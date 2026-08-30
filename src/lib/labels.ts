@@ -96,6 +96,14 @@ export const modeLabels: Record<LineupMode, string> = {
   gathering: "Gathering",
 };
 
+export const modeShort: Record<LineupMode, string> = {
+  pvp: "PvP",
+  pve: "PvE",
+  rally: "Rally",
+  defense: "Defense",
+  gathering: "Gather",
+};
+
 export const modeCopy: Record<LineupMode, string> = {
   pvp: "Player fights and alliance wars. Prioritize taunt, control, and a shared affinity.",
   pve: "Campaign tiles, events, and monster hunts. Recovery and consistent damage.",

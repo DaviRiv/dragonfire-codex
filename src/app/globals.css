@@ -136,6 +136,8 @@
   a,
   [role="button"] {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: rgb(245 158 11 / 0.28);
+    user-select: none;
   }
   .font-heading {
     font-family: var(--font-heading);

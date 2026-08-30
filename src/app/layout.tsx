@@ -48,10 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <Providers>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 sm:px-4 sm:py-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-2 py-3 sm:px-4 sm:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
             {children}
           </main>
-          <footer className="border-t border-border/60 px-4 py-6 pb-[calc(5.75rem+env(safe-area-inset-bottom))] text-center text-xs text-muted-foreground md:pb-6">
+          <footer className="hidden border-t border-border/60 px-4 py-6 text-center text-xs text-muted-foreground md:block">
             Fan-made. Not affiliated with HBO, Warner Bros., or Game of
             Thrones: Dragonfire.
           </footer>

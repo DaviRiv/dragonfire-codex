@@ -1,4 +1,4 @@
-import { DragonPortrait } from "@/components/dragon-portrait";
+import { DragonIcon } from "@/components/dragon-icon";
 import type { DragonSuggestion } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
 
@@ -17,30 +17,29 @@ export function SuggestTile({
       type="button"
       onClick={onPick}
       className={cn(
-        "overflow-hidden rounded-xl bg-card/80 text-left ring-1 ring-foreground/10 transition hover:ring-amber-400/60",
-        selected && "ring-2 ring-amber-300",
+        "flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left select-none active:bg-amber-500/15",
+        selected && "bg-amber-500/20",
       )}
     >
-      <DragonPortrait
+      <DragonIcon
         dragonId={dragon.id}
         name={dragon.name}
-        breed={dragon.breed}
+        rarity={dragon.rarity}
         custom={dragon.custom}
-        showMark={false}
-        className="aspect-square w-full"
-        sizes="(max-width: 640px) 45vw, 160px"
+        selected={selected}
+        size="lg"
       />
-      <div className="p-1.5 sm:p-2">
-        <p className="font-heading truncate text-sm tracking-wide sm:text-base">
+      <span className="min-w-0 flex-1">
+        <span className="font-heading block truncate text-base tracking-wide">
           {dragon.name}
-        </p>
-        <p className="truncate text-[11px] text-amber-200/90">
+        </span>
+        <span className="block truncate text-sm text-amber-200/90">
           {reasons[0]}
-        </p>
-        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-          {owned ? `★${owned.starRank} · ${reasons[1] ?? "Ready"}` : "Tap to slot"}
-        </p>
-      </div>
+        </span>
+      </span>
+      <span className="shrink-0 text-xs text-muted-foreground">
+        {selected ? "Slotted" : owned ? `★${owned.starRank}` : "Tap"}
+      </span>
     </button>
   );
 }

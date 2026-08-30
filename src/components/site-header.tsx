@@ -63,7 +63,7 @@ export function SiteHeader() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] text-muted-foreground",
+                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] text-muted-foreground",
                     active && "text-amber-200",
                   )}
                 >

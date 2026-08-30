@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
 import { AffinityBadges } from "@/components/affinity-badges";
-import { DragonCard } from "@/components/dragon-card";
+import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPortrait } from "@/components/dragon-portrait";
 import { EmptyState } from "@/components/empty-state";
 import { StarRank } from "@/components/star-rank";
@@ -100,23 +100,37 @@ export function PitPage() {
           description="Nothing in your pit matches that search."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
           {dragons.map((owned) => {
             const used = lineupsUsingDragon(state, owned.id);
+            const dragon = findDragon(owned.dragonId, state.customDragons);
+            if (!dragon) return null;
             return (
-              <DragonCard
+              <button
                 key={owned.id}
-                owned={owned}
-                state={state}
+                type="button"
                 onClick={() => setEditing(owned)}
-                footer={
-                  <p className="text-xs text-muted-foreground">
-                    {used.length === 0
-                      ? "Not in a lineup yet"
-                      : `In ${used.length} lineup${used.length === 1 ? "" : "s"}`}
-                  </p>
-                }
-              />
+                className="flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left select-none active:bg-amber-500/15"
+              >
+                <DragonIcon
+                  dragonId={dragon.id}
+                  name={dragon.name}
+                  rarity={dragon.rarity}
+                  custom={dragon.custom}
+                  size="lg"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="font-heading block truncate text-base">
+                    {dragon.name}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    ★{owned.starRank} · Reign {owned.reignLevel}
+                    {used.length
+                      ? ` · ${used.length} lineup${used.length === 1 ? "" : "s"}`
+                      : ""}
+                  </span>
+                </span>
+              </button>
             );
           })}
         </div>

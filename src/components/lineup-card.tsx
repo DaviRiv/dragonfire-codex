@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { TroopBadge } from "@/components/affinity-badges";
-import { DragonPortrait } from "@/components/dragon-portrait";
-import { Badge } from "@/components/ui/badge";
+import { DragonIcon } from "@/components/dragon-icon";
 import { findDragon, filledSlots } from "@/lib/dragons";
-import { modeLabels, slotLabels } from "@/lib/labels";
+import { modeLabels, slotShort } from "@/lib/labels";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 
 export function LineupCard({
   lineup,
@@ -37,26 +37,22 @@ export function LineupCard({
           return (
             <div
               key={slot}
-              className="overflow-hidden rounded-lg bg-black/30 text-center ring-1 ring-foreground/8"
+              className="flex flex-col items-center gap-1 rounded-lg bg-black/30 px-1 py-2 text-center"
             >
-              <p className="px-2 pt-1.5 text-[10px] tracking-widest text-muted-foreground">
-                {slotLabels[slot].split(" ")[0]}
+              <p className="text-[10px] tracking-widest text-muted-foreground">
+                {slotShort[slot].toUpperCase()}
               </p>
-              {dragon && owned ? (
-                <>
-                  <DragonPortrait
-                    dragonId={dragon.id}
-                    name={dragon.name}
-                    breed={dragon.breed}
-                    custom={dragon.custom}
-                    className="mx-auto mt-1 aspect-square w-full"
-                    sizes="120px"
-                  />
-                  <p className="truncate px-1 py-1.5 text-xs">{dragon.name}</p>
-                </>
-              ) : (
-                <p className="px-2 py-8 text-xs text-muted-foreground">Empty</p>
-              )}
+              <DragonIcon
+                dragonId={dragon?.id}
+                name={dragon?.name}
+                rarity={dragon?.rarity}
+                custom={dragon?.custom}
+                empty={!dragon}
+                size="lg"
+              />
+              <p className="w-full truncate text-xs">
+                {dragon?.name ?? "Empty"}
+              </p>
             </div>
           );
         })}
@@ -76,26 +72,25 @@ export function MiniSlotRow({
   state: PitState;
 }) {
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex items-center gap-2">
       {(["left", "vanguard", "right"] as SlotId[]).map((slot) => {
         const owned = state.owned.find((o) => o.id === lineup.slots[slot]);
         const dragon = owned
           ? findDragon(owned.dragonId, state.customDragons)
           : undefined;
         return dragon ? (
-          <Badge key={slot} variant="secondary" className="max-w-[40vw] shrink-0 gap-1.5 pr-2 pl-1 sm:max-w-none">
-            <DragonPortrait
+          <Badge key={slot} variant="secondary" className="max-w-[40vw] gap-1.5 pr-2 pl-1 sm:max-w-none">
+            <DragonIcon
               dragonId={dragon.id}
               name={dragon.name}
-              breed={dragon.breed}
+              rarity={dragon.rarity}
               custom={dragon.custom}
-              className="size-5 shrink-0 rounded-full"
-              sizes="24px"
+              size="sm"
             />
             <span className="truncate">{dragon.name}</span>
           </Badge>
         ) : (
-          <Badge key={slot} variant="outline" className="shrink-0">
+          <Badge key={slot} variant="outline">
             —
           </Badge>
         );

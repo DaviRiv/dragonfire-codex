@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LineupEditor } from "@/app/lineups/lineup-editor";
-import { Chip, ChipRow } from "@/components/chip";
+import { ChoiceButton } from "@/components/chip";
 import { Button } from "@/components/ui/button";
 import { usePit } from "@/lib/store";
 import { troopShort } from "@/lib/labels";
@@ -29,17 +29,11 @@ export function BuildPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
           Build a line
         </h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Pick a troop, tap a lane, then tap a suggested dragon. No need to fill
-          the pit first.
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
         <Button
           onClick={() => {
             const lineup = createLineup(
@@ -50,24 +44,26 @@ export function BuildPage() {
           className="shrink-0"
         >
           <Plus data-icon="inline-start" />
-          <span className="sm:hidden">New</span>
-          <span className="hidden sm:inline">New lineup</span>
+          New
         </Button>
-        <ChipRow className="min-w-0 flex-1">
+      </div>
+      {state.lineups.length > 1 ? (
+        <div className="flex flex-wrap gap-2">
           {state.lineups.map((lineup) => (
-            <Chip
+            <ChoiceButton
               key={lineup.id}
               active={resolvedId === lineup.id}
               onClick={() => setActiveId(lineup.id)}
+              className="w-auto min-w-[7.5rem] px-3"
             >
               {lineup.name}
-              <span className="ml-1.5 text-[11px] text-muted-foreground">
+              <span className="ml-1.5 text-[11px] opacity-70">
                 {troopShort[lineup.troop]}
               </span>
-            </Chip>
+            </ChoiceButton>
           ))}
-        </ChipRow>
-      </div>
+        </div>
+      ) : null}
       <LineupEditor lineupId={resolvedId} embedded />
     </div>
   );

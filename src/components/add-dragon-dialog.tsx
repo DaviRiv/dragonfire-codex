@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Chip, ChipRow } from "@/components/chip";
-import { CatalogTile } from "@/components/dragon-card";
+import { Chip, ChoiceButton } from "@/components/chip";
+import { DragonIcon } from "@/components/dragon-icon";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DRAGONS } from "@/data/dragons";
-import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels } from "@/lib/labels";
+import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels, troopShort } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
 
@@ -78,57 +78,98 @@ export function AddDragonDialog({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <ChipRow>
-              <Chip active={breed === "all"} onClick={() => setBreed("all")}>
-                All breeds
-              </Chip>
+            <div className="grid grid-cols-3 gap-2">
+              <ChoiceButton
+                active={breed === "all"}
+                onClick={() => setBreed("all")}
+              >
+                All
+              </ChoiceButton>
               {BREEDS.map((b) => (
-                <Chip key={b} active={breed === b} onClick={() => setBreed(b)}>
+                <ChoiceButton
+                  key={b}
+                  active={breed === b}
+                  onClick={() => setBreed(b)}
+                >
                   {breedLabels[b]}
-                </Chip>
+                </ChoiceButton>
               ))}
-            </ChipRow>
-            <ChipRow>
-              <Chip active={rarity === "all"} onClick={() => setRarity("all")}>
-                All rarities
-              </Chip>
-              {RARITIES.map((r) => (
-                <Chip key={r} active={rarity === r} onClick={() => setRarity(r)}>
-                  {rarityLabels[r]}
-                </Chip>
-              ))}
-            </ChipRow>
-            <ChipRow>
-              <Chip active={troop === "all"} onClick={() => setTroop("all")}>
-                All affinities
-              </Chip>
-              {TROOP_TYPES.map((t) => (
-                <Chip key={t} active={troop === t} onClick={() => setTroop(t)}>
-                  {troopLabels[t]}
-                </Chip>
-              ))}
-            </ChipRow>
-            <div className="grid max-h-[50dvh] grid-cols-2 gap-3 overflow-y-auto sm:max-h-[46vh] lg:grid-cols-3">
-              {filtered.length === 0 ? (
-                <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
-                  No dragons match those filters. Add them as unlisted instead.
-                </p>
-              ) : (
-                filtered.map((d) => (
-                  <CatalogTile
-                    key={d.id}
-                    id={d.id}
-                    name={d.name}
-                    epithet={d.epithet}
-                    breed={d.breed}
-                    rarity={d.rarity}
-                    affinities={d.affinities}
-                    owned={state.owned.some((o) => o.dragonId === d.id)}
-                    onAdd={() => addFromCatalog(d.id)}
-                  />
-                ))
-              )}
             </div>
+            <div className="grid grid-cols-3 gap-2">
+              <ChoiceButton
+                active={rarity === "all"}
+                onClick={() => setRarity("all")}
+              >
+                Any
+              </ChoiceButton>
+              {RARITIES.map((r) => (
+                <ChoiceButton
+                  key={r}
+                  active={rarity === r}
+                  onClick={() => setRarity(r)}
+                >
+                  {rarityLabels[r]}
+                </ChoiceButton>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <ChoiceButton
+                active={troop === "all"}
+                onClick={() => setTroop("all")}
+              >
+                Any
+              </ChoiceButton>
+              {TROOP_TYPES.map((t) => (
+                <ChoiceButton
+                  key={t}
+                  active={troop === t}
+                  onClick={() => setTroop(t)}
+                >
+                  {troopShort[t]}
+                </ChoiceButton>
+              ))}
+            </div>
+            <ul className="max-h-[50dvh] divide-y divide-border/50 overflow-y-auto rounded-2xl ring-1 ring-foreground/10 sm:max-h-[46vh]">
+              {filtered.length === 0 ? (
+                <li className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  No dragons match those filters. Add them as unlisted instead.
+                </li>
+              ) : (
+                filtered.map((d) => {
+                  const owned = state.owned.some((o) => o.dragonId === d.id);
+                  return (
+                    <li key={d.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!owned) addFromCatalog(d.id);
+                        }}
+                        disabled={owned}
+                        className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left disabled:opacity-50"
+                      >
+                        <DragonIcon
+                          dragonId={d.id}
+                          name={d.name}
+                          rarity={d.rarity}
+                          size="lg"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="font-heading block truncate">
+                            {d.name}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {d.epithet}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {owned ? "In pit" : "Tap to add"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
           </div>
         ) : (
           <CustomDragonForm

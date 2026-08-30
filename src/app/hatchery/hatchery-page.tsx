@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Chip, ChipRow } from "@/components/chip";
-import { CatalogTile } from "@/components/dragon-card";
+import { ChoiceButton } from "@/components/chip";
+import { DragonIcon } from "@/components/dragon-icon";
 import { Input } from "@/components/ui/input";
 import { DRAGONS } from "@/data/dragons";
-import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels } from "@/lib/labels";
+import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopShort } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function HatcheryPage() {
   const { ready, state, addFromCatalog } = usePit();
@@ -32,70 +33,107 @@ export function HatcheryPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div>
-        <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
+        <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
           Hatchery
         </h1>
-        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          Every dragon in the roster. Slot them from Build and they land in your
-          pit automatically — or add them here to track stars first.
+        <p className="mt-1 hidden max-w-xl text-sm text-muted-foreground sm:block">
+          Tap a dragon icon to add it to your pit. Slotting from Build does the
+          same automatically.
         </p>
       </div>
       <Input
         placeholder="Search dragons…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="max-w-md"
         enterKeyHint="search"
       />
-      <ChipRow>
-        <Chip active={breed === "all"} onClick={() => setBreed("all")}>
-          All breeds
-        </Chip>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        <ChoiceButton
+          active={breed === "all"}
+          onClick={() => setBreed("all")}
+        >
+          All
+        </ChoiceButton>
         {BREEDS.map((b) => (
-          <Chip key={b} active={breed === b} onClick={() => setBreed(b)}>
+          <ChoiceButton
+            key={b}
+            active={breed === b}
+            onClick={() => setBreed(b)}
+          >
             {breedLabels[b]}
-          </Chip>
+          </ChoiceButton>
         ))}
-      </ChipRow>
-      <ChipRow>
-        <Chip active={rarity === "all"} onClick={() => setRarity("all")}>
-          All rarities
-        </Chip>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <ChoiceButton
+          active={rarity === "all"}
+          onClick={() => setRarity("all")}
+        >
+          Any rarity
+        </ChoiceButton>
         {RARITIES.map((r) => (
-          <Chip key={r} active={rarity === r} onClick={() => setRarity(r)}>
+          <ChoiceButton
+            key={r}
+            active={rarity === r}
+            onClick={() => setRarity(r)}
+          >
             {rarityLabels[r]}
-          </Chip>
+          </ChoiceButton>
         ))}
-      </ChipRow>
-      <ChipRow>
-        <Chip active={troop === "all"} onClick={() => setTroop("all")}>
-          All affinities
-        </Chip>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <ChoiceButton
+          active={troop === "all"}
+          onClick={() => setTroop("all")}
+        >
+          Any troop
+        </ChoiceButton>
         {TROOP_TYPES.map((t) => (
-          <Chip key={t} active={troop === t} onClick={() => setTroop(t)}>
-            {troopLabels[t]}
-          </Chip>
+          <ChoiceButton
+            key={t}
+            active={troop === t}
+            onClick={() => setTroop(t)}
+          >
+            {troopShort[t]}
+          </ChoiceButton>
         ))}
-      </ChipRow>
+      </div>
       <p className="text-sm text-muted-foreground">
         {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
       </p>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {filtered.map((d) => (
-          <CatalogTile
-            key={d.id}
-            id={d.id}
-            name={d.name}
-            epithet={d.epithet}
-            breed={d.breed}
-            rarity={d.rarity}
-            affinities={d.affinities}
-            owned={state.owned.some((o) => o.dragonId === d.id)}
-            onAdd={() => addFromCatalog(d.id)}
-          />
-        ))}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+        {filtered.map((d) => {
+          const owned = state.owned.some((o) => o.dragonId === d.id);
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => {
+                if (!owned) addFromCatalog(d.id);
+              }}
+              disabled={owned}
+              className={cn(
+                "flex min-h-[7.5rem] flex-col items-center gap-1.5 rounded-2xl bg-card/70 px-1 py-3 ring-1 ring-foreground/10 select-none",
+                owned && "opacity-50",
+              )}
+            >
+              <DragonIcon
+                dragonId={d.id}
+                name={d.name}
+                rarity={d.rarity}
+                size="xl"
+              />
+              <span className="w-full truncate text-center text-xs font-medium">
+                {d.name}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {owned ? "In pit" : "Tap to add"}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

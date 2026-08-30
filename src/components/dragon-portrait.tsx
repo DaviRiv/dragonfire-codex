@@ -71,7 +71,7 @@ export function DragonPortrait({
         alt={name}
         fill
         sizes={sizes}
-        className="object-cover"
+        className="object-cover object-center"
       />
       <span className="sr-only">{name}</span>
       {showMark ? (

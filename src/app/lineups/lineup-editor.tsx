@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Chip, ChipRow } from "@/components/chip";
+import { ChoiceButton } from "@/components/chip";
 import { FormationBoard } from "@/components/formation-board";
 import { SuggestTile } from "@/components/suggest-tile";
 import { SynergyPanel } from "@/components/synergy-panel";
@@ -14,7 +14,7 @@ import { findDragon } from "@/lib/dragons";
 import {
   MODES,
   TROOP_TYPES,
-  modeLabels,
+  modeShort,
   slotShort,
   troopCounters,
   troopLabels,
@@ -145,11 +145,11 @@ export function LineupEditor({
 
   const counter = troopCounters[lineup.troop];
   const selectedDragon = dragonInSlot(selectedSlot);
-  const visibleLimit = pool === "all" || query.trim() ? 30 : 18;
+  const visibleLimit = pool === "all" || query.trim() ? 36 : 24;
   const visible = suggestions.slice(0, visibleLimit);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {!embedded ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
@@ -197,22 +197,21 @@ export function LineupEditor({
       )}
 
       <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground sm:text-xs">
-          TROOP TYPE
+        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
+          TROOP
         </p>
-        <ChipRow>
+        <div className="grid grid-cols-3 gap-2">
           {TROOP_TYPES.map((troop) => (
-            <Chip
+            <ChoiceButton
               key={troop}
               active={lineup.troop === troop}
               onClick={() => updateLineup(lineup.id, { troop })}
             >
-              <span className="sm:hidden">{troopShort[troop]}</span>
-              <span className="hidden sm:inline">{troopLabels[troop]}</span>
-            </Chip>
+              {troopShort[troop]}
+            </ChoiceButton>
           ))}
-        </ChipRow>
-        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
           {counter.beats
             ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
                 counter.losesTo
@@ -224,23 +223,23 @@ export function LineupEditor({
       </div>
 
       <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground sm:text-xs">
+        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
           MODE
         </p>
-        <ChipRow>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {MODES.map((mode) => (
-            <Chip
+            <ChoiceButton
               key={mode}
               active={lineup.mode === mode}
               onClick={() => updateLineup(lineup.id, { mode })}
             >
-              {modeLabels[mode]}
-            </Chip>
+              {modeShort[mode]}
+            </ChoiceButton>
           ))}
-        </ChipRow>
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.2fr)]">
+      <div className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-20 -mx-2 bg-background/95 px-2 py-2 backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
         <FormationBoard
           lineup={lineup}
           state={state}
@@ -248,76 +247,75 @@ export function LineupEditor({
           onSelectSlot={setSelectedSlot}
           onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
         />
-        <section className="space-y-3">
-          <div className="flex flex-col gap-2">
-            <div>
-              <h2 className="font-heading text-lg tracking-wide sm:text-xl">
-                Pick for {slotShort[selectedSlot]}
-              </h2>
-              <p className="text-xs text-muted-foreground sm:text-sm">
-                {selectedDragon
-                  ? `Replace ${selectedDragon.name}, or tap another lane.`
-                  : `Tap a dragon ranked for ${troopLabels[lineup.troop]}.`}
-              </p>
-            </div>
-            <Button
-              variant="secondary"
-              onClick={fillLine}
-              className="w-full sm:w-auto"
+      </div>
+
+      <section className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-heading min-w-0 truncate text-lg tracking-wide">
+            {selectedDragon
+              ? `Replace ${selectedDragon.name}`
+              : `Pick ${slotShort[selectedSlot]}`}
+          </h2>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={fillLine}
+            className="shrink-0"
+          >
+            <Sparkles data-icon="inline-start" />
+            Auto-fill
+          </Button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ["suggested", "Suggested"],
+              ["pit", "Pit"],
+              ["all", "All"],
+            ] as const
+          ).map(([id, label]) => (
+            <ChoiceButton
+              key={id}
+              active={pool === id}
+              onClick={() => setPool(id)}
             >
-              <Sparkles data-icon="inline-start" />
-              Fill empty lanes
-            </Button>
-          </div>
-          <ChipRow>
-            {(
-              [
-                ["suggested", "Suggested"],
-                ["pit", "Your pit"],
-                ["all", "All dragons"],
-              ] as const
-            ).map(([id, label]) => (
-              <Chip
-                key={id}
-                active={pool === id}
-                onClick={() => setPool(id)}
-              >
-                {label}
-              </Chip>
-            ))}
-          </ChipRow>
-          <Input
-            placeholder="Search name, breed, or habit…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            enterKeyHint="search"
-          />
-          {visible.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
-              {pool === "pit"
-                ? "Nothing in your pit matches. Slot from Suggested — they land in the pit automatically."
-                : "Nothing matches. Try All dragons, or clear the search."}
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {visible.map((suggestion) => (
+              {label}
+            </ChoiceButton>
+          ))}
+        </div>
+        <Input
+          placeholder="Search dragons…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          enterKeyHint="search"
+        />
+        {visible.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
+            {pool === "pit"
+              ? "Nothing in your pit matches. Tap Suggested — they land in the pit automatically."
+              : "Nothing matches. Try All, or clear the search."}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+            {visible.map((suggestion) => (
+              <li key={suggestion.dragon.id}>
                 <SuggestTile
-                  key={suggestion.dragon.id}
                   suggestion={suggestion}
-                  selected={slottedHere(suggestion.dragon.id) === selectedSlot}
+                  selected={
+                    slottedHere(suggestion.dragon.id) === selectedSlot
+                  }
                   onPick={() => pick(suggestion.dragon.id)}
                 />
-              ))}
-            </div>
-          )}
-          {suggestions.length > visibleLimit ? (
-            <p className="text-xs text-muted-foreground">
-              Showing the top {visibleLimit}. Search or open All dragons to go
-              further.
-            </p>
-          ) : null}
-        </section>
-      </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {suggestions.length > visibleLimit ? (
+          <p className="text-xs text-muted-foreground">
+            Showing the top {visibleLimit}. Search to find the rest.
+          </p>
+        ) : null}
+      </section>
 
       <SynergyPanel report={report} />
     </div>
