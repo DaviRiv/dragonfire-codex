@@ -1,0 +1,210 @@
+import type { DragonStats } from "@/lib/types";
+
+/**
+ * Keyword colors used in Game of Thrones: Dragonfire ability text.
+ * Physical / Strength are orange, Tactical / Instinct cyan, Fire red,
+ * Recovery green, Initiative gold, Intelligence violet.
+ */
+export type GameTone =
+  | "physical"
+  | "tactical"
+  | "fire"
+  | "recovery"
+  | "strength"
+  | "instinct"
+  | "intelligence"
+  | "initiative"
+  | "buff"
+  | "debuff"
+  | "dealt"
+  | "received"
+  | "status";
+
+export interface AbilityToken {
+  value: string;
+  tone?: GameTone;
+}
+
+export const TONE_TEXT_CLASS: Record<GameTone, string> = {
+  physical: "font-medium text-df-physical",
+  tactical: "font-medium text-df-tactical",
+  fire: "font-medium text-df-fire",
+  recovery: "font-medium text-df-recovery",
+  strength: "font-medium text-df-strength",
+  instinct: "font-medium text-df-instinct",
+  intelligence: "font-medium text-df-intelligence",
+  initiative: "font-medium text-df-initiative",
+  buff: "font-medium text-df-buff",
+  debuff: "font-medium text-df-debuff",
+  dealt: "font-medium text-df-dealt",
+  received: "font-medium text-df-received",
+  status: "font-medium text-df-status",
+};
+
+export const TONE_BADGE_CLASS: Record<GameTone, string> = {
+  physical: "border-df-physical/40 bg-df-physical/15 text-df-physical",
+  tactical: "border-df-tactical/40 bg-df-tactical/15 text-df-tactical",
+  fire: "border-df-fire/40 bg-df-fire/15 text-df-fire",
+  recovery: "border-df-recovery/40 bg-df-recovery/15 text-df-recovery",
+  strength: "border-df-strength/40 bg-df-strength/15 text-df-strength",
+  instinct: "border-df-instinct/40 bg-df-instinct/15 text-df-instinct",
+  intelligence:
+    "border-df-intelligence/40 bg-df-intelligence/15 text-df-intelligence",
+  initiative: "border-df-initiative/40 bg-df-initiative/15 text-df-initiative",
+  buff: "border-df-buff/40 bg-df-buff/15 text-df-buff",
+  debuff: "border-df-debuff/40 bg-df-debuff/15 text-df-debuff",
+  dealt: "border-df-dealt/40 bg-df-dealt/15 text-df-dealt",
+  received: "border-df-received/40 bg-df-received/15 text-df-received",
+  status: "border-df-status/40 bg-df-status/15 text-df-status",
+};
+
+export const STAT_TEXT_CLASS: Record<keyof DragonStats, string> = {
+  strength: TONE_TEXT_CLASS.strength,
+  instinct: TONE_TEXT_CLASS.instinct,
+  intelligence: TONE_TEXT_CLASS.intelligence,
+  initiative: TONE_TEXT_CLASS.initiative,
+};
+
+export const STAT_BAR_CLASS: Record<keyof DragonStats, string> = {
+  strength: "bg-gradient-to-r from-df-physical/50 to-df-physical",
+  instinct: "bg-gradient-to-r from-df-tactical/50 to-df-tactical",
+  intelligence: "bg-gradient-to-r from-df-intelligence/50 to-df-intelligence",
+  initiative: "bg-gradient-to-r from-df-initiative/50 to-df-initiative",
+};
+
+const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
+  { phrase: "Physical damage (Command & Habits)", tone: "physical" },
+  { phrase: "Tactical damage received", tone: "tactical" },
+  { phrase: "Physical damage received", tone: "physical" },
+  { phrase: "Fire damage received", tone: "fire" },
+  { phrase: "Tactical damage dealt", tone: "tactical" },
+  { phrase: "Physical damage dealt", tone: "physical" },
+  { phrase: "Fire damage dealt", tone: "fire" },
+  { phrase: "Recovery received", tone: "recovery" },
+  { phrase: "Damage received", tone: "received" },
+  { phrase: "Damage dealt", tone: "dealt" },
+  { phrase: "Tactical damage", tone: "tactical" },
+  { phrase: "Physical damage", tone: "physical" },
+  { phrase: "Fire damage", tone: "fire" },
+  { phrase: "Tactical Dmg", tone: "tactical" },
+  { phrase: "Physical Dmg", tone: "physical" },
+  { phrase: "Fire Dmg", tone: "fire" },
+  { phrase: "Command & Habits", tone: "status" },
+  { phrase: "First-Strike", tone: "status" },
+  { phrase: "Double-Strike", tone: "status" },
+  { phrase: "Rising Tide", tone: "status" },
+  { phrase: "Solar Flare", tone: "status" },
+  { phrase: "Right Flank", tone: "status" },
+  { phrase: "Left Flank", tone: "status" },
+  { phrase: "Basic Attack", tone: "status" },
+  { phrase: "Intelligence", tone: "intelligence" },
+  { phrase: "Initiative", tone: "initiative" },
+  { phrase: "Strength", tone: "strength" },
+  { phrase: "Instinct", tone: "instinct" },
+  { phrase: "Recovery", tone: "recovery" },
+  { phrase: "Advantage", tone: "dealt" },
+  { phrase: "Vulnerable", tone: "debuff" },
+  { phrase: "Weakened", tone: "debuff" },
+  { phrase: "Overwhelm", tone: "status" },
+  { phrase: "Confusion", tone: "status" },
+  { phrase: "Protect", tone: "status" },
+  { phrase: "Cleanse", tone: "recovery" },
+  { phrase: "Stagger", tone: "physical" },
+  { phrase: "Control", tone: "status" },
+  { phrase: "Physical", tone: "physical" },
+  { phrase: "Tactical", tone: "tactical" },
+  { phrase: "Bleed", tone: "physical" },
+  { phrase: "Panic", tone: "tactical" },
+  { phrase: "Burn", tone: "fire" },
+  { phrase: "Taunt", tone: "status" },
+  { phrase: "Stun", tone: "status" },
+  { phrase: "Prey", tone: "status" },
+  { phrase: "Slow", tone: "tactical" },
+  { phrase: "Evade", tone: "status" },
+  { phrase: "Fire", tone: "fire" },
+];
+
+const SORTED_PHRASES = [...ABILITY_PHRASES].sort(
+  (a, b) => b.phrase.length - a.phrase.length,
+);
+
+const BUFF_RE = /\+\d+(?:\.\d+)?%?/g;
+const DEBUFF_RE = /(?:\u2212|(?<!\d)-)\d+(?:\.\d+)?%?/g;
+
+interface Hit {
+  start: number;
+  end: number;
+  tone: GameTone;
+}
+
+function isIdentChar(ch: string | undefined): boolean {
+  return ch !== undefined && /[A-Za-z0-9]/.test(ch);
+}
+
+function hasWordBounds(text: string, start: number, end: number): boolean {
+  return !isIdentChar(text[start - 1]) && !isIdentChar(text[end]);
+}
+
+function overlaps(hits: Hit[], start: number, end: number): boolean {
+  return hits.some((hit) => start < hit.end && end > hit.start);
+}
+
+function pushRegexHits(
+  text: string,
+  regex: RegExp,
+  tone: GameTone,
+  hits: Hit[],
+) {
+  regex.lastIndex = 0;
+  for (const match of text.matchAll(regex)) {
+    const start = match.index ?? 0;
+    const end = start + match[0].length;
+    if (!overlaps(hits, start, end)) {
+      hits.push({ start, end, tone });
+    }
+  }
+}
+
+export function tokenizeAbilityText(text: string): AbilityToken[] {
+  if (!text) return [];
+
+  const hits: Hit[] = [];
+  const lower = text.toLowerCase();
+
+  for (const { phrase, tone } of SORTED_PHRASES) {
+    const needle = phrase.toLowerCase();
+    let from = 0;
+    while (from <= lower.length - needle.length) {
+      const idx = lower.indexOf(needle, from);
+      if (idx === -1) break;
+      const end = idx + phrase.length;
+      if (hasWordBounds(text, idx, end) && !overlaps(hits, idx, end)) {
+        hits.push({ start: idx, end, tone });
+      }
+      from = idx + 1;
+    }
+  }
+
+  pushRegexHits(text, BUFF_RE, "buff", hits);
+  pushRegexHits(text, DEBUFF_RE, "debuff", hits);
+
+  hits.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  const tokens: AbilityToken[] = [];
+  let cursor = 0;
+  for (const hit of hits) {
+    if (hit.start > cursor) {
+      tokens.push({ value: text.slice(cursor, hit.start) });
+    }
+    tokens.push({ value: text.slice(hit.start, hit.end), tone: hit.tone });
+    cursor = hit.end;
+  }
+  if (cursor < text.length) {
+    tokens.push({ value: text.slice(cursor) });
+  }
+  return tokens;
+}
+
+export function toneForPhrase(label: string): GameTone | undefined {
+  return tokenizeAbilityText(label).find((token) => token.tone)?.tone;
+}

@@ -24,6 +24,10 @@ The layout is built for a phone in one hand: bottom tabs, a three-lane
 formation that stays in a row, and suggestion tiles you can tap without
 pinching.
 
+Habit and command text uses the in-game keyword colors: **Physical**
+orange, **Tactical** cyan, **Fire** red, **Recovery** green, with matching
+stat and tag colors. Positive magnitudes are green; reductions are red.
+
 ```bash
 npm install
 npm run dev

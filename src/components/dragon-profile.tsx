@@ -1,5 +1,7 @@
+import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { Badge } from "@/components/ui/badge";
+import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
 import {
   breedLabels,
   breedRoles,
@@ -18,7 +20,7 @@ export function StatLine({ stats }: { stats: DragonStats }) {
     <span className="flex flex-wrap gap-x-2.5 text-[11px] tabular-nums text-muted-foreground">
       {STAT_KEYS.map((key) => (
         <span key={key}>
-          <span className="text-muted-foreground/70">{statShort[key]}</span>{" "}
+          <span className={STAT_TEXT_CLASS[key]}>{statShort[key]}</span>{" "}
           {stats[key]}
         </span>
       ))}
@@ -40,14 +42,14 @@ export function StatGrid({
       {STAT_KEYS.map((key) => (
         <div key={key}>
           <div className="flex items-baseline justify-between gap-2 text-xs">
-            <span className="tracking-wide text-muted-foreground">
+            <span className={cn("tracking-wide", STAT_TEXT_CLASS[key])}>
               {compact ? statShort[key] : statLabels[key]}
             </span>
             <span className="font-medium tabular-nums">{stats[key]}</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-700 to-amber-300"
+              className={cn("h-full rounded-full", STAT_BAR_CLASS[key])}
               style={{ width: `${Math.min(100, stats[key])}%` }}
             />
           </div>
@@ -78,7 +80,9 @@ export function DragonProfile({
         </Badge>
       </div>
       <p className="text-xs text-muted-foreground">
-        {breedRoles[dragon.breed]} Buffs the {slotLabels[dragon.flankBonus]}.
+        <AbilityText
+          text={`${breedRoles[dragon.breed]} Buffs the ${slotLabels[dragon.flankBonus]}.`}
+        />
       </p>
       <AffinityBadges
         affinities={dragon.affinities}
@@ -95,13 +99,7 @@ export function DragonProfile({
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {dragon.tags.map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-              className="rounded-md font-normal"
-            >
-              {tag}
-            </Badge>
+            <AbilityTag key={tag} tag={tag} />
           ))}
         </div>
       ) : null}
@@ -115,7 +113,9 @@ function AbilityBlock({ title, body }: { title: string; body: string }) {
       <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
         {title.toUpperCase()}
       </p>
-      <p className="mt-1 leading-relaxed">{body}</p>
+      <p className="mt-1 leading-relaxed">
+        <AbilityText text={body} />
+      </p>
     </div>
   );
 }

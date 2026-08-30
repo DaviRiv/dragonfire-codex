@@ -46,6 +46,19 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-df-physical: #ff9a3c;
+  --color-df-tactical: #4ec4f0;
+  --color-df-fire: #ff5c3a;
+  --color-df-recovery: #5cdb7a;
+  --color-df-strength: #ff9a3c;
+  --color-df-instinct: #4ec4f0;
+  --color-df-intelligence: #c084fc;
+  --color-df-initiative: #f0c040;
+  --color-df-buff: #7ddea0;
+  --color-df-debuff: #ff6b6b;
+  --color-df-dealt: #f5d76e;
+  --color-df-received: #94a3b8;
+  --color-df-status: #e8d48b;
 }
 
 :root {

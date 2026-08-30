@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AbilityText } from "@/components/ability-text";
 import { ChoiceButton } from "@/components/chip";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
@@ -279,11 +280,15 @@ export function LineupEditor({
             <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
               HABIT
             </p>
-            <p className="mt-1 line-clamp-3 text-sm">{selectedDragon.habit}</p>
+            <p className="mt-1 line-clamp-3 text-sm">
+              <AbilityText text={selectedDragon.habit} />
+            </p>
             <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
               COMMAND
             </p>
-            <p className="mt-1 line-clamp-3 text-sm">{selectedDragon.command}</p>
+            <p className="mt-1 line-clamp-3 text-sm">
+              <AbilityText text={selectedDragon.command} />
+            </p>
             <p className="mt-2 text-xs text-amber-200/80">
               Tap for full stats and abilities
             </p>

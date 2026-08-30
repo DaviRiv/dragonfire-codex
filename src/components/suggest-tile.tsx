@@ -1,3 +1,4 @@
+import { AbilityText } from "@/components/ability-text";
 import { DragonIcon } from "@/components/dragon-icon";
 import { StatLine } from "@/components/dragon-profile";
 import type { DragonSuggestion } from "@/lib/suggest";
@@ -44,9 +45,10 @@ export function SuggestTile({
             {reasons[0]}
           </span>
           <StatLine stats={dragon.stats} />
-          <span className="mt-0.5 line-clamp-2 block text-xs leading-snug text-foreground/80">
-            {dragon.habit}
-          </span>
+          <AbilityText
+            text={dragon.habit}
+            className="mt-0.5 line-clamp-2 block text-xs leading-snug text-foreground/80"
+          />
         </span>
         <span className="shrink-0 self-start pt-1 text-xs text-muted-foreground">
           {selected ? "Slotted" : owned ? `★${owned.starRank}` : "Slot"}
