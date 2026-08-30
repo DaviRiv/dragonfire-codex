@@ -54,6 +54,7 @@ export function DragonPortrait({
   custom,
   className,
   sizes = "(max-width: 640px) 50vw, 240px",
+  showMark = true,
 }: {
   dragonId: string;
   name: string;
@@ -61,6 +62,7 @@ export function DragonPortrait({
   custom?: boolean;
   className?: string;
   sizes?: string;
+  showMark?: boolean;
 }) {
   return (
     <div className={cn("relative overflow-hidden bg-black/40", className)}>
@@ -72,10 +74,12 @@ export function DragonPortrait({
         className="object-cover"
       />
       <span className="sr-only">{name}</span>
-      <DragonMark
-        breed={breed}
-        className="pointer-events-none absolute right-1.5 bottom-1.5 size-5 opacity-70 drop-shadow"
-      />
+      {showMark ? (
+        <DragonMark
+          breed={breed}
+          className="pointer-events-none absolute right-1.5 bottom-1.5 size-5 opacity-70 drop-shadow"
+        />
+      ) : null}
     </div>
   );
 }

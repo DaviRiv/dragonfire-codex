@@ -25,16 +25,17 @@ export function TeamsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl tracking-wide">Teams</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Teams</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Bundle lineups you swap between: a PvP wall, a rally, and a keep
             defense as one war kit.
           </p>
         </div>
         <Button
+          className="w-full sm:w-auto"
           onClick={() => {
             const team = createTeam(`Team ${state.teams.length + 1}`);
             setSelectedId(team.id);
@@ -67,15 +68,15 @@ export function TeamsPage() {
           }
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <aside className="space-y-2">
+        <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          <aside className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:block lg:space-y-2 lg:overflow-visible">
             {state.teams.map((team) => (
               <button
                 key={team.id}
                 type="button"
                 onClick={() => setSelectedId(team.id)}
                 className={cn(
-                  "w-full rounded-xl p-3 text-left ring-1 ring-foreground/10",
+                  "min-h-11 min-w-40 shrink-0 rounded-xl p-3 text-left ring-1 ring-foreground/10 lg:w-full lg:min-w-0",
                   selected?.id === team.id
                     ? "bg-amber-500/15 ring-amber-400/40"
                     : "bg-card/60 hover:ring-amber-400/30",
@@ -150,7 +151,7 @@ function TeamEditor({
             />
           </div>
         </div>
-        <Button variant="destructive" onClick={onDelete}>
+        <Button variant="destructive" onClick={onDelete} className="w-full sm:w-auto">
           <Trash2 data-icon="inline-start" />
           Disband
         </Button>
@@ -191,6 +192,7 @@ function TeamEditor({
                   size="sm"
                   variant={on ? "secondary" : "outline"}
                   onClick={() => toggle(lineup.id)}
+                  className="w-full sm:w-auto"
                 >
                   {on ? "Attached" : "Attach"}
                 </Button>

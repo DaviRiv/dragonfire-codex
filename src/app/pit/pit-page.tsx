@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
+import { AffinityBadges } from "@/components/affinity-badges";
 import { DragonCard } from "@/components/dragon-card";
+import { DragonPortrait } from "@/components/dragon-portrait";
 import { EmptyState } from "@/components/empty-state";
+import { StarRank } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,19 +21,18 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { findDragon, lineupsUsingDragon } from "@/lib/dragons";
-import { usePit } from "@/lib/store";
+import { exportPit, isPitState, usePit } from "@/lib/store";
 import type { OwnedDragon } from "@/lib/types";
-import { Plus, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { AffinityBadges } from "@/components/affinity-badges";
-import { DragonPortrait } from "@/components/dragon-portrait";
-import { StarRank } from "@/components/star-rank";
+import { Download, Plus, Search, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 export function PitPage() {
-  const { ready, state, updateOwned, removeOwned } = usePit();
+  const { ready, state, updateOwned, removeOwned, loadSample, resetPit, importState } =
+    usePit();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<OwnedDragon | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const dragons = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,25 +51,32 @@ export function PitPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl tracking-wide">Your pit</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Your pit</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Log every dragon you hatched. Star rank stays between reigns; reign
-            level is this campaign. Lineups pull from this list.
+            level is this campaign. Slotting a dragon on Build also adds them here.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus data-icon="inline-start" />
-          Add dragon
-        </Button>
+        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          {state.owned.length === 0 ? (
+            <Button variant="secondary" onClick={loadSample}>
+              Load sample pit
+            </Button>
+          ) : null}
+          <Button onClick={() => setOpen(true)}>
+            <Plus data-icon="inline-start" />
+            Add dragon
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="pl-8"
+          className="pl-9"
           placeholder="Search your pit…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -76,7 +86,7 @@ export function PitPage() {
       {state.owned.length === 0 ? (
         <EmptyState
           title="The pit is empty"
-          description="Add dragons from the hatchery roster, or record an unlisted one you already own. You can also load a sample pit from the overview."
+          description="Add dragons from the hatchery, or just slot them on Build — they land here automatically."
           action={
             <Button onClick={() => setOpen(true)}>
               <Plus data-icon="inline-start" />
@@ -112,6 +122,59 @@ export function PitPage() {
         </div>
       )}
 
+      <section className="rounded-2xl bg-card/60 p-5 ring-1 ring-foreground/10">
+        <h2 className="font-heading text-xl tracking-wide">Your data</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Everything stays in this browser. Export a JSON backup before you
+          clear storage.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+          <Button variant="outline" onClick={() => exportPit(state)}>
+            <Download data-icon="inline-start" />
+            Export pit
+          </Button>
+          <Button variant="outline" onClick={() => fileRef.current?.click()}>
+            <Upload data-icon="inline-start" />
+            Import
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Clear this browser’s pit, lineups, and teams?",
+                )
+              ) {
+                resetPit();
+              }
+            }}
+          >
+            Clear pit
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              try {
+                const parsed: unknown = JSON.parse(await file.text());
+                if (!isPitState(parsed)) {
+                  toast.error("That file is not a Dragonfire pit export.");
+                  return;
+                }
+                importState(parsed);
+              } catch {
+                toast.error("Could not read that file.");
+              }
+            }}
+          />
+        </div>
+      </section>
+
       <AddDragonDialog open={open} onOpenChange={setOpen} />
       <EditDragonSheet
         owned={editing}
@@ -146,10 +209,7 @@ function EditDragonSheet({
   onRemove: (id: string) => void;
 }) {
   return (
-    <Sheet
-      open={!!owned}
-      onOpenChange={onOpenChange}
-    >
+    <Sheet open={!!owned} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto sm:max-w-md">
         {owned ? (
           <EditDragonForm
@@ -259,15 +319,21 @@ function EditDragonForm({
           </div>
         ) : null}
       </div>
-      <SheetFooter>
-        <Button onClick={() => onSave(owned.id, { starRank, reignLevel, notes })}>
+      <SheetFooter className="gap-2">
+        <Button
+          className="w-full"
+          onClick={() => onSave(owned.id, { starRank, reignLevel, notes })}
+        >
           Save
         </Button>
-        <Button variant="destructive" onClick={() => onRemove(owned.id)}>
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={() => onRemove(owned.id)}
+        >
           Remove from pit
         </Button>
       </SheetFooter>
     </>
   );
 }
-

@@ -1,5 +1,5 @@
-import { OverviewPage } from "./overview-page";
+import { BuildPage } from "./build-page";
 
 export default function Home() {
-  return <OverviewPage />;
+  return <BuildPage />;
 }

@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { Chip, ChipRow } from "@/components/chip";
 import { CatalogTile } from "@/components/dragon-card";
 import { Input } from "@/components/ui/input";
 import { DRAGONS } from "@/data/dragons";
 import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export function HatcheryPage() {
   const { ready, state, addFromCatalog } = usePit();
@@ -32,12 +32,14 @@ export function HatcheryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="font-heading text-3xl tracking-wide">Hatchery</h1>
+        <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
+          Hatchery
+        </h1>
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          Every dragon currently in the roster. Portraits are original fan
-          illustrations, not in-game art. Add the ones you hatched to your pit.
+          Every dragon in the roster. Slot them from Build and they land in your
+          pit automatically — or add them here to track stars first.
         </p>
       </div>
       <Input
@@ -45,8 +47,9 @@ export function HatcheryPage() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="max-w-md"
+        enterKeyHint="search"
       />
-      <div className="flex flex-wrap gap-1.5">
+      <ChipRow>
         <Chip active={breed === "all"} onClick={() => setBreed("all")}>
           All breeds
         </Chip>
@@ -55,8 +58,8 @@ export function HatcheryPage() {
             {breedLabels[b]}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
+      </ChipRow>
+      <ChipRow>
         <Chip active={rarity === "all"} onClick={() => setRarity("all")}>
           All rarities
         </Chip>
@@ -65,8 +68,8 @@ export function HatcheryPage() {
             {rarityLabels[r]}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
+      </ChipRow>
+      <ChipRow>
         <Chip active={troop === "all"} onClick={() => setTroop("all")}>
           All affinities
         </Chip>
@@ -75,11 +78,11 @@ export function HatcheryPage() {
             {troopLabels[t]}
           </Chip>
         ))}
-      </div>
+      </ChipRow>
       <p className="text-sm text-muted-foreground">
         {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {filtered.map((d) => (
           <CatalogTile
             key={d.id}
@@ -95,28 +98,5 @@ export function HatcheryPage() {
         ))}
       </div>
     </div>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-2.5 py-1 text-xs ring-1 ring-foreground/15",
-        active ? "bg-amber-500/20 text-amber-100" : "text-muted-foreground hover:bg-muted",
-      )}
-    >
-      {children}
-    </button>
   );
 }

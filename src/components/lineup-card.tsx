@@ -19,8 +19,8 @@ export function LineupCard({
       href={`/lineups/${lineup.id}`}
       className="block rounded-2xl bg-card/80 p-4 ring-1 ring-foreground/10 transition hover:ring-amber-400/40"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="font-heading text-lg tracking-wide">{lineup.name}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {modeLabels[lineup.mode]} · {filled}/3 slotted
@@ -76,26 +76,26 @@ export function MiniSlotRow({
   state: PitState;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {(["left", "vanguard", "right"] as SlotId[]).map((slot) => {
         const owned = state.owned.find((o) => o.id === lineup.slots[slot]);
         const dragon = owned
           ? findDragon(owned.dragonId, state.customDragons)
           : undefined;
         return dragon ? (
-          <Badge key={slot} variant="secondary" className="gap-1.5 pr-2 pl-1">
+          <Badge key={slot} variant="secondary" className="max-w-[40vw] shrink-0 gap-1.5 pr-2 pl-1 sm:max-w-none">
             <DragonPortrait
               dragonId={dragon.id}
               name={dragon.name}
               breed={dragon.breed}
               custom={dragon.custom}
-              className="size-5 rounded-full"
+              className="size-5 shrink-0 rounded-full"
               sizes="24px"
             />
-            {dragon.name}
+            <span className="truncate">{dragon.name}</span>
           </Badge>
         ) : (
-          <Badge key={slot} variant="outline">
+          <Badge key={slot} variant="outline" className="shrink-0">
             —
           </Badge>
         );

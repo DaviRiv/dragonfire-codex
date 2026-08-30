@@ -5,13 +5,13 @@ import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 
 export function SynergyPanel({ report }: { report: SynergyReport }) {
   return (
-    <aside className="space-y-4 rounded-2xl bg-card/70 p-4 ring-1 ring-foreground/10">
+    <aside className="space-y-4 rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10 sm:p-4">
       <div>
         <p className="font-heading text-xs tracking-[0.2em] text-muted-foreground">
           FORMATION READ
         </p>
         <div className="mt-2 flex items-end justify-between gap-3">
-          <p className="font-heading text-2xl">{report.label}</p>
+          <p className="font-heading text-xl sm:text-2xl">{report.label}</p>
           <p className="text-sm text-muted-foreground">
             {report.score}/{report.maxScore}
           </p>

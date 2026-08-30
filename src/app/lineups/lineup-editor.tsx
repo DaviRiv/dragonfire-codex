@@ -3,83 +3,138 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AddDragonDialog } from "@/components/add-dragon-dialog";
-import { DragonCard } from "@/components/dragon-card";
-import { EmptyState } from "@/components/empty-state";
+import { Chip, ChipRow } from "@/components/chip";
 import { FormationBoard } from "@/components/formation-board";
+import { SuggestTile } from "@/components/suggest-tile";
 import { SynergyPanel } from "@/components/synergy-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { findDragon } from "@/lib/dragons";
 import {
   MODES,
   TROOP_TYPES,
-  modeCopy,
   modeLabels,
+  slotShort,
   troopCounters,
   troopLabels,
+  troopShort,
 } from "@/lib/labels";
+import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { analyzeLineup, summarizeLineup } from "@/lib/synergy";
 import { usePit } from "@/lib/store";
 import type { SlotId } from "@/lib/types";
-import { Copy, Plus, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { Copy, Sparkles, Trash2 } from "lucide-react";
 
-export function LineupEditor({ lineupId }: { lineupId: string }) {
-  const { ready, state, updateLineup, setSlot, deleteLineup } = usePit();
+type Pool = "suggested" | "pit" | "all";
+
+export function LineupEditor({
+  lineupId,
+  embedded,
+}: {
+  lineupId: string;
+  embedded?: boolean;
+}) {
+  const {
+    ready,
+    state,
+    updateLineup,
+    setSlot,
+    slotDragon,
+    slotDragons,
+    deleteLineup,
+  } = usePit();
   const router = useRouter();
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
-  const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [pool, setPool] = useState<Pool>("suggested");
 
   const lineup = state.lineups.find((l) => l.id === lineupId);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || embedded) return;
     if (lineup) return;
     const timer = window.setTimeout(() => router.replace("/lineups"), 250);
     return () => window.clearTimeout(timer);
-  }, [ready, lineup, router]);
+  }, [ready, lineup, router, embedded]);
+
+  const [syncedId, setSyncedId] = useState(lineupId);
+  if (lineup && syncedId !== lineup.id) {
+    setSyncedId(lineup.id);
+    const empty = (["vanguard", "left", "right"] as SlotId[]).find(
+      (s) => !lineup.slots[s],
+    );
+    setSelectedSlot(empty ?? "vanguard");
+    setQuery("");
+    setPool("suggested");
+  }
 
   const report = useMemo(
     () => (lineup ? analyzeLineup(lineup, state) : null),
     [lineup, state],
   );
 
-  const bench = useMemo(() => {
+  const suggestions = useMemo(() => {
     if (!lineup) return [];
-    const q = query.trim().toLowerCase();
-    return state.owned.filter((owned) => {
-      const d = findDragon(owned.dragonId, state.customDragons);
-      if (!d) return false;
-      if (!q) return true;
-      return `${d.name} ${d.epithet} ${d.breed}`.toLowerCase().includes(q);
+    let list = suggestDragons({
+      lineup,
+      slot: selectedSlot,
+      state,
+      query,
     });
-  }, [lineup, query, state.owned, state.customDragons]);
+    if (pool === "pit") {
+      list = list.filter((s) => s.owned);
+    }
+    return list;
+  }, [lineup, selectedSlot, state, query, pool]);
 
   if (!ready || !lineup || !report) {
     return <p className="text-sm text-muted-foreground">Opening formation…</p>;
   }
 
   const active = lineup;
-
-  function place(ownedId: string) {
-    const already = (Object.keys(active.slots) as SlotId[]).find(
-      (s) => active.slots[s] === ownedId,
+  const slottedHere = (catalogId: string) => {
+    const owned = state.owned.find((o) => o.dragonId === catalogId);
+    if (!owned) return undefined;
+    return (["left", "vanguard", "right"] as SlotId[]).find(
+      (s) => active.slots[s] === owned.id,
     );
+  };
+
+  function dragonInSlot(slot: SlotId) {
+    const ownedId = active.slots[slot];
+    if (!ownedId) return undefined;
+    const owned = state.owned.find((o) => o.id === ownedId);
+    if (!owned) return undefined;
+    return findDragon(owned.dragonId, state.customDragons);
+  }
+
+  function pick(dragonId: string) {
+    const already = slottedHere(dragonId);
     if (already === selectedSlot) {
-      setSlot(active.id, selectedSlot, null);
+      const owned = state.owned.find((o) => o.dragonId === dragonId);
+      if (owned) setSlot(active.id, selectedSlot, null);
       return;
     }
-    setSlot(active.id, selectedSlot, ownedId);
+    slotDragon(active.id, selectedSlot, dragonId);
     const order: SlotId[] = ["vanguard", "left", "right"];
-    const next = order.find(
-      (s) => s !== selectedSlot && !active.slots[s] && s !== already,
-    );
+    const next = order.find((s) => s !== selectedSlot && !active.slots[s]);
     if (next) setSelectedSlot(next);
+  }
+
+  function fillLine() {
+    const picks = suggestFullLine(active, state);
+    if (picks.length === 0) {
+      toast("Every lane is already filled.");
+      return;
+    }
+    slotDragons(
+      active.id,
+      picks.map((p) => ({ slot: p.slot, dragonId: p.dragon.id })),
+    );
+    toast.success(
+      `Slotted ${picks.map((p) => p.dragon.name).join(", ")}.`,
+    );
   }
 
   async function copySummary() {
@@ -89,194 +144,182 @@ export function LineupEditor({ lineupId }: { lineupId: string }) {
   }
 
   const counter = troopCounters[lineup.troop];
+  const selectedDragon = dragonInSlot(selectedSlot);
+  const visibleLimit = pool === "all" || query.trim() ? 30 : 18;
+  const visible = suggestions.slice(0, visibleLimit);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1 space-y-3">
-          <Label htmlFor="lineup-name">Lineup name</Label>
-          <Input
-            id="lineup-name"
-            value={lineup.name}
-            onChange={(e) => updateLineup(lineup.id, { name: e.target.value })}
-            className="font-heading h-10 max-w-lg text-lg"
-          />
+    <div className="space-y-4 sm:space-y-6">
+      {!embedded ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Label htmlFor="lineup-name">Lineup name</Label>
+            <Input
+              id="lineup-name"
+              value={lineup.name}
+              onChange={(e) => updateLineup(lineup.id, { name: e.target.value })}
+              className="font-heading max-w-lg text-lg"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <Button variant="outline" onClick={copySummary}>
+              <Copy data-icon="inline-start" />
+              Copy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteLineup(lineup.id);
+                router.push("/lineups");
+              }}
+            >
+              <Trash2 data-icon="inline-start" />
+              Delete
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={copySummary}>
-            <Copy data-icon="inline-start" />
-            Copy summary
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              deleteLineup(lineup.id);
-              router.push("/lineups");
-            }}
-          >
-            <Trash2 data-icon="inline-start" />
-            Delete
+      ) : (
+        <div className="flex items-end gap-2">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Label htmlFor="lineup-name">Lineup name</Label>
+            <Input
+              id="lineup-name"
+              value={lineup.name}
+              onChange={(e) => updateLineup(lineup.id, { name: e.target.value })}
+              className="font-heading text-lg"
+            />
+          </div>
+          <Button variant="outline" size="icon" onClick={copySummary}>
+            <Copy />
+            <span className="sr-only">Copy summary</span>
           </Button>
         </div>
+      )}
+
+      <div>
+        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground sm:text-xs">
+          TROOP TYPE
+        </p>
+        <ChipRow>
+          {TROOP_TYPES.map((troop) => (
+            <Chip
+              key={troop}
+              active={lineup.troop === troop}
+              onClick={() => updateLineup(lineup.id, { troop })}
+            >
+              <span className="sm:hidden">{troopShort[troop]}</span>
+              <span className="hidden sm:inline">{troopLabels[troop]}</span>
+            </Chip>
+          ))}
+        </ChipRow>
+        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+          {counter.beats
+            ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
+                counter.losesTo
+                  ? `, lose to ${troopLabels[counter.losesTo]}`
+                  : ""
+              }.`
+            : counter.note}
+        </p>
       </div>
 
-      <div className="grid gap-3">
-        <div>
-          <p className="mb-2 text-xs tracking-[0.2em] text-muted-foreground">
-            MODE
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {MODES.map((mode) => (
-              <Chip
-                key={mode}
-                active={lineup.mode === mode}
-                onClick={() => updateLineup(lineup.id, { mode })}
-              >
-                {modeLabels[mode]}
-              </Chip>
-            ))}
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {modeCopy[lineup.mode]}
-          </p>
-        </div>
-        <div>
-          <p className="mb-2 text-xs tracking-[0.2em] text-muted-foreground">
-            TROOP TYPE
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {TROOP_TYPES.map((troop) => (
-              <Chip
-                key={troop}
-                active={lineup.troop === troop}
-                onClick={() => updateLineup(lineup.id, { troop })}
-              >
-                {troopLabels[troop]}
-              </Chip>
-            ))}
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {counter.beats
-              ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
-                  counter.losesTo
-                    ? ` and lose to ${troopLabels[counter.losesTo]}`
-                    : ""
-                }. ${counter.note}`
-              : counter.note}
-          </p>
-        </div>
+      <div>
+        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground sm:text-xs">
+          MODE
+        </p>
+        <ChipRow>
+          {MODES.map((mode) => (
+            <Chip
+              key={mode}
+              active={lineup.mode === mode}
+              onClick={() => updateLineup(lineup.id, { mode })}
+            >
+              {modeLabels[mode]}
+            </Chip>
+          ))}
+        </ChipRow>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_20rem]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.2fr)]">
         <FormationBoard
           lineup={lineup}
           state={state}
           selectedSlot={selectedSlot}
-          onSelectSlot={(slot) => {
-            if (selectedSlot === slot && lineup.slots[slot]) {
-              setSlot(lineup.id, slot, null);
-              return;
-            }
-            setSelectedSlot(slot);
-          }}
+          onSelectSlot={setSelectedSlot}
+          onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
         />
-        <SynergyPanel report={report} />
-      </div>
-
-      <div className="grid gap-1.5">
-        <Label htmlFor="lineup-notes">Notes</Label>
-        <Textarea
-          id="lineup-notes"
-          value={lineup.notes}
-          onChange={(e) => updateLineup(lineup.id, { notes: e.target.value })}
-          placeholder="When to swap this in, habit order, who fills if a dragon is marching…"
-        />
-      </div>
-
-      <section className="space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="font-heading text-xl tracking-wide">Bench</h2>
-            <p className="text-sm text-muted-foreground">
-              Selected lane: {selectedSlot}. Same dragon can sit in other saved
-              lineups.
-            </p>
+        <section className="space-y-3">
+          <div className="flex flex-col gap-2">
+            <div>
+              <h2 className="font-heading text-lg tracking-wide sm:text-xl">
+                Pick for {slotShort[selectedSlot]}
+              </h2>
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                {selectedDragon
+                  ? `Replace ${selectedDragon.name}, or tap another lane.`
+                  : `Tap a dragon ranked for ${troopLabels[lineup.troop]}.`}
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={fillLine}
+              className="w-full sm:w-auto"
+            >
+              <Sparkles data-icon="inline-start" />
+              Fill empty lanes
+            </Button>
           </div>
-          <Button variant="outline" onClick={() => setAddOpen(true)}>
-            <Plus data-icon="inline-start" />
-            Add dragon
-          </Button>
-        </div>
-        <Input
-          placeholder="Filter bench…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-md"
-        />
-        {state.owned.length === 0 ? (
-          <EmptyState
-            title="No dragons in the pit"
-            description="Add dragons, then slot them into this formation."
-            action={
-              <Button onClick={() => setAddOpen(true)}>Add dragons</Button>
-            }
+          <ChipRow>
+            {(
+              [
+                ["suggested", "Suggested"],
+                ["pit", "Your pit"],
+                ["all", "All dragons"],
+              ] as const
+            ).map(([id, label]) => (
+              <Chip
+                key={id}
+                active={pool === id}
+                onClick={() => setPool(id)}
+              >
+                {label}
+              </Chip>
+            ))}
+          </ChipRow>
+          <Input
+            placeholder="Search name, breed, or habit…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            enterKeyHint="search"
           />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {bench.map((owned) => {
-              const slotted = (Object.keys(lineup.slots) as SlotId[]).find(
-                (s) => lineup.slots[s] === owned.id,
-              );
-              return (
-                <DragonCard
-                  key={owned.id}
-                  owned={owned}
-                  state={state}
-                  selected={slotted === selectedSlot}
-                  highlightTroop={lineup.troop}
-                  onClick={() => place(owned.id)}
-                  footer={
-                    <p className="text-xs text-muted-foreground">
-                      {slotted
-                        ? `On ${slotted}`
-                        : findDragon(owned.dragonId, state.customDragons)
-                            ?.affinities.includes(lineup.troop)
-                          ? `Matches ${troopLabels[lineup.troop]}`
-                          : "No affinity match"}
-                    </p>
-                  }
+          {visible.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
+              {pool === "pit"
+                ? "Nothing in your pit matches. Slot from Suggested — they land in the pit automatically."
+                : "Nothing matches. Try All dragons, or clear the search."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {visible.map((suggestion) => (
+                <SuggestTile
+                  key={suggestion.dragon.id}
+                  suggestion={suggestion}
+                  selected={slottedHere(suggestion.dragon.id) === selectedSlot}
+                  onPick={() => pick(suggestion.dragon.id)}
                 />
-              );
-            })}
-          </div>
-        )}
-      </section>
-      <AddDragonDialog open={addOpen} onOpenChange={setAddOpen} />
-    </div>
-  );
-}
+              ))}
+            </div>
+          )}
+          {suggestions.length > visibleLimit ? (
+            <p className="text-xs text-muted-foreground">
+              Showing the top {visibleLimit}. Search or open All dragons to go
+              further.
+            </p>
+          ) : null}
+        </section>
+      </div>
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-3 py-1.5 text-sm ring-1 ring-foreground/15",
-        active
-          ? "bg-amber-500/20 text-amber-100"
-          : "text-muted-foreground hover:bg-muted",
-      )}
-    >
-      {children}
-    </button>
+      <SynergyPanel report={report} />
+    </div>
   );
 }

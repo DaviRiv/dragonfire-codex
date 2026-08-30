@@ -76,6 +76,12 @@ export const slotLabels: Record<SlotId, string> = {
   right: "Right Flank",
 };
 
+export const slotShort: Record<SlotId, string> = {
+  left: "Left",
+  vanguard: "Vanguard",
+  right: "Right",
+};
+
 export const slotHints: Record<SlotId, string> = {
   left: "Often receives Instinct / Initiative and tactical buffs.",
   vanguard: "Front line. Taunt, damage reduction, and your main carry.",

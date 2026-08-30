@@ -54,7 +54,7 @@ export function DragonCard({
           className="aspect-[4/3] w-full"
         />
         <div className="p-3">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="font-heading truncate text-base tracking-wide">
                 {dragon.name}
@@ -65,7 +65,7 @@ export function DragonCard({
             </div>
             <Badge
               variant="outline"
-              className={cn("rounded-md font-normal", rarityTone[dragon.rarity])}
+              className={cn("shrink-0 rounded-md font-normal text-[10px] sm:text-xs", rarityTone[dragon.rarity])}
             >
               {rarityLabels[dragon.rarity]}
             </Badge>
@@ -122,14 +122,14 @@ export function CatalogTile({
         className="aspect-[4/3] w-full"
       />
       <div className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          <div className="min-w-0">
             <p className="font-heading truncate tracking-wide">{name}</p>
             <p className="truncate text-xs text-muted-foreground">{epithet}</p>
           </div>
           <Badge
             variant="outline"
-            className={cn("rounded-md font-normal", rarityTone[rarity])}
+            className={cn("shrink-0 rounded-md font-normal text-[10px] sm:text-xs", rarityTone[rarity])}
           >
             {rarityLabels[rarity]}
           </Badge>
@@ -141,7 +141,7 @@ export function CatalogTile({
             type="button"
             onClick={onAdd}
             disabled={owned}
-            className="mt-3 h-8 w-full rounded-lg bg-primary/90 text-sm font-medium text-primary-foreground disabled:opacity-40"
+            className="mt-3 min-h-11 w-full rounded-lg bg-primary/90 text-sm font-medium text-primary-foreground disabled:opacity-40 sm:h-8 sm:min-h-0"
           >
             {owned ? "In your pit" : "Add to pit"}
           </button>

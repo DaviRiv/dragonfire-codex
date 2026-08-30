@@ -12,7 +12,13 @@ export function StarRank({
 }) {
   const starSize = size === "sm" ? "size-3.5" : "size-4.5";
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${value} stars`}>
+    <div
+      className={cn(
+        "flex items-center",
+        onChange ? "w-full max-w-sm justify-between" : "gap-0.5",
+      )}
+      aria-label={`${value} stars`}
+    >
       {Array.from({ length: 10 }, (_, i) => {
         const n = i + 1;
         const filled = n <= value;
@@ -35,7 +41,7 @@ export function StarRank({
           <button
             key={n}
             type="button"
-            className="rounded-sm p-0.5 hover:scale-110"
+            className="flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-sm"
             onClick={() => onChange(n)}
             aria-label={`${n} stars`}
           >

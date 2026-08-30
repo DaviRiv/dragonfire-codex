@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { Chip, ChipRow } from "@/components/chip";
 import { CatalogTile } from "@/components/dragon-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,6 @@ import { DRAGONS } from "@/data/dragons";
 import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export function AddDragonDialog({
   open,
@@ -48,7 +48,7 @@ export function AddDragonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[88vh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="font-heading tracking-wide">Add a dragon</DialogTitle>
           <DialogDescription>
@@ -78,37 +78,37 @@ export function AddDragonDialog({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip active={breed === "all"} onClick={() => setBreed("all")}>
+            <ChipRow>
+              <Chip active={breed === "all"} onClick={() => setBreed("all")}>
                 All breeds
-              </FilterChip>
+              </Chip>
               {BREEDS.map((b) => (
-                <FilterChip key={b} active={breed === b} onClick={() => setBreed(b)}>
+                <Chip key={b} active={breed === b} onClick={() => setBreed(b)}>
                   {breedLabels[b]}
-                </FilterChip>
+                </Chip>
               ))}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip active={rarity === "all"} onClick={() => setRarity("all")}>
+            </ChipRow>
+            <ChipRow>
+              <Chip active={rarity === "all"} onClick={() => setRarity("all")}>
                 All rarities
-              </FilterChip>
+              </Chip>
               {RARITIES.map((r) => (
-                <FilterChip key={r} active={rarity === r} onClick={() => setRarity(r)}>
+                <Chip key={r} active={rarity === r} onClick={() => setRarity(r)}>
                   {rarityLabels[r]}
-                </FilterChip>
+                </Chip>
               ))}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip active={troop === "all"} onClick={() => setTroop("all")}>
+            </ChipRow>
+            <ChipRow>
+              <Chip active={troop === "all"} onClick={() => setTroop("all")}>
                 All affinities
-              </FilterChip>
+              </Chip>
               {TROOP_TYPES.map((t) => (
-                <FilterChip key={t} active={troop === t} onClick={() => setTroop(t)}>
+                <Chip key={t} active={troop === t} onClick={() => setTroop(t)}>
                   {troopLabels[t]}
-                </FilterChip>
+                </Chip>
               ))}
-            </div>
-            <div className="grid max-h-[46vh] gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+            </ChipRow>
+            <div className="grid max-h-[50dvh] grid-cols-2 gap-3 overflow-y-auto sm:max-h-[46vh] lg:grid-cols-3">
               {filtered.length === 0 ? (
                 <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
                   No dragons match those filters. Add them as unlisted instead.
@@ -140,29 +140,6 @@ export function AddDragonDialog({
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full px-2.5 py-1 text-xs ring-1 ring-foreground/15",
-        active ? "bg-amber-500/20 text-amber-100" : "text-muted-foreground hover:bg-muted",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -225,9 +202,9 @@ function CustomDragonForm({
           <Label>Breed</Label>
           <div className="flex flex-wrap gap-1.5">
             {BREEDS.map((b) => (
-              <FilterChip key={b} active={breed === b} onClick={() => setBreed(b)}>
+              <Chip key={b} active={breed === b} onClick={() => setBreed(b)}>
                 {breedLabels[b]}
-              </FilterChip>
+              </Chip>
             ))}
           </div>
         </div>
@@ -235,9 +212,9 @@ function CustomDragonForm({
           <Label>Rarity</Label>
           <div className="flex flex-wrap gap-1.5">
             {RARITIES.map((r) => (
-              <FilterChip key={r} active={rarity === r} onClick={() => setRarity(r)}>
+              <Chip key={r} active={rarity === r} onClick={() => setRarity(r)}>
                 {rarityLabels[r]}
-              </FilterChip>
+              </Chip>
             ))}
           </div>
         </div>
@@ -246,13 +223,13 @@ function CustomDragonForm({
         <Label>Positive affinities</Label>
         <div className="flex flex-wrap gap-1.5">
           {TROOP_TYPES.map((t) => (
-            <FilterChip
+            <Chip
               key={t}
               active={affinities.includes(t)}
               onClick={() => toggleTroop(t)}
             >
               {troopLabels[t]}
-            </FilterChip>
+            </Chip>
           ))}
         </div>
       </div>

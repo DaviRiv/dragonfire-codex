@@ -49,8 +49,14 @@ type PitContextValue = {
   ) => void;
   removeOwned: (id: string) => void;
   createLineup: (name?: string) => Lineup;
+  ensureLineup: (name?: string) => Lineup;
   updateLineup: (id: string, patch: Partial<Omit<Lineup, "id">>) => void;
   setSlot: (lineupId: string, slot: SlotId, ownedId: string | null) => void;
+  slotDragon: (lineupId: string, slot: SlotId, dragonId: string) => void;
+  slotDragons: (
+    lineupId: string,
+    picks: { slot: SlotId; dragonId: string }[],
+  ) => void;
   deleteLineup: (id: string) => void;
   createTeam: (name?: string) => TeamLike;
   updateTeam: (
@@ -292,6 +298,25 @@ export function PitProvider({ children }: { children: ReactNode }) {
     return lineup;
   }, []);
 
+  const ensureLineup = useCallback((name?: string): Lineup => {
+    const existing = getClientSnapshot().lineups[0];
+    if (existing) return existing;
+    const lineup: Lineup = {
+      id: newId("lineup"),
+      name: name?.trim() || "New lineup",
+      mode: "pvp",
+      troop: "shieldbearers",
+      notes: "",
+      slots: { left: null, vanguard: null, right: null },
+      updatedAt: nowIso(),
+    };
+    commit((prev) => {
+      if (prev.lineups.length > 0) return prev;
+      return { ...prev, lineups: [lineup, ...prev.lineups] };
+    });
+    return getClientSnapshot().lineups[0] ?? lineup;
+  }, []);
+
   const updateLineup = useCallback(
     (id: string, patch: Partial<Omit<Lineup, "id">>) => {
       commit((prev) => ({
@@ -320,6 +345,30 @@ export function PitProvider({ children }: { children: ReactNode }) {
           return { ...lineup, slots, updatedAt: nowIso() };
         }),
       }));
+    },
+    [],
+  );
+
+  const slotDragon = useCallback(
+    (lineupId: string, slot: SlotId, dragonId: string) => {
+      commit((prev) => applySlotDragon(prev, lineupId, slot, dragonId));
+    },
+    [],
+  );
+
+  const slotDragons = useCallback(
+    (
+      lineupId: string,
+      picks: { slot: SlotId; dragonId: string }[],
+    ) => {
+      if (picks.length === 0) return;
+      commit((prev) => {
+        let next = prev;
+        for (const pick of picks) {
+          next = applySlotDragon(next, lineupId, pick.slot, pick.dragonId);
+        }
+        return next;
+      });
     },
     [],
   );
@@ -399,8 +448,11 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateOwned,
       removeOwned,
       createLineup,
+      ensureLineup,
       updateLineup,
       setSlot,
+      slotDragon,
+      slotDragons,
       deleteLineup,
       createTeam,
       updateTeam,
@@ -417,8 +469,11 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateOwned,
       removeOwned,
       createLineup,
+      ensureLineup,
       updateLineup,
       setSlot,
+      slotDragon,
+      slotDragons,
       deleteLineup,
       createTeam,
       updateTeam,
@@ -436,6 +491,42 @@ export function usePit() {
   const ctx = useContext(PitContext);
   if (!ctx) throw new Error("usePit must be used inside PitProvider");
   return ctx;
+}
+
+function applySlotDragon(
+  prev: PitState,
+  lineupId: string,
+  slot: SlotId,
+  dragonId: string,
+): PitState {
+  const catalog = findDragon(dragonId, prev.customDragons);
+  if (!catalog) return prev;
+  let owned = prev.owned.find((o) => o.dragonId === dragonId);
+  let ownedList = prev.owned;
+  if (!owned) {
+    owned = {
+      id: newId("own"),
+      dragonId,
+      starRank: 1,
+      reignLevel: 1,
+      notes: "",
+    };
+    ownedList = [...prev.owned, owned];
+  }
+  const ownedId = owned.id;
+  return {
+    ...prev,
+    owned: ownedList,
+    lineups: prev.lineups.map((lineup) => {
+      if (lineup.id !== lineupId) return lineup;
+      const slots = { ...lineup.slots };
+      (Object.keys(slots) as SlotId[]).forEach((key) => {
+        if (slots[key] === ownedId) slots[key] = null;
+      });
+      slots[slot] = ownedId;
+      return { ...lineup, slots, updatedAt: nowIso() };
+    }),
+  };
 }
 
 function clamp(n: number, min: number, max: number) {
