@@ -149,3 +149,17 @@ export const statLabels = {
   intelligence: "Intelligence",
   initiative: "Initiative",
 } as const;
+
+export const statShort = {
+  strength: "STR",
+  instinct: "INS",
+  intelligence: "INT",
+  initiative: "INIT",
+} as const;
+
+export const STAT_KEYS = [
+  "strength",
+  "instinct",
+  "intelligence",
+  "initiative",
+] as const;

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChoiceButton } from "@/components/chip";
+import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
+import { StatGrid } from "@/components/dragon-profile";
 import { SuggestTile } from "@/components/suggest-tile";
 import { SynergyPanel } from "@/components/synergy-panel";
 import { Button } from "@/components/ui/button";
@@ -23,7 +25,7 @@ import {
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { analyzeLineup, summarizeLineup } from "@/lib/synergy";
 import { usePit } from "@/lib/store";
-import type { SlotId } from "@/lib/types";
+import type { Dragon, SlotId } from "@/lib/types";
 import { Copy, Sparkles, Trash2 } from "lucide-react";
 
 type Pool = "suggested" | "pit" | "all";
@@ -48,6 +50,7 @@ export function LineupEditor({
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
   const [query, setQuery] = useState("");
   const [pool, setPool] = useState<Pool>("suggested");
+  const [inspecting, setInspecting] = useState<Dragon | null>(null);
 
   const lineup = state.lineups.find((l) => l.id === lineupId);
 
@@ -266,6 +269,26 @@ export function LineupEditor({
             Auto-fill
           </Button>
         </div>
+        {selectedDragon ? (
+          <button
+            type="button"
+            onClick={() => setInspecting(selectedDragon)}
+            className="w-full rounded-2xl bg-card/70 p-3 text-left ring-1 ring-foreground/10"
+          >
+            <StatGrid stats={selectedDragon.stats} compact />
+            <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
+              HABIT
+            </p>
+            <p className="mt-1 line-clamp-3 text-sm">{selectedDragon.habit}</p>
+            <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
+              COMMAND
+            </p>
+            <p className="mt-1 line-clamp-3 text-sm">{selectedDragon.command}</p>
+            <p className="mt-2 text-xs text-amber-200/80">
+              Tap for full stats and abilities
+            </p>
+          </button>
+        ) : null}
         <div className="grid grid-cols-3 gap-2">
           {(
             [
@@ -305,6 +328,7 @@ export function LineupEditor({
                     slottedHere(suggestion.dragon.id) === selectedSlot
                   }
                   onPick={() => pick(suggestion.dragon.id)}
+                  onInspect={() => setInspecting(suggestion.dragon)}
                 />
               </li>
             ))}
@@ -318,6 +342,24 @@ export function LineupEditor({
       </section>
 
       <SynergyPanel report={report} />
+      <DragonSheet
+        dragon={inspecting}
+        open={!!inspecting}
+        onOpenChange={(next) => {
+          if (!next) setInspecting(null);
+        }}
+        highlightTroop={lineup.troop}
+        actionLabel={
+          inspecting && slottedHere(inspecting.id) === selectedSlot
+            ? "Remove from lane"
+            : `Slot in ${slotShort[selectedSlot]}`
+        }
+        onAction={() => {
+          if (!inspecting) return;
+          pick(inspecting.id);
+          setInspecting(null);
+        }}
+      />
     </div>
   );
 }

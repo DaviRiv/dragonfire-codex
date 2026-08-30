@@ -3,9 +3,9 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
-import { AffinityBadges } from "@/components/affinity-badges";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPortrait } from "@/components/dragon-portrait";
+import { DragonProfile } from "@/components/dragon-profile";
 import { EmptyState } from "@/components/empty-state";
 import { StarRank } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
@@ -277,17 +277,7 @@ function EditDragonForm({
         sizes="400px"
       />
       <div className="space-y-4 px-4">
-        <AffinityBadges affinities={dragon.affinities} />
-        <div className="rounded-lg bg-muted/50 p-3 text-sm">
-          <p className="text-xs tracking-widest text-muted-foreground">HABIT</p>
-          <p className="mt-1">{dragon.habit}</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-3 text-sm">
-          <p className="text-xs tracking-widest text-muted-foreground">
-            COMMAND
-          </p>
-          <p className="mt-1">{dragon.command}</p>
-        </div>
+        <DragonProfile dragon={dragon} />
         <div className="grid gap-1.5">
           <Label>Star rank</Label>
           <StarRank value={starRank} onChange={setStarRank} />
