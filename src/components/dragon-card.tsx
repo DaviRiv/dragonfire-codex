@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { AffinityBadges } from "@/components/affinity-badges";
-import { DragonMark } from "@/components/dragon-mark";
+import { DragonPortrait } from "@/components/dragon-portrait";
 import { StarRank } from "@/components/star-rank";
 import { Badge } from "@/components/ui/badge";
 import { findDragon } from "@/lib/dragons";
 import { breedLabels, rarityLabels } from "@/lib/labels";
-import type { OwnedDragon, PitState, TroopType } from "@/lib/types";
+import type { Breed, OwnedDragon, PitState, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const rarityTone: Record<string, string> = {
@@ -35,7 +35,7 @@ export function DragonCard({
   return (
     <article
       className={cn(
-        "flex flex-col rounded-xl bg-card/80 ring-1 ring-foreground/10 transition",
+        "flex flex-col overflow-hidden rounded-xl bg-card/80 ring-1 ring-foreground/10 transition",
         selected && "ring-2 ring-amber-400/80",
         onClick && "cursor-pointer hover:ring-amber-400/50",
       )}
@@ -44,46 +44,48 @@ export function DragonCard({
         type="button"
         onClick={onClick}
         disabled={!onClick}
-        className="flex flex-1 flex-col p-3 text-left disabled:cursor-default"
+        className="flex flex-1 flex-col text-left disabled:cursor-default"
       >
-        <div className="flex items-start gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-black/30 ring-1 ring-foreground/10">
-            <DragonMark breed={dragon.breed} className="size-8" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-heading truncate text-base tracking-wide">
-                  {dragon.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {dragon.epithet}
-                </p>
-              </div>
-              <Badge
-                variant="outline"
-                className={cn("rounded-md font-normal", rarityTone[dragon.rarity])}
-              >
-                {rarityLabels[dragon.rarity]}
-              </Badge>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {breedLabels[dragon.breed]}
-              {dragon.custom ? " · Custom" : ""}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <StarRank value={owned.starRank} size="sm" />
-          <span className="text-xs text-muted-foreground">
-            Reign {owned.reignLevel}
-          </span>
-        </div>
-        <AffinityBadges
-          affinities={dragon.affinities}
-          highlight={highlightTroop}
-          className="mt-3"
+        <DragonPortrait
+          dragonId={dragon.id}
+          name={dragon.name}
+          breed={dragon.breed}
+          custom={dragon.custom}
+          className="aspect-[4/3] w-full"
         />
+        <div className="p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-heading truncate text-base tracking-wide">
+                {dragon.name}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {dragon.epithet}
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className={cn("rounded-md font-normal", rarityTone[dragon.rarity])}
+            >
+              {rarityLabels[dragon.rarity]}
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {breedLabels[dragon.breed]}
+            {dragon.custom ? " · Custom" : ""}
+          </p>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <StarRank value={owned.starRank} size="sm" />
+            <span className="text-xs text-muted-foreground">
+              Reign {owned.reignLevel}
+            </span>
+          </div>
+          <AffinityBadges
+            affinities={dragon.affinities}
+            highlight={highlightTroop}
+            className="mt-3"
+          />
+        </div>
       </button>
       {footer ? (
         <div className="border-t border-foreground/10 px-3 py-2">{footer}</div>
@@ -93,6 +95,7 @@ export function DragonCard({
 }
 
 export function CatalogTile({
+  id,
   name,
   epithet,
   breed,
@@ -101,47 +104,49 @@ export function CatalogTile({
   owned,
   onAdd,
 }: {
+  id: string;
   name: string;
   epithet: string;
-  breed: import("@/lib/types").Breed;
-  rarity: import("@/lib/types").Rarity;
+  breed: Breed;
+  rarity: Rarity;
   affinities: TroopType[];
   owned?: boolean;
   onAdd?: () => void;
 }) {
   return (
-    <article className="flex flex-col rounded-xl bg-card/70 p-3 ring-1 ring-foreground/10">
-      <div className="flex items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-black/30">
-          <DragonMark breed={breed} className="size-7" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="font-heading truncate tracking-wide">{name}</p>
-              <p className="truncate text-xs text-muted-foreground">{epithet}</p>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn("rounded-md font-normal", rarityTone[rarity])}
-            >
-              {rarityLabels[rarity]}
-            </Badge>
+    <article className="flex flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10">
+      <DragonPortrait
+        dragonId={id}
+        name={name}
+        breed={breed}
+        className="aspect-[4/3] w-full"
+      />
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-heading truncate tracking-wide">{name}</p>
+            <p className="truncate text-xs text-muted-foreground">{epithet}</p>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{breedLabels[breed]}</p>
+          <Badge
+            variant="outline"
+            className={cn("rounded-md font-normal", rarityTone[rarity])}
+          >
+            {rarityLabels[rarity]}
+          </Badge>
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">{breedLabels[breed]}</p>
+        <AffinityBadges affinities={affinities} className="mt-3" />
+        {onAdd ? (
+          <button
+            type="button"
+            onClick={onAdd}
+            disabled={owned}
+            className="mt-3 h-8 w-full rounded-lg bg-primary/90 text-sm font-medium text-primary-foreground disabled:opacity-40"
+          >
+            {owned ? "In your pit" : "Add to pit"}
+          </button>
+        ) : null}
       </div>
-      <AffinityBadges affinities={affinities} className="mt-3" />
-      {onAdd ? (
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={owned}
-          className="mt-3 h-8 rounded-lg bg-primary/90 text-sm font-medium text-primary-foreground disabled:opacity-40"
-        >
-          {owned ? "In your pit" : "Add to pit"}
-        </button>
-      ) : null}
     </article>
   );
 }

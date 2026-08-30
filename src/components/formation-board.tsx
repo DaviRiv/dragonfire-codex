@@ -1,6 +1,6 @@
 "use client";
 
-import { DragonMark } from "@/components/dragon-mark";
+import { DragonPortrait } from "@/components/dragon-portrait";
 import { StarRank } from "@/components/star-rank";
 import { findDragon } from "@/lib/dragons";
 import { slotHints, slotLabels } from "@/lib/labels";
@@ -84,39 +84,46 @@ function SlotCard({
       type="button"
       onClick={() => onSelect?.(slot)}
       className={cn(
-        "relative min-h-44 rounded-xl p-3 text-left ring-1 transition",
+        "relative overflow-hidden rounded-xl text-left ring-1 transition",
         dragon
           ? "bg-black/40 ring-amber-500/25"
-          : "bg-black/20 ring-dashed ring-foreground/15",
+          : "min-h-44 bg-black/20 ring-dashed ring-foreground/15",
         selected && "ring-2 ring-amber-300",
         className,
       )}
     >
-      <p className="font-heading text-[11px] tracking-[0.2em] text-amber-200/90">
-        {slotLabels[slot].toUpperCase()}
-      </p>
       {dragon && owned ? (
-        <div className="mt-2">
-          <div className="flex items-center gap-2">
-            <DragonMark breed={dragon.breed} className="size-8" />
-            <div className="min-w-0">
-              <p className="font-heading truncate text-lg">{dragon.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {dragon.epithet}
-              </p>
+        <>
+          <DragonPortrait
+            dragonId={dragon.id}
+            name={dragon.name}
+            breed={dragon.breed}
+            custom={dragon.custom}
+            className="aspect-[4/5] w-full"
+            sizes="(max-width: 640px) 90vw, 280px"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3 pt-10">
+            <p className="font-heading text-[11px] tracking-[0.2em] text-amber-200/90">
+              {slotLabels[slot].toUpperCase()}
+            </p>
+            <p className="font-heading truncate text-lg">{dragon.name}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {dragon.epithet}
+            </p>
+            <div className="mt-2">
+              <StarRank value={owned.starRank} size="sm" />
             </div>
           </div>
-          <div className="mt-3">
-            <StarRank value={owned.starRank} size="sm" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Reign {owned.reignLevel}
-          </p>
-        </div>
+        </>
       ) : (
-        <div className="mt-6 flex flex-col items-center justify-center text-muted-foreground">
-          <Plus className="size-6" />
-          <p className="mt-2 text-xs">{slotHints[slot]}</p>
+        <div className="p-3">
+          <p className="font-heading text-[11px] tracking-[0.2em] text-amber-200/90">
+            {slotLabels[slot].toUpperCase()}
+          </p>
+          <div className="mt-6 flex flex-col items-center justify-center text-muted-foreground">
+            <Plus className="size-6" />
+            <p className="mt-2 text-xs">{slotHints[slot]}</p>
+          </div>
         </div>
       )}
     </button>

@@ -22,6 +22,7 @@ import type { OwnedDragon } from "@/lib/types";
 import { Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AffinityBadges } from "@/components/affinity-badges";
+import { DragonPortrait } from "@/components/dragon-portrait";
 import { StarRank } from "@/components/star-rank";
 
 export function PitPage() {
@@ -193,6 +194,14 @@ function EditDragonForm({
         </SheetTitle>
         <SheetDescription>{dragon.epithet}</SheetDescription>
       </SheetHeader>
+      <DragonPortrait
+        dragonId={dragon.id}
+        name={dragon.name}
+        breed={dragon.breed}
+        custom={dragon.custom}
+        className="mx-4 aspect-[4/3] rounded-lg"
+        sizes="400px"
+      />
       <div className="space-y-4 px-4">
         <AffinityBadges affinities={dragon.affinities} />
         <div className="rounded-lg bg-muted/50 p-3 text-sm">

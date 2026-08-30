@@ -48,7 +48,7 @@ export function AddDragonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[88vh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-h-[88vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="font-heading tracking-wide">Add a dragon</DialogTitle>
           <DialogDescription>
@@ -108,7 +108,7 @@ export function AddDragonDialog({
                 </FilterChip>
               ))}
             </div>
-            <div className="grid max-h-[46vh] gap-3 overflow-y-auto sm:grid-cols-2">
+            <div className="grid max-h-[46vh] gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
               {filtered.length === 0 ? (
                 <p className="col-span-full py-8 text-center text-sm text-muted-foreground">
                   No dragons match those filters. Add them as unlisted instead.
@@ -117,6 +117,7 @@ export function AddDragonDialog({
                 filtered.map((d) => (
                   <CatalogTile
                     key={d.id}
+                    id={d.id}
                     name={d.name}
                     epithet={d.epithet}
                     breed={d.breed}

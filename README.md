@@ -6,7 +6,8 @@ Nothing here is affiliated with HBO, Warner Bros., or the game. Dragon stats and
 
 ## What you can do
 
-- **Pit** — add dragons from a 36-dragon hatchery, or record an unlisted one. Set star rank (1–10) and reign level.
+- **Hatchery** — original portraits for every dragon in the roster. Add the ones you hatched to your pit.
+- **Pit** — your collection with star rank (1–10) and reign level. Unlisted dragons can be recorded by hand.
 - **Lineups** — three-lane formation board, troop type, and mode (PvP, PvE, rally, castle defense, gathering). A read-out flags affinity matches, taunt placement, and flank habits.
 - **Teams** — attach several lineups into one kit (for example a war kit with PvP, rally, and defense).
 - **Backup** — everything lives in this browser. Export and import JSON from the overview page.

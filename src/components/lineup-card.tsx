@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TroopBadge } from "@/components/affinity-badges";
-import { DragonMark } from "@/components/dragon-mark";
+import { DragonPortrait } from "@/components/dragon-portrait";
 import { Badge } from "@/components/ui/badge";
 import { findDragon, filledSlots } from "@/lib/dragons";
 import { modeLabels, slotLabels } from "@/lib/labels";
@@ -37,19 +37,25 @@ export function LineupCard({
           return (
             <div
               key={slot}
-              className="rounded-lg bg-black/30 p-2 text-center ring-1 ring-foreground/8"
+              className="overflow-hidden rounded-lg bg-black/30 text-center ring-1 ring-foreground/8"
             >
-              <p className="text-[10px] tracking-widest text-muted-foreground">
+              <p className="px-2 pt-1.5 text-[10px] tracking-widest text-muted-foreground">
                 {slotLabels[slot].split(" ")[0]}
               </p>
               {dragon && owned ? (
                 <>
-                  <DragonMark breed={dragon.breed} className="mx-auto mt-1 size-6" />
-                  <p className="mt-1 truncate text-xs">{dragon.name}</p>
-                  <p className="text-[10px] text-muted-foreground">★{owned.starRank}</p>
+                  <DragonPortrait
+                    dragonId={dragon.id}
+                    name={dragon.name}
+                    breed={dragon.breed}
+                    custom={dragon.custom}
+                    className="mx-auto mt-1 aspect-square w-full"
+                    sizes="120px"
+                  />
+                  <p className="truncate px-1 py-1.5 text-xs">{dragon.name}</p>
                 </>
               ) : (
-                <p className="mt-4 text-xs text-muted-foreground">Empty</p>
+                <p className="px-2 py-8 text-xs text-muted-foreground">Empty</p>
               )}
             </div>
           );
@@ -77,8 +83,15 @@ export function MiniSlotRow({
           ? findDragon(owned.dragonId, state.customDragons)
           : undefined;
         return dragon ? (
-          <Badge key={slot} variant="secondary" className="gap-1">
-            <DragonMark breed={dragon.breed} className="size-3" />
+          <Badge key={slot} variant="secondary" className="gap-1.5 pr-2 pl-1">
+            <DragonPortrait
+              dragonId={dragon.id}
+              name={dragon.name}
+              breed={dragon.breed}
+              custom={dragon.custom}
+              className="size-5 rounded-full"
+              sizes="24px"
+            />
             {dragon.name}
           </Badge>
         ) : (
