@@ -52,6 +52,7 @@ export function LineupEditor({
     updateSlotPick,
     deleteLineup,
     loadSample,
+    updateOwned,
   } = usePit();
   const router = useRouter();
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
@@ -313,6 +314,9 @@ export function LineupEditor({
                   rank={index + 1}
                   onPick={() => pick(suggestion.dragon.id)}
                   onInspect={() => setInspecting(suggestion.dragon)}
+                  onSaveNotes={(ownedId, notes) =>
+                    updateOwned(ownedId, { notes })
+                  }
                 />
               </li>
             ))}
