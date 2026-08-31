@@ -1,48 +1,8 @@
 import Image from "next/image";
 import { DragonMark } from "@/components/dragon-mark";
+import { CATALOG_IDS } from "@/data/dragons";
 import type { Breed } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-/** Catalog art lives in public/dragons. Official portraits from gotdragonfire.com when listed. */
-
-const CATALOG_IDS = new Set([
-  "caraxes",
-  "kalspire",
-  "malachite",
-  "syrax",
-  "venator",
-  "crimson",
-  "seasmoke",
-  "vhagar",
-  "vermithor",
-  "sunfyre",
-  "sheepstealer",
-  "moondancer",
-  "tessarion",
-  "rhysarion",
-  "zivern",
-  "daemoros",
-  "feskar",
-  "shadowsong",
-  "tashix",
-  "vaeldra",
-  "velar",
-  "vermax",
-  "tairax",
-  "starshower",
-  "antares",
-  "bevlorin",
-  "jagadrix",
-  "shadowrend",
-  "shimmer",
-  "solstryker",
-  "thunderstrike",
-  "vesper",
-  "dawnseeker",
-  "arulix",
-  "nyrena",
-  "arrax",
-]);
 
 export function dragonImageSrc(dragonId: string, custom?: boolean): string {
   if (custom || !CATALOG_IDS.has(dragonId)) return "/dragons/custom.webp";

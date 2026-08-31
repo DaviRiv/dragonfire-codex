@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { ListFilterBar } from "@/components/list-filter-bar";
-import { DRAGONS } from "@/data/dragons";
-import { breedLabels } from "@/lib/labels";
+import { DRAGONS, UNRELEASED_DRAGONS } from "@/data/dragons";
+import { breedLabels, rarityLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Dragon, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,8 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap a dragon, add it to your pit, then pick a team.
+          Tap a dragon, add it to your pit, then pick a team. Commands, habits,
+          and stats come from Dragonfire-Hub.
         </p>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
@@ -99,6 +100,27 @@ export function HatcheryPage() {
           </div>
         )}
       </div>
+      {UNRELEASED_DRAGONS.length > 0 ? (
+        <div className="overflow-hidden rounded-2xl bg-card/50 ring-1 ring-foreground/10">
+          <p className="px-3 py-2 text-xs text-muted-foreground">
+            Not in the game yet · {UNRELEASED_DRAGONS.length} names from
+            Dragonfire-Hub
+          </p>
+          <ul className="divide-y divide-border/40">
+            {UNRELEASED_DRAGONS.map((dragon) => (
+              <li
+                key={dragon.id}
+                className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+              >
+                <span className="font-heading tracking-wide">{dragon.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {rarityLabels[dragon.rarity]} · {breedLabels[dragon.breed]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <DragonSheet
         dragon={inspecting}
         open={!!inspecting}

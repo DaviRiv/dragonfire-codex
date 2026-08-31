@@ -122,9 +122,9 @@ function SlotButton({
         {slot === "vanguard" && dragon ? (
           <span
             className="compact-line max-w-full px-1 text-center text-[10px] text-emerald-200/90"
-            title={vanguardBonus(dragon)}
+            title={vanguardBonus(dragon, true)}
           >
-            {vanguardBonus(dragon)}
+            {vanguardBonus(dragon, true)}
           </span>
         ) : null}
       </button>

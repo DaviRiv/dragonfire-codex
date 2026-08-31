@@ -298,7 +298,11 @@ function EditDragonForm({
         sizes="400px"
       />
       <div className="space-y-4 px-4">
-        <DragonProfile dragon={dragon} />
+        <DragonProfile
+          dragon={dragon}
+          starRank={starRank}
+          reignLevel={reignLevel}
+        />
         <div className="grid gap-1.5">
           <Label>Star rank</Label>
           <StarRank value={starRank} onChange={setStarRank} />

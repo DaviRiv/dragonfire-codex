@@ -16,15 +16,18 @@ with HBO, Warner Bros., or the game.
   **vanguard skill** when that lane is selected. Turn on **Abilities**
   for command and the unique **(6+ stars)** skill. Open a row for the
   full command, Habits 1–5, vanguard skill, and stats at the bottom.
-  Ability text comes from [Dragonfire-Hub](https://dragonfire-hub.com/).
+  Ability text, stats-by-level, troop counts, and power come from
+  [Dragonfire-Hub](https://dragonfire-hub.com/).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
   yourself.
 - **Hatchery** — the roster, with official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
-  site has them. A few names are not listed there yet, so those keep
-  stand-in art. Add a dragon to the pit, then pick it on Team.
+  site has them. Kit text, base stats, and star/reign scaling are pulled
+  from [dragonfire-hub.com](https://dragonfire-hub.com/). Names Hub lists
+  as unreleased sit at the bottom. Add a dragon to the pit, then pick it
+  on Team.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 
@@ -56,6 +59,7 @@ work in-game even when a dragon is already marching.
 
 Portraits for dragons listed on the official site are copied from
 [gotdragonfire.com](https://gotdragonfire.com/dragons/) for local use in
-this unofficial fan tool. Warner Bros. and HBO own that art. Command and
-habit text is transcribed from
-[dragonfire-hub.com](https://dragonfire-hub.com/).
+this unofficial fan tool. Warner Bros. and HBO own that art. Command,
+habit, stat, troop, and power tables are transcribed from
+[dragonfire-hub.com](https://dragonfire-hub.com/). Re-pull that catalog
+with `npm run sync-hub`.

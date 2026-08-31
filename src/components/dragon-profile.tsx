@@ -13,8 +13,17 @@ import {
   statShort,
   STAT_KEYS,
 } from "@/lib/labels";
+import {
+  dragonPower,
+  formatPower,
+  hubLevel,
+  scaledStats,
+  troopCount,
+} from "@/lib/scale-stats";
 import type { Dragon, DragonStats } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const STAT_BAR_MAX = 400;
 
 export function StatLine({ stats }: { stats: DragonStats }) {
   return (
@@ -51,7 +60,9 @@ export function StatGrid({
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
               className={cn("h-full rounded-full", STAT_BAR_CLASS[key])}
-              style={{ width: `${Math.min(100, stats[key])}%` }}
+              style={{
+                width: `${Math.min(100, (stats[key] / STAT_BAR_MAX) * 100)}%`,
+              }}
             />
           </div>
         </div>
@@ -63,11 +74,19 @@ export function StatGrid({
 export function DragonProfile({
   dragon,
   highlightTroop,
+  starRank = 1,
+  reignLevel = 1,
 }: {
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
+  starRank?: number;
+  reignLevel?: number;
 }) {
   const kit = dragonKit(dragon);
+  const stats = scaledStats(dragon, starRank, reignLevel);
+  const troops = troopCount(dragon.rarity, starRank, reignLevel);
+  const power = dragonPower(dragon.rarity, starRank, reignLevel);
+  const level = hubLevel(reignLevel);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -99,19 +118,44 @@ export function DragonProfile({
       ) : null}
       <AbilityBlock title="Command" body={kit.command} />
       {kit.extras.map((extra) => (
-        <AbilityBlock key={extra.title} title={extra.title} body={extra.body} />
+        <AbilityBlock
+          key={extra.title}
+          title={extra.title}
+          body={extra.body}
+          ranks={extra.ranks}
+        />
       ))}
       <div>
         <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-          STATS
+          STATS · ★{starRank} · REIGN {reignLevel}
         </p>
-        <StatGrid stats={dragon.stats} />
+        <StatGrid stats={stats} />
+        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          <p className="text-muted-foreground">Troops</p>
+          <p className="text-right tabular-nums">{troops.toLocaleString()}</p>
+          <p className="text-muted-foreground">Power</p>
+          <p className="text-right tabular-nums">{formatPower(power)}</p>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Stats use Dragonfire-Hub’s level table
+          {level < reignLevel ? ` (capped at ${level})` : ""} plus star
+          multipliers. Power is stars + reign; habit ranks and heirlooms are
+          not included.
+        </p>
       </div>
     </div>
   );
 }
 
-export function AbilityBlock({ title, body }: { title: string; body: string }) {
+export function AbilityBlock({
+  title,
+  body,
+  ranks,
+}: {
+  title: string;
+  body: string;
+  ranks?: string[];
+}) {
   return (
     <div className="rounded-xl bg-muted/50 p-3 text-sm">
       <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
@@ -120,6 +164,25 @@ export function AbilityBlock({ title, body }: { title: string; body: string }) {
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} />
       </p>
+      {ranks && ranks.length > 1 ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[11px] text-muted-foreground">
+            Ranks 2–5
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {ranks.slice(1).map((text, index) => (
+              <li key={index} className="text-xs leading-relaxed">
+                <span className="text-[10px] tracking-[0.16em] text-muted-foreground">
+                  RANK {index + 2}
+                </span>
+                <span className="mt-0.5 block">
+                  <AbilityText text={text} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
     </div>
   );
 }

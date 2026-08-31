@@ -5,8 +5,9 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
+import { commandLine, dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
 import { breedChipClass, breedLabels } from "@/lib/labels";
+import { scaledStats } from "@/lib/scale-stats";
 import type { DragonSuggestion } from "@/lib/suggest";
 import type { SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,8 @@ export function SuggestTile({
 
   const notesDirty = owned ? notes !== storedNotes : false;
   const synergy = reasons[0];
-  const star6 = star6Ability(dragon);
-  const frontBonus = slot === "vanguard" ? vanguardBonus(dragon) : null;
+  const star6 = star6Ability(dragon, true);
+  const frontBonus = slot === "vanguard" ? vanguardBonus(dragon, true) : null;
   const kit = dragonKit(dragon);
 
   return (
@@ -121,9 +122,9 @@ export function SuggestTile({
               <>
                 <span
                   className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
-                  title={dragon.command}
+                  title={commandLine(dragon, true)}
                 >
-                  {dragon.command}
+                  {commandLine(dragon, true)}
                 </span>
                 {star6 ? (
                   <span
@@ -177,7 +178,11 @@ export function SuggestTile({
             <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
               STATS
             </p>
-            <StatGrid stats={dragon.stats} compact className="mt-2" />
+            <StatGrid
+              stats={scaledStats(dragon, starRank, reignLevel)}
+              compact
+              className="mt-2"
+            />
           </div>
           {owned && onSaveNotes ? (
             <div className="space-y-1.5">

@@ -236,9 +236,12 @@ export function PitProvider({ children }: { children: ReactNode }) {
         stats: { strength: 50, instinct: 50, intelligence: 50, initiative: 50 },
         marchSpeed: "average",
         habit: "Habits not recorded yet.",
+        habitShort: "",
         command: "Command not recorded yet.",
+        commandShort: "",
         tags: [],
         flankBonus: "left",
+        released: true,
         custom: true,
       };
       const owned: OwnedDragon = {

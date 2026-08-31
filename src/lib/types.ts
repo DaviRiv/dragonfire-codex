@@ -32,10 +32,17 @@ export interface Dragon {
   affinities: TroopType[];
   stats: DragonStats;
   marchSpeed: MarchSpeed;
+  /** Full vanguard skill from Dragonfire-Hub. */
   habit: string;
+  /** Card-sized vanguard line. */
+  habitShort?: string;
+  /** Full command skill from Dragonfire-Hub. */
   command: string;
+  /** Card-sized command line. */
+  commandShort?: string;
   tags: string[];
   flankBonus: "left" | "right";
+  released?: boolean;
   custom?: boolean;
 }
 

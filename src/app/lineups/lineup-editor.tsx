@@ -260,7 +260,7 @@ export function LineupEditor({
             className="rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[12px] leading-snug text-emerald-100/90 ring-1 ring-emerald-500/25"
             title={
               selectedDragon
-                ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon)}`
+                ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
                 : slotHints.vanguard
             }
           >
@@ -269,7 +269,7 @@ export function LineupEditor({
             </span>
             {" · "}
             {selectedDragon
-              ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon)}`
+              ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
               : slotHints.vanguard}
           </p>
         ) : null}
@@ -381,6 +381,26 @@ export function LineupEditor({
           if (!next) setInspecting(null);
         }}
         highlightTroop={lineup.troop}
+        starRank={
+          inspecting
+            ? (["left", "vanguard", "right"] as SlotId[])
+                .map((slot) => resolveSlot(active, state, slot))
+                .find((row) => row?.dragon.id === inspecting.id)?.starRank ??
+              (isTheory
+                ? active.craftStars
+                : (state.owned.find((row) => row.dragonId === inspecting.id)
+                    ?.starRank ?? 1))
+            : 1
+        }
+        reignLevel={
+          inspecting
+            ? (["left", "vanguard", "right"] as SlotId[])
+                .map((slot) => resolveSlot(active, state, slot))
+                .find((row) => row?.dragon.id === inspecting.id)?.reignLevel ??
+              (state.owned.find((row) => row.dragonId === inspecting.id)
+                ?.reignLevel ?? 1)
+            : 1
+        }
         actionLabel={
           inspecting && slottedHere(inspecting.id) === selectedSlot
             ? "Remove from lane"
