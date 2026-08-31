@@ -7,6 +7,7 @@ import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
+import { PairingPanel } from "@/components/pairing-panel";
 import { EmptyState } from "@/components/empty-state";
 import { StarRank } from "@/components/star-rank";
 import { SuggestTile } from "@/components/suggest-tile";
@@ -32,6 +33,7 @@ import { vanguardBonus } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, SlotId } from "@/lib/types";
+import { pairingReport } from "@/lib/pairing";
 import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
 import { Copy, Sparkles, Trash2 } from "lucide-react";
 
@@ -87,6 +89,10 @@ export function LineupEditor({
     () => (lineup ? analyzeLineup(lineup, state) : null),
     [lineup, state],
   );
+  const pairing = useMemo(
+    () => (lineup ? pairingReport(lineup, state) : null),
+    [lineup, state],
+  );
 
   const suggestions = useMemo(() => {
     if (!lineup) return [];
@@ -99,7 +105,7 @@ export function LineupEditor({
     });
   }, [lineup, selectedSlot, state, query, theoryPool]);
 
-  if (!ready || !lineup || !report) {
+  if (!ready || !lineup || !report || !pairing) {
     return <p className="text-sm text-muted-foreground">Opening formation…</p>;
   }
 
@@ -215,6 +221,8 @@ export function LineupEditor({
             />
           </div>
         ) : null}
+
+        {isTheory ? <PairingPanel report={pairing} /> : null}
 
         <div className="hidden space-y-2 lg:block">
           <TeamExtras

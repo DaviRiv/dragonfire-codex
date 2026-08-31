@@ -16,6 +16,10 @@ with HBO, Warner Bros., or the game.
   **vanguard skill** when that lane is selected. Turn on **Abilities**
   for command and the unique **(6+ stars)** skill. Open a row for the
   full command, Habits 1–5, vanguard skill, and stats at the bottom.
+  Theory lines also show **Pros and cons** under the formation: named
+  partners from kit text (Moondancer wants an ally Sentinel) and Hub
+  `needs` (Caraxes wants First-Strike). Miss the partner and the panel
+  spells out what never fires; slot them and it flips to a payoff.
   Ability text, stats-by-level, troop counts, and power come from
   [Dragonfire-Hub](https://dragonfire-hub.com/).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit

@@ -1,4 +1,5 @@
 import { allDragons, findDragon } from "@/lib/dragons";
+import { pairingFit } from "@/lib/pairing";
 import {
   emptySlots,
   investmentScore,
@@ -188,6 +189,10 @@ function scoreDragon(
 
   if (lineup.mode === "defense" && dragon.tags.includes("Protect")) {
     note("Protect for castle defense", 55, 10);
+  }
+
+  for (const fit of pairingFit(dragon, teammates)) {
+    note(fit.text, 112, fit.points);
   }
 
   const reasons = weighted

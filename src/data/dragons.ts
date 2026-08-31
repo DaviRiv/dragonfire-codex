@@ -64,6 +64,20 @@ function tagsFor(raw: HubDragon): string[] {
   ).map(({ tag }) => tag);
 }
 
+function uniqueAbilities(values: string[]): string[] {
+  const seen = new Set<string>();
+  const next: string[] = [];
+  for (const value of values) {
+    const name = value.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push(name);
+  }
+  return next;
+}
+
 function mapAffinities(values: string[]): TroopType[] {
   const next: TroopType[] = [];
   for (const value of values) {
@@ -99,6 +113,8 @@ function mapDragon(raw: HubDragon): Dragon {
     command: raw.commandSkill,
     commandShort: raw.commandSkillShort,
     tags: tagsFor(raw),
+    needs: uniqueAbilities(raw.needs.map((item) => item.ability)),
+    provides: uniqueAbilities(raw.provides.ability.map((item) => item.ability)),
     flankBonus: flank,
     released: raw.released,
   };

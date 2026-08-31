@@ -240,6 +240,8 @@ export function PitProvider({ children }: { children: ReactNode }) {
         command: "Command not recorded yet.",
         commandShort: "",
         tags: [],
+        needs: [],
+        provides: [],
         flankBonus: "left",
         released: true,
         custom: true,

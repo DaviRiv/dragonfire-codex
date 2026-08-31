@@ -41,6 +41,10 @@ export interface Dragon {
   /** Card-sized command line. */
   commandShort?: string;
   tags: string[];
+  /** Named effects this kit is stronger with on a teammate (Hub `needs`). */
+  needs?: string[];
+  /** Named effects this dragon can apply (Hub `provides.ability`). */
+  provides?: string[];
   flankBonus: "left" | "right";
   released?: boolean;
   custom?: boolean;
