@@ -12,8 +12,9 @@ with HBO, Warner Bros., or the game.
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first, hiding anyone already slotted. Ranking favors
   synergy plus damage and healing. Each thin row shows breed, command,
-  and the **(6+ stars)** ability under the command. The vanguard bonus
-  (the self habit) only appears when the Vanguard lane is selected.
+  and that dragon’s unique **(6+ stars)** ability (Habit 3). The vanguard
+  skill only appears when the Vanguard lane is selected. Six-star text
+  comes from [Dragonfire-Hub](https://dragonfire-hub.com/).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -53,4 +54,6 @@ work in-game even when a dragon is already marching.
 
 Portraits for dragons listed on the official site are copied from
 [gotdragonfire.com](https://gotdragonfire.com/dragons/) for local use in
-this unofficial fan tool. Warner Bros. and HBO own that art.
+this unofficial fan tool. Warner Bros. and HBO own that art. Unique
+6-star ability text is transcribed from
+[dragonfire-hub.com](https://dragonfire-hub.com/).

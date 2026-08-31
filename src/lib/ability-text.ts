@@ -102,6 +102,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Strength", tone: "strength" },
   { phrase: "Instinct", tone: "instinct" },
   { phrase: "Recovery", tone: "recovery" },
+  { phrase: "Resistance", tone: "received" },
   { phrase: "Advantage", tone: "dealt" },
   { phrase: "Vulnerable", tone: "debuff" },
   { phrase: "Weakened", tone: "debuff" },

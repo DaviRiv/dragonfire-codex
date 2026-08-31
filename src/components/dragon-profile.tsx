@@ -96,9 +96,9 @@ export function DragonProfile({
         </p>
         <StatGrid stats={dragon.stats} />
       </div>
-      <AbilityBlock title="Vanguard bonus" body={vanguardBonus(dragon)} />
-      {star6 ? <AbilityBlock title="(6+ stars)" body={star6} /> : null}
       <AbilityBlock title="Command" body={dragon.command} />
+      {star6 ? <AbilityBlock title="(6+ stars)" body={star6} /> : null}
+      <AbilityBlock title="Vanguard bonus" body={vanguardBonus(dragon)} />
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {dragon.tags.map((tag) => (
