@@ -65,12 +65,12 @@ export function SuggestTile({
   const star6 = star6Ability(dragon);
 
   return (
-    <div className={cn(selected && "bg-amber-500/20")}>
-      <div className="flex items-stretch">
+    <div className={cn("min-w-0", selected && "bg-amber-500/20")}>
+      <div className="flex min-w-0 items-stretch">
         <button
           type="button"
           onClick={onPick}
-          className="flex min-h-9 min-w-0 flex-1 items-start gap-1.5 overflow-hidden px-2 py-1 text-left select-none active:bg-amber-500/15"
+          className="flex min-h-9 w-0 min-w-0 flex-1 items-start gap-1.5 overflow-hidden px-2 py-1 text-left select-none active:bg-amber-500/15"
         >
           {rank != null ? (
             <span className="w-4 shrink-0 pt-0.5 text-center text-[11px] tabular-nums text-muted-foreground">
@@ -86,8 +86,8 @@ export function SuggestTile({
             size="sm"
             className="mt-px"
           />
-          <span className="min-w-0 flex-1 overflow-hidden">
-            <span className="flex min-w-0 items-center gap-1.5">
+          <div className="w-0 min-w-0 flex-1 overflow-hidden">
+            <div className="flex min-w-0 items-center gap-1.5">
               <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
               </span>
@@ -102,23 +102,25 @@ export function SuggestTile({
               <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
-            </span>
-            <span className="mt-px block min-w-0 overflow-hidden text-[11px] text-amber-200/90 text-ellipsis whitespace-nowrap">
+            </div>
+            <p className="compact-line mt-px text-[11px] text-amber-200/90" title={synergy}>
               {synergy}
-            </span>
-            <span className="mt-px block min-w-0 overflow-hidden text-[11px] leading-none text-foreground/85 text-ellipsis whitespace-nowrap">
-              <AbilityText
-                text={dragon.command}
-                className="whitespace-nowrap"
-              />
-            </span>
+            </p>
+            <p
+              className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
+              title={dragon.command}
+            >
+              {dragon.command}
+            </p>
             {star6 ? (
-              <span className="mt-px block min-w-0 overflow-hidden text-[11px] leading-none text-foreground/70 text-ellipsis whitespace-nowrap">
-                <span className="text-amber-200/80">(6+ stars) </span>
-                <AbilityText text={star6} className="whitespace-nowrap" />
-              </span>
+              <p
+                className="compact-line mt-px text-[11px] leading-snug text-foreground/70"
+                title={`(6+ stars) ${star6}`}
+              >
+                {`(6+ stars) ${star6}`}
+              </p>
             ) : null}
-          </span>
+          </div>
         </button>
         <button
           type="button"
