@@ -6,6 +6,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { breedChipClass, breedLabels } from "@/lib/labels";
 import type { DragonSuggestion } from "@/lib/suggest";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
@@ -50,6 +51,7 @@ export function SuggestTile({
         : `★${starRank} · R${reignLevel}`;
 
   const notesDirty = owned ? notes !== storedNotes : false;
+  const synergy = reasons[0];
 
   return (
     <div className={cn(selected && "bg-amber-500/20")}>
@@ -73,17 +75,24 @@ export function SuggestTile({
             size="sm"
           />
           <span className="min-w-0 flex-1">
-            <span className="flex items-baseline gap-2">
+            <span className="flex min-w-0 items-center gap-1.5">
               <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
               </span>
-              <span className="shrink-0 text-[11px] text-muted-foreground">
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-1.5 py-px text-[10px] tracking-wide ring-1",
+                  breedChipClass[dragon.breed],
+                )}
+              >
+                {breedLabels[dragon.breed]}
+              </span>
+              <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
             </span>
-            <span className="block truncate text-[11px] text-amber-200/90">
-              {reasons[0]}
-              {owned?.notes ? " · notes" : ""}
+            <span className="mt-0.5 block truncate text-[11px] text-amber-200/90">
+              {synergy}
             </span>
           </span>
         </button>
@@ -105,6 +114,16 @@ export function SuggestTile({
       </div>
       {open ? (
         <div className="space-y-3 border-t border-border/40 px-3 py-3">
+          <div>
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
+              WITH THIS TEAM
+            </p>
+            <ul className="mt-1 space-y-0.5 text-sm text-amber-100/90">
+              {reasons.map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          </div>
           <StatGrid stats={dragon.stats} compact />
           <div>
             <p className="text-[10px] tracking-[0.2em] text-muted-foreground">

@@ -49,6 +49,13 @@ export const breedLabels: Record<Breed, string> = {
   warrior: "Warrior",
 };
 
+export const breedChipClass: Record<Breed, string> = {
+  champion: "bg-amber-500/15 text-amber-200 ring-amber-400/35",
+  hunter: "bg-orange-500/15 text-orange-200 ring-orange-400/35",
+  sentinel: "bg-cyan-500/15 text-cyan-200 ring-cyan-400/35",
+  warrior: "bg-rose-500/15 text-rose-200 ring-rose-400/35",
+};
+
 export const breedRoles: Record<Breed, string> = {
   champion: "Suppressor — mixed damage, flexible core",
   hunter: "Debuffer — fire pressure and disruption",

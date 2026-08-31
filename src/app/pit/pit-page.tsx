@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { findDragon, lineupsUsingDragon } from "@/lib/dragons";
+import { breedLabels } from "@/lib/labels";
 import { exportPit, isPitState, usePit } from "@/lib/store";
 import type { Breed, OwnedDragon, Rarity, TroopType } from "@/lib/types";
 import { Download, Plus, Upload } from "lucide-react";
@@ -143,7 +144,8 @@ export function PitPage() {
                         {dragon.name}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        ★{owned.starRank} · Reign {owned.reignLevel}
+                        {breedLabels[dragon.breed]} · ★{owned.starRank} · Reign{" "}
+                        {owned.reignLevel}
                         {used.length
                           ? ` · ${used.length} team${used.length === 1 ? "" : "s"}`
                           : ""}

@@ -5,6 +5,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { ListFilterBar } from "@/components/list-filter-bar";
 import { DRAGONS } from "@/data/dragons";
+import { breedLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Dragon, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -89,7 +90,8 @@ export function HatcheryPage() {
                     {d.name}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {owned ? "In pit" : "Stats"}
+                    {breedLabels[d.breed]}
+                    {owned ? " · In pit" : ""}
                   </span>
                 </button>
               );

@@ -10,8 +10,8 @@ with HBO, Warner Bros., or the game.
 - **Team** — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
-  first, in a thin row. Open the chevron on a row for habit, command, and
-  your notes. **Suggest team** fills empty lanes, or replaces a full line.
+  for **this team** first. Each row shows breed (Champion, Hunter,
+  Sentinel, Warrior) and why it pairs with the dragons already slotted.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them

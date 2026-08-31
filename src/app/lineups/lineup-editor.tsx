@@ -251,7 +251,7 @@ export function LineupEditor({
         <p className="text-xs text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
-            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()}`}
+            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()} from this team`}
         </p>
 
         {isTheory ? (

@@ -6,6 +6,7 @@ import {
   placedInLineup,
   resolveSlot,
   slottedDragonIds,
+  type ResolvedSlot,
 } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import type { Dragon, Lineup, OwnedDragon, PitState, SlotId } from "@/lib/types";
@@ -19,8 +20,19 @@ export interface DragonSuggestion {
   reignLevel: number;
 }
 
-function placedBreeds(lineup: Lineup, state: PitState): Set<string> {
-  return new Set(placedInLineup(lineup, state).map((p) => p.dragon.breed));
+function teammatesForSlot(
+  lineup: Lineup,
+  state: PitState,
+  slot: SlotId,
+): ResolvedSlot[] {
+  return placedInLineup(lineup, state).filter((placed) => placed.slot !== slot);
+}
+
+function mateIn(
+  teammates: ResolvedSlot[],
+  slot: SlotId,
+): ResolvedSlot | undefined {
+  return teammates.find((placed) => placed.slot === slot);
 }
 
 function scoreDragon(
@@ -28,93 +40,153 @@ function scoreDragon(
   owned: OwnedDragon | null,
   lineup: Lineup,
   slot: SlotId,
-  takenBreeds: Set<string>,
+  teammates: ResolvedSlot[],
 ): DragonSuggestion {
   let score = 0;
-  const reasons: string[] = [];
+  const weighted: { text: string; weight: number }[] = [];
   const troopName = troopLabels[lineup.troop];
+  const breedName = breedLabels[dragon.breed];
   const starRank =
-    lineup.kind === "theory"
-      ? lineup.craftStars
-      : owned?.starRank ?? 1;
+    lineup.kind === "theory" ? lineup.craftStars : (owned?.starRank ?? 1);
   const reignLevel = owned?.reignLevel ?? 1;
+  const takenBreeds = new Set(teammates.map((mate) => mate.dragon.breed));
+  const left = mateIn(teammates, "left");
+  const vanguard = mateIn(teammates, "vanguard");
+  const right = mateIn(teammates, "right");
+
+  function note(text: string, weight: number, points = 0) {
+    score += points;
+    if (!weighted.some((item) => item.text === text)) {
+      weighted.push({ text, weight });
+    }
+  }
 
   if (dragon.affinities.includes(lineup.troop)) {
-    score += 40;
-    reasons.push(`Matches ${troopName}`);
+    note(
+      teammates.length > 0
+        ? `Matches ${troopName} with this team`
+        : `Matches ${troopName}`,
+      70,
+      40,
+    );
   }
 
   if (lineup.kind === "pit" && owned) {
     score += 8 + investmentScore(owned.starRank, owned.reignLevel, lineup.ignoreLevel) / 8;
-    reasons.push(
-      lineup.ignoreLevel
-        ? `★${owned.starRank} in pit`
-        : `★${owned.starRank} · R${owned.reignLevel}`,
-    );
   }
 
-  if (lineup.kind === "theory") {
-    if (owned) {
-      score += 6;
-      reasons.push(`Own ★${owned.starRank}`);
-    } else {
-      reasons.push(`Aim ★${lineup.craftStars}`);
+  if (lineup.kind === "theory" && owned) {
+    score += 6;
+  }
+
+  if (teammates.length > 0 && !takenBreeds.has(dragon.breed)) {
+    const have = [...takenBreeds].map((breed) => breedLabels[breed]).join(" + ");
+    note(`Adds ${breedName} — you have ${have}`, 90, 20);
+  } else if (teammates.length > 0 && takenBreeds.has(dragon.breed)) {
+    score -= 6;
+  }
+
+  if (slot !== "right" && dragon.flankBonus === "right" && right) {
+    note(`Buffs ${right.dragon.name} on the right`, 100, 24);
+  } else if (slot !== "left" && dragon.flankBonus === "left" && left) {
+    note(`Buffs ${left.dragon.name} on the left`, 100, 24);
+  } else if (slot === "left" && dragon.flankBonus === "right") {
+    note("Buffs the right from here", 55, 12);
+  } else if (slot === "right" && dragon.flankBonus === "left") {
+    note("Buffs the left from here", 55, 12);
+  }
+
+  if (slot === "right") {
+    const feeder =
+      left?.dragon.flankBonus === "right"
+        ? left
+        : vanguard?.dragon.flankBonus === "right"
+          ? vanguard
+          : null;
+    if (feeder) {
+      note(`Gets ${feeder.dragon.name}’s right-flank habit`, 85, 16);
+    }
+  }
+  if (slot === "left") {
+    const feeder =
+      right?.dragon.flankBonus === "left"
+        ? right
+        : vanguard?.dragon.flankBonus === "left"
+          ? vanguard
+          : null;
+    if (feeder) {
+      note(`Gets ${feeder.dragon.name}’s left-flank habit`, 85, 16);
     }
   }
 
   if (slot === "vanguard") {
     if (dragon.tags.includes("Taunt")) {
-      score += 28;
-      reasons.push("Taunt soak");
+      note(
+        teammates.length ? "Taunt soak for this team" : "Taunt soak",
+        80,
+        28,
+      );
     }
     if (dragon.breed === "warrior") {
-      score += 10;
-      reasons.push("Front-line warrior");
+      note("Front-line warrior", 50, 10);
     }
+  } else if (
+    !vanguard?.dragon.tags.includes("Taunt") &&
+    dragon.tags.includes("Taunt")
+  ) {
+    note("Taunt is usually better in Vanguard", 25);
   }
 
-  if (slot === "left") {
-    if (dragon.flankBonus === "right") {
-      score += 16;
-      reasons.push("Buffs the right from here");
-    }
-    if (dragon.breed === "sentinel") {
-      score += 8;
-      reasons.push("Support on the left");
-    }
+  if (slot === "left" && dragon.breed === "sentinel") {
+    note("Sentinel support on the left", 45, 8);
   }
-
-  if (slot === "right") {
-    if (dragon.flankBonus === "left") {
-      score += 16;
-      reasons.push("Buffs the left from here");
-    }
-    if (dragon.breed === "hunter") {
-      score += 8;
-      reasons.push("Hunter pressure");
-    }
+  if (slot === "right" && dragon.breed === "hunter") {
+    note("Hunter pressure on the right", 45, 8);
   }
 
   if (dragon.flankBonus === slot) {
     score -= 6;
-  } else if (slot !== "vanguard") {
-    if (dragon.flankBonus === "left" && slot === "right") {
-      score += 4;
-    }
-    if (dragon.flankBonus === "right" && slot === "left") {
-      score += 4;
-    }
   }
 
-  if (!takenBreeds.has(dragon.breed)) {
-    score += 10;
-    reasons.push(`Adds ${breedLabels[dragon.breed]}`);
+  const teamHasRecovery = teammates.some((mate) =>
+    mate.dragon.tags.includes("Recovery"),
+  );
+  if (dragon.tags.includes("Recovery") && !teamHasRecovery) {
+    note(
+      teammates.length
+        ? "Recovery your line is missing"
+        : lineup.mode === "pve"
+          ? "Recovery for PvE"
+          : "Recovery",
+      60,
+      lineup.mode === "pve" ? 12 : 8,
+    );
   }
 
-  if (dragon.tags.includes("Recovery") && lineup.mode === "pve") {
-    score += 8;
-    reasons.push("Recovery for PvE");
+  const fireMate = teammates.find((mate) =>
+    mate.dragon.tags.includes("Fire Damage"),
+  );
+  if (fireMate && dragon.tags.includes("Fire Damage")) {
+    note(`Fire kit with ${fireMate.dragon.name}`, 65, 10);
   }
+
+  const physicalMate = teammates.find((mate) =>
+    mate.dragon.tags.includes("Physical Damage"),
+  );
+  if (physicalMate && dragon.tags.includes("Physical Damage")) {
+    note(`Physical kit with ${physicalMate.dragon.name}`, 60, 8);
+  }
+
+  if (lineup.mode === "defense" && dragon.tags.includes("Protect")) {
+    note("Protect for castle defense", 55, 10);
+  }
+  if (lineup.mode === "pvp" && dragon.tags.includes("Taunt") && slot === "vanguard") {
+    score += 4;
+  }
+
+  const reasons = weighted
+    .sort((a, b) => b.weight - a.weight)
+    .map((item) => item.text);
 
   if (reasons.length === 0) {
     reasons.push(`For ${slotLabels[slot]}`);
@@ -124,7 +196,7 @@ function scoreDragon(
     dragon,
     owned,
     score,
-    reasons: reasons.slice(0, 2),
+    reasons: reasons.slice(0, 3),
     starRank,
     reignLevel,
   };
@@ -146,7 +218,7 @@ export function suggestDragons({
   pool?: "all" | "owned" | "unowned";
 }): DragonSuggestion[] {
   const used = slottedDragonIds(lineup, state);
-  const breeds = placedBreeds(lineup, state);
+  const teammates = teammatesForSlot(lineup, state, slot);
   const q = query.trim().toLowerCase();
   const ownedByCatalog = new Map(
     state.owned.map((o) => [o.dragonId, o] as const),
@@ -176,7 +248,7 @@ export function suggestDragons({
         ownedByCatalog.get(dragon.id) ?? null,
         lineup,
         slot,
-        breeds,
+        teammates,
       ),
     )
     .sort(
