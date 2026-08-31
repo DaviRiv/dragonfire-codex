@@ -86,8 +86,8 @@ export function SuggestTile({
             size="sm"
             className="mt-px"
           />
-          <div className="w-0 min-w-0 flex-1 overflow-hidden">
-            <div className="flex min-w-0 items-center gap-1.5">
+          <span className="w-0 min-w-0 flex-1 overflow-hidden">
+            <span className="flex min-w-0 items-center gap-1.5">
               <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
               </span>
@@ -102,25 +102,28 @@ export function SuggestTile({
               <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
-            </div>
-            <p className="compact-line mt-px text-[11px] text-amber-200/90" title={synergy}>
+            </span>
+            <span
+              className="compact-line mt-px text-[11px] text-amber-200/90"
+              title={synergy}
+            >
               {synergy}
-            </p>
-            <p
+            </span>
+            <span
               className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
               title={dragon.command}
             >
               {dragon.command}
-            </p>
+            </span>
             {star6 ? (
-              <p
+              <span
                 className="compact-line mt-px text-[11px] leading-snug text-foreground/70"
                 title={`(6+ stars) ${star6}`}
               >
                 {`(6+ stars) ${star6}`}
-              </p>
+              </span>
             ) : null}
-          </div>
+          </span>
         </button>
         <button
           type="button"
