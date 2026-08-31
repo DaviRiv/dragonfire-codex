@@ -148,40 +148,46 @@ function scoreDragon(
     score -= 6;
   }
 
-  const teamHasRecovery = teammates.some((mate) =>
-    mate.dragon.tags.includes("Recovery"),
-  );
-  if (dragon.tags.includes("Recovery") && !teamHasRecovery) {
-    note(
-      teammates.length
-        ? "Recovery your line is missing"
-        : lineup.mode === "pve"
-          ? "Recovery for PvE"
-          : "Recovery",
-      60,
-      lineup.mode === "pve" ? 12 : 8,
-    );
+  const DAMAGE = [
+    ["Fire Damage", "fire damage"],
+    ["Physical Damage", "physical damage"],
+    ["Tactical Damage", "tactical damage"],
+  ] as const;
+  for (const [tag, label] of DAMAGE) {
+    if (!dragon.tags.includes(tag)) continue;
+    const mate = teammates.find((t) => t.dragon.tags.includes(tag));
+    if (mate) {
+      note(`${label[0].toUpperCase()}${label.slice(1)} with ${mate.dragon.name}`, 72, 12);
+    } else if (teammates.length > 0) {
+      note(`Adds ${label}`, 82, 18);
+    } else {
+      note(`Brings ${label}`, 58, 12);
+    }
+    if (slot === "vanguard") score += 6;
+    if (lineup.mode === "pvp" || lineup.mode === "rally") score += 4;
   }
 
-  const fireMate = teammates.find((mate) =>
-    mate.dragon.tags.includes("Fire Damage"),
+  const heals =
+    dragon.tags.includes("Recovery") ||
+    /\brecovery\b/i.test(`${dragon.habit} ${dragon.command}`);
+  const teamHeals = teammates.some(
+    (mate) =>
+      mate.dragon.tags.includes("Recovery") ||
+      /\brecovery\b/i.test(`${mate.dragon.habit} ${mate.dragon.command}`),
   );
-  if (fireMate && dragon.tags.includes("Fire Damage")) {
-    note(`Fire kit with ${fireMate.dragon.name}`, 65, 10);
-  }
-
-  const physicalMate = teammates.find((mate) =>
-    mate.dragon.tags.includes("Physical Damage"),
-  );
-  if (physicalMate && dragon.tags.includes("Physical Damage")) {
-    note(`Physical kit with ${physicalMate.dragon.name}`, 60, 8);
+  if (heals) {
+    if (teammates.length > 0 && !teamHeals) {
+      note("Healing your line is missing", 92, 24);
+    } else if (lineup.mode === "pve" || lineup.mode === "defense") {
+      note("Healing for this mode", 74, 14);
+    } else {
+      note("Healing", 56, 10);
+    }
+    if (slot === "left") score += 4;
   }
 
   if (lineup.mode === "defense" && dragon.tags.includes("Protect")) {
     note("Protect for castle defense", 55, 10);
-  }
-  if (lineup.mode === "pvp" && dragon.tags.includes("Taunt") && slot === "vanguard") {
-    score += 4;
   }
 
   const reasons = weighted

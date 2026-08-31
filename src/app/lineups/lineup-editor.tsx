@@ -94,7 +94,6 @@ export function LineupEditor({
       slot: selectedSlot,
       state,
       query,
-      includeSlotted: true,
       pool: lineup.kind === "theory" ? theoryPool : "all",
     });
   }, [lineup, selectedSlot, state, query, theoryPool]);
@@ -253,7 +252,7 @@ export function LineupEditor({
         <p className="text-xs text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
-            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()} from this team`}
+            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()} — synergy, damage, and healing. Dragons already on this team are hidden.`}
         </p>
         {selectedSlot === "vanguard" ? (
           <div className="rounded-xl bg-emerald-950/40 px-3 py-2 text-sm ring-1 ring-emerald-500/25">
@@ -322,7 +321,9 @@ export function LineupEditor({
           <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
             {isTheory
               ? "Nothing matches. Try Hatchery, or clear the search."
-              : "Nothing in your pit matches. Add more dragons, or ignore search."}
+              : query.trim()
+                ? "Nothing in your pit matches. Clear the search."
+                : "Everyone in your pit is already on this team. Clear a lane to see other picks."}
           </p>
         ) : (
           <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">

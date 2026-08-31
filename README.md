@@ -10,8 +10,8 @@ with HBO, Warner Bros., or the game.
 - **Team** — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
-  for **this team** first. Each row shows breed (Champion, Hunter,
-  Sentinel, Warrior) and why it pairs with the dragons already slotted.
+  for **this team** first, hiding anyone already slotted. Ranking favors
+  synergy plus damage and healing. Each row shows breed and command.
   Every row shows that dragon’s command. Select Vanguard to see front-line
   benefits (taunt, damage reduction, carry).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
