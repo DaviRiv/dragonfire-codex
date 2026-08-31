@@ -24,6 +24,7 @@ export function SuggestTile({
   ignoreLevel,
   rank,
   slot,
+  showAbilities,
 }: {
   suggestion: DragonSuggestion;
   selected?: boolean;
@@ -34,6 +35,7 @@ export function SuggestTile({
   ignoreLevel?: boolean;
   rank?: number;
   slot?: SlotId;
+  showAbilities?: boolean;
 }) {
   const { dragon, owned, reasons, starRank, reignLevel } = suggestion;
   const notesId = owned?.id ?? dragon.id;
@@ -48,8 +50,8 @@ export function SuggestTile({
   const meta =
     kind === "theory"
       ? owned
-        ? `Aim ★${starRank} · own ★${owned.starRank}`
-        : `Aim ★${starRank}`
+        ? `Aim ★${starRank}`
+        : `★${starRank}`
       : ignoreLevel
         ? `★${starRank}`
         : `★${starRank} · R${reignLevel}`;
@@ -65,10 +67,13 @@ export function SuggestTile({
         <button
           type="button"
           onClick={onPick}
-          className="flex min-h-9 w-0 min-w-0 flex-1 items-start gap-1.5 overflow-hidden px-2 py-1 text-left select-none active:bg-amber-500/15"
+          className={cn(
+            "flex min-h-11 w-0 min-w-0 flex-1 gap-1.5 overflow-hidden px-2 py-1.5 text-left select-none active:bg-amber-500/15",
+            showAbilities ? "items-start" : "items-center",
+          )}
         >
           {rank != null ? (
-            <span className="w-4 shrink-0 pt-0.5 text-center text-[11px] tabular-nums text-muted-foreground">
+            <span className="w-4 shrink-0 text-center text-[11px] tabular-nums text-muted-foreground">
               {rank}
             </span>
           ) : null}
@@ -79,7 +84,6 @@ export function SuggestTile({
             custom={dragon.custom}
             selected={selected}
             size="sm"
-            className="mt-px"
           />
           <span className="w-0 min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">
@@ -88,7 +92,7 @@ export function SuggestTile({
               </span>
               <span
                 className={cn(
-                  "shrink-0 rounded-full px-1.5 py-px text-[10px] tracking-wide ring-1",
+                  "hidden shrink-0 rounded-full px-1.5 py-px text-[10px] tracking-wide ring-1 min-[380px]:inline",
                   breedChipClass[dragon.breed],
                 )}
               >
@@ -104,27 +108,31 @@ export function SuggestTile({
             >
               {synergy}
             </span>
-            <span
-              className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
-              title={dragon.command}
-            >
-              {dragon.command}
-            </span>
-            {star6 ? (
-              <span
-                className="compact-line mt-px text-[11px] leading-snug text-foreground/70"
-                title={`(6+ stars) ${star6}`}
-              >
-                {`(6+ stars) ${star6}`}
-              </span>
-            ) : null}
-            {frontBonus ? (
-              <span
-                className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
-                title={`Vanguard ${frontBonus}`}
-              >
-                {`Vanguard ${frontBonus}`}
-              </span>
+            {showAbilities ? (
+              <>
+                <span
+                  className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
+                  title={dragon.command}
+                >
+                  {dragon.command}
+                </span>
+                {star6 ? (
+                  <span
+                    className="compact-line mt-px text-[11px] leading-snug text-foreground/70"
+                    title={`(6+ stars) ${star6}`}
+                  >
+                    {`(6+ stars) ${star6}`}
+                  </span>
+                ) : null}
+                {frontBonus ? (
+                  <span
+                    className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
+                    title={`Vanguard ${frontBonus}`}
+                  >
+                    {`Vanguard ${frontBonus}`}
+                  </span>
+                ) : null}
+              </>
             ) : null}
           </span>
         </button>
@@ -137,7 +145,7 @@ export function SuggestTile({
               ? `Hide details for ${dragon.name}`
               : `Show details for ${dragon.name}`
           }
-          className="flex w-10 shrink-0 items-start justify-center pt-2 text-muted-foreground hover:text-foreground"
+          className="flex w-10 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
         >
           <ChevronDown
             className={cn("size-4 transition", open && "rotate-180")}

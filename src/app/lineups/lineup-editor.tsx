@@ -61,6 +61,7 @@ export function LineupEditor({
   const [query, setQuery] = useState("");
   const [theoryPool, setTheoryPool] = useState<TheoryPool>("all");
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
+  const [showAbilities, setShowAbilities] = useState(false);
 
   const lineup = state.lineups.find((l) => l.id === lineupId);
 
@@ -234,7 +235,7 @@ export function LineupEditor({
 
       <section className="mt-3 min-w-0 space-y-2 lg:mt-0">
         <div className="flex items-center gap-2">
-          <h2 className="font-heading min-w-0 flex-1 truncate text-lg tracking-wide">
+          <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">
             {selectedDragon
               ? `Replace ${selectedDragon.name}`
               : `Pick ${slotShort[selectedSlot]}`}
@@ -246,32 +247,31 @@ export function LineupEditor({
             disabled={pitEmpty}
           >
             <Sparkles data-icon="inline-start" />
-            Suggest team
+            Suggest
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
-            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()} — synergy, damage, and healing. Dragons already on this team are hidden.`}
+            : `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden.`}
         </p>
         {selectedSlot === "vanguard" ? (
-          <div className="rounded-xl bg-emerald-950/40 px-3 py-2 text-sm ring-1 ring-emerald-500/25">
-            <p className="font-heading text-xs tracking-[0.16em] text-emerald-200">
-              VANGUARD
-            </p>
-            <p className="mt-0.5 text-xs text-emerald-100/85">
-              {slotHints.vanguard}
-            </p>
-            {selectedDragon ? (
-              <p className="mt-1 text-xs text-emerald-50">
-                {selectedDragon.name}: {vanguardBonus(selectedDragon)}
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-emerald-100/70">
-                Pick a taunt soak or a command that can carry from the front.
-              </p>
-            )}
-          </div>
+          <p
+            className="compact-line rounded-lg bg-emerald-950/40 px-2.5 py-1.5 text-[11px] text-emerald-100/90 ring-1 ring-emerald-500/25"
+            title={
+              selectedDragon
+                ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon)}`
+                : slotHints.vanguard
+            }
+          >
+            <span className="font-heading tracking-wide text-emerald-200">
+              Vanguard
+            </span>
+            {" · "}
+            {selectedDragon
+              ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon)}`
+              : slotHints.vanguard}
+          </p>
         ) : null}
 
         {isTheory ? (
@@ -294,14 +294,24 @@ export function LineupEditor({
           </div>
         ) : null}
 
-        <Input
-          placeholder={
-            isTheory ? "Search hatchery…" : "Search your pit…"
-          }
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          enterKeyHint="search"
-        />
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Input
+            placeholder={
+              isTheory ? "Search hatchery…" : "Search your pit…"
+            }
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            enterKeyHint="search"
+            className="min-w-0 flex-1"
+          />
+          <MiniChip
+            active={showAbilities}
+            onClick={() => setShowAbilities((value) => !value)}
+            className="shrink-0"
+          >
+            Abilities
+          </MiniChip>
+        </div>
 
         {pitEmpty ? (
           <EmptyState
@@ -340,6 +350,7 @@ export function LineupEditor({
                     updateOwned(ownedId, { notes })
                   }
                   slot={selectedSlot}
+                  showAbilities={showAbilities}
                 />
               </li>
             ))}

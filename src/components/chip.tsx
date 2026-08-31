@@ -84,6 +84,7 @@ export function MiniChip({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 text-xs ring-1 select-none",
         active
