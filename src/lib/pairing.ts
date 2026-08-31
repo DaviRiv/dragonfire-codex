@@ -93,13 +93,13 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
 
+/** True when Hub lists this dragon as applying `ability` — not when kit text merely mentions it. */
 export function dragonProvides(dragon: Dragon, ability: string): boolean {
   const want = canonAbility(ability).toLowerCase();
   if (!want) return false;
   if ((dragon.provides ?? []).some((item) => item.toLowerCase() === want)) {
     return true;
   }
-  if (dragon.tags.some((tag) => tag.toLowerCase() === want)) return true;
   if (want === "control effect") {
     return CONTROL_EFFECTS.some((effect) => dragonProvides(dragon, effect));
   }
