@@ -27,8 +27,8 @@ import {
   troopLabels,
   troopShort,
   slotHints,
-  vanguardBenefitLines,
 } from "@/lib/labels";
+import { vanguardBonus } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, SlotId } from "@/lib/types";
@@ -264,8 +264,7 @@ export function LineupEditor({
             </p>
             {selectedDragon ? (
               <p className="mt-1 text-xs text-emerald-50">
-                {selectedDragon.name}:{" "}
-                {vanguardBenefitLines(selectedDragon).join(" · ")}
+                {selectedDragon.name}: {vanguardBonus(selectedDragon)}
               </p>
             ) : (
               <p className="mt-1 text-xs text-emerald-100/70">

@@ -6,12 +6,8 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { star6Ability } from "@/lib/habits";
-import {
-  breedChipClass,
-  breedLabels,
-  vanguardBenefitLines,
-} from "@/lib/labels";
+import { star6Ability, vanguardBonus } from "@/lib/habits";
+import { breedChipClass, breedLabels } from "@/lib/labels";
 import type { DragonSuggestion } from "@/lib/suggest";
 import type { SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -60,9 +56,8 @@ export function SuggestTile({
 
   const notesDirty = owned ? notes !== storedNotes : false;
   const synergy = reasons[0];
-  const vanguardBits =
-    slot === "vanguard" ? vanguardBenefitLines(dragon) : [];
   const star6 = star6Ability(dragon);
+  const frontBonus = slot === "vanguard" ? vanguardBonus(dragon) : null;
 
   return (
     <div className={cn("min-w-0", selected && "bg-amber-500/20")}>
@@ -123,6 +118,14 @@ export function SuggestTile({
                 {`(6+ stars) ${star6}`}
               </span>
             ) : null}
+            {frontBonus ? (
+              <span
+                className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
+                title={`Vanguard ${frontBonus}`}
+              >
+                {`Vanguard ${frontBonus}`}
+              </span>
+            ) : null}
           </span>
         </button>
         <button
@@ -153,16 +156,14 @@ export function SuggestTile({
               ))}
             </ul>
           </div>
-          {vanguardBits.length > 0 ? (
+          {frontBonus ? (
             <div>
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
                 VANGUARD
               </p>
-              <ul className="mt-1 space-y-0.5 text-sm text-emerald-100/90">
-                {vanguardBits.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
+              <p className="mt-1 text-sm leading-snug text-emerald-100/90">
+                <AbilityText text={frontBonus} />
+              </p>
             </div>
           ) : null}
           <StatGrid stats={dragon.stats} compact />
@@ -184,14 +185,6 @@ export function SuggestTile({
               </p>
             </div>
           ) : null}
-          <div>
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              HABIT
-            </p>
-            <p className="mt-1 text-sm leading-snug">
-              <AbilityText text={dragon.habit} />
-            </p>
-          </div>
           {owned && onSaveNotes ? (
             <div className="space-y-1.5">
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
