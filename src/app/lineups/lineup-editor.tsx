@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AbilityText } from "@/components/ability-text";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
-import { StatGrid } from "@/components/dragon-profile";
 import { EmptyState } from "@/components/empty-state";
 import { StarRank } from "@/components/star-rank";
 import { SuggestTile } from "@/components/suggest-tile";
@@ -30,9 +28,9 @@ import {
   troopShort,
 } from "@/lib/labels";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
-import { analyzeLineup, summarizeLineup } from "@/lib/synergy";
 import { usePit } from "@/lib/store";
-import type { Dragon, SlotId } from "@/lib/types";
+import type { Dragon, Lineup, SlotId } from "@/lib/types";
+import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
 import { Copy, Sparkles, Trash2 } from "lucide-react";
 
 type TheoryPool = "all" | "owned" | "unowned";
@@ -93,6 +91,7 @@ export function LineupEditor({
       slot: selectedSlot,
       state,
       query,
+      includeSlotted: true,
       pool: lineup.kind === "theory" ? theoryPool : "all",
     });
   }, [lineup, selectedSlot, state, query, theoryPool]);
@@ -154,13 +153,11 @@ export function LineupEditor({
   }
 
   const counter = troopCounters[lineup.troop];
-  const visibleLimit = query.trim() || theoryPool !== "all" ? 36 : 24;
-  const visible = suggestions.slice(0, visibleLimit);
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <div className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-20 -mx-2 bg-background/95 px-2 py-2 backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+    <div className="lg:grid lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)] lg:items-start lg:gap-4">
+      <div className="space-y-2 lg:sticky lg:top-[calc(3.5rem+env(safe-area-inset-top))]">
         <FormationBoard
           lineup={lineup}
           state={state}
@@ -168,179 +165,93 @@ export function LineupEditor({
           onSelectSlot={setSelectedSlot}
           onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
           onNameChange={(name) => updateLineup(lineup.id, { name })}
-        />
-      </div>
-
-      <Button
-        size="lg"
-        onClick={fillLine}
-        className="w-full"
-        disabled={pitEmpty}
-      >
-        <Sparkles data-icon="inline-start" />
-        Suggest team
-      </Button>
-
-      <div className="space-y-1.5">
-        <div className="flex flex-wrap gap-1">
-          {TROOP_TYPES.map((troop) => (
-            <MiniChip
-              key={troop}
-              active={lineup.troop === troop}
-              onClick={() => updateLineup(lineup.id, { troop })}
-            >
-              {troopShort[troop]}
-            </MiniChip>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {MODES.map((mode) => (
-            <MiniChip
-              key={mode}
-              active={lineup.mode === mode}
-              onClick={() => updateLineup(lineup.id, { mode })}
-            >
-              {modeShort[mode]}
-            </MiniChip>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {counter.beats
-            ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
-                counter.losesTo
-                  ? `, lose to ${troopLabels[counter.losesTo]}`
-                  : ""
-              }.`
-            : counter.note}
-        </p>
-      </div>
-
-      <Disclosure
-        title="Options"
-        badge={
-          isTheory
-            ? `Aim ★${lineup.craftStars}`
-            : lineup.ignoreLevel
-              ? "Ignore level"
-              : "Use reign"
-        }
-      >
-        {!isTheory ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1">
+        >
+          <div className="flex flex-wrap gap-1">
+            {TROOP_TYPES.map((troop) => (
               <MiniChip
-                active={!lineup.ignoreLevel}
-                onClick={() => updateLineup(lineup.id, { ignoreLevel: false })}
+                key={troop}
+                active={lineup.troop === troop}
+                onClick={() => updateLineup(lineup.id, { troop })}
               >
-                Use reign level
+                {troopShort[troop]}
               </MiniChip>
-              <MiniChip
-                active={lineup.ignoreLevel}
-                onClick={() => updateLineup(lineup.id, { ignoreLevel: true })}
-              >
-                Ignore level
-              </MiniChip>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {lineup.ignoreLevel
-                ? "Suggestions rank by stars and kit only. Reign is hidden."
-                : "Higher reign ranks a dragon above an equal-star alternative."}
-            </p>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              AIM FOR STARS
+          <div className="flex flex-wrap gap-1">
+            {MODES.map((mode) => (
+              <MiniChip
+                key={mode}
+                active={lineup.mode === mode}
+                onClick={() => updateLineup(lineup.id, { mode })}
+              >
+                {modeShort[mode]}
+              </MiniChip>
+            ))}
+          </div>
+          <p className="text-[11px] text-amber-100/70">
+            {counter.beats
+              ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
+                  counter.losesTo
+                    ? `, lose to ${troopLabels[counter.losesTo]}`
+                    : ""
+                }.`
+              : counter.note}
+          </p>
+        </FormationBoard>
+
+        {isTheory && selectedResolved ? (
+          <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
+            <p className="mb-1 text-[10px] tracking-[0.2em] text-muted-foreground">
+              STARS · {selectedDragon?.name}
             </p>
             <StarRank
-              value={lineup.craftStars}
-              onChange={(craftStars) => updateLineup(lineup.id, { craftStars })}
+              value={selectedResolved.starRank}
+              onChange={(starRank) =>
+                updateSlotPick(active.id, selectedSlot, { starRank })
+              }
             />
-            <p className="text-xs text-muted-foreground">
-              New slots use ★{lineup.craftStars}. Change a slotted dragon below
-              without touching your pit.
-            </p>
-          </div>
-        )}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={copySummary}>
-            <Copy data-icon="inline-start" />
-            Copy
-          </Button>
-          {!embedded ? (
-            <Button
-              variant="destructive"
-              onClick={() => {
-                deleteLineup(lineup.id);
-                router.push("/lineups");
-              }}
-            >
-              <Trash2 data-icon="inline-start" />
-              Delete
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={() => router.push("/lineups")}
-            >
-              Saved teams
-            </Button>
-          )}
-        </div>
-      </Disclosure>
-
-      <section className="space-y-2">
-        <h2 className="font-heading min-w-0 truncate text-lg tracking-wide">
-          {selectedDragon
-            ? `Replace ${selectedDragon.name}`
-            : `Pick ${slotShort[selectedSlot]}`}
-        </h2>
-        {selectedResolved ? (
-          <div className="w-full rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10">
-            <button
-              type="button"
-              onClick={() => setInspecting(selectedResolved.dragon)}
-              className="w-full text-left"
-            >
-              <StatGrid stats={selectedResolved.dragon.stats} compact />
-              <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-                HABIT
-              </p>
-              <p className="mt-1 line-clamp-3 text-sm">
-                <AbilityText text={selectedResolved.dragon.habit} />
-              </p>
-              <p className="mt-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-                COMMAND
-              </p>
-              <p className="mt-1 line-clamp-3 text-sm">
-                <AbilityText text={selectedResolved.dragon.command} />
-              </p>
-            </button>
-            {isTheory ? (
-              <div className="mt-3 border-t border-border/60 pt-3">
-                <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-                  SLOTTED STARS
-                </p>
-                <StarRank
-                  value={selectedResolved.starRank}
-                  onChange={(starRank) =>
-                    updateSlotPick(active.id, selectedSlot, { starRank })
-                  }
-                />
-              </div>
-            ) : (
-              <p className="mt-3 text-xs text-muted-foreground">
-                ★{selectedResolved.starRank}
-                {active.ignoreLevel
-                  ? " from your pit"
-                  : ` · Reign ${selectedResolved.reignLevel} from your pit`}
-              </p>
-            )}
-            <p className="mt-2 text-xs text-amber-200/80">
-              Tap the kit for full stats and abilities
-            </p>
           </div>
         ) : null}
+
+        <div className="hidden space-y-2 lg:block">
+          <TeamExtras
+            isTheory={isTheory}
+            lineup={lineup}
+            embedded={embedded}
+            report={report}
+            onUpdate={(patch) => updateLineup(lineup.id, patch)}
+            onCopy={copySummary}
+            onDelete={() => {
+              deleteLineup(lineup.id);
+              router.push("/lineups");
+            }}
+            onSaved={() => router.push("/lineups")}
+          />
+        </div>
+      </div>
+
+      <section className="mt-3 min-w-0 space-y-2 lg:mt-0">
+        <div className="flex items-center gap-2">
+          <h2 className="font-heading min-w-0 flex-1 truncate text-lg tracking-wide">
+            {selectedDragon
+              ? `Replace ${selectedDragon.name}`
+              : `Pick ${slotShort[selectedSlot]}`}
+          </h2>
+          <Button
+            size="sm"
+            onClick={fillLine}
+            className="shrink-0"
+            disabled={pitEmpty}
+          >
+            <Sparkles data-icon="inline-start" />
+            Suggest team
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {pitEmpty
+            ? "Log dragons in the pit to rank a team."
+            : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()}`}
+        </p>
 
         {isTheory ? (
           <div className="flex flex-wrap gap-1">
@@ -378,16 +289,13 @@ export function LineupEditor({
             action={
               <div className="grid w-full max-w-sm gap-2">
                 <Button onClick={loadSample}>Load sample pit</Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/pit")}
-                >
+                <Button variant="outline" onClick={() => router.push("/pit")}>
                   Open pit
                 </Button>
               </div>
             }
           />
-        ) : visible.length === 0 ? (
+        ) : suggestions.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
             {isTheory
               ? "Nothing matches. Try Hatchery, or clear the search."
@@ -395,13 +303,14 @@ export function LineupEditor({
           </p>
         ) : (
           <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
-            {visible.map((suggestion) => (
+            {suggestions.map((suggestion, index) => (
               <li key={suggestion.dragon.id}>
                 <SuggestTile
                   suggestion={suggestion}
                   selected={slottedHere(suggestion.dragon.id) === selectedSlot}
                   kind={active.kind}
                   ignoreLevel={active.ignoreLevel}
+                  rank={index + 1}
                   onPick={() => pick(suggestion.dragon.id)}
                   onInspect={() => setInspecting(suggestion.dragon)}
                 />
@@ -409,19 +318,24 @@ export function LineupEditor({
             ))}
           </ul>
         )}
-        {suggestions.length > visibleLimit ? (
-          <p className="text-xs text-muted-foreground">
-            Showing the top {visibleLimit}. Search to find the rest.
-          </p>
-        ) : null}
       </section>
 
-      <Disclosure
-        title="Why this team"
-        badge={`${report.label} · ${report.score}`}
-      >
-        <SynergyPanel report={report} compact />
-      </Disclosure>
+      <div className="col-span-full mt-3 space-y-2 lg:hidden">
+        <TeamExtras
+          isTheory={isTheory}
+          lineup={lineup}
+          embedded={embedded}
+          report={report}
+          onUpdate={(patch) => updateLineup(lineup.id, patch)}
+          onCopy={copySummary}
+          onDelete={() => {
+            deleteLineup(lineup.id);
+            router.push("/lineups");
+          }}
+          onSaved={() => router.push("/lineups")}
+        />
+      </div>
+
       <DragonSheet
         dragon={inspecting}
         open={!!inspecting}
@@ -440,6 +354,101 @@ export function LineupEditor({
           setInspecting(null);
         }}
       />
+    </div>
+  );
+}
+
+function TeamExtras({
+  isTheory,
+  lineup,
+  embedded,
+  report,
+  onUpdate,
+  onCopy,
+  onDelete,
+  onSaved,
+}: {
+  isTheory: boolean;
+  lineup: Lineup;
+  embedded?: boolean;
+  report: SynergyReport;
+  onUpdate: (patch: Partial<Lineup>) => void;
+  onCopy: () => void;
+  onDelete: () => void;
+  onSaved: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Disclosure
+        title="Options"
+        badge={
+          isTheory
+            ? `Aim ★${lineup.craftStars}`
+            : lineup.ignoreLevel
+              ? "Ignore level"
+              : "Use reign"
+        }
+      >
+        {!isTheory ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1">
+              <MiniChip
+                active={!lineup.ignoreLevel}
+                onClick={() => onUpdate({ ignoreLevel: false })}
+              >
+                Use reign level
+              </MiniChip>
+              <MiniChip
+                active={lineup.ignoreLevel}
+                onClick={() => onUpdate({ ignoreLevel: true })}
+              >
+                Ignore level
+              </MiniChip>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {lineup.ignoreLevel
+                ? "Suggestions rank by stars and kit only. Reign is hidden."
+                : "Higher reign ranks a dragon above an equal-star alternative."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
+              AIM FOR STARS
+            </p>
+            <StarRank
+              value={lineup.craftStars}
+              onChange={(craftStars) => onUpdate({ craftStars })}
+            />
+            <p className="text-xs text-muted-foreground">
+              New slots use ★{lineup.craftStars}. Change a slotted dragon
+              without touching your pit.
+            </p>
+          </div>
+        )}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={onCopy}>
+            <Copy data-icon="inline-start" />
+            Copy
+          </Button>
+          {!embedded ? (
+            <Button variant="destructive" onClick={onDelete}>
+              <Trash2 data-icon="inline-start" />
+              Delete
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={onSaved}>
+              Saved teams
+            </Button>
+          )}
+        </div>
+      </Disclosure>
+      <Disclosure
+        title="Why this team"
+        badge={`${report.label} · ${report.score}`}
+      >
+        <SynergyPanel report={report} compact />
+      </Disclosure>
     </div>
   );
 }

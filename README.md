@@ -7,11 +7,10 @@ with HBO, Warner Bros., or the game.
 
 ## What you can do
 
-- **Team** — the three-lane formation is the first thing you see. Choose
-  Pit (only dragons you logged) or Theory (any hatchery dragon, stars you
-  aim for). Troop and mode sit under the board as compact chips. **Suggest
-  team** fills empty lanes, or replaces a full line if you want a second
-  opinion.
+- **Team** — formation on the left (or on top on a phone). The full ranked
+  list sits beside it on desktop, directly under it on mobile. Tap a lane,
+  then pick from the column — every matching dragon is listed, best fit
+  first. **Suggest team** fills empty lanes, or replaces a full line.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -23,8 +22,9 @@ with HBO, Warner Bros., or the game.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 
-The layout is built for a phone in one hand: three bottom tabs, a sticky
-formation, and suggestion tiles you can tap without pinching.
+The layout is built for a phone in one hand: three bottom tabs, the team
+then the ranked list, and on a wider screen the list is a full column on
+the right so the formation stays in view.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** cyan, **Fire** red, **Recovery** green, with matching

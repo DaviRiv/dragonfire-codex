@@ -12,6 +12,7 @@ export function SuggestTile({
   onInspect,
   kind,
   ignoreLevel,
+  rank,
 }: {
   suggestion: DragonSuggestion;
   selected?: boolean;
@@ -19,6 +20,7 @@ export function SuggestTile({
   onInspect: () => void;
   kind?: "pit" | "theory";
   ignoreLevel?: boolean;
+  rank?: number;
 }) {
   const { dragon, owned, reasons, starRank, reignLevel } = suggestion;
   const meta =
@@ -42,6 +44,11 @@ export function SuggestTile({
         onClick={onPick}
         className="flex min-h-[4.75rem] min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left select-none active:bg-amber-500/15"
       >
+        {rank != null ? (
+          <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground">
+            {rank}
+          </span>
+        ) : null}
         <DragonIcon
           dragonId={dragon.id}
           name={dragon.name}

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import { slotShort } from "@/lib/labels";
@@ -14,6 +15,7 @@ export function FormationBoard({
   onSelectSlot,
   onClearSlot,
   onNameChange,
+  children,
 }: {
   lineup: Lineup;
   state: PitState;
@@ -21,9 +23,10 @@ export function FormationBoard({
   onSelectSlot?: (slot: SlotId) => void;
   onClearSlot?: (slot: SlotId) => void;
   onNameChange?: (name: string) => void;
+  children?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-2 ring-1 ring-amber-500/20 sm:p-4">
+    <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-2 ring-1 ring-amber-500/20 sm:p-3">
       <div className="mb-1 flex items-center gap-2 sm:mb-2">
         <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.16em] text-amber-200/90 ring-1 ring-amber-400/30">
           {lineupKindLabel(lineup.kind).toUpperCase()}
@@ -55,6 +58,11 @@ export function FormationBoard({
           />
         ))}
       </div>
+      {children ? (
+        <div className="mt-2 space-y-1.5 border-t border-amber-500/15 pt-2">
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
