@@ -1,5 +1,12 @@
 import { allDragons, findDragon } from "@/lib/dragons";
-import { investmentScore, placedInLineup, resolveSlot, slottedDragonIds } from "@/lib/lineup";
+import {
+  emptySlots,
+  investmentScore,
+  makePick,
+  placedInLineup,
+  resolveSlot,
+  slottedDragonIds,
+} from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import type { Dragon, Lineup, OwnedDragon, PitState, SlotId } from "@/lib/types";
 
@@ -181,19 +188,29 @@ export function suggestDragons({
 export function suggestFullLine(
   lineup: Lineup,
   state: PitState,
+  options?: { replace?: boolean },
 ): { slot: SlotId; dragon: Dragon }[] {
   const picks: { slot: SlotId; dragon: Dragon }[] = [];
-  const exclude = slottedDragonIds(lineup, state);
+  const working: Lineup = {
+    ...lineup,
+    slots: options?.replace ? emptySlots() : { ...lineup.slots },
+  };
+  const exclude = slottedDragonIds(working, state);
 
-  (["vanguard", "left", "right"] as SlotId[]).forEach((slot) => {
-    if (resolveSlot(lineup, state, slot)) return;
-    const next = suggestDragons({ lineup, slot, state }).find(
+  for (const slot of ["vanguard", "left", "right"] as SlotId[]) {
+    if (resolveSlot(working, state, slot)) continue;
+    const next = suggestDragons({ lineup: working, slot, state }).find(
       (s) => !exclude.has(s.dragon.id),
     );
-    if (!next) return;
+    if (!next) continue;
     picks.push({ slot, dragon: next.dragon });
     exclude.add(next.dragon.id);
-  });
+    working.slots[slot] = makePick(
+      next.dragon.id,
+      next.starRank,
+      next.reignLevel,
+    );
+  }
 
   return picks;
 }

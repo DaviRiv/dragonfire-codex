@@ -2,21 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Egg, Flame, Layers, Swords, Users } from "lucide-react";
+import { Egg, Flame, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Build", icon: Swords },
-  { href: "/hatchery", label: "Hatchery", icon: Egg },
+  { href: "/", label: "Team", icon: Swords },
   { href: "/pit", label: "Pit", icon: Flame },
-  { href: "/lineups", label: "Lineups", icon: Layers },
-  { href: "/teams", label: "Teams", icon: Users },
+  { href: "/hatchery", label: "Hatchery", icon: Egg },
 ] as const;
 
 function isActive(pathname: string, href: string) {
   return href === "/"
     ? pathname === "/"
     : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isSaved(pathname: string) {
+  return (
+    pathname === "/lineups" ||
+    pathname.startsWith("/lineups/") ||
+    pathname === "/teams" ||
+    pathname.startsWith("/teams/")
+  );
 }
 
 export function SiteHeader() {
@@ -47,6 +54,15 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              href="/lineups"
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
+                isSaved(pathname) && "bg-muted text-foreground",
+              )}
+            >
+              Saved
+            </Link>
           </nav>
         </div>
       </header>
@@ -54,7 +70,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-5">
+        <ul className="mx-auto grid max-w-6xl grid-cols-3">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);

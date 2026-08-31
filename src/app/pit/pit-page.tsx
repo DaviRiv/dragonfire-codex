@@ -3,10 +3,12 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
+import { Disclosure } from "@/components/disclosure";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPortrait } from "@/components/dragon-portrait";
 import { DragonProfile } from "@/components/dragon-profile";
 import { EmptyState } from "@/components/empty-state";
+import { ListFilterBar } from "@/components/list-filter-bar";
 import { StarRank } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +24,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { findDragon, lineupsUsingDragon } from "@/lib/dragons";
 import { exportPit, isPitState, usePit } from "@/lib/store";
-import type { OwnedDragon } from "@/lib/types";
-import { Download, Plus, Search, Upload } from "lucide-react";
+import type { Breed, OwnedDragon, Rarity, TroopType } from "@/lib/types";
+import { Download, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export function PitPage() {
@@ -31,62 +33,69 @@ export function PitPage() {
     usePit();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [breed, setBreed] = useState<Breed | "all">("all");
+  const [rarity, setRarity] = useState<Rarity | "all">("all");
+  const [troop, setTroop] = useState<TroopType | "all">("all");
   const [editing, setEditing] = useState<OwnedDragon | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const dragons = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return state.owned.filter((owned) => {
-      const d = findDragon(owned.dragonId, state.customDragons);
-      if (!d) return false;
-      if (!q) return true;
-      return `${d.name} ${d.epithet} ${d.breed} ${d.affinities.join(" ")}`
-        .toLowerCase()
-        .includes(q);
-    });
-  }, [query, state.owned, state.customDragons]);
+    return state.owned
+      .flatMap((owned) => {
+        const d = findDragon(owned.dragonId, state.customDragons);
+        if (!d) return [];
+        if (q && !`${d.name} ${d.epithet} ${d.breed} ${d.affinities.join(" ")}`
+          .toLowerCase()
+          .includes(q)) {
+          return [];
+        }
+        if (breed !== "all" && d.breed !== breed) return [];
+        if (rarity !== "all" && d.rarity !== rarity) return [];
+        if (troop !== "all" && !d.affinities.includes(troop)) return [];
+        return [{ owned, dragon: d }];
+      })
+      .sort(
+        (a, b) =>
+          b.owned.starRank - a.owned.starRank ||
+          b.owned.reignLevel - a.owned.reignLevel ||
+          a.dragon.name.localeCompare(b.dragon.name),
+      );
+  }, [query, breed, rarity, troop, state.owned, state.customDragons]);
 
   if (!ready) {
     return <p className="text-sm text-muted-foreground">Opening the pit…</p>;
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Your pit</h1>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Log every dragon you hatched. Star rank stays between reigns; reign
-            level is this campaign. Slotting a dragon on Build also adds them here.
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
+            Your pit
+          </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {state.owned.length} dragon
+            {state.owned.length === 1 ? "" : "s"} you hatched
           </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+        <div className="flex shrink-0 gap-2">
           {state.owned.length === 0 ? (
             <Button variant="secondary" onClick={loadSample}>
-              Load sample pit
+              Sample
             </Button>
           ) : null}
           <Button onClick={() => setOpen(true)}>
             <Plus data-icon="inline-start" />
-            Add dragon
+            Add
           </Button>
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          placeholder="Search your pit…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-
       {state.owned.length === 0 ? (
         <EmptyState
-          title="The pit is empty"
-          description="Add dragons from the hatchery, or just slot them on Build — they land here automatically."
+          title="Log the dragons you hatched"
+          description="Add them here with stars and reign. Then open Team and pick a three-dragon line — slotting never adds to the pit."
           action={
             <Button onClick={() => setOpen(true)}>
               <Plus data-icon="inline-start" />
@@ -94,55 +103,65 @@ export function PitPage() {
             </Button>
           }
         />
-      ) : dragons.length === 0 ? (
-        <EmptyState
-          title="No matches"
-          description="Nothing in your pit matches that search."
-        />
       ) : (
-        <div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
-          {dragons.map((owned) => {
-            const used = lineupsUsingDragon(state, owned.id);
-            const dragon = findDragon(owned.dragonId, state.customDragons);
-            if (!dragon) return null;
-            return (
-              <button
-                key={owned.id}
-                type="button"
-                onClick={() => setEditing(owned)}
-                className="flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left select-none active:bg-amber-500/15"
-              >
-                <DragonIcon
-                  dragonId={dragon.id}
-                  name={dragon.name}
-                  rarity={dragon.rarity}
-                  custom={dragon.custom}
-                  size="lg"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="font-heading block truncate text-base">
-                    {dragon.name}
-                  </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    ★{owned.starRank} · Reign {owned.reignLevel}
-                    {used.length
-                      ? ` · ${used.length} lineup${used.length === 1 ? "" : "s"}`
-                      : ""}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
+        <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+          <ListFilterBar
+            query={query}
+            onQueryChange={setQuery}
+            placeholder="Search your pit…"
+            breed={breed}
+            onBreedChange={setBreed}
+            rarity={rarity}
+            onRarityChange={setRarity}
+            troop={troop}
+            onTroopChange={setTroop}
+          />
+          {dragons.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+              Nothing in your pit matches those filters.
+            </p>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {dragons.map(({ owned, dragon }) => {
+                const used = lineupsUsingDragon(state, owned.id);
+                return (
+                  <button
+                    key={owned.id}
+                    type="button"
+                    onClick={() => setEditing(owned)}
+                    className="flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left select-none active:bg-amber-500/15"
+                  >
+                    <DragonIcon
+                      dragonId={dragon.id}
+                      name={dragon.name}
+                      rarity={dragon.rarity}
+                      custom={dragon.custom}
+                      size="lg"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="font-heading block truncate text-base">
+                        {dragon.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        ★{owned.starRank} · Reign {owned.reignLevel}
+                        {used.length
+                          ? ` · ${used.length} team${used.length === 1 ? "" : "s"}`
+                          : ""}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      <section className="rounded-2xl bg-card/60 p-5 ring-1 ring-foreground/10">
-        <h2 className="font-heading text-xl tracking-wide">Your data</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Everything stays in this browser. Export a JSON backup before you
-          clear storage.
+      <Disclosure title="Your data" badge="This browser">
+        <p className="text-sm text-muted-foreground">
+          Export a JSON backup before you clear storage. Nothing is uploaded.
         </p>
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
           <Button variant="outline" onClick={() => exportPit(state)}>
             <Download data-icon="inline-start" />
             Export pit
@@ -187,7 +206,7 @@ export function PitPage() {
             }}
           />
         </div>
-      </section>
+      </Disclosure>
 
       <AddDragonDialog open={open} onOpenChange={setOpen} />
       <EditDragonSheet
@@ -305,7 +324,7 @@ function EditDragonForm({
         {used.length > 0 ? (
           <div className="text-sm">
             <p className="text-xs tracking-widest text-muted-foreground">
-              LINEUPS
+              TEAMS
             </p>
             <ul className="mt-1 space-y-1">
               {used.map((lineup) => (

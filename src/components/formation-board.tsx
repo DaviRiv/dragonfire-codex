@@ -1,7 +1,7 @@
 "use client";
 
 import { DragonIcon } from "@/components/dragon-icon";
-import { formatInvestment, resolveSlot, SLOT_IDS } from "@/lib/lineup";
+import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import { slotShort } from "@/lib/labels";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -13,18 +13,35 @@ export function FormationBoard({
   selectedSlot,
   onSelectSlot,
   onClearSlot,
+  onNameChange,
 }: {
   lineup: Lineup;
   state: PitState;
   selectedSlot?: SlotId | null;
   onSelectSlot?: (slot: SlotId) => void;
   onClearSlot?: (slot: SlotId) => void;
+  onNameChange?: (name: string) => void;
 }) {
   return (
     <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-2 ring-1 ring-amber-500/20 sm:p-4">
-      <p className="mb-1 text-center font-heading text-[10px] tracking-[0.28em] text-amber-200/80 sm:mb-2 sm:text-xs">
-        {lineup.kind === "theory" ? "THEORY LINE" : "YOUR LINE"}
-      </p>
+      <div className="mb-1 flex items-center gap-2 sm:mb-2">
+        <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.16em] text-amber-200/90 ring-1 ring-amber-400/30">
+          {lineupKindLabel(lineup.kind).toUpperCase()}
+        </span>
+        {onNameChange ? (
+          <input
+            value={lineup.name}
+            onChange={(e) => onNameChange(e.target.value)}
+            aria-label="Team name"
+            className="font-heading min-w-0 flex-1 bg-transparent text-sm tracking-wide text-amber-50 outline-none placeholder:text-amber-200/40"
+            placeholder="Name this team"
+          />
+        ) : (
+          <p className="font-heading min-w-0 flex-1 truncate text-sm tracking-wide text-amber-50">
+            {lineup.name}
+          </p>
+        )}
+      </div>
       <div className="grid grid-cols-3 gap-1">
         {SLOT_IDS.map((slot) => (
           <SlotButton
@@ -66,7 +83,7 @@ function SlotButton({
         type="button"
         onClick={() => onSelect?.(slot)}
         className={cn(
-          "flex min-h-[6.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 select-none",
+          "flex min-h-[7.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-2 select-none",
           selected && "bg-amber-500/20 ring-2 ring-amber-300",
         )}
       >
@@ -77,13 +94,13 @@ function SlotButton({
           custom={dragon?.custom}
           empty={!dragon}
           selected={selected}
-          size="xl"
+          size="2xl"
         />
         <span className="font-heading text-[10px] tracking-[0.16em] text-amber-200/90">
           {slotShort[slot].toUpperCase()}
         </span>
         <span className="max-w-full truncate text-xs">
-          {dragon?.name ?? "Tap"}
+          {dragon?.name ?? "Tap to pick"}
         </span>
         {resolved ? (
           <span className="text-[10px] text-amber-100/80">

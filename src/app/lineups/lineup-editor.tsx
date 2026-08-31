@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AbilityText } from "@/components/ability-text";
-import { ChoiceButton } from "@/components/chip";
+import { MiniChip } from "@/components/chip";
+import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
 import { StatGrid } from "@/components/dragon-profile";
@@ -14,10 +15,8 @@ import { SuggestTile } from "@/components/suggest-tile";
 import { SynergyPanel } from "@/components/synergy-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
-  lineupKindLabel,
+  filledCount,
   resolveSlot,
   slotOfDragon,
 } from "@/lib/lineup";
@@ -126,7 +125,8 @@ export function LineupEditor({
   }
 
   function fillLine() {
-    const picks = suggestFullLine(active, state);
+    const filled = filledCount(active, state);
+    const picks = suggestFullLine(active, state, { replace: filled === 3 });
     if (picks.length === 0) {
       toast(
         isTheory
@@ -138,9 +138,12 @@ export function LineupEditor({
     slotDragons(
       active.id,
       picks.map((p) => ({ slot: p.slot, dragonId: p.dragon.id })),
+      { replace: filled === 3 },
     );
     toast.success(
-      `Slotted ${picks.map((p) => p.dragon.name).join(", ")}.`,
+      filled === 3
+        ? `Suggested ${picks.map((p) => p.dragon.name).join(", ")}.`
+        : `Slotted ${picks.map((p) => p.dragon.name).join(", ")}.`,
     );
   }
 
@@ -156,80 +159,52 @@ export function LineupEditor({
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {!embedded ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="lineup-name">Lineup name</Label>
-              <Badge variant="outline" className="rounded-md font-normal">
-                {lineupKindLabel(active.kind)}
-              </Badge>
-            </div>
-            <Input
-              id="lineup-name"
-              value={lineup.name}
-              onChange={(e) => updateLineup(lineup.id, { name: e.target.value })}
-              className="font-heading max-w-lg text-lg"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <Button variant="outline" onClick={copySummary}>
-              <Copy data-icon="inline-start" />
-              Copy
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                deleteLineup(lineup.id);
-                router.push("/lineups");
-              }}
-            >
-              <Trash2 data-icon="inline-start" />
-              Delete
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-end gap-2">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Label htmlFor="lineup-name">Lineup name</Label>
-            <Input
-              id="lineup-name"
-              value={lineup.name}
-              onChange={(e) => updateLineup(lineup.id, { name: e.target.value })}
-              className="font-heading text-lg"
-            />
-          </div>
-          <Button variant="outline" size="icon" onClick={copySummary}>
-            <Copy />
-            <span className="sr-only">Copy summary</span>
-          </Button>
-        </div>
-      )}
+    <div className="space-y-3 sm:space-y-4">
+      <div className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-20 -mx-2 bg-background/95 px-2 py-2 backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+        <FormationBoard
+          lineup={lineup}
+          state={state}
+          selectedSlot={selectedSlot}
+          onSelectSlot={setSelectedSlot}
+          onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
+          onNameChange={(name) => updateLineup(lineup.id, { name })}
+        />
+      </div>
 
-      <p className="text-sm text-muted-foreground">
-        {isTheory
-          ? "Theory craft any hatchery dragon and the stars you want. Nothing is added to your pit."
-          : "Only dragons in your pit. Stars and reign come from the pit, live."}
-      </p>
+      <Button
+        size="lg"
+        onClick={fillLine}
+        className="w-full"
+        disabled={pitEmpty}
+      >
+        <Sparkles data-icon="inline-start" />
+        Suggest team
+      </Button>
 
-      <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-          TROOP
-        </p>
-        <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap gap-1">
           {TROOP_TYPES.map((troop) => (
-            <ChoiceButton
+            <MiniChip
               key={troop}
               active={lineup.troop === troop}
               onClick={() => updateLineup(lineup.id, { troop })}
             >
               {troopShort[troop]}
-            </ChoiceButton>
+            </MiniChip>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-1">
+          {MODES.map((mode) => (
+            <MiniChip
+              key={mode}
+              active={lineup.mode === mode}
+              onClick={() => updateLineup(lineup.id, { mode })}
+            >
+              {modeShort[mode]}
+            </MiniChip>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
           {counter.beats
             ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
                 counter.losesTo
@@ -240,92 +215,86 @@ export function LineupEditor({
         </p>
       </div>
 
-      <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-          MODE
-        </p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          {MODES.map((mode) => (
-            <ChoiceButton
-              key={mode}
-              active={lineup.mode === mode}
-              onClick={() => updateLineup(lineup.id, { mode })}
-            >
-              {modeShort[mode]}
-            </ChoiceButton>
-          ))}
-        </div>
-      </div>
-
-      {!isTheory ? (
-        <div>
-          <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-            REIGN
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <ChoiceButton
-              active={!lineup.ignoreLevel}
-              onClick={() => updateLineup(lineup.id, { ignoreLevel: false })}
-            >
-              Use reign level
-            </ChoiceButton>
-            <ChoiceButton
-              active={lineup.ignoreLevel}
-              onClick={() => updateLineup(lineup.id, { ignoreLevel: true })}
-            >
-              Ignore level
-            </ChoiceButton>
+      <Disclosure
+        title="Options"
+        badge={
+          isTheory
+            ? `Aim ★${lineup.craftStars}`
+            : lineup.ignoreLevel
+              ? "Ignore level"
+              : "Use reign"
+        }
+      >
+        {!isTheory ? (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1">
+              <MiniChip
+                active={!lineup.ignoreLevel}
+                onClick={() => updateLineup(lineup.id, { ignoreLevel: false })}
+              >
+                Use reign level
+              </MiniChip>
+              <MiniChip
+                active={lineup.ignoreLevel}
+                onClick={() => updateLineup(lineup.id, { ignoreLevel: true })}
+              >
+                Ignore level
+              </MiniChip>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {lineup.ignoreLevel
+                ? "Suggestions rank by stars and kit only. Reign is hidden."
+                : "Higher reign ranks a dragon above an equal-star alternative."}
+            </p>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {lineup.ignoreLevel
-              ? "Suggestions rank by stars and kit only. Reign is hidden."
-              : "Higher reign ranks a dragon above an equal-star alternative."}
-          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
+              AIM FOR STARS
+            </p>
+            <StarRank
+              value={lineup.craftStars}
+              onChange={(craftStars) => updateLineup(lineup.id, { craftStars })}
+            />
+            <p className="text-xs text-muted-foreground">
+              New slots use ★{lineup.craftStars}. Change a slotted dragon below
+              without touching your pit.
+            </p>
+          </div>
+        )}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={copySummary}>
+            <Copy data-icon="inline-start" />
+            Copy
+          </Button>
+          {!embedded ? (
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteLineup(lineup.id);
+                router.push("/lineups");
+              }}
+            >
+              <Trash2 data-icon="inline-start" />
+              Delete
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => router.push("/lineups")}
+            >
+              Saved teams
+            </Button>
+          )}
         </div>
-      ) : (
-        <div>
-          <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-            AIM FOR STARS
-          </p>
-          <StarRank
-            value={lineup.craftStars}
-            onChange={(craftStars) => updateLineup(lineup.id, { craftStars })}
-          />
-          <p className="mt-2 text-xs text-muted-foreground">
-            New slots use ★{lineup.craftStars}. Change a slotted dragon below
-            without touching your pit.
-          </p>
-        </div>
-      )}
-
-      <div className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-20 -mx-2 bg-background/95 px-2 py-2 backdrop-blur-md sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-        <FormationBoard
-          lineup={lineup}
-          state={state}
-          selectedSlot={selectedSlot}
-          onSelectSlot={setSelectedSlot}
-          onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
-        />
-      </div>
+      </Disclosure>
 
       <section className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-heading min-w-0 truncate text-lg tracking-wide">
-            {selectedDragon
-              ? `Replace ${selectedDragon.name}`
-              : `Pick ${slotShort[selectedSlot]}`}
-          </h2>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={fillLine}
-            className="shrink-0"
-            disabled={pitEmpty}
-          >
-            <Sparkles data-icon="inline-start" />
-            Auto-fill
-          </Button>
-        </div>
+        <h2 className="font-heading min-w-0 truncate text-lg tracking-wide">
+          {selectedDragon
+            ? `Replace ${selectedDragon.name}`
+            : `Pick ${slotShort[selectedSlot]}`}
+        </h2>
         {selectedResolved ? (
           <div className="w-full rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10">
             <button
@@ -374,7 +343,7 @@ export function LineupEditor({
         ) : null}
 
         {isTheory ? (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-wrap gap-1">
             {(
               [
                 ["all", "Hatchery"],
@@ -382,13 +351,13 @@ export function LineupEditor({
                 ["owned", "In pit"],
               ] as const
             ).map(([id, label]) => (
-              <ChoiceButton
+              <MiniChip
                 key={id}
                 active={theoryPool === id}
                 onClick={() => setTheoryPool(id)}
               >
                 {label}
-              </ChoiceButton>
+              </MiniChip>
             ))}
           </div>
         ) : null}
@@ -404,16 +373,16 @@ export function LineupEditor({
 
         {pitEmpty ? (
           <EmptyState
-            title="Your pit is empty"
-            description="This builder only uses dragons you’ve logged, with their stars and reign. Add them in Hatchery, or load a sample."
+            title="Add your dragons first"
+            description="Log hatched dragons in the pit, then come back and pick a team. Suggest team ranks what you own."
             action={
               <div className="grid w-full max-w-sm gap-2">
                 <Button onClick={loadSample}>Load sample pit</Button>
                 <Button
                   variant="outline"
-                  onClick={() => router.push("/hatchery")}
+                  onClick={() => router.push("/pit")}
                 >
-                  Open hatchery
+                  Open pit
                 </Button>
               </div>
             }
@@ -447,7 +416,12 @@ export function LineupEditor({
         ) : null}
       </section>
 
-      <SynergyPanel report={report} />
+      <Disclosure
+        title="Why this team"
+        badge={`${report.label} · ${report.score}`}
+      >
+        <SynergyPanel report={report} compact />
+      </Disclosure>
       <DragonSheet
         dragon={inspecting}
         open={!!inspecting}

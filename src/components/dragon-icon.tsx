@@ -9,6 +9,7 @@ const sizeClass = {
   md: "size-14",
   lg: "size-16",
   xl: "size-[4.75rem]",
+  "2xl": "size-[5.75rem]",
 } as const;
 
 const rarityRing: Record<Rarity, string> = {
@@ -59,7 +60,7 @@ export function DragonIcon({
           src={dragonImageSrc(dragonId, custom)}
           alt={name ?? ""}
           fill
-          sizes="96px"
+          sizes="128px"
           className="object-cover object-[center_30%]"
         />
       )}

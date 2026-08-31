@@ -1,12 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChoiceButton } from "@/components/chip";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
-import { Input } from "@/components/ui/input";
+import { ListFilterBar } from "@/components/list-filter-bar";
 import { DRAGONS } from "@/data/dragons";
-import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopShort } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Dragon, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -39,106 +37,65 @@ export function HatcheryPage() {
     : false;
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       <div>
         <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
           Hatchery
         </h1>
-        <p className="mt-1 hidden max-w-xl text-sm text-muted-foreground sm:block">
-          Tap a dragon to read stats, habit, and command. Portraits come from
-          the official Dragonfire site when they have one. Add it to your pit,
-          then slot it from Build → Your pit. Theory craft uses the hatchery
-          without adding anything.
+        <p className="mt-1 text-sm text-muted-foreground">
+          Tap a dragon, add it to your pit, then pick a team.
         </p>
       </div>
-      <Input
-        placeholder="Search dragons…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        enterKeyHint="search"
-      />
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-        <ChoiceButton
-          active={breed === "all"}
-          onClick={() => setBreed("all")}
-        >
-          All
-        </ChoiceButton>
-        {BREEDS.map((b) => (
-          <ChoiceButton
-            key={b}
-            active={breed === b}
-            onClick={() => setBreed(b)}
-          >
-            {breedLabels[b]}
-          </ChoiceButton>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <ChoiceButton
-          active={rarity === "all"}
-          onClick={() => setRarity("all")}
-        >
-          Any rarity
-        </ChoiceButton>
-        {RARITIES.map((r) => (
-          <ChoiceButton
-            key={r}
-            active={rarity === r}
-            onClick={() => setRarity(r)}
-          >
-            {rarityLabels[r]}
-          </ChoiceButton>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <ChoiceButton
-          active={troop === "all"}
-          onClick={() => setTroop("all")}
-        >
-          Any troop
-        </ChoiceButton>
-        {TROOP_TYPES.map((t) => (
-          <ChoiceButton
-            key={t}
-            active={troop === t}
-            onClick={() => setTroop(t)}
-          >
-            {troopShort[t]}
-          </ChoiceButton>
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
-      </p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-        {filtered.map((d) => {
-          const owned = state.owned.some((o) => o.dragonId === d.id);
-          return (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setInspecting(d)}
-              className={cn(
-                "flex min-h-[7.5rem] flex-col items-center gap-1.5 rounded-2xl bg-card/70 px-1 py-3 ring-1 ring-foreground/10 select-none",
-                owned && "ring-amber-400/30",
-              )}
-            >
-              <DragonIcon
-                dragonId={d.id}
-                name={d.name}
-                rarity={d.rarity}
-                size="xl"
-              />
-              <span className="w-full truncate text-center text-xs font-medium">
-                {d.name}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {owned ? "In pit" : "Stats"}
-              </span>
-            </button>
-          );
-        })}
+      <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+        <ListFilterBar
+          query={query}
+          onQueryChange={setQuery}
+          placeholder="Search dragons…"
+          breed={breed}
+          onBreedChange={setBreed}
+          rarity={rarity}
+          onRarityChange={setRarity}
+          troop={troop}
+          onTroopChange={setTroop}
+        />
+        <p className="px-3 py-2 text-xs text-muted-foreground">
+          {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
+        </p>
+        {filtered.length === 0 ? (
+          <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+            Nothing matches those filters.
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 p-2 sm:grid-cols-4 lg:grid-cols-6">
+            {filtered.map((d) => {
+              const owned = state.owned.some((o) => o.dragonId === d.id);
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setInspecting(d)}
+                  className={cn(
+                    "flex min-h-[7.5rem] flex-col items-center gap-1.5 rounded-2xl bg-background/50 px-1 py-3 ring-1 ring-foreground/10 select-none",
+                    owned && "ring-amber-400/30",
+                  )}
+                >
+                  <DragonIcon
+                    dragonId={d.id}
+                    name={d.name}
+                    rarity={d.rarity}
+                    size="xl"
+                  />
+                  <span className="w-full truncate text-center text-xs font-medium">
+                    {d.name}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {owned ? "In pit" : "Stats"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
       <DragonSheet
         dragon={inspecting}

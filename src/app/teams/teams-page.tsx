@@ -28,10 +28,10 @@ export function TeamsPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Teams</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">War kits</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-            Bundle lineups you swap between: a PvP wall, a rally, and a keep
-            defense as one war kit.
+            Bundle saved teams you swap between: a PvP wall, a rally, and a keep
+            defense as one kit.
           </p>
         </div>
         <Button

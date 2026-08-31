@@ -72,6 +72,7 @@ type PitContextValue = {
   slotDragons: (
     lineupId: string,
     picks: { slot: SlotId; dragonId: string }[],
+    options?: { replace?: boolean },
   ) => void;
   updateSlotPick: (
     lineupId: string,
@@ -394,10 +395,21 @@ export function PitProvider({ children }: { children: ReactNode }) {
     (
       lineupId: string,
       picks: { slot: SlotId; dragonId: string }[],
+      options?: { replace?: boolean },
     ) => {
-      if (picks.length === 0) return;
+      if (picks.length === 0 && !options?.replace) return;
       commit((prev) => {
         let next = prev;
+        if (options?.replace) {
+          next = {
+            ...next,
+            lineups: next.lineups.map((lineup) =>
+              lineup.id === lineupId
+                ? { ...lineup, slots: emptySlots(), updatedAt: nowIso() }
+                : lineup,
+            ),
+          };
+        }
         for (const pick of picks) {
           next = applySlotDragon(next, lineupId, pick.slot, pick.dragonId);
         }

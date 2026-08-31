@@ -68,3 +68,31 @@ export function ChoiceButton({
     </button>
   );
 }
+
+export function MiniChip({
+  active,
+  onClick,
+  children,
+  className,
+}: {
+  active?: boolean;
+  onClick?: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 text-xs ring-1 select-none",
+        active
+          ? "bg-amber-500/25 text-amber-50 ring-amber-300"
+          : "text-muted-foreground ring-foreground/15 hover:bg-muted",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}

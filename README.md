@@ -1,32 +1,30 @@
 # Dragonfire Pit
 
-Unofficial fan tool for **Game of Thrones: Dragonfire**. Open the site and go
-straight into picking a troop, a lane, and a suggested dragon. Pit builds
-use your collection; theory builds do not.
-
-Nothing here is affiliated with HBO, Warner Bros., or the game. Dragon stats
-and habits are compiled from public community sources and can drift after
-patches.
+Unofficial fan tool for **Game of Thrones: Dragonfire**. Log the dragons you
+hatched, then pick a three-dragon team. **Suggest team** ranks a line from
+what you own (or from the hatchery in Theory). Nothing here is affiliated
+with HBO, Warner Bros., or the game.
 
 ## What you can do
 
-- **Build** — two boards. **Your pit** only slots dragons you own and
-  ranks them by stars (and reign, unless you ignore level). **Theory**
-  lets you try hatchery dragons and star ranks you do not own yet;
-  those picks never land in the pit.
+- **Team** — the three-lane formation is the first thing you see. Choose
+  Pit (only dragons you logged) or Theory (any hatchery dragon, stars you
+  aim for). Troop and mode sit under the board as compact chips. **Suggest
+  team** fills empty lanes, or replaces a full line if you want a second
+  opinion.
+- **Pit** — your collection. Search, breed, rarity, and troop filters sit
+  on the list. Star rank stays between reigns; reign level is this
+  campaign. Slotting a team never adds a dragon here — you add them
+  yourself.
 - **Hatchery** — the roster, with official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
-  site has them. A few hatchery names are not listed there yet, so those
-  keep stand-in art.
-- **Pit** — your collection with star rank (1–10) and reign level. Export and
-  import JSON backups here. Unlisted dragons can be recorded by hand.
-- **Lineups** — saved formations. Open one to keep picking.
-- **Teams** — attach several lineups into one kit (for example a war kit with
-  PvP, rally, and defense).
+  site has them. A few names are not listed there yet, so those keep
+  stand-in art. Add a dragon to the pit, then pick it on Team.
+- **Saved** (desktop nav, or Team → Saved) — named formations and optional
+  teams that bundle several lines (PvP, rally, defense).
 
-The layout is built for a phone in one hand: bottom tabs, a three-lane
-formation that stays in a row, and suggestion tiles you can tap without
-pinching.
+The layout is built for a phone in one hand: three bottom tabs, a sticky
+formation, and suggestion tiles you can tap without pinching.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** cyan, **Fire** red, **Recovery** green, with matching

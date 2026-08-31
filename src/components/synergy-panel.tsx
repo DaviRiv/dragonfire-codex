@@ -3,30 +3,44 @@ import type { SynergyReport } from "@/lib/synergy";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 
-export function SynergyPanel({ report }: { report: SynergyReport }) {
+export function SynergyPanel({
+  report,
+  compact,
+}: {
+  report: SynergyReport;
+  compact?: boolean;
+}) {
   return (
-    <aside className="space-y-4 rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10 sm:p-4">
-      <div>
-        <p className="font-heading text-xs tracking-[0.2em] text-muted-foreground">
-          FORMATION READ
-        </p>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <p className="font-heading text-xl sm:text-2xl">{report.label}</p>
-          <p className="text-sm text-muted-foreground">
-            {report.score}/{report.maxScore}
+    <aside
+      className={cn(
+        compact
+          ? "space-y-2"
+          : "space-y-4 rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10 sm:p-4",
+      )}
+    >
+      {compact ? null : (
+        <div>
+          <p className="font-heading text-xs tracking-[0.2em] text-muted-foreground">
+            FORMATION READ
           </p>
+          <div className="mt-2 flex items-end justify-between gap-3">
+            <p className="font-heading text-xl sm:text-2xl">{report.label}</p>
+            <p className="text-sm text-muted-foreground">
+              {report.score}/{report.maxScore}
+            </p>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-700 to-amber-300"
+              style={{ width: `${report.score}%` }}
+            />
+          </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-amber-700 to-amber-300"
-            style={{ width: `${report.score}%` }}
-          />
-        </div>
-      </div>
+      )}
       <div className="space-y-2">
         {report.notes.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Slot dragons to see affinity, flank habits, and breed coverage.
+            Slot three dragons to see affinity, flanks, and breed coverage.
           </p>
         ) : (
           report.notes.map((note, i) => (

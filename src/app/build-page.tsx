@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { LineupEditor } from "@/app/lineups/lineup-editor";
-import { ChoiceButton } from "@/components/chip";
+import { MiniChip } from "@/components/chip";
 import { Button } from "@/components/ui/button";
 import { usePit } from "@/lib/store";
 import { troopShort } from "@/lib/labels";
@@ -45,16 +46,30 @@ export function BuildPage() {
       : ofKind[0]?.id) ?? null;
 
   if (!ready || !resolvedId) {
-    return <p className="text-sm text-muted-foreground">Opening the board…</p>;
+    return <p className="text-sm text-muted-foreground">Opening your team…</p>;
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
-          Build a line
-        </h1>
+    <div className="space-y-2 sm:space-y-4">
+      <div className="flex items-center gap-1.5">
+        <MiniChip active={kind === "pit"} onClick={() => chooseKind("pit")}>
+          Pit
+        </MiniChip>
+        <MiniChip
+          active={kind === "theory"}
+          onClick={() => chooseKind("theory")}
+        >
+          Theory
+        </MiniChip>
+        <Link
+          href="/lineups"
+          className="ml-auto inline-flex min-h-9 items-center px-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Saved
+        </Link>
         <Button
+          size="icon"
+          variant="outline"
           onClick={() => {
             const lineup = createLineup(
               kind === "theory"
@@ -64,42 +79,23 @@ export function BuildPage() {
             );
             setActiveId(lineup.id);
           }}
-          className="shrink-0"
+          aria-label="New team"
         >
-          <Plus data-icon="inline-start" />
-          New
+          <Plus />
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <ChoiceButton
-          active={kind === "pit"}
-          onClick={() => chooseKind("pit")}
-        >
-          Your pit
-        </ChoiceButton>
-        <ChoiceButton
-          active={kind === "theory"}
-          onClick={() => chooseKind("theory")}
-        >
-          Theory
-        </ChoiceButton>
-      </div>
-
       {ofKind.length > 1 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {ofKind.map((lineup) => (
-            <ChoiceButton
+            <MiniChip
               key={lineup.id}
               active={resolvedId === lineup.id}
               onClick={() => setActiveId(lineup.id)}
-              className="w-auto min-w-[7.5rem] px-3"
             >
               {lineup.name}
-              <span className="ml-1.5 text-[11px] opacity-70">
-                {troopShort[lineup.troop]}
-              </span>
-            </ChoiceButton>
+              <span className="ml-1 opacity-70">{troopShort[lineup.troop]}</span>
+            </MiniChip>
           ))}
         </div>
       ) : null}

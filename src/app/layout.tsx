@@ -21,9 +21,9 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "Dragonfire — Build a line",
+  title: "Dragonfire — Pick a team",
   description:
-    "Unofficial Game of Thrones: Dragonfire tool. Build from your pit, or theory-craft dragons you want.",
+    "Unofficial Game of Thrones: Dragonfire tool. Log your dragons, then pick a three-dragon team.",
   icons: { icon: "/favicon.svg" },
   appleWebApp: {
     capable: true,
@@ -48,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <Providers>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-2 py-3 sm:px-4 sm:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-2 py-2 sm:px-4 sm:py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8">
             {children}
           </main>
           <footer className="hidden border-t border-border/60 px-4 py-6 text-center text-xs text-muted-foreground md:block">

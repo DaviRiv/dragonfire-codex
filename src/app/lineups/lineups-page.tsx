@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { LineupCard } from "@/components/lineup-card";
-import { ChoiceButton } from "@/components/chip";
+import { MiniChip } from "@/components/chip";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { usePit } from "@/lib/store";
 import type { LineupKind } from "@/lib/types";
 import { Plus } from "lucide-react";
@@ -37,10 +38,14 @@ export function LineupsPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Saved lineups</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Saved teams</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Pit lines use dragons you own. Theory lines are wish-lists — stars
-            you set here never change the pit.
+            you set here never change the pit.{" "}
+            <Link href="/teams" className="text-amber-200 underline-offset-2 hover:underline">
+              Bundle into a war kit
+            </Link>
+            .
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
@@ -59,7 +64,7 @@ export function LineupsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-1">
         {(
           [
             ["all", "All"],
@@ -67,13 +72,13 @@ export function LineupsPage() {
             ["theory", "Theory"],
           ] as const
         ).map(([id, label]) => (
-          <ChoiceButton
+          <MiniChip
             key={id}
             active={filter === id}
             onClick={() => setFilter(id)}
           >
             {label}
-          </ChoiceButton>
+          </MiniChip>
         ))}
       </div>
 
