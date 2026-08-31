@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { AbilityText } from "@/components/ability-text";
 import { DragonIcon } from "@/components/dragon-icon";
-import { StatGrid } from "@/components/dragon-profile";
+import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { star6Ability, vanguardBonus } from "@/lib/habits";
+import { dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
 import { breedChipClass, breedLabels } from "@/lib/labels";
 import type { DragonSuggestion } from "@/lib/suggest";
 import type { SlotId } from "@/lib/types";
@@ -60,6 +59,7 @@ export function SuggestTile({
   const synergy = reasons[0];
   const star6 = star6Ability(dragon);
   const frontBonus = slot === "vanguard" ? vanguardBonus(dragon) : null;
+  const kit = dragonKit(dragon);
 
   return (
     <div className={cn("min-w-0", selected && "bg-amber-500/20")}>
@@ -165,35 +165,20 @@ export function SuggestTile({
               ))}
             </ul>
           </div>
-          {frontBonus ? (
-            <div>
-              <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-                VANGUARD
-              </p>
-              <p className="mt-1 text-sm leading-snug text-emerald-100/90">
-                <AbilityText text={frontBonus} />
-              </p>
-            </div>
-          ) : null}
-          <StatGrid stats={dragon.stats} compact />
+          <AbilityBlock title="Command" body={kit.command} />
+          {kit.extras.map((extra) => (
+            <AbilityBlock
+              key={extra.title}
+              title={extra.title}
+              body={extra.body}
+            />
+          ))}
           <div>
             <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              COMMAND
+              STATS
             </p>
-            <p className="mt-1 text-sm leading-snug">
-              <AbilityText text={dragon.command} />
-            </p>
+            <StatGrid stats={dragon.stats} compact className="mt-2" />
           </div>
-          {star6 ? (
-            <div>
-              <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-                (6+ STARS)
-              </p>
-              <p className="mt-1 text-sm leading-snug">
-                <AbilityText text={star6} />
-              </p>
-            </div>
-          ) : null}
           {owned && onSaveNotes ? (
             <div className="space-y-1.5">
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground">

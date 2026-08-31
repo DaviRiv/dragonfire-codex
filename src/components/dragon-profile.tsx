@@ -2,7 +2,7 @@ import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
-import { star6Ability, vanguardBonus } from "@/lib/habits";
+import { dragonKit } from "@/lib/habits";
 import {
   breedLabels,
   breedRoles,
@@ -67,7 +67,7 @@ export function DragonProfile({
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
 }) {
-  const star6 = star6Ability(dragon);
+  const kit = dragonKit(dragon);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -90,15 +90,6 @@ export function DragonProfile({
         affinities={dragon.affinities}
         highlight={highlightTroop}
       />
-      <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-          STATS
-        </p>
-        <StatGrid stats={dragon.stats} />
-      </div>
-      <AbilityBlock title="Command" body={dragon.command} />
-      {star6 ? <AbilityBlock title="(6+ stars)" body={star6} /> : null}
-      <AbilityBlock title="Vanguard bonus" body={vanguardBonus(dragon)} />
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {dragon.tags.map((tag) => (
@@ -106,11 +97,21 @@ export function DragonProfile({
           ))}
         </div>
       ) : null}
+      <AbilityBlock title="Command" body={kit.command} />
+      {kit.extras.map((extra) => (
+        <AbilityBlock key={extra.title} title={extra.title} body={extra.body} />
+      ))}
+      <div>
+        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
+          STATS
+        </p>
+        <StatGrid stats={dragon.stats} />
+      </div>
     </div>
   );
 }
 
-function AbilityBlock({ title, body }: { title: string; body: string }) {
+export function AbilityBlock({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-xl bg-muted/50 p-3 text-sm">
       <p className="text-[10px] tracking-[0.2em] text-muted-foreground">

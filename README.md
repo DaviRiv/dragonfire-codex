@@ -14,9 +14,9 @@ with HBO, Warner Bros., or the game.
   synergy plus damage and healing. The formation is large so you can
   read the lane. Pick rows stay thin: name and synergy, or the
   **vanguard skill** when that lane is selected. Turn on **Abilities**
-  for command and the unique **(6+ stars)** skill. The chevron opens the
-  rest. Six-star text comes from
-  [Dragonfire-Hub](https://dragonfire-hub.com/).
+  for command and the unique **(6+ stars)** skill. Open a row for the
+  full command, Habits 1–5, vanguard skill, and stats at the bottom.
+  Ability text comes from [Dragonfire-Hub](https://dragonfire-hub.com/).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -56,6 +56,6 @@ work in-game even when a dragon is already marching.
 
 Portraits for dragons listed on the official site are copied from
 [gotdragonfire.com](https://gotdragonfire.com/dragons/) for local use in
-this unofficial fan tool. Warner Bros. and HBO own that art. Unique
-6-star ability text is transcribed from
+this unofficial fan tool. Warner Bros. and HBO own that art. Command and
+habit text is transcribed from
 [dragonfire-hub.com](https://dragonfire-hub.com/).
