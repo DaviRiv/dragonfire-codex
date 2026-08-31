@@ -1,5 +1,6 @@
 import { DRAGONS } from "@/data/dragons";
 import { newId, nowIso } from "@/lib/dragons";
+import { makePick } from "@/lib/lineup";
 import type { Lineup, OwnedDragon, PitState, Team } from "@/lib/types";
 
 function own(
@@ -44,56 +45,85 @@ export function samplePit(): PitState {
   const pvp: Lineup = {
     id: newId("lineup"),
     name: "Shield wall",
+    kind: "pit",
     mode: "pvp",
     troop: "shieldbearers",
     notes: "Vhagar soaks, Malachite recovers, Venator finishes.",
     slots: {
-      left: malachite.id,
-      vanguard: vhagar.id,
-      right: venator.id,
+      left: makePick("malachite", 5, 28),
+      vanguard: makePick("vhagar", 4, 30),
+      right: makePick("venator", 6, 32),
     },
+    ignoreLevel: false,
+    craftStars: 10,
     updatedAt: nowIso(),
   };
 
   const spears: Lineup = {
     id: newId("lineup"),
     name: "Blood wyrm spears",
+    kind: "pit",
     mode: "rally",
     troop: "spearmen",
     notes: "Caraxes in vanguard for the fire nuke; Syrax feeds First-Strike.",
     slots: {
-      left: syrax.id,
-      vanguard: caraxes.id,
-      right: vaeldra.id,
+      left: makePick("syrax", 5, 30),
+      vanguard: makePick("caraxes", 4, 26),
+      right: makePick("vaeldra", 4, 24),
     },
+    ignoreLevel: false,
+    craftStars: 10,
     updatedAt: nowIso(),
   };
 
   const archers: Lineup = {
     id: newId("lineup"),
     name: "Bow march",
+    kind: "pit",
     mode: "pve",
     troop: "archers",
     notes: "Daemoros carries. Seasmoke cleanses; Crimson stuns on odd rounds.",
     slots: {
-      left: seasmoke.id,
-      vanguard: daemoros.id,
-      right: crimson.id,
+      left: makePick("seasmoke", 3, 22),
+      vanguard: makePick("daemoros", 5, 25),
+      right: makePick("crimson", 3, 20),
     },
+    ignoreLevel: false,
+    craftStars: 10,
     updatedAt: nowIso(),
   };
 
   const defense: Lineup = {
     id: newId("lineup"),
     name: "Keep watch",
+    kind: "pit",
     mode: "defense",
     troop: "shieldbearers",
     notes: "Velar Advantage plus the shield wall core.",
     slots: {
-      left: velar.id,
-      vanguard: vhagar.id,
-      right: malachite.id,
+      left: makePick("velar", 4, 21),
+      vanguard: makePick("vhagar", 4, 30),
+      right: makePick("malachite", 5, 28),
     },
+    ignoreLevel: false,
+    craftStars: 10,
+    updatedAt: nowIso(),
+  };
+
+  const dream: Lineup = {
+    id: newId("lineup"),
+    name: "Sun court",
+    kind: "theory",
+    mode: "pvp",
+    troop: "spearmen",
+    notes: "Aspirational 10-star core you do not own yet.",
+    slots: {
+      left: makePick("syrax", 10, 30),
+      vanguard: makePick("sunfyre", 10, 1),
+      right: makePick("caraxes", 10, 26),
+    },
+    ignoreLevel: true,
+    craftStars: 10,
     updatedAt: nowIso(),
   };
 
@@ -115,10 +145,10 @@ export function samplePit(): PitState {
   ];
 
   return {
-    version: 1,
+    version: 2,
     owned,
     customDragons: [],
-    lineups: [pvp, spears, archers, defense],
+    lineups: [pvp, spears, archers, defense, dream],
     teams,
   };
 }

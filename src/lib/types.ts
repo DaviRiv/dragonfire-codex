@@ -14,6 +14,7 @@ export type MarchSpeed =
   | "very-fast";
 export type LineupMode = "pvp" | "pve" | "rally" | "defense" | "gathering";
 export type SlotId = "left" | "vanguard" | "right";
+export type LineupKind = "pit" | "theory";
 
 export interface DragonStats {
   strength: number;
@@ -46,19 +47,28 @@ export interface OwnedDragon {
   notes: string;
 }
 
+export interface LineupPick {
+  dragonId: string;
+  starRank: number;
+  reignLevel: number;
+}
+
 export interface LineupSlots {
-  left: string | null;
-  vanguard: string | null;
-  right: string | null;
+  left: LineupPick | null;
+  vanguard: LineupPick | null;
+  right: LineupPick | null;
 }
 
 export interface Lineup {
   id: string;
   name: string;
+  kind: LineupKind;
   mode: LineupMode;
   troop: TroopType;
   notes: string;
   slots: LineupSlots;
+  ignoreLevel: boolean;
+  craftStars: number;
   updatedAt: string;
 }
 
@@ -71,7 +81,7 @@ export interface Team {
 }
 
 export interface PitState {
-  version: 1;
+  version: 2;
   owned: OwnedDragon[];
   customDragons: Dragon[];
   lineups: Lineup[];

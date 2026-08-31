@@ -1,8 +1,8 @@
 # Dragonfire Pit
 
 Unofficial fan tool for **Game of Thrones: Dragonfire**. Open the site and go
-straight into picking a troop, a lane, and a suggested dragon. Slotting a
-dragon also adds it to your pit.
+straight into picking a troop, a lane, and a suggested dragon. Pit builds
+use your collection; theory builds do not.
 
 Nothing here is affiliated with HBO, Warner Bros., or the game. Dragon stats
 and habits are compiled from public community sources and can drift after
@@ -10,9 +10,10 @@ patches.
 
 ## What you can do
 
-- **Build** — the home screen. Choose troop type and a lane; suggestions rank
-  hatchery dragons for that combination. Tap to slot. Fill empty lanes in one
-  shot if you want a starter line.
+- **Build** — two boards. **Your pit** only slots dragons you own and
+  ranks them by stars (and reign, unless you ignore level). **Theory**
+  lets you try hatchery dragons and star ranks you do not own yet;
+  those picks never land in the pit.
 - **Hatchery** — the roster, with official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
   site has them. A few hatchery names are not listed there yet, so those

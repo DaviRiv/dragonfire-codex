@@ -1,7 +1,7 @@
 "use client";
 
 import { DragonIcon } from "@/components/dragon-icon";
-import { findDragon } from "@/lib/dragons";
+import { formatInvestment, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import { slotShort } from "@/lib/labels";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -23,10 +23,10 @@ export function FormationBoard({
   return (
     <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-2 ring-1 ring-amber-500/20 sm:p-4">
       <p className="mb-1 text-center font-heading text-[10px] tracking-[0.28em] text-amber-200/80 sm:mb-2 sm:text-xs">
-        YOUR LINE
+        {lineup.kind === "theory" ? "THEORY LINE" : "YOUR LINE"}
       </p>
       <div className="grid grid-cols-3 gap-1">
-        {(["left", "vanguard", "right"] as SlotId[]).map((slot) => (
+        {SLOT_IDS.map((slot) => (
           <SlotButton
             key={slot}
             slot={slot}
@@ -57,11 +57,8 @@ function SlotButton({
   onSelect?: (slot: SlotId) => void;
   onClear?: (slot: SlotId) => void;
 }) {
-  const ownedId = lineup.slots[slot];
-  const owned = state.owned.find((o) => o.id === ownedId);
-  const dragon = owned
-    ? findDragon(owned.dragonId, state.customDragons)
-    : undefined;
+  const resolved = resolveSlot(lineup, state, slot);
+  const dragon = resolved?.dragon;
 
   return (
     <div className="relative">
@@ -88,6 +85,14 @@ function SlotButton({
         <span className="max-w-full truncate text-xs">
           {dragon?.name ?? "Tap"}
         </span>
+        {resolved ? (
+          <span className="text-[10px] text-amber-100/80">
+            {formatInvestment(resolved.starRank, resolved.reignLevel, {
+              kind: lineup.kind,
+              ignoreLevel: lineup.ignoreLevel,
+            })}
+          </span>
+        ) : null}
       </button>
       {dragon && onClear ? (
         <button

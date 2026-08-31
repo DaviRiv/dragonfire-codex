@@ -23,7 +23,7 @@ const cinzel = Cinzel({
 export const metadata: Metadata = {
   title: "Dragonfire — Build a line",
   description:
-    "Unofficial Game of Thrones: Dragonfire tool. Pick a troop and a lane, then tap suggested dragons into formation.",
+    "Unofficial Game of Thrones: Dragonfire tool. Build from your pit, or theory-craft dragons you want.",
   icons: { icon: "/favicon.svg" },
   appleWebApp: {
     capable: true,

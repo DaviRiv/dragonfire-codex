@@ -1,4 +1,5 @@
 import { allDragons, findDragon } from "@/lib/dragons";
+import { investmentScore, placedInLineup, resolveSlot, slottedDragonIds } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import type { Dragon, Lineup, OwnedDragon, PitState, SlotId } from "@/lib/types";
 
@@ -7,31 +8,12 @@ export interface DragonSuggestion {
   owned: OwnedDragon | null;
   score: number;
   reasons: string[];
-}
-
-function slottedCatalogIds(lineup: Lineup, state: PitState): Set<string> {
-  const ids = new Set<string>();
-  (["left", "vanguard", "right"] as SlotId[]).forEach((slot) => {
-    const ownedId = lineup.slots[slot];
-    if (!ownedId) return;
-    const owned = state.owned.find((o) => o.id === ownedId);
-    if (owned) ids.add(owned.dragonId);
-  });
-  return ids;
+  starRank: number;
+  reignLevel: number;
 }
 
 function placedBreeds(lineup: Lineup, state: PitState): Set<string> {
-  const breeds = new Set<string>();
-  (["left", "vanguard", "right"] as SlotId[]).forEach((slot) => {
-    const ownedId = lineup.slots[slot];
-    if (!ownedId) return;
-    const owned = state.owned.find((o) => o.id === ownedId);
-    const dragon = owned
-      ? findDragon(owned.dragonId, state.customDragons)
-      : undefined;
-    if (dragon) breeds.add(dragon.breed);
-  });
-  return breeds;
+  return new Set(placedInLineup(lineup, state).map((p) => p.dragon.breed));
 }
 
 function scoreDragon(
@@ -44,15 +26,33 @@ function scoreDragon(
   let score = 0;
   const reasons: string[] = [];
   const troopName = troopLabels[lineup.troop];
+  const starRank =
+    lineup.kind === "theory"
+      ? lineup.craftStars
+      : owned?.starRank ?? 1;
+  const reignLevel = owned?.reignLevel ?? 1;
 
   if (dragon.affinities.includes(lineup.troop)) {
     score += 40;
     reasons.push(`Matches ${troopName}`);
   }
 
-  if (owned) {
-    score += 14;
-    reasons.push("In your pit");
+  if (lineup.kind === "pit" && owned) {
+    score += 8 + investmentScore(owned.starRank, owned.reignLevel, lineup.ignoreLevel) / 8;
+    reasons.push(
+      lineup.ignoreLevel
+        ? `★${owned.starRank} in pit`
+        : `★${owned.starRank} · R${owned.reignLevel}`,
+    );
+  }
+
+  if (lineup.kind === "theory") {
+    if (owned) {
+      score += 6;
+      reasons.push(`Own ★${owned.starRank}`);
+    } else {
+      reasons.push(`Aim ★${lineup.craftStars}`);
+    }
   }
 
   if (slot === "vanguard") {
@@ -104,10 +104,7 @@ function scoreDragon(
     reasons.push(`Adds ${breedLabels[dragon.breed]}`);
   }
 
-  if (
-    dragon.tags.includes("Recovery") &&
-    lineup.mode === "pve"
-  ) {
+  if (dragon.tags.includes("Recovery") && lineup.mode === "pve") {
     score += 8;
     reasons.push("Recovery for PvE");
   }
@@ -116,7 +113,14 @@ function scoreDragon(
     reasons.push(`For ${slotLabels[slot]}`);
   }
 
-  return { dragon, owned, score, reasons: reasons.slice(0, 2) };
+  return {
+    dragon,
+    owned,
+    score,
+    reasons: reasons.slice(0, 2),
+    starRank,
+    reignLevel,
+  };
 }
 
 export function suggestDragons({
@@ -125,23 +129,35 @@ export function suggestDragons({
   state,
   query = "",
   includeSlotted = false,
+  pool = "all",
 }: {
   lineup: Lineup;
   slot: SlotId;
   state: PitState;
   query?: string;
   includeSlotted?: boolean;
+  pool?: "all" | "owned" | "unowned";
 }): DragonSuggestion[] {
-  const used = slottedCatalogIds(lineup, state);
+  const used = slottedDragonIds(lineup, state);
   const breeds = placedBreeds(lineup, state);
   const q = query.trim().toLowerCase();
   const ownedByCatalog = new Map(
     state.owned.map((o) => [o.dragonId, o] as const),
   );
 
-  return allDragons(state.customDragons)
+  const source =
+    lineup.kind === "pit"
+      ? state.owned
+          .map((owned) => findDragon(owned.dragonId, state.customDragons))
+          .filter((d): d is Dragon => Boolean(d))
+      : allDragons(state.customDragons);
+
+  return source
     .filter((dragon) => {
       if (!includeSlotted && used.has(dragon.id)) return false;
+      const owned = ownedByCatalog.get(dragon.id) ?? null;
+      if (pool === "owned" && !owned) return false;
+      if (pool === "unowned" && owned) return false;
       if (!q) return true;
       return `${dragon.name} ${dragon.epithet} ${dragon.breed} ${dragon.tags.join(" ")}`
         .toLowerCase()
@@ -156,7 +172,10 @@ export function suggestDragons({
         breeds,
       ),
     )
-    .sort((a, b) => b.score - a.score || a.dragon.name.localeCompare(b.dragon.name));
+    .sort(
+      (a, b) =>
+        b.score - a.score || a.dragon.name.localeCompare(b.dragon.name),
+    );
 }
 
 export function suggestFullLine(
@@ -164,10 +183,10 @@ export function suggestFullLine(
   state: PitState,
 ): { slot: SlotId; dragon: Dragon }[] {
   const picks: { slot: SlotId; dragon: Dragon }[] = [];
-  const exclude = slottedCatalogIds(lineup, state);
+  const exclude = slottedDragonIds(lineup, state);
 
   (["vanguard", "left", "right"] as SlotId[]).forEach((slot) => {
-    if (lineup.slots[slot]) return;
+    if (resolveSlot(lineup, state, slot)) return;
     const next = suggestDragons({ lineup, slot, state }).find(
       (s) => !exclude.has(s.dragon.id),
     );

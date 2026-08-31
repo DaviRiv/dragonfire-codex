@@ -1,23 +1,14 @@
-import { findDragon, filledSlots, powerScore } from "@/lib/dragons";
+import { investmentScore, placedInLineup } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
-import type {
-  Dragon,
-  Lineup,
-  OwnedDragon,
-  PitState,
-  SlotId,
-} from "@/lib/types";
+import type { Lineup, PitState, SlotId } from "@/lib/types";
+import type { ResolvedSlot } from "@/lib/lineup";
 
 export interface SynergyNote {
   tone: "good" | "warn" | "info";
   text: string;
 }
 
-export interface PlacedDragon {
-  slot: SlotId;
-  owned: OwnedDragon;
-  dragon: Dragon;
-}
+export type PlacedDragon = ResolvedSlot;
 
 export interface SynergyReport {
   score: number;
@@ -42,17 +33,7 @@ export function placedDragons(
   lineup: Lineup,
   state: PitState,
 ): PlacedDragon[] {
-  const result: PlacedDragon[] = [];
-  (["left", "vanguard", "right"] as SlotId[]).forEach((slot) => {
-    const ownedId = lineup.slots[slot];
-    if (!ownedId) return;
-    const owned = state.owned.find((o) => o.id === ownedId);
-    if (!owned) return;
-    const dragon = findDragon(owned.dragonId, state.customDragons);
-    if (!dragon) return;
-    result.push({ slot, owned, dragon });
-  });
-  return result;
+  return placedInLineup(lineup, state);
 }
 
 export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
@@ -60,7 +41,14 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
   const notes: SynergyNote[] = [];
   let score = 0;
   const maxScore = 100;
-  const filled = filledSlots(lineup);
+  const filled = placed.length;
+
+  if (lineup.kind === "theory") {
+    notes.push({
+      tone: "info",
+      text: `Theory line at ★${lineup.craftStars} target. Nothing here is added to your pit.`,
+    });
+  }
 
   if (filled < 3) {
     notes.push({
@@ -151,7 +139,12 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
   const avgPower =
     placed.length === 0
       ? 0
-      : placed.reduce((sum, p) => sum + powerScore(p.owned), 0) / placed.length;
+      : placed.reduce(
+          (sum, p) =>
+            sum +
+            investmentScore(p.starRank, p.reignLevel, lineup.ignoreLevel),
+          0,
+        ) / placed.length;
   score += Math.min(16, Math.round(avgPower / 12));
 
   if (placed.some((p) => p.dragon.tags.includes("Recovery"))) {
@@ -176,13 +169,18 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
 
 export function summarizeLineup(lineup: Lineup, state: PitState): string {
   const placed = placedDragons(lineup, state);
+  const kind = lineup.kind === "theory" ? "theory" : "pit";
   const names = (["left", "vanguard", "right"] as SlotId[])
     .map((slot) => {
       const p = placed.find((x) => x.slot === slot);
       const letter = slot === "left" ? "L" : slot === "right" ? "R" : "V";
       if (!p) return `${letter}: empty`;
-      return `${letter}: ${p.dragon.name} ★${p.owned.starRank} Lv${p.owned.reignLevel}`;
+      const lvl =
+        lineup.kind === "theory" || lineup.ignoreLevel
+          ? `★${p.starRank}`
+          : `★${p.starRank} R${p.reignLevel}`;
+      return `${letter}: ${p.dragon.name} ${lvl}`;
     })
     .join(" · ");
-  return `${lineup.name} (${troopLabels[lineup.troop]}) — ${names}`;
+  return `${lineup.name} [${kind}] (${troopLabels[lineup.troop]}) — ${names}`;
 }

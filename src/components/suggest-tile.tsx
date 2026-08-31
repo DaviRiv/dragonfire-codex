@@ -10,13 +10,26 @@ export function SuggestTile({
   selected,
   onPick,
   onInspect,
+  kind,
+  ignoreLevel,
 }: {
   suggestion: DragonSuggestion;
   selected?: boolean;
   onPick: () => void;
   onInspect: () => void;
+  kind?: "pit" | "theory";
+  ignoreLevel?: boolean;
 }) {
-  const { dragon, owned, reasons } = suggestion;
+  const { dragon, owned, reasons, starRank, reignLevel } = suggestion;
+  const meta =
+    kind === "theory"
+      ? owned
+        ? `Aim ★${starRank} · own ★${owned.starRank}`
+        : `Aim ★${starRank}`
+      : ignoreLevel
+        ? `★${starRank}`
+        : `★${starRank} · R${reignLevel}`;
+
   return (
     <div
       className={cn(
@@ -50,8 +63,8 @@ export function SuggestTile({
             className="mt-0.5 line-clamp-2 block text-xs leading-snug text-foreground/80"
           />
         </span>
-        <span className="shrink-0 self-start pt-1 text-xs text-muted-foreground">
-          {selected ? "Slotted" : owned ? `★${owned.starRank}` : "Slot"}
+        <span className="shrink-0 self-start pt-1 text-right text-xs text-muted-foreground">
+          {selected ? "Slotted" : meta}
         </span>
       </button>
       <button

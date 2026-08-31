@@ -46,8 +46,9 @@ export function HatcheryPage() {
         </h1>
         <p className="mt-1 hidden max-w-xl text-sm text-muted-foreground sm:block">
           Tap a dragon to read stats, habit, and command. Portraits come from
-          the official Dragonfire site when they have one. Add it to your pit
-          from there, or slot it from Build.
+          the official Dragonfire site when they have one. Add it to your pit,
+          then slot it from Build → Your pit. Theory craft uses the hatchery
+          without adding anything.
         </p>
       </div>
       <Input

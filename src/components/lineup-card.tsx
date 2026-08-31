@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { TroopBadge } from "@/components/affinity-badges";
 import { DragonIcon } from "@/components/dragon-icon";
-import { findDragon, filledSlots } from "@/lib/dragons";
+import { filledCount, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import { modeLabels, slotShort } from "@/lib/labels";
-import type { Lineup, PitState, SlotId } from "@/lib/types";
+import type { Lineup, PitState } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 
 export function LineupCard({
@@ -13,7 +13,7 @@ export function LineupCard({
   lineup: Lineup;
   state: PitState;
 }) {
-  const filled = filledSlots(lineup);
+  const filled = filledCount(lineup, state);
   return (
     <Link
       href={`/lineups/${lineup.id}`}
@@ -23,17 +23,24 @@ export function LineupCard({
         <div className="min-w-0">
           <p className="font-heading text-lg tracking-wide">{lineup.name}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {modeLabels[lineup.mode]} · {filled}/3 slotted
+            {lineupKindLabel(lineup.kind)} · {modeLabels[lineup.mode]} · {filled}
+            /3 slotted
           </p>
         </div>
-        <TroopBadge troop={lineup.troop} />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge
+            variant="outline"
+            className="rounded-md font-normal"
+          >
+            {lineupKindLabel(lineup.kind)}
+          </Badge>
+          <TroopBadge troop={lineup.troop} />
+        </div>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
-        {(["left", "vanguard", "right"] as SlotId[]).map((slot) => {
-          const owned = state.owned.find((o) => o.id === lineup.slots[slot]);
-          const dragon = owned
-            ? findDragon(owned.dragonId, state.customDragons)
-            : undefined;
+        {SLOT_IDS.map((slot) => {
+          const resolved = resolveSlot(lineup, state, slot);
+          const dragon = resolved?.dragon;
           return (
             <div
               key={slot}
@@ -53,6 +60,11 @@ export function LineupCard({
               <p className="w-full truncate text-xs">
                 {dragon?.name ?? "Empty"}
               </p>
+              {resolved ? (
+                <p className="text-[10px] text-muted-foreground">
+                  ★{resolved.starRank}
+                </p>
+              ) : null}
             </div>
           );
         })}
@@ -73,11 +85,9 @@ export function MiniSlotRow({
 }) {
   return (
     <div className="flex items-center gap-2">
-      {(["left", "vanguard", "right"] as SlotId[]).map((slot) => {
-        const owned = state.owned.find((o) => o.id === lineup.slots[slot]);
-        const dragon = owned
-          ? findDragon(owned.dragonId, state.customDragons)
-          : undefined;
+      {SLOT_IDS.map((slot) => {
+        const resolved = resolveSlot(lineup, state, slot);
+        const dragon = resolved?.dragon;
         return dragon ? (
           <Badge key={slot} variant="secondary" className="max-w-[40vw] gap-1.5 pr-2 pl-1 sm:max-w-none">
             <DragonIcon

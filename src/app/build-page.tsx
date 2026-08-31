@@ -6,23 +6,43 @@ import { ChoiceButton } from "@/components/chip";
 import { Button } from "@/components/ui/button";
 import { usePit } from "@/lib/store";
 import { troopShort } from "@/lib/labels";
+import type { LineupKind } from "@/lib/types";
 import { Plus } from "lucide-react";
+
+const KIND_KEY = "dragonfire-build-kind";
+
+function readKind(): LineupKind {
+  if (typeof window === "undefined") return "pit";
+  return window.sessionStorage.getItem(KIND_KEY) === "theory"
+    ? "theory"
+    : "pit";
+}
 
 export function BuildPage() {
   const { ready, state, createLineup, ensureLineup } = usePit();
+  const [kind, setKind] = useState<LineupKind>(() => readKind());
   const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
-    if (state.lineups.length === 0) {
-      ensureLineup("New lineup");
-    }
-  }, [ready, state.lineups.length, ensureLineup]);
+    ensureLineup(kind === "theory" ? "New theory" : "New lineup", kind);
+  }, [ready, kind, ensureLineup]);
 
+  function chooseKind(next: LineupKind) {
+    setKind(next);
+    sessionStorage.setItem(KIND_KEY, next);
+    const lineup = ensureLineup(
+      next === "theory" ? "New theory" : "New lineup",
+      next,
+    );
+    setActiveId(lineup.id);
+  }
+
+  const ofKind = state.lineups.filter((lineup) => lineup.kind === kind);
   const resolvedId =
-    (activeId && state.lineups.some((lineup) => lineup.id === activeId)
+    (activeId && ofKind.some((lineup) => lineup.id === activeId)
       ? activeId
-      : state.lineups[0]?.id) ?? null;
+      : ofKind[0]?.id) ?? null;
 
   if (!ready || !resolvedId) {
     return <p className="text-sm text-muted-foreground">Opening the board…</p>;
@@ -37,7 +57,10 @@ export function BuildPage() {
         <Button
           onClick={() => {
             const lineup = createLineup(
-              `Lineup ${state.lineups.length + 1}`,
+              kind === "theory"
+                ? `Theory ${ofKind.length + 1}`
+                : `Lineup ${ofKind.length + 1}`,
+              kind,
             );
             setActiveId(lineup.id);
           }}
@@ -47,9 +70,25 @@ export function BuildPage() {
           New
         </Button>
       </div>
-      {state.lineups.length > 1 ? (
+
+      <div className="grid grid-cols-2 gap-2">
+        <ChoiceButton
+          active={kind === "pit"}
+          onClick={() => chooseKind("pit")}
+        >
+          Your pit
+        </ChoiceButton>
+        <ChoiceButton
+          active={kind === "theory"}
+          onClick={() => chooseKind("theory")}
+        >
+          Theory
+        </ChoiceButton>
+      </div>
+
+      {ofKind.length > 1 ? (
         <div className="flex flex-wrap gap-2">
-          {state.lineups.map((lineup) => (
+          {ofKind.map((lineup) => (
             <ChoiceButton
               key={lineup.id}
               active={resolvedId === lineup.id}

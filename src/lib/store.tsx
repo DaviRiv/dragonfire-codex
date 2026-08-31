@@ -10,11 +10,27 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { samplePit } from "@/data/sample";
-import { emptyPit, findDragon, newId, nowIso, slugify } from "@/lib/dragons";
+import {
+  emptyPit,
+  findDragon,
+  newId,
+  normalizePitState,
+  nowIso,
+  slugify,
+} from "@/lib/dragons";
+import {
+  clampReign,
+  clampStar,
+  clearDragonFromSlots,
+  emptySlots,
+  makePick,
+} from "@/lib/lineup";
 import type {
   Breed,
   Dragon,
   Lineup,
+  LineupKind,
+  LineupPick,
   OwnedDragon,
   PitState,
   Rarity,
@@ -48,14 +64,19 @@ type PitContextValue = {
     patch: Partial<Pick<OwnedDragon, "starRank" | "reignLevel" | "notes">>,
   ) => void;
   removeOwned: (id: string) => void;
-  createLineup: (name?: string) => Lineup;
-  ensureLineup: (name?: string) => Lineup;
+  createLineup: (name?: string, kind?: LineupKind) => Lineup;
+  ensureLineup: (name?: string, kind?: LineupKind) => Lineup;
   updateLineup: (id: string, patch: Partial<Omit<Lineup, "id">>) => void;
-  setSlot: (lineupId: string, slot: SlotId, ownedId: string | null) => void;
+  setSlot: (lineupId: string, slot: SlotId, dragonId: string | null) => void;
   slotDragon: (lineupId: string, slot: SlotId, dragonId: string) => void;
   slotDragons: (
     lineupId: string,
     picks: { slot: SlotId; dragonId: string }[],
+  ) => void;
+  updateSlotPick: (
+    lineupId: string,
+    slot: SlotId,
+    patch: Partial<Pick<LineupPick, "starRank" | "reignLevel">>,
   ) => void;
   deleteLineup: (id: string) => void;
   createTeam: (name?: string) => TeamLike;
@@ -66,24 +87,12 @@ type PitContextValue = {
   deleteTeam: (id: string) => void;
   loadSample: () => void;
   resetPit: () => void;
-  importState: (next: PitState) => void;
+  importState: (next: unknown) => void;
 };
 
 type TeamLike = PitState["teams"][number];
 
 const PitContext = createContext<PitContextValue | null>(null);
-
-function isPitState(value: unknown): value is PitState {
-  if (!value || typeof value !== "object") return false;
-  const v = value as PitState;
-  return (
-    v.version === 1 &&
-    Array.isArray(v.owned) &&
-    Array.isArray(v.lineups) &&
-    Array.isArray(v.teams) &&
-    Array.isArray(v.customDragons)
-  );
-}
 
 let cachedRaw: string | null = null;
 let cachedState: PitState = EMPTY;
@@ -92,7 +101,7 @@ function parseRaw(raw: string | null): PitState {
   if (!raw) return EMPTY;
   try {
     const parsed: unknown = JSON.parse(raw);
-    return isPitState(parsed) ? parsed : EMPTY;
+    return normalizePitState(parsed) ?? EMPTY;
   } catch {
     return EMPTY;
   }
@@ -138,6 +147,23 @@ function commit(updater: (prev: PitState) => PitState) {
   write(updater(getClientSnapshot()));
 }
 
+function blankLineup(name: string | undefined, kind: LineupKind): Lineup {
+  return {
+    id: newId("lineup"),
+    name:
+      name?.trim() ||
+      (kind === "theory" ? "New theory" : "New lineup"),
+    kind,
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: false,
+    craftStars: 10,
+    updatedAt: nowIso(),
+  };
+}
+
 export function PitProvider({ children }: { children: ReactNode }) {
   const stored = useSyncExternalStore(
     subscribe,
@@ -159,8 +185,8 @@ export function PitProvider({ children }: { children: ReactNode }) {
       const owned: OwnedDragon = {
         id: newId("own"),
         dragonId,
-        starRank: clamp(starRank, 1, 10),
-        reignLevel: clamp(reignLevel, 1, 80),
+        starRank: clampStar(starRank),
+        reignLevel: clampReign(reignLevel),
         notes: "",
       };
       commit((prev) => ({ ...prev, owned: [...prev.owned, owned] }));
@@ -217,8 +243,8 @@ export function PitProvider({ children }: { children: ReactNode }) {
       const owned: OwnedDragon = {
         id: newId("own"),
         dragonId: id,
-        starRank: clamp(input.starRank, 1, 10),
-        reignLevel: clamp(input.reignLevel, 1, 80),
+        starRank: clampStar(input.starRank),
+        reignLevel: clampReign(input.reignLevel),
         notes: "",
       };
       commit((prev) => ({
@@ -246,11 +272,11 @@ export function PitProvider({ children }: { children: ReactNode }) {
                 ...patch,
                 starRank:
                   patch.starRank !== undefined
-                    ? clamp(patch.starRank, 1, 10)
+                    ? clampStar(patch.starRank)
                     : o.starRank,
                 reignLevel:
                   patch.reignLevel !== undefined
-                    ? clamp(patch.reignLevel, 1, 80)
+                    ? clampReign(patch.reignLevel)
                     : o.reignLevel,
               }
             : o,
@@ -270,59 +296,57 @@ export function PitProvider({ children }: { children: ReactNode }) {
           if (!owned) return true;
           return d.id !== owned.dragonId;
         }),
-        lineups: prev.lineups.map((lineup) => ({
-          ...lineup,
-          slots: {
-            left: lineup.slots.left === id ? null : lineup.slots.left,
-            vanguard:
-              lineup.slots.vanguard === id ? null : lineup.slots.vanguard,
-            right: lineup.slots.right === id ? null : lineup.slots.right,
-          },
-        })),
+        lineups: prev.lineups.map((lineup) => {
+          if (!owned || lineup.kind !== "pit") return lineup;
+          return {
+            ...lineup,
+            slots: clearDragonFromSlots(lineup.slots, owned.dragonId),
+            updatedAt: nowIso(),
+          };
+        }),
       };
     });
     toast("Dragon released from the pit.");
   }, []);
 
-  const createLineup = useCallback((name?: string): Lineup => {
-    const lineup: Lineup = {
-      id: newId("lineup"),
-      name: name?.trim() || "New lineup",
-      mode: "pvp",
-      troop: "shieldbearers",
-      notes: "",
-      slots: { left: null, vanguard: null, right: null },
-      updatedAt: nowIso(),
-    };
+  const createLineup = useCallback((name?: string, kind: LineupKind = "pit"): Lineup => {
+    const lineup = blankLineup(name, kind);
     commit((prev) => ({ ...prev, lineups: [lineup, ...prev.lineups] }));
     return lineup;
   }, []);
 
-  const ensureLineup = useCallback((name?: string): Lineup => {
-    const existing = getClientSnapshot().lineups[0];
-    if (existing) return existing;
-    const lineup: Lineup = {
-      id: newId("lineup"),
-      name: name?.trim() || "New lineup",
-      mode: "pvp",
-      troop: "shieldbearers",
-      notes: "",
-      slots: { left: null, vanguard: null, right: null },
-      updatedAt: nowIso(),
-    };
-    commit((prev) => {
-      if (prev.lineups.length > 0) return prev;
-      return { ...prev, lineups: [lineup, ...prev.lineups] };
-    });
-    return getClientSnapshot().lineups[0] ?? lineup;
-  }, []);
+  const ensureLineup = useCallback(
+    (name?: string, kind: LineupKind = "pit"): Lineup => {
+      const existing = getClientSnapshot().lineups.find((l) => l.kind === kind);
+      if (existing) return existing;
+      const lineup = blankLineup(name, kind);
+      commit((prev) => {
+        if (prev.lineups.some((l) => l.kind === kind)) return prev;
+        return { ...prev, lineups: [lineup, ...prev.lineups] };
+      });
+      return (
+        getClientSnapshot().lineups.find((l) => l.kind === kind) ?? lineup
+      );
+    },
+    [],
+  );
 
   const updateLineup = useCallback(
     (id: string, patch: Partial<Omit<Lineup, "id">>) => {
       commit((prev) => ({
         ...prev,
         lineups: prev.lineups.map((lineup) =>
-          lineup.id === id ? { ...lineup, ...patch, updatedAt: nowIso() } : lineup,
+          lineup.id === id
+            ? {
+                ...lineup,
+                ...patch,
+                craftStars:
+                  patch.craftStars !== undefined
+                    ? clampStar(patch.craftStars)
+                    : lineup.craftStars,
+                updatedAt: nowIso(),
+              }
+            : lineup,
         ),
       }));
     },
@@ -330,19 +354,20 @@ export function PitProvider({ children }: { children: ReactNode }) {
   );
 
   const setSlot = useCallback(
-    (lineupId: string, slot: SlotId, ownedId: string | null) => {
+    (lineupId: string, slot: SlotId, dragonId: string | null) => {
+      if (dragonId) {
+        commit((prev) => applySlotDragon(prev, lineupId, slot, dragonId));
+        return;
+      }
       commit((prev) => ({
         ...prev,
         lineups: prev.lineups.map((lineup) => {
           if (lineup.id !== lineupId) return lineup;
-          const slots = { ...lineup.slots };
-          if (ownedId) {
-            (Object.keys(slots) as SlotId[]).forEach((key) => {
-              if (slots[key] === ownedId) slots[key] = null;
-            });
-          }
-          slots[slot] = ownedId;
-          return { ...lineup, slots, updatedAt: nowIso() };
+          return {
+            ...lineup,
+            slots: { ...lineup.slots, [slot]: null },
+            updatedAt: nowIso(),
+          };
         }),
       }));
     },
@@ -351,6 +376,15 @@ export function PitProvider({ children }: { children: ReactNode }) {
 
   const slotDragon = useCallback(
     (lineupId: string, slot: SlotId, dragonId: string) => {
+      const current = getClientSnapshot();
+      const lineup = current.lineups.find((l) => l.id === lineupId);
+      const dragon = findDragon(dragonId, current.customDragons);
+      if (lineup?.kind === "pit" && !current.owned.some((o) => o.dragonId === dragonId)) {
+        toast.error(
+          `${dragon?.name ?? "That dragon"} is not in your pit. Add them first, or switch to Theory.`,
+        );
+        return;
+      }
       commit((prev) => applySlotDragon(prev, lineupId, slot, dragonId));
     },
     [],
@@ -369,6 +403,36 @@ export function PitProvider({ children }: { children: ReactNode }) {
         }
         return next;
       });
+    },
+    [],
+  );
+
+  const updateSlotPick = useCallback(
+    (
+      lineupId: string,
+      slot: SlotId,
+      patch: Partial<Pick<LineupPick, "starRank" | "reignLevel">>,
+    ) => {
+      commit((prev) => ({
+        ...prev,
+        lineups: prev.lineups.map((lineup) => {
+          if (lineup.id !== lineupId) return lineup;
+          const current = lineup.slots[slot];
+          if (!current) return lineup;
+          return {
+            ...lineup,
+            slots: {
+              ...lineup.slots,
+              [slot]: makePick(
+                current.dragonId,
+                patch.starRank ?? current.starRank,
+                patch.reignLevel ?? current.reignLevel,
+              ),
+            },
+            updatedAt: nowIso(),
+          };
+        }),
+      }));
     },
     [],
   );
@@ -422,7 +486,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
 
   const loadSample = useCallback(() => {
     write(samplePit());
-    toast.success("Sample pit loaded — ten dragons, four lineups, two teams.");
+    toast.success("Sample pit loaded — ten dragons, pit lines, and a theory line.");
   }, []);
 
   const resetPit = useCallback(() => {
@@ -430,12 +494,13 @@ export function PitProvider({ children }: { children: ReactNode }) {
     toast("Pit cleared.");
   }, []);
 
-  const importState = useCallback((next: PitState) => {
-    if (!isPitState(next)) {
+  const importState = useCallback((next: unknown) => {
+    const normalized = normalizePitState(next);
+    if (!normalized) {
       toast.error("That file is not a Dragonfire pit export.");
       return;
     }
-    write(next);
+    write(normalized);
     toast.success("Pit imported.");
   }, []);
 
@@ -453,6 +518,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       setSlot,
       slotDragon,
       slotDragons,
+      updateSlotPick,
       deleteLineup,
       createTeam,
       updateTeam,
@@ -474,6 +540,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       setSlot,
       slotDragon,
       slotDragons,
+      updateSlotPick,
       deleteLineup,
       createTeam,
       updateTeam,
@@ -501,36 +568,29 @@ function applySlotDragon(
 ): PitState {
   const catalog = findDragon(dragonId, prev.customDragons);
   if (!catalog) return prev;
-  let owned = prev.owned.find((o) => o.dragonId === dragonId);
-  let ownedList = prev.owned;
-  if (!owned) {
-    owned = {
-      id: newId("own"),
-      dragonId,
-      starRank: 1,
-      reignLevel: 1,
-      notes: "",
-    };
-    ownedList = [...prev.owned, owned];
+  const lineup = prev.lineups.find((l) => l.id === lineupId);
+  if (!lineup) return prev;
+  const owned = prev.owned.find((o) => o.dragonId === dragonId) ?? null;
+
+  if (lineup.kind === "pit") {
+    if (!owned) return prev;
   }
-  const ownedId = owned.id;
+
+  const pick = makePick(
+    dragonId,
+    lineup.kind === "theory" ? lineup.craftStars : (owned?.starRank ?? 1),
+    owned?.reignLevel ?? 1,
+  );
+
   return {
     ...prev,
-    owned: ownedList,
-    lineups: prev.lineups.map((lineup) => {
-      if (lineup.id !== lineupId) return lineup;
-      const slots = { ...lineup.slots };
-      (Object.keys(slots) as SlotId[]).forEach((key) => {
-        if (slots[key] === ownedId) slots[key] = null;
-      });
-      slots[slot] = ownedId;
-      return { ...lineup, slots, updatedAt: nowIso() };
+    lineups: prev.lineups.map((item) => {
+      if (item.id !== lineupId) return item;
+      let slots = clearDragonFromSlots(item.slots, dragonId);
+      slots = { ...slots, [slot]: pick };
+      return { ...item, slots, updatedAt: nowIso() };
     }),
   };
-}
-
-function clamp(n: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, Math.round(n)));
 }
 
 export function exportPit(state: PitState) {
@@ -545,4 +605,6 @@ export function exportPit(state: PitState) {
   URL.revokeObjectURL(url);
 }
 
-export { isPitState };
+export function isPitState(value: unknown): value is PitState {
+  return normalizePitState(value) !== null;
+}
