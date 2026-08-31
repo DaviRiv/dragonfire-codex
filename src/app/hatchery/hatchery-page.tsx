@@ -45,7 +45,8 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 hidden max-w-xl text-sm text-muted-foreground sm:block">
-          Tap a dragon to read stats, habit, and command. Add it to your pit
+          Tap a dragon to read stats, habit, and command. Portraits come from
+          the official Dragonfire site when they have one. Add it to your pit
           from there, or slot it from Build.
         </p>
       </div>

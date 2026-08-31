@@ -13,7 +13,10 @@ patches.
 - **Build** — the home screen. Choose troop type and a lane; suggestions rank
   hatchery dragons for that combination. Tap to slot. Fill empty lanes in one
   shot if you want a starter line.
-- **Hatchery** — original portraits for every dragon in the roster.
+- **Hatchery** — the roster, with official portraits from
+  [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
+  site has them. A few hatchery names are not listed there yet, so those
+  keep stand-in art.
 - **Pit** — your collection with star rank (1–10) and reign level. Export and
   import JSON backups here. Unlisted dragons can be recorded by hand.
 - **Lineups** — saved formations. Open one to keep picking.
@@ -45,3 +48,7 @@ npx next dev --hostname 0.0.0.0 --port 43123
 
 Saved formations can reuse the same dragon — matching how Army Formations
 work in-game even when a dragon is already marching.
+
+Portraits for dragons listed on the official site are copied from
+[gotdragonfire.com](https://gotdragonfire.com/dragons/) for local use in
+this unofficial fan tool. Warner Bros. and HBO own that art.

@@ -60,7 +60,7 @@ export function DragonIcon({
           alt={name ?? ""}
           fill
           sizes="96px"
-          className="object-cover object-center"
+          className="object-cover object-[center_30%]"
         />
       )}
     </div>

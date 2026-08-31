@@ -49,7 +49,7 @@ export function DragonSheet({
               name={dragon.name}
               breed={dragon.breed}
               custom={dragon.custom}
-              className="mx-4 aspect-[16/9] rounded-lg"
+              className="mx-4 aspect-[4/3] rounded-lg"
               sizes="500px"
             />
             <div className="px-4 pb-2">

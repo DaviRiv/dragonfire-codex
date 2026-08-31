@@ -3,6 +3,8 @@ import { DragonMark } from "@/components/dragon-mark";
 import type { Breed } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+/** Catalog art lives in public/dragons. Official portraits from gotdragonfire.com when listed. */
+
 const CATALOG_IDS = new Set([
   "caraxes",
   "kalspire",
@@ -71,7 +73,7 @@ export function DragonPortrait({
         alt={name}
         fill
         sizes={sizes}
-        className="object-cover object-center"
+        className="object-cover object-[center_35%]"
       />
       <span className="sr-only">{name}</span>
       {showMark ? (
