@@ -11,9 +11,9 @@ with HBO, Warner Bros., or the game.
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first, hiding anyone already slotted. Ranking favors
-  synergy plus damage and healing. Each row shows breed and command.
-  Every row shows that dragon’s command. Select Vanguard to see front-line
-  benefits (taunt, damage reduction, carry).
+  synergy plus damage and healing. Each thin row shows breed, command, and
+  the **(6+ stars)** habit under the command. Select Vanguard to see
+  front-line benefits.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them

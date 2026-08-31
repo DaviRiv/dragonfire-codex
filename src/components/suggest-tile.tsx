@@ -6,6 +6,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { star6Ability } from "@/lib/habits";
 import {
   breedChipClass,
   breedLabels,
@@ -61,6 +62,7 @@ export function SuggestTile({
   const synergy = reasons[0];
   const vanguardBits =
     slot === "vanguard" ? vanguardBenefitLines(dragon) : [];
+  const star6 = star6Ability(dragon);
 
   return (
     <div className={cn(selected && "bg-amber-500/20")}>
@@ -68,10 +70,10 @@ export function SuggestTile({
         <button
           type="button"
           onClick={onPick}
-          className="flex min-h-12 min-w-0 flex-1 items-start gap-2 px-2 py-2 text-left select-none active:bg-amber-500/15"
+          className="flex min-h-10 min-w-0 flex-1 items-start gap-1.5 px-2 py-1 text-left select-none active:bg-amber-500/15"
         >
           {rank != null ? (
-            <span className="w-4 shrink-0 pt-1 text-center text-[11px] tabular-nums text-muted-foreground">
+            <span className="w-4 shrink-0 pt-0.5 text-center text-[11px] tabular-nums text-muted-foreground">
               {rank}
             </span>
           ) : null}
@@ -82,7 +84,7 @@ export function SuggestTile({
             custom={dragon.custom}
             selected={selected}
             size="sm"
-            className="mt-0.5"
+            className="mt-px"
           />
           <span className="min-w-0 flex-1">
             <span className="flex min-w-0 items-center gap-1.5">
@@ -101,17 +103,18 @@ export function SuggestTile({
                 {selected ? "Slotted" : meta}
               </span>
             </span>
-            <span className="mt-0.5 block truncate text-[11px] text-amber-200/90">
+            <span className="mt-px block truncate text-[11px] text-amber-200/90">
               {synergy}
             </span>
-            {vanguardBits.length > 0 ? (
-              <span className="mt-0.5 block text-[11px] text-emerald-200/90">
-                Vanguard: {vanguardBits.join(" · ")}
-              </span>
-            ) : null}
-            <span className="mt-1 block text-xs leading-snug text-foreground/85">
+            <span className="mt-px block truncate text-[11px] leading-snug text-foreground/85">
               <AbilityText text={dragon.command} />
             </span>
+            {star6 ? (
+              <span className="mt-px block truncate text-[11px] leading-snug text-foreground/70">
+                <span className="text-amber-200/80">(6+ stars) </span>
+                <AbilityText text={star6} />
+              </span>
+            ) : null}
           </span>
         </button>
         <button
@@ -123,7 +126,7 @@ export function SuggestTile({
               ? `Hide details for ${dragon.name}`
               : `Show details for ${dragon.name}`
           }
-          className="flex w-11 shrink-0 items-start justify-center pt-3 text-muted-foreground hover:text-foreground"
+          className="flex w-10 shrink-0 items-start justify-center pt-2 text-muted-foreground hover:text-foreground"
         >
           <ChevronDown
             className={cn("size-4 transition", open && "rotate-180")}
@@ -155,6 +158,24 @@ export function SuggestTile({
             </div>
           ) : null}
           <StatGrid stats={dragon.stats} compact />
+          <div>
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
+              COMMAND
+            </p>
+            <p className="mt-1 text-sm leading-snug">
+              <AbilityText text={dragon.command} />
+            </p>
+          </div>
+          {star6 ? (
+            <div>
+              <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
+                (6+ STARS)
+              </p>
+              <p className="mt-1 text-sm leading-snug">
+                <AbilityText text={star6} />
+              </p>
+            </div>
+          ) : null}
           <div>
             <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
               HABIT

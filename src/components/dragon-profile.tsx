@@ -2,6 +2,7 @@ import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
+import { baseHabit, star6Ability } from "@/lib/habits";
 import {
   breedLabels,
   breedRoles,
@@ -66,6 +67,7 @@ export function DragonProfile({
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
 }) {
+  const star6 = star6Ability(dragon);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -94,7 +96,8 @@ export function DragonProfile({
         </p>
         <StatGrid stats={dragon.stats} />
       </div>
-      <AbilityBlock title="Habit" body={dragon.habit} />
+      <AbilityBlock title="Habit" body={baseHabit(dragon)} />
+      {star6 ? <AbilityBlock title="(6+ stars)" body={star6} /> : null}
       <AbilityBlock title="Command" body={dragon.command} />
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
