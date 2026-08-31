@@ -95,6 +95,36 @@ export const slotHints: Record<SlotId, string> = {
   right: "Often receives Strength, fire, and physical damage buffs.",
 };
 
+export function vanguardBenefitLines(dragon: {
+  breed: Breed;
+  tags: string[];
+  habit: string;
+}): string[] {
+  const lines: string[] = [];
+  const selfMitigation =
+    /damage received\s*[−\-]/i.test(dragon.habit) &&
+    !/to (?:the )?(?:left|right) flank/i.test(dragon.habit);
+  if (dragon.tags.includes("Taunt")) {
+    lines.push("Taunt soaks hits for the row");
+  }
+  if (selfMitigation) {
+    lines.push("Takes less damage on the front");
+  }
+  if (dragon.tags.includes("Protect")) {
+    lines.push("Protect covers an ally");
+  }
+  if (dragon.breed === "warrior") {
+    lines.push("Warrior front line");
+  }
+  if (dragon.tags.includes("Recovery")) {
+    lines.push("Recovery from vanguard");
+  }
+  if (lines.length === 0) {
+    lines.push("Front-line carry — this command leads the fight");
+  }
+  return lines;
+}
+
 export const modeLabels: Record<LineupMode, string> = {
   pvp: "PvP",
   pve: "PvE",

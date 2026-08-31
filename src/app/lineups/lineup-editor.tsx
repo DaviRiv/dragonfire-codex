@@ -26,6 +26,8 @@ import {
   troopCounters,
   troopLabels,
   troopShort,
+  slotHints,
+  vanguardBenefitLines,
 } from "@/lib/labels";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
@@ -253,6 +255,26 @@ export function LineupEditor({
             ? "Log dragons in the pit to rank a team."
             : `${suggestions.length} ranked for ${slotShort[selectedSlot].toLowerCase()} from this team`}
         </p>
+        {selectedSlot === "vanguard" ? (
+          <div className="rounded-xl bg-emerald-950/40 px-3 py-2 text-sm ring-1 ring-emerald-500/25">
+            <p className="font-heading text-xs tracking-[0.16em] text-emerald-200">
+              VANGUARD
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-100/85">
+              {slotHints.vanguard}
+            </p>
+            {selectedDragon ? (
+              <p className="mt-1 text-xs text-emerald-50">
+                {selectedDragon.name}:{" "}
+                {vanguardBenefitLines(selectedDragon).join(" · ")}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-emerald-100/70">
+                Pick a taunt soak or a command that can carry from the front.
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {isTheory ? (
           <div className="flex flex-wrap gap-1">
@@ -317,6 +339,7 @@ export function LineupEditor({
                   onSaveNotes={(ownedId, notes) =>
                     updateOwned(ownedId, { notes })
                   }
+                  slot={selectedSlot}
                 />
               </li>
             ))}

@@ -12,6 +12,8 @@ with HBO, Warner Bros., or the game.
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first. Each row shows breed (Champion, Hunter,
   Sentinel, Warrior) and why it pairs with the dragons already slotted.
+  Every row shows that dragon’s command. Select Vanguard to see front-line
+  benefits (taunt, damage reduction, carry).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them

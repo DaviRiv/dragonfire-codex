@@ -238,7 +238,7 @@ export function suggestDragons({
       if (pool === "owned" && !owned) return false;
       if (pool === "unowned" && owned) return false;
       if (!q) return true;
-      return `${dragon.name} ${dragon.epithet} ${dragon.breed} ${dragon.tags.join(" ")}`
+      return `${dragon.name} ${dragon.epithet} ${dragon.breed} ${dragon.tags.join(" ")} ${dragon.command} ${dragon.habit}`
         .toLowerCase()
         .includes(q);
     })
