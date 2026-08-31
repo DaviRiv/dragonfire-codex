@@ -70,7 +70,7 @@ export function SuggestTile({
         <button
           type="button"
           onClick={onPick}
-          className="flex min-h-10 min-w-0 flex-1 items-start gap-1.5 px-2 py-1 text-left select-none active:bg-amber-500/15"
+          className="flex min-h-9 min-w-0 flex-1 items-start gap-1.5 overflow-hidden px-2 py-1 text-left select-none active:bg-amber-500/15"
         >
           {rank != null ? (
             <span className="w-4 shrink-0 pt-0.5 text-center text-[11px] tabular-nums text-muted-foreground">
@@ -86,7 +86,7 @@ export function SuggestTile({
             size="sm"
             className="mt-px"
           />
-          <span className="min-w-0 flex-1">
+          <span className="min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
@@ -103,16 +103,19 @@ export function SuggestTile({
                 {selected ? "Slotted" : meta}
               </span>
             </span>
-            <span className="mt-px block truncate text-[11px] text-amber-200/90">
+            <span className="mt-px block min-w-0 overflow-hidden text-[11px] text-amber-200/90 text-ellipsis whitespace-nowrap">
               {synergy}
             </span>
-            <span className="mt-px block truncate text-[11px] leading-snug text-foreground/85">
-              <AbilityText text={dragon.command} />
+            <span className="mt-px block min-w-0 overflow-hidden text-[11px] leading-none text-foreground/85 text-ellipsis whitespace-nowrap">
+              <AbilityText
+                text={dragon.command}
+                className="whitespace-nowrap"
+              />
             </span>
             {star6 ? (
-              <span className="mt-px block truncate text-[11px] leading-snug text-foreground/70">
+              <span className="mt-px block min-w-0 overflow-hidden text-[11px] leading-none text-foreground/70 text-ellipsis whitespace-nowrap">
                 <span className="text-amber-200/80">(6+ stars) </span>
-                <AbilityText text={star6} />
+                <AbilityText text={star6} className="whitespace-nowrap" />
               </span>
             ) : null}
           </span>
