@@ -68,12 +68,12 @@ export function SuggestTile({
           type="button"
           onClick={onPick}
           className={cn(
-            "flex min-h-11 w-0 min-w-0 flex-1 gap-1.5 overflow-hidden px-2 py-1.5 text-left select-none active:bg-amber-500/15",
-            showAbilities ? "items-start" : "items-center",
+            "flex min-h-9 w-0 min-w-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1 text-left select-none active:bg-amber-500/15",
+            showAbilities || frontBonus ? "items-start" : "items-center",
           )}
         >
           {rank != null ? (
-            <span className="w-4 shrink-0 text-center text-[11px] tabular-nums text-muted-foreground">
+            <span className="w-3.5 shrink-0 text-center text-[10px] tabular-nums text-muted-foreground">
               {rank}
             </span>
           ) : null}
@@ -83,11 +83,11 @@ export function SuggestTile({
             rarity={dragon.rarity}
             custom={dragon.custom}
             selected={selected}
-            size="sm"
+            size="xs"
           />
           <span className="w-0 min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="font-heading truncate text-sm tracking-wide">
+              <span className="font-heading truncate text-[13px] tracking-wide">
                 {dragon.name}
               </span>
               <span
@@ -98,16 +98,25 @@ export function SuggestTile({
               >
                 {breedLabels[dragon.breed]}
               </span>
-              <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
+              <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
             </span>
-            <span
-              className="compact-line mt-px text-[11px] text-amber-200/90"
-              title={synergy}
-            >
-              {synergy}
-            </span>
+            {frontBonus ? (
+              <span
+                className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
+                title={`Vanguard ${frontBonus}`}
+              >
+                {`Vanguard ${frontBonus}`}
+              </span>
+            ) : (
+              <span
+                className="compact-line mt-px text-[11px] text-amber-200/90"
+                title={synergy}
+              >
+                {synergy}
+              </span>
+            )}
             {showAbilities ? (
               <>
                 <span
@@ -124,14 +133,6 @@ export function SuggestTile({
                     {`(6+ stars) ${star6}`}
                   </span>
                 ) : null}
-                {frontBonus ? (
-                  <span
-                    className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
-                    title={`Vanguard ${frontBonus}`}
-                  >
-                    {`Vanguard ${frontBonus}`}
-                  </span>
-                ) : null}
               </>
             ) : null}
           </span>
@@ -145,7 +146,7 @@ export function SuggestTile({
               ? `Hide details for ${dragon.name}`
               : `Show details for ${dragon.name}`
           }
-          className="flex w-10 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
+          className="flex w-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
         >
           <ChevronDown
             className={cn("size-4 transition", open && "rotate-180")}

@@ -159,7 +159,7 @@ export function LineupEditor({
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(20rem,26rem)_minmax(0,1fr)] lg:items-start lg:gap-4">
+    <div className="lg:grid lg:grid-cols-[minmax(24rem,38rem)_minmax(0,1fr)] lg:items-start lg:gap-5">
       <div className="space-y-2 lg:sticky lg:top-[calc(3.5rem+env(safe-area-inset-top))]">
         <FormationBoard
           lineup={lineup}
@@ -257,7 +257,7 @@ export function LineupEditor({
         </p>
         {selectedSlot === "vanguard" ? (
           <p
-            className="compact-line rounded-lg bg-emerald-950/40 px-2.5 py-1.5 text-[11px] text-emerald-100/90 ring-1 ring-emerald-500/25"
+            className="rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[12px] leading-snug text-emerald-100/90 ring-1 ring-emerald-500/25"
             title={
               selectedDragon
                 ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon)}`

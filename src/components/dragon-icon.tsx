@@ -5,11 +5,13 @@ import type { Breed, Rarity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const sizeClass = {
-  sm: "size-10",
+  xs: "size-8",
+  sm: "size-9",
   md: "size-14",
   lg: "size-16",
   xl: "size-[4.75rem]",
   "2xl": "size-[5.75rem]",
+  "3xl": "size-32",
 } as const;
 
 const rarityRing: Record<Rarity, string> = {
@@ -54,13 +56,13 @@ export function DragonIcon({
       )}
     >
       {empty || !dragonId ? (
-        <Plus className="size-5 text-muted-foreground" />
+        <Plus className={cn("text-muted-foreground", size === "3xl" ? "size-10" : "size-5")} />
       ) : (
         <Image
           src={dragonImageSrc(dragonId, custom)}
           alt={name ?? ""}
           fill
-          sizes="128px"
+          sizes="256px"
           className="object-cover object-[center_30%]"
         />
       )}
