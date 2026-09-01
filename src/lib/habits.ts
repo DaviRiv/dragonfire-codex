@@ -86,10 +86,7 @@ export function dragonKit(
     if (!body) return;
     const star = HABIT_UNLOCK_STARS[index];
     extras.push({
-      title:
-        star === 6
-          ? `(6+ stars) · Habit ${index + 1}`
-          : `Habit ${index + 1} · ${star}★`,
+      title: `Habit ${index + 1} · ${star}★`,
       body,
       ranks: rankList(dragon.id, index),
     });

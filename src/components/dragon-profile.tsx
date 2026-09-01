@@ -3,6 +3,7 @@ import { AffinityBadges } from "@/components/affinity-badges";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
 import { dragonKit } from "@/lib/habits";
+import { healGateTitle, healUnlocked, healingAbilities } from "@/lib/healing";
 import {
   breedLabels,
   breedRoles,
@@ -83,6 +84,7 @@ export function DragonProfile({
   reignLevel?: number;
 }) {
   const kit = dragonKit(dragon);
+  const heals = healingAbilities(dragon);
   const stats = scaledStats(dragon, starRank, reignLevel);
   const troops = troopCount(dragon.rarity, starRank, reignLevel);
   const power = dragonPower(dragon.rarity, starRank, reignLevel);
@@ -116,15 +118,52 @@ export function DragonProfile({
           ))}
         </div>
       ) : null}
-      <AbilityBlock title="Command" body={kit.command} />
-      {kit.extras.map((extra) => (
-        <AbilityBlock
-          key={extra.title}
-          title={extra.title}
-          body={extra.body}
-          ranks={extra.ranks}
-        />
-      ))}
+      {heals.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-label">Healing</p>
+          {heals.map((heal) => {
+            const unlocked = healUnlocked(heal, starRank);
+            return (
+              <div
+                key={heal.id}
+                className="rounded-xl bg-emerald-950/35 p-3 text-[15px] leading-relaxed ring-1 ring-emerald-500/20"
+              >
+                <p className="text-label text-emerald-100">
+                  {healGateTitle(heal)}
+                  {unlocked ? "" : ` · needs ${heal.stars}★`}
+                </p>
+                <p
+                  className={
+                    unlocked
+                      ? "mt-1 leading-relaxed"
+                      : "mt-1 leading-relaxed text-muted-foreground"
+                  }
+                >
+                  <AbilityText text={heal.text} />
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      <AbilityBlock
+        title={heals.some((heal) => heal.stars === null) ? "Command · Heal · always on" : "Command"}
+        body={kit.command}
+      />
+      {kit.extras.map((extra) => {
+        const heal = heals.find(
+          (item) =>
+            item.habit != null && extra.title === `Habit ${item.habit} · ${item.stars}★`,
+        );
+        return (
+          <AbilityBlock
+            key={extra.title}
+            title={heal ? healGateTitle(heal) : extra.title}
+            body={extra.body}
+            ranks={extra.ranks}
+          />
+        );
+      })}
       <div>
         <p className="text-label mb-2">
           Stats · ★{starRank} · Reign {reignLevel}

@@ -6,6 +6,13 @@ import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { commandLine, dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
+import {
+  compactHealLine,
+  healChipLabel,
+  healGateTitle,
+  healUnlocked,
+  healingAbilities,
+} from "@/lib/healing";
 import { breedLabels } from "@/lib/labels";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { scaledStats } from "@/lib/scale-stats";
@@ -62,6 +69,8 @@ export function SuggestTile({
   const star6 = star6Ability(dragon, true);
   const frontBonus = slot === "vanguard" ? vanguardBonus(dragon, true) : null;
   const kit = dragonKit(dragon);
+  const heals = healingAbilities(dragon);
+  const showHealLines = heals.length > 0;
 
   return (
     <div className={cn("min-w-0", selected && "bg-amber-500/20")}>
@@ -71,7 +80,7 @@ export function SuggestTile({
           onClick={onPick}
           className={cn(
             "flex min-h-11 w-0 min-w-0 flex-1 gap-2 overflow-hidden px-2 py-1.5 text-left select-none active:bg-amber-500/15",
-            showAbilities || frontBonus ? "items-start" : "items-center",
+            showAbilities || frontBonus || showHealLines ? "items-start" : "items-center",
           )}
         >
           {rank != null ? (
@@ -100,13 +109,33 @@ export function SuggestTile({
                     roleChipClass[role],
                   )}
                 >
-                  {roleShort[role]}
+                  {role === "healing" ? healChipLabel(dragon) : roleShort[role]}
                 </span>
               ))}
               <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
             </span>
+            {showHealLines
+              ? heals.map((heal) => {
+                  const unlocked = healUnlocked(heal, starRank);
+                  const line = compactHealLine(heal, starRank);
+                  return (
+                    <span
+                      key={heal.id}
+                      className={cn(
+                        "compact-line mt-0.5 text-xs leading-snug",
+                        unlocked
+                          ? "text-emerald-100"
+                          : "text-muted-foreground",
+                      )}
+                      title={line}
+                    >
+                      {line}
+                    </span>
+                  );
+                })
+              : null}
             {frontBonus ? (
               <span
                 className="compact-line mt-0.5 text-xs leading-snug text-emerald-100"
@@ -135,7 +164,7 @@ export function SuggestTile({
                 >
                   {commandLine(dragon, true)}
                 </span>
-                {star6 ? (
+                {star6 && !heals.some((heal) => heal.stars === 6) ? (
                   <span
                     className="compact-line mt-0.5 text-xs leading-snug text-foreground/75"
                     title={`(6+ stars) ${star6}`}
@@ -180,14 +209,47 @@ export function SuggestTile({
               ))}
             </ul>
           </div>
-          <AbilityBlock title="Command" body={kit.command} />
-          {kit.extras.map((extra) => (
-            <AbilityBlock
-              key={extra.title}
-              title={extra.title}
-              body={extra.body}
-            />
-          ))}
+          {heals.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-label">Healing</p>
+              {heals.map((heal) => (
+                <p
+                  key={heal.id}
+                  className={cn(
+                    "text-[13px] leading-snug",
+                    healUnlocked(heal, starRank)
+                      ? "text-emerald-100"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {compactHealLine(heal, starRank)}
+                </p>
+              ))}
+            </div>
+          ) : null}
+          <AbilityBlock
+            title={
+              heals.some((heal) => heal.stars === null)
+                ? "Command · Heal · always on"
+                : "Command"
+            }
+            body={kit.command}
+          />
+          {kit.extras.map((extra) => {
+            const heal = heals.find(
+              (item) =>
+                item.habit != null &&
+                extra.title === `Habit ${item.habit} · ${item.stars}★`,
+            );
+            return (
+              <AbilityBlock
+                key={extra.title}
+                title={heal ? healGateTitle(heal) : extra.title}
+                body={extra.body}
+                ranks={extra.ranks}
+              />
+            );
+          })}
           <div>
             <p className="text-label">Stats</p>
             <StatGrid

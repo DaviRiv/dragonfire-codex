@@ -1,4 +1,5 @@
 import { DRAGON_HABITS } from "@/data/dragon-habits";
+import { healingAbilities } from "@/lib/healing";
 import type { Dragon } from "@/lib/types";
 
 /** World of Warcraft-style lineup jobs. A dragon can hold more than one. */
@@ -57,31 +58,7 @@ function providesAny(
 
 /** Recovery that lands on allies — not self-heal, not enemy Recovery Received. */
 export function isHealer(dragon: Dragon): boolean {
-  if (providesNamed(dragon, "Recovery")) {
-    const hay = kitLines(dragon).join("\n");
-    if (
-      /apply Recovery[^.\n]{0,180}All(?:y|ies)/i.test(hay) ||
-      /Recovery to (?:the |[123] )?(?:other )?All(?:y|ies)/i.test(hay)
-    ) {
-      return true;
-    }
-  }
-  for (const line of kitLines(dragon)) {
-    if (!/recovery/i.test(line)) continue;
-    if (/yourself/i.test(line) && !/All(?:y|ies)/i.test(line)) continue;
-    if (/Recovery Received/i.test(line) && /Enem(?:y|ies)/i.test(line)) {
-      continue;
-    }
-    if (
-      /apply Recovery[^.\n]{0,180}(?:the |[123] )?(?:other )?All(?:y|ies)/i.test(
-        line,
-      ) ||
-      /Recovery to (?:the |[123] )?(?:other )?All(?:y|ies)/i.test(line)
-    ) {
-      return true;
-    }
-  }
-  return false;
+  return healingAbilities(dragon).length > 0;
 }
 
 /** Taunt that pulls enemies onto this dragon — not “targets that already have Taunt”. */

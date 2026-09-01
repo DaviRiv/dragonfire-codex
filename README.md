@@ -19,6 +19,8 @@ with HBO, Warner Bros., or the game.
   crowd-control kit the same way a group finder does. The formation is
   large so you can read the lane. Pick rows stay thin: name, role chips,
   and synergy, or the **vanguard skill** when that lane is selected.
+  Healers always show the Recovery line with its star gate (Command,
+  2★, 6★, 10★) so a 10★ habit is not mistaken for a Command heal.
   Turn on **Abilities** for command and the unique **(6+ stars)** skill.
   Open a row for the full command, Habits 1–5, vanguard skill, and stats
   at the bottom. Theory lines also show a compact **Pairing** summary

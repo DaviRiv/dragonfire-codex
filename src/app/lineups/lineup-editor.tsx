@@ -339,7 +339,7 @@ export function LineupEditor({
               {roleFilter === "all"
                 ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group. Troop and mode live under Options."
                 : roleFilter === "healing"
-                  ? "Allies who apply Recovery, like Malachite. Hybrids who also deal damage still show here."
+                  ? "Ally Recovery, with the star gate on the line. Command is always on; Velar’s heal is a 10★ habit."
                   : roleFilter === "tanking"
                     ? "Taunt soaks, like Vhagar. They stay out of Damage so this list is the front line."
                     : roleFilter === "damage"
