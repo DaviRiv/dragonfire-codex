@@ -7,6 +7,7 @@ export interface AbilityLine {
   title: string;
   body: string;
   ranks?: string[];
+  unlockStars?: number;
 }
 
 function habitRank(
@@ -89,6 +90,7 @@ export function dragonKit(
       title: `Habit ${index + 1} · ${star}★`,
       body,
       ranks: rankList(dragon.id, index),
+      unlockStars: star,
     });
   });
   const vanguard = vanguardBonus(dragon);

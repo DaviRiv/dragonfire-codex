@@ -23,6 +23,7 @@ export function DragonSheet({
   actionLabel,
   onAction,
   actionDisabled,
+  ownedStars,
 }: {
   dragon: Dragon | null;
   open: boolean;
@@ -33,6 +34,7 @@ export function DragonSheet({
   actionLabel?: string;
   onAction?: () => void;
   actionDisabled?: boolean;
+  ownedStars?: number | null;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -62,6 +64,7 @@ export function DragonSheet({
                 highlightTroop={highlightTroop}
                 starRank={starRank}
                 reignLevel={reignLevel}
+                ownedStars={ownedStars}
               />
             </div>
             {onAction && actionLabel ? (

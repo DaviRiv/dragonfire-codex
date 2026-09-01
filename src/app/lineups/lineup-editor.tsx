@@ -339,7 +339,7 @@ export function LineupEditor({
               {roleFilter === "all"
                 ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group. Troop and mode live under Options."
                 : roleFilter === "healing"
-                  ? "Ally Recovery, with the star gate on the line. Command is always on; Velar’s heal is a 10★ habit."
+                  ? "Ally Recovery, with the star gate on the line. A red ★ means your pit is short of that rank — the kit is a goal, not live."
                   : roleFilter === "tanking"
                     ? "Taunt soaks, like Vhagar. They stay out of Damage so this list is the front line."
                     : roleFilter === "damage"
@@ -441,6 +441,12 @@ export function LineupEditor({
               (state.owned.find((row) => row.dragonId === inspecting.id)
                 ?.reignLevel ?? 1)
             : 1
+        }
+        ownedStars={
+          inspecting
+            ? (state.owned.find((row) => row.dragonId === inspecting.id)
+                ?.starRank ?? null)
+            : null
         }
         actionLabel={
           inspecting && slottedHere(inspecting.id) === selectedSlot

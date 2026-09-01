@@ -21,6 +21,9 @@ with HBO, Warner Bros., or the game.
   and synergy, or the **vanguard skill** when that lane is selected.
   Healers always show the Recovery line with its star gate (Command,
   2★, 6★, 10★) so a 10★ habit is not mistaken for a Command heal.
+  Gates you do not own yet (or that sit above the dragon in your pit)
+  render in red — a 10★ Velar heal stays a goal until you actually
+  have 10 stars.
   Turn on **Abilities** for command and the unique **(6+ stars)** skill.
   Open a row for the full command, Habits 1–5, vanguard skill, and stats
   at the bottom. Theory lines also show a compact **Pairing** summary
@@ -48,8 +51,9 @@ then the ranked list, and on a wider screen the list is a full column on
 the right so the formation stays in view.
 
 Habit and command text uses the in-game keyword colors: **Physical**
-orange, **Tactical** cyan, **Fire** red, **Recovery** green, with matching
-stat and tag colors. Positive magnitudes are green; reductions are red.
+orange, **Tactical** purple, **Fire** red-orange, **Recovery** green,
+with matching stat and tag colors. Positive magnitudes are green;
+reductions are red.
 
 ```bash
 npm install

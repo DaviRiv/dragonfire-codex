@@ -302,6 +302,7 @@ function EditDragonForm({
           dragon={dragon}
           starRank={starRank}
           reignLevel={reignLevel}
+          ownedStars={starRank}
         />
         <div className="grid gap-1.5">
           <Label>Star rank</Label>

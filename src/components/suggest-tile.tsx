@@ -3,21 +3,17 @@
 import { useState } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
+import { StarRequirement } from "@/components/star-requirement";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { commandLine, dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
-import {
-  compactHealLine,
-  healChipLabel,
-  healGateTitle,
-  healUnlocked,
-  healingAbilities,
-} from "@/lib/healing";
+import { healingAbilities } from "@/lib/healing";
+import { starGateHint } from "@/lib/stars";
 import { breedLabels } from "@/lib/labels";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { scaledStats } from "@/lib/scale-stats";
 import type { DragonSuggestion } from "@/lib/suggest";
-import type { SlotId } from "@/lib/types";
+import type { Dragon, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -64,6 +60,7 @@ export function SuggestTile({
         ? `★${starRank}`
         : `★${starRank} · R${reignLevel}`;
 
+  const ownedStars = owned?.starRank ?? null;
   const notesDirty = owned ? notes !== storedNotes : false;
   const synergy = reasons[0];
   const star6 = star6Ability(dragon, true);
@@ -109,7 +106,11 @@ export function SuggestTile({
                     roleChipClass[role],
                   )}
                 >
-                  {role === "healing" ? healChipLabel(dragon) : roleShort[role]}
+                  {role === "healing" ? (
+                    <HealChip dragon={dragon} ownedStars={ownedStars} />
+                  ) : (
+                    roleShort[role]
+                  )}
                 </span>
               ))}
               <span className="ml-auto shrink-0 text-xs text-muted-foreground">
@@ -118,20 +119,31 @@ export function SuggestTile({
             </span>
             {showHealLines
               ? heals.map((heal) => {
-                  const unlocked = healUnlocked(heal, starRank);
-                  const line = compactHealLine(heal, starRank);
+                  const line =
+                    heal.stars == null
+                      ? `Command · ${heal.short}`
+                      : `${heal.stars}★ · ${heal.short}`;
                   return (
                     <span
                       key={heal.id}
-                      className={cn(
-                        "compact-line mt-0.5 text-xs leading-snug",
-                        unlocked
-                          ? "text-emerald-100"
-                          : "text-muted-foreground",
-                      )}
-                      title={line}
+                      className="compact-line mt-0.5 text-xs leading-snug"
+                      title={
+                        heal.stars == null
+                          ? line
+                          : `${line}. ${starGateHint(heal.stars, ownedStars)}`
+                      }
                     >
-                      {line}
+                      {heal.stars == null ? (
+                        <>Command · {heal.short}</>
+                      ) : (
+                        <>
+                          <StarRequirement
+                            stars={heal.stars}
+                            ownedStars={ownedStars}
+                          />
+                          {` · ${heal.short}`}
+                        </>
+                      )}
                     </span>
                   );
                 })
@@ -167,9 +179,13 @@ export function SuggestTile({
                 {star6 && !heals.some((heal) => heal.stars === 6) ? (
                   <span
                     className="compact-line mt-0.5 text-xs leading-snug text-foreground/75"
-                    title={`(6+ stars) ${star6}`}
+                    title={`${star6}. ${starGateHint(6, ownedStars)}`}
                   >
-                    {`(6+ stars) ${star6}`}
+                    (
+                    <StarRequirement stars={6} ownedStars={ownedStars}>
+                      6+ stars
+                    </StarRequirement>
+                    {`) ${star6}`}
                   </span>
                 ) : null}
               </>
@@ -213,16 +229,18 @@ export function SuggestTile({
             <div className="space-y-2">
               <p className="text-label">Healing</p>
               {heals.map((heal) => (
-                <p
-                  key={heal.id}
-                  className={cn(
-                    "text-[13px] leading-snug",
-                    healUnlocked(heal, starRank)
-                      ? "text-emerald-100"
-                      : "text-muted-foreground",
+                <p key={heal.id} className="text-[13px] leading-snug">
+                  {heal.stars == null ? (
+                    <>Command · {heal.short}</>
+                  ) : (
+                    <>
+                      <StarRequirement
+                        stars={heal.stars}
+                        ownedStars={ownedStars}
+                      />
+                      {` · ${heal.short}`}
+                    </>
                   )}
-                >
-                  {compactHealLine(heal, starRank)}
                 </p>
               ))}
             </div>
@@ -235,21 +253,26 @@ export function SuggestTile({
             }
             body={kit.command}
           />
-          {kit.extras.map((extra) => {
-            const heal = heals.find(
-              (item) =>
-                item.habit != null &&
-                extra.title === `Habit ${item.habit} · ${item.stars}★`,
-            );
-            return (
-              <AbilityBlock
-                key={extra.title}
-                title={heal ? healGateTitle(heal) : extra.title}
-                body={extra.body}
-                ranks={extra.ranks}
-              />
-            );
-          })}
+          {kit.extras.map((extra) => (
+            <AbilityBlock
+              key={extra.title}
+              title={
+                extra.unlockStars != null ? (
+                  <>
+                    {extra.title.replace(/ · \d+★$/, "")} ·{" "}
+                    <StarRequirement
+                      stars={extra.unlockStars}
+                      ownedStars={ownedStars}
+                    />
+                  </>
+                ) : (
+                  extra.title
+                )
+              }
+              body={extra.body}
+              ranks={extra.ranks}
+            />
+          ))}
           <div>
             <p className="text-label">Stats</p>
             <StatGrid
@@ -291,5 +314,25 @@ export function SuggestTile({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function HealChip({
+  dragon,
+  ownedStars,
+}: {
+  dragon: Dragon;
+  ownedStars: number | null;
+}) {
+  const heals = healingAbilities(dragon);
+  if (heals.length === 0 || heals.some((heal) => heal.stars === null)) {
+    return "Heal";
+  }
+  const min = Math.min(...heals.map((heal) => heal.stars ?? 1));
+  return (
+    <>
+      Heal{" "}
+      <StarRequirement stars={min} ownedStars={ownedStars} />
+    </>
   );
 }

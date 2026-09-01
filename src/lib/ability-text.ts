@@ -2,8 +2,9 @@ import type { DragonStats } from "@/lib/types";
 
 /**
  * Keyword colors used in Game of Thrones: Dragonfire ability text.
- * Physical / Strength are orange, Tactical / Instinct cyan, Fire red,
- * Recovery green, Initiative gold, Intelligence violet.
+ * Physical / Strength are orange, Tactical purple, Fire red-orange,
+ * Recovery / healing green, Instinct cyan, Initiative gold,
+ * Intelligence violet.
  */
 export type GameTone =
   | "physical"
@@ -67,7 +68,7 @@ export const STAT_TEXT_CLASS: Record<keyof DragonStats, string> = {
 
 export const STAT_BAR_CLASS: Record<keyof DragonStats, string> = {
   strength: "bg-gradient-to-r from-df-physical/50 to-df-physical",
-  instinct: "bg-gradient-to-r from-df-tactical/50 to-df-tactical",
+  instinct: "bg-gradient-to-r from-df-instinct/50 to-df-instinct",
   intelligence: "bg-gradient-to-r from-df-intelligence/50 to-df-intelligence",
   initiative: "bg-gradient-to-r from-df-initiative/50 to-df-initiative",
 };
@@ -81,6 +82,8 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Physical damage dealt", tone: "physical" },
   { phrase: "Fire damage dealt", tone: "fire" },
   { phrase: "Recovery received", tone: "recovery" },
+  { phrase: "Recovery dealt", tone: "recovery" },
+  { phrase: "Recovery Rate", tone: "recovery" },
   { phrase: "Damage received", tone: "received" },
   { phrase: "Damage dealt", tone: "dealt" },
   { phrase: "Tactical damage", tone: "tactical" },
@@ -102,6 +105,8 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Strength", tone: "strength" },
   { phrase: "Instinct", tone: "instinct" },
   { phrase: "Recovery", tone: "recovery" },
+  { phrase: "Healing", tone: "recovery" },
+  { phrase: "Heal", tone: "recovery" },
   { phrase: "Resistance", tone: "received" },
   { phrase: "Advantage", tone: "dealt" },
   { phrase: "Vulnerable", tone: "debuff" },

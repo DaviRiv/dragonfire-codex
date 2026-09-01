@@ -127,6 +127,12 @@ export function HatcheryPage() {
         onOpenChange={(next) => {
           if (!next) setInspecting(null);
         }}
+        ownedStars={
+          inspecting
+            ? (state.owned.find((row) => row.dragonId === inspecting.id)
+                ?.starRank ?? null)
+            : null
+        }
         actionLabel={inspectingOwned ? "Already in your pit" : "Add to pit"}
         actionDisabled={inspectingOwned}
         onAction={() => {
