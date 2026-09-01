@@ -126,8 +126,8 @@ export function DragonProfile({
         />
       ))}
       <div>
-        <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground">
-          STATS · ★{starRank} · REIGN {reignLevel}
+        <p className="text-label mb-2">
+          Stats · ★{starRank} · Reign {reignLevel}
         </p>
         <StatGrid stats={stats} />
         <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -157,24 +157,20 @@ export function AbilityBlock({
   ranks?: string[];
 }) {
   return (
-    <div className="rounded-xl bg-muted/50 p-3 text-sm">
-      <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-        {title.toUpperCase()}
-      </p>
+    <div className="rounded-xl bg-muted/50 p-3 text-[15px] leading-relaxed">
+      <p className="text-label">{title}</p>
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} />
       </p>
       {ranks && ranks.length > 1 ? (
         <details className="mt-2">
-          <summary className="cursor-pointer text-[11px] text-muted-foreground">
+          <summary className="cursor-pointer text-[13px] text-muted-foreground">
             Ranks 2–5
           </summary>
           <ul className="mt-2 space-y-2">
             {ranks.slice(1).map((text, index) => (
-              <li key={index} className="text-xs leading-relaxed">
-                <span className="text-[10px] tracking-[0.16em] text-muted-foreground">
-                  RANK {index + 2}
-                </span>
+              <li key={index} className="text-[13px] leading-relaxed">
+                <span className="text-label">Rank {index + 2}</span>
                 <span className="mt-0.5 block">
                   <AbilityText text={text} />
                 </span>

@@ -11,7 +11,7 @@ const sizeClass = {
   lg: "size-16",
   xl: "size-[4.75rem]",
   "2xl": "size-[5.75rem]",
-  "3xl": "size-32",
+  "3xl": "size-24 sm:size-32",
 } as const;
 
 const rarityRing: Record<Rarity, string> = {

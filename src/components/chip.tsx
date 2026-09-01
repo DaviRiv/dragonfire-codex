@@ -17,10 +17,10 @@ export function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full px-3.5 text-sm ring-1 ring-foreground/15 select-none",
+        "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full px-3.5 text-sm ring-1 ring-foreground/20 select-none",
         active
           ? "bg-amber-500/25 text-amber-50 ring-amber-300"
-          : "text-muted-foreground hover:bg-muted",
+          : "text-foreground/80 hover:bg-muted",
         className,
       )}
     >
@@ -86,10 +86,10 @@ export function MiniChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-2.5 text-xs ring-1 select-none",
+        "inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-2.5 text-[13px] ring-1 select-none",
         active
           ? "bg-amber-500/25 text-amber-50 ring-amber-300"
-          : "text-muted-foreground ring-foreground/15 hover:bg-muted",
+          : "text-foreground/75 ring-foreground/20 hover:bg-muted",
         className,
       )}
     >

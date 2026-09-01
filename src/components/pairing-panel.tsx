@@ -1,61 +1,81 @@
 import type { PairingNote, PairingReport } from "@/lib/pairing";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, TriangleAlert } from "lucide-react";
+import { CheckCircle2, ChevronDown, TriangleAlert } from "lucide-react";
 
 export function PairingPanel({ report }: { report: PairingReport }) {
   const { pros, cons, placedCount } = report;
   const empty = placedCount === 0;
   const quiet = !empty && pros.length === 0 && cons.length === 0;
+  const extra =
+    !empty && !quiet && cons.length + pros.length > 1
+      ? ` +${cons.length + pros.length - 1} more`
+      : "";
+  const headline = empty
+    ? "Slot dragons to see who they need."
+    : quiet
+      ? "No named partners on this line."
+      : (cons[0]?.title ?? pros[0]?.title ?? "");
 
   return (
-    <aside className="rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="font-heading text-[10px] tracking-[0.2em] text-muted-foreground">
-            PAIRING
-          </p>
-          <p className="font-heading mt-0.5 text-base tracking-wide sm:text-lg">
-            Pros and cons
+    <details className="group rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+      <summary className="flex min-h-12 cursor-pointer list-none items-start gap-2 px-3 py-2.5 select-none [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="font-heading text-[15px] tracking-wide sm:text-base">
+              Pairing
+            </p>
+            {empty || quiet ? null : (
+              <p className="shrink-0 text-xs text-muted-foreground">
+                {cons.length} idle · {pros.length} live
+              </p>
+            )}
+          </div>
+          <p
+            className={cn(
+              "mt-0.5 text-[13px] leading-snug",
+              cons.length
+                ? "text-amber-100"
+                : quiet || empty
+                  ? "text-muted-foreground"
+                  : "text-emerald-100",
+            )}
+          >
+            {headline}
+            {extra ? (
+              <span className="text-muted-foreground">{extra}</span>
+            ) : null}
           </p>
         </div>
-        {empty || quiet ? null : (
-          <p className="shrink-0 text-xs text-muted-foreground">
-            {cons.length} miss{cons.length === 1 ? "" : "es"} · {pros.length}{" "}
-            payoff{pros.length === 1 ? "" : "s"}
+        <ChevronDown className="mt-1 size-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-border/50 p-3">
+        {empty ? (
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            Moondancer wants a Sentinel. Caraxes wants First-Strike. Slot a
+            partner and the miss flips to a payoff.
           </p>
+        ) : quiet ? (
+          <p className="text-[13px] leading-relaxed text-muted-foreground">
+            Flanks and troop affinity still live under Why this team.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <NoteColumn
+              title="Cons"
+              empty="Nothing sitting idle."
+              notes={cons}
+              tone="con"
+            />
+            <NoteColumn
+              title="Pros"
+              empty="No pairing payoffs yet."
+              notes={pros}
+              tone="pro"
+            />
+          </div>
         )}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Named partners and Hub needs — what this line pays off, and what sits
-        idle without the right dragon.
-      </p>
-      {empty ? (
-        <p className="mt-3 rounded-xl border border-dashed border-border/80 px-3 py-3 text-sm text-muted-foreground">
-          Slot dragons to see pairing payoffs. Moondancer wants a Sentinel.
-          Caraxes wants First-Strike.
-        </p>
-      ) : quiet ? (
-        <p className="mt-3 rounded-xl border border-dashed border-border/80 px-3 py-3 text-sm text-muted-foreground">
-          No named partner requirements on this line. Flanks and troop affinity
-          still live under Why this team.
-        </p>
-      ) : (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <NoteColumn
-            title="Cons"
-            empty="Nothing sitting idle."
-            notes={cons}
-            tone="con"
-          />
-          <NoteColumn
-            title="Pros"
-            empty="No pairing payoffs yet."
-            notes={pros}
-            tone="pro"
-          />
-        </div>
-      )}
-    </aside>
+    </details>
   );
 }
 
@@ -74,16 +94,16 @@ function NoteColumn({
     <div>
       <p
         className={cn(
-          "font-heading text-[10px] tracking-[0.18em]",
-          tone === "con" ? "text-amber-200/90" : "text-emerald-200/90",
+          "text-label",
+          tone === "con" ? "text-amber-200" : "text-emerald-200",
         )}
       >
-        {title.toUpperCase()}
+        {title}
         {notes.length ? ` · ${notes.length}` : ""}
       </p>
-      <ul className="mt-1.5 space-y-1.5">
+      <ul className="mt-1.5 max-h-[min(18rem,40vh)] space-y-1.5 overflow-y-auto">
         {notes.length === 0 ? (
-          <li className="rounded-xl px-2.5 py-2 text-xs text-muted-foreground ring-1 ring-foreground/8">
+          <li className="rounded-xl px-2.5 py-2 text-[13px] text-muted-foreground ring-1 ring-foreground/10">
             {empty}
           </li>
         ) : (
@@ -97,7 +117,7 @@ function NoteColumn({
                   : "bg-emerald-500/10 ring-emerald-500/30",
               )}
             >
-              <p className="flex gap-1.5 text-sm leading-snug text-foreground">
+              <p className="flex gap-1.5 text-[13px] leading-snug text-foreground">
                 {tone === "con" ? (
                   <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-300" />
                 ) : (
@@ -105,7 +125,7 @@ function NoteColumn({
                 )}
                 <span className="min-w-0 font-medium">{note.title}</span>
               </p>
-              <p className="mt-0.5 pl-5 text-xs leading-snug text-muted-foreground">
+              <p className="mt-1 pl-5 text-[13px] leading-relaxed text-foreground/80">
                 {note.detail}
               </p>
             </li>

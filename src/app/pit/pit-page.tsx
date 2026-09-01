@@ -75,7 +75,7 @@ export function PitPage() {
           <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
             Your pit
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             {state.owned.length} dragon
             {state.owned.length === 1 ? "" : "s"} you hatched
           </p>
@@ -130,7 +130,7 @@ export function PitPage() {
                     key={owned.id}
                     type="button"
                     onClick={() => setEditing(owned)}
-                    className="flex min-h-12 w-full items-center gap-2 px-3 py-1.5 text-left select-none active:bg-amber-500/15"
+                    className="flex min-h-14 w-full items-center gap-2.5 px-3 py-2 text-left select-none active:bg-amber-500/15"
                   >
                     <DragonIcon
                       dragonId={dragon.id}
@@ -143,7 +143,7 @@ export function PitPage() {
                       <span className="font-heading block truncate text-sm">
                         {dragon.name}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="block truncate text-[13px] text-muted-foreground">
                         {breedLabels[dragon.breed]} · ★{owned.starRank} · Reign{" "}
                         {owned.reignLevel}
                         {used.length

@@ -35,7 +35,7 @@ export function ListFilterBar({
   onTroopChange?: (value: TroopType | "all") => void;
 }) {
   return (
-    <div className="space-y-2 border-b border-border/50 bg-card/90 p-2">
+    <div className="space-y-2 border-b border-border/50 bg-card/90 p-2.5">
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -46,7 +46,7 @@ export function ListFilterBar({
           enterKeyHint="search"
         />
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
         <MiniChip active={breed === "all"} onClick={() => onBreedChange("all")}>
           All breeds
         </MiniChip>
@@ -60,7 +60,7 @@ export function ListFilterBar({
           </MiniChip>
         ))}
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
         <MiniChip
           active={rarity === "all"}
           onClick={() => onRarityChange("all")}
@@ -78,7 +78,7 @@ export function ListFilterBar({
         ))}
       </div>
       {onTroopChange && troop !== undefined ? (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
           <MiniChip
             active={troop === "all"}
             onClick={() => onTroopChange("all")}

@@ -22,7 +22,7 @@ export function LineupCard({
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-heading text-lg tracking-wide">{lineup.name}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {lineupKindLabel(lineup.kind)} · {modeLabels[lineup.mode]} · {filled}
             /3 slotted
           </p>
@@ -46,8 +46,8 @@ export function LineupCard({
               key={slot}
               className="flex flex-col items-center gap-1 rounded-lg bg-black/30 px-1 py-2 text-center"
             >
-              <p className="text-[10px] tracking-widest text-muted-foreground">
-                {slotShort[slot].toUpperCase()}
+              <p className="text-label text-muted-foreground">
+                {slotShort[slot]}
               </p>
               <DragonIcon
                 dragonId={dragon?.id}
@@ -57,11 +57,11 @@ export function LineupCard({
                 empty={!dragon}
                 size="lg"
               />
-              <p className="w-full truncate text-xs">
+              <p className="w-full truncate text-[13px] font-medium">
                 {dragon?.name ?? "Empty"}
               </p>
               {resolved ? (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   ★{resolved.starRank}
                 </p>
               ) : null}

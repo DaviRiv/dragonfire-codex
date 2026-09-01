@@ -60,7 +60,7 @@ export function HatcheryPage() {
           troop={troop}
           onTroopChange={setTroop}
         />
-        <p className="px-3 py-2 text-xs text-muted-foreground">
+        <p className="px-3 py-2 text-[13px] text-muted-foreground">
           {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
         </p>
         {filtered.length === 0 ? (
@@ -77,7 +77,7 @@ export function HatcheryPage() {
                   type="button"
                   onClick={() => setInspecting(d)}
                   className={cn(
-                    "flex min-h-[7.5rem] flex-col items-center gap-1.5 rounded-2xl bg-background/50 px-1 py-3 ring-1 ring-foreground/10 select-none",
+                    "flex min-h-[8.25rem] flex-col items-center gap-1.5 rounded-2xl bg-background/50 px-1 py-3 ring-1 ring-foreground/10 select-none",
                     owned && "ring-amber-400/30",
                   )}
                 >
@@ -87,10 +87,10 @@ export function HatcheryPage() {
                     rarity={d.rarity}
                     size="xl"
                   />
-                  <span className="w-full truncate text-center text-xs font-medium">
+                  <span className="line-clamp-2 w-full text-center text-[13px] leading-snug font-medium">
                     {d.name}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {breedLabels[d.breed]}
                     {owned ? " · In pit" : ""}
                   </span>
@@ -102,7 +102,7 @@ export function HatcheryPage() {
       </div>
       {UNRELEASED_DRAGONS.length > 0 ? (
         <div className="overflow-hidden rounded-2xl bg-card/50 ring-1 ring-foreground/10">
-          <p className="px-3 py-2 text-xs text-muted-foreground">
+          <p className="px-3 py-2 text-[13px] text-muted-foreground">
             Not in the game yet · {UNRELEASED_DRAGONS.length} names from
             Dragonfire-Hub
           </p>

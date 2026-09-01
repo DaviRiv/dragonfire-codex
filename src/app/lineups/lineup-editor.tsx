@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { MiniChip } from "@/components/chip";
@@ -35,7 +35,7 @@ import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, SlotId } from "@/lib/types";
 import { pairingReport } from "@/lib/pairing";
 import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
-import { Copy, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Search, Sparkles, Trash2 } from "lucide-react";
 
 type TheoryPool = "all" | "owned" | "unowned";
 
@@ -64,6 +64,7 @@ export function LineupEditor({
   const [theoryPool, setTheoryPool] = useState<TheoryPool>("all");
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
   const [showAbilities, setShowAbilities] = useState(false);
+  const pickRef = useRef<HTMLElement>(null);
 
   const lineup = state.lineups.find((l) => l.id === lineupId);
 
@@ -171,7 +172,15 @@ export function LineupEditor({
           lineup={lineup}
           state={state}
           selectedSlot={selectedSlot}
-          onSelectSlot={setSelectedSlot}
+          onSelectSlot={(slot) => {
+            setSelectedSlot(slot);
+            if (window.matchMedia("(max-width: 1023px)").matches) {
+              pickRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          }}
           onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
           onNameChange={(name) => updateLineup(lineup.id, { name })}
         >
@@ -197,7 +206,7 @@ export function LineupEditor({
               </MiniChip>
             ))}
           </div>
-          <p className="text-[11px] text-amber-100/70">
+          <p className="text-xs leading-snug text-amber-100/80">
             {counter.beats
               ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
                   counter.losesTo
@@ -210,8 +219,8 @@ export function LineupEditor({
 
         {isTheory && selectedResolved ? (
           <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
-            <p className="mb-1 text-[10px] tracking-[0.2em] text-muted-foreground">
-              STARS · {selectedDragon?.name}
+            <p className="text-label mb-1">
+              Stars · {selectedDragon?.name}
             </p>
             <StarRank
               value={selectedResolved.starRank}
@@ -241,7 +250,10 @@ export function LineupEditor({
         </div>
       </div>
 
-      <section className="mt-3 min-w-0 space-y-2 lg:mt-0">
+      <section
+        ref={pickRef}
+        className="mt-3 min-w-0 scroll-mt-[4.25rem] space-y-2 lg:mt-0"
+      >
         <div className="flex items-center gap-2">
           <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">
             {selectedDragon
@@ -258,14 +270,14 @@ export function LineupEditor({
             Suggest
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[13px] leading-snug text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
             : `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden.`}
         </p>
         {selectedSlot === "vanguard" ? (
           <p
-            className="rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[12px] leading-snug text-emerald-100/90 ring-1 ring-emerald-500/25"
+            className="line-clamp-2 rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[13px] leading-snug text-emerald-50 ring-1 ring-emerald-500/25"
             title={
               selectedDragon
                 ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
@@ -303,15 +315,18 @@ export function LineupEditor({
         ) : null}
 
         <div className="flex min-w-0 items-center gap-1.5">
-          <Input
-            placeholder={
-              isTheory ? "Search hatchery…" : "Search your pit…"
-            }
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            enterKeyHint="search"
-            className="min-w-0 flex-1"
-          />
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={
+                isTheory ? "Search hatchery…" : "Search your pit…"
+              }
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              enterKeyHint="search"
+              className="pl-9"
+            />
+          </div>
           <MiniChip
             active={showAbilities}
             onClick={() => setShowAbilities((value) => !value)}
@@ -479,9 +494,7 @@ function TeamExtras({
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              AIM FOR STARS
-            </p>
+            <p className="text-label">Aim for stars</p>
             <StarRank
               value={lineup.craftStars}
               onChange={(craftStars) => onUpdate({ craftStars })}

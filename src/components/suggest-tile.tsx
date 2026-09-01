@@ -69,12 +69,12 @@ export function SuggestTile({
           type="button"
           onClick={onPick}
           className={cn(
-            "flex min-h-9 w-0 min-w-0 flex-1 gap-1.5 overflow-hidden px-1.5 py-1 text-left select-none active:bg-amber-500/15",
+            "flex min-h-11 w-0 min-w-0 flex-1 gap-2 overflow-hidden px-2 py-1.5 text-left select-none active:bg-amber-500/15",
             showAbilities || frontBonus ? "items-start" : "items-center",
           )}
         >
           {rank != null ? (
-            <span className="w-3.5 shrink-0 text-center text-[10px] tabular-nums text-muted-foreground">
+            <span className="w-4 shrink-0 text-center text-xs tabular-nums text-muted-foreground">
               {rank}
             </span>
           ) : null}
@@ -88,31 +88,36 @@ export function SuggestTile({
           />
           <span className="w-0 min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">
-              <span className="font-heading truncate text-[13px] tracking-wide">
+              <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
               </span>
               <span
                 className={cn(
-                  "hidden shrink-0 rounded-full px-1.5 py-px text-[10px] tracking-wide ring-1 min-[380px]:inline",
+                  "hidden shrink-0 rounded-full px-1.5 py-px text-[11px] tracking-wide ring-1 min-[380px]:inline",
                   breedChipClass[dragon.breed],
                 )}
               >
                 {breedLabels[dragon.breed]}
               </span>
-              <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
             </span>
             {frontBonus ? (
               <span
-                className="compact-line mt-px text-[11px] leading-snug text-emerald-200/85"
+                className="compact-line mt-0.5 text-xs leading-snug text-emerald-100"
                 title={`Vanguard ${frontBonus}`}
               >
                 {`Vanguard ${frontBonus}`}
               </span>
             ) : (
               <span
-                className="compact-line mt-px text-[11px] text-amber-200/90"
+                className={cn(
+                  "compact-line mt-0.5 text-xs",
+                  /^(Fills |Gives |Gets )/.test(synergy ?? "")
+                    ? "text-emerald-100"
+                    : "text-amber-100",
+                )}
                 title={synergy}
               >
                 {synergy}
@@ -121,14 +126,14 @@ export function SuggestTile({
             {showAbilities ? (
               <>
                 <span
-                  className="compact-line mt-px text-[11px] leading-snug text-foreground/85"
+                  className="compact-line mt-0.5 text-xs leading-snug text-foreground/90"
                   title={commandLine(dragon, true)}
                 >
                   {commandLine(dragon, true)}
                 </span>
                 {star6 ? (
                   <span
-                    className="compact-line mt-px text-[11px] leading-snug text-foreground/70"
+                    className="compact-line mt-0.5 text-xs leading-snug text-foreground/75"
                     title={`(6+ stars) ${star6}`}
                   >
                     {`(6+ stars) ${star6}`}
@@ -157,10 +162,8 @@ export function SuggestTile({
       {open ? (
         <div className="space-y-3 border-t border-border/40 px-3 py-3">
           <div>
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              WITH THIS TEAM
-            </p>
-            <ul className="mt-1 space-y-0.5 text-sm text-amber-100/90">
+            <p className="text-label">With this team</p>
+            <ul className="mt-1 space-y-0.5 text-[13px] leading-snug text-amber-100">
               {reasons.map((reason) => (
                 <li key={reason}>{reason}</li>
               ))}
@@ -175,9 +178,7 @@ export function SuggestTile({
             />
           ))}
           <div>
-            <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-              STATS
-            </p>
+            <p className="text-label">Stats</p>
             <StatGrid
               stats={scaledStats(dragon, starRank, reignLevel)}
               compact
@@ -186,9 +187,7 @@ export function SuggestTile({
           </div>
           {owned && onSaveNotes ? (
             <div className="space-y-1.5">
-              <p className="text-[10px] tracking-[0.2em] text-muted-foreground">
-                YOUR NOTES
-              </p>
+              <p className="text-label">Your notes</p>
               <Textarea
                 value={notes}
                 onChange={(e) =>

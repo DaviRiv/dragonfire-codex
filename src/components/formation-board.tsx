@@ -29,8 +29,8 @@ export function FormationBoard({
   return (
     <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-3 ring-1 ring-amber-500/20 sm:p-4">
       <div className="mb-2 flex items-center gap-2 sm:mb-3">
-        <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.16em] text-amber-200/90 ring-1 ring-amber-400/30">
-          {lineupKindLabel(lineup.kind).toUpperCase()}
+        <span className="rounded-full px-2 py-0.5 text-xs tracking-wide text-amber-100 ring-1 ring-amber-400/35">
+          {lineupKindLabel(lineup.kind)}
         </span>
         {onNameChange ? (
           <input
@@ -92,7 +92,7 @@ function SlotButton({
         type="button"
         onClick={() => onSelect?.(slot)}
         className={cn(
-          "flex min-h-[13.5rem] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 py-3 select-none sm:min-h-[15rem]",
+          "flex min-h-[10.75rem] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 select-none sm:min-h-[15rem] sm:py-3",
           selected && "bg-amber-500/20 ring-2 ring-amber-300",
         )}
       >
@@ -105,14 +105,14 @@ function SlotButton({
           selected={selected}
           size="3xl"
         />
-        <span className="font-heading text-[11px] tracking-[0.16em] text-amber-200/90">
-          {slotShort[slot].toUpperCase()}
+        <span className="text-label text-amber-200/90">
+          {slotShort[slot]}
         </span>
-        <span className="max-w-full truncate text-sm">
+        <span className="max-w-full truncate px-0.5 text-sm font-medium">
           {dragon?.name ?? "Tap to pick"}
         </span>
         {resolved ? (
-          <span className="text-[11px] text-amber-100/80">
+          <span className="text-xs text-amber-100/85">
             {formatInvestment(resolved.starRank, resolved.reignLevel, {
               kind: lineup.kind,
               ignoreLevel: lineup.ignoreLevel,
@@ -121,7 +121,7 @@ function SlotButton({
         ) : null}
         {slot === "vanguard" && dragon ? (
           <span
-            className="compact-line max-w-full px-1 text-center text-[10px] text-emerald-200/90"
+            className="line-clamp-2 max-w-full px-1 text-center text-[11px] leading-snug text-emerald-100 sm:text-xs"
             title={vanguardBonus(dragon, true)}
           >
             {vanguardBonus(dragon, true)}

@@ -73,7 +73,7 @@
   --secondary: oklch(0.28 0.03 48);
   --secondary-foreground: oklch(0.93 0.02 80);
   --muted: oklch(0.26 0.02 50);
-  --muted-foreground: oklch(0.74 0.03 70);
+  --muted-foreground: oklch(0.82 0.025 75);
   --accent: oklch(0.32 0.05 50);
   --accent-foreground: oklch(0.95 0.03 80);
   --destructive: oklch(0.65 0.18 25);
@@ -108,7 +108,7 @@
   --secondary: oklch(0.28 0.03 48);
   --secondary-foreground: oklch(0.93 0.02 80);
   --muted: oklch(0.26 0.02 50);
-  --muted-foreground: oklch(0.74 0.03 70);
+  --muted-foreground: oklch(0.82 0.025 75);
   --accent: oklch(0.32 0.05 50);
   --accent-foreground: oklch(0.95 0.03 80);
   --destructive: oklch(0.65 0.18 25);
@@ -154,6 +154,14 @@
   }
   .font-heading {
     font-family: var(--font-heading);
+  }
+  .text-label {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
   }
 }
 
