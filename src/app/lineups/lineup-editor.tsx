@@ -339,7 +339,7 @@ export function LineupEditor({
               {roleFilter === "all"
                 ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group. Troop and mode live under Options."
                 : roleFilter === "healing"
-                  ? "Ally Recovery, with the star gate on the line. A red ★ means your pit is short of that rank — the kit is a goal, not live."
+                  ? "Ally Recovery, with the star gate on the line. A red warning on the ★ means your pit is short of that rank — the kit is a goal, not live."
                   : roleFilter === "tanking"
                     ? "Taunt soaks, like Vhagar. They stay out of Damage so this list is the front line."
                     : roleFilter === "damage"
