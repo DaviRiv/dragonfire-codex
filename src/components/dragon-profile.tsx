@@ -132,20 +132,26 @@ export function DragonProfile({
               key={heal.id}
               className="rounded-xl bg-emerald-950/35 p-3 text-[15px] leading-relaxed ring-1 ring-emerald-500/20"
             >
-              <p className="text-label text-emerald-100">
+              <div className="flex flex-wrap items-center gap-x-1.5">
                 {heal.stars == null ? (
-                  "Command · Heal · always on"
+                  <p className="text-label text-emerald-100">
+                    Command · Heal · always on
+                  </p>
                 ) : (
                   <>
-                    {heal.habit ? `Habit ${heal.habit} · ` : null}
+                    {heal.habit ? (
+                      <span className="text-label text-emerald-100">
+                        Habit {heal.habit}
+                      </span>
+                    ) : null}
                     <StarRequirement
                       stars={heal.stars}
                       ownedStars={qualifyStars}
                     />
-                    {" · Heal"}
+                    <span className="text-label text-emerald-100">· Heal</span>
                   </>
                 )}
-              </p>
+              </div>
               <p className="mt-1 leading-relaxed">
                 <AbilityText text={heal.text} />
               </p>
@@ -167,7 +173,12 @@ export function DragonProfile({
           title={
             extra.unlockStars != null ? (
               <>
-                {extra.title.replace(/ · \d+★$/, "")} ·{" "}
+                <span className="text-muted-foreground">
+                  {extra.title.replace(/ · \d+★$/, "")}
+                </span>
+                <span className="text-muted-foreground" aria-hidden>
+                  ·
+                </span>
                 <StarRequirement
                   stars={extra.unlockStars}
                   ownedStars={qualifyStars}
@@ -214,7 +225,13 @@ export function AbilityBlock({
 }) {
   return (
     <div className="rounded-xl bg-muted/50 p-3 text-[15px] leading-relaxed">
-      <p className="text-label">{title}</p>
+      <div className="flex flex-wrap items-center gap-x-1.5 text-[0.6875rem] font-medium leading-[1.2] tracking-[0.12em] uppercase">
+        {typeof title === "string" ? (
+          <span className="text-muted-foreground">{title}</span>
+        ) : (
+          title
+        )}
+      </div>
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} />
       </p>

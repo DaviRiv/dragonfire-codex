@@ -176,3 +176,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Unmet star gates — unlayered so .text-label / chip colors cannot wash this out. */
+.star-gate-warn {
+  color: var(--color-df-debuff) !important;
+}
+.star-gate-warn svg {
+  stroke: currentColor;
+}

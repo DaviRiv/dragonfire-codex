@@ -16,21 +16,20 @@ export function StarRequirement({
   className?: string;
 }) {
   const ok = qualifiesForStars(stars, ownedStars);
+  const hint = starGateHint(stars, ownedStars);
   return (
     <span
       className={cn(
-        "inline-flex items-baseline gap-0.5",
-        !ok && "font-medium text-red-400",
+        "inline-flex items-center gap-0.5 align-middle",
+        !ok && "star-gate-warn font-semibold",
         className,
       )}
-      title={starGateHint(stars, ownedStars)}
+      title={hint}
+      aria-label={ok ? undefined : hint}
     >
       {!ok ? (
         <>
-          <TriangleAlert
-            className="mb-px size-3 shrink-0 self-center"
-            aria-hidden
-          />
+          <TriangleAlert className="size-3.5 shrink-0" aria-hidden />
           <span className="sr-only">Warning: </span>
         </>
       ) : null}

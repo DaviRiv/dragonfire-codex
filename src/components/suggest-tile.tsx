@@ -126,7 +126,7 @@ export function SuggestTile({
                   return (
                     <span
                       key={heal.id}
-                      className="compact-line mt-0.5 text-xs leading-snug"
+                      className="mt-0.5 flex min-w-0 items-center gap-1 text-xs leading-snug"
                       title={
                         heal.stars == null
                           ? line
@@ -134,14 +134,19 @@ export function SuggestTile({
                       }
                     >
                       {heal.stars == null ? (
-                        <>Command · {heal.short}</>
+                        <span className="min-w-0 truncate">
+                          Command · {heal.short}
+                        </span>
                       ) : (
                         <>
                           <StarRequirement
                             stars={heal.stars}
                             ownedStars={ownedStars}
+                            className="shrink-0"
                           />
-                          {` · ${heal.short}`}
+                          <span className="min-w-0 truncate">
+                            {` · ${heal.short}`}
+                          </span>
                         </>
                       )}
                     </span>
@@ -178,14 +183,17 @@ export function SuggestTile({
                 </span>
                 {star6 && !heals.some((heal) => heal.stars === 6) ? (
                   <span
-                    className="compact-line mt-0.5 text-xs leading-snug text-foreground/75"
+                    className="mt-0.5 flex min-w-0 items-center gap-1 text-xs leading-snug text-foreground/75"
                     title={`${star6}. ${starGateHint(6, ownedStars)}`}
                   >
-                    (
-                    <StarRequirement stars={6} ownedStars={ownedStars}>
+                    <StarRequirement
+                      stars={6}
+                      ownedStars={ownedStars}
+                      className="shrink-0"
+                    >
                       6+ stars
                     </StarRequirement>
-                    {`) ${star6}`}
+                    <span className="min-w-0 truncate">{` ${star6}`}</span>
                   </span>
                 ) : null}
               </>
@@ -259,7 +267,12 @@ export function SuggestTile({
               title={
                 extra.unlockStars != null ? (
                   <>
-                    {extra.title.replace(/ · \d+★$/, "")} ·{" "}
+                    <span className="text-muted-foreground">
+                      {extra.title.replace(/ · \d+★$/, "")}
+                    </span>
+                    <span className="text-muted-foreground" aria-hidden>
+                      ·
+                    </span>
                     <StarRequirement
                       stars={extra.unlockStars}
                       ownedStars={ownedStars}
@@ -330,9 +343,9 @@ function HealChip({
   }
   const min = Math.min(...heals.map((heal) => heal.stars ?? 1));
   return (
-    <>
-      Heal{" "}
+    <span className="inline-flex items-center gap-0.5">
+      Heal
       <StarRequirement stars={min} ownedStars={ownedStars} />
-    </>
+    </span>
   );
 }
