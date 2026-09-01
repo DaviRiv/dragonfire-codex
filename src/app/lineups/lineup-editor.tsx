@@ -183,39 +183,7 @@ export function LineupEditor({
           }}
           onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
           onNameChange={(name) => updateLineup(lineup.id, { name })}
-        >
-          <div className="flex flex-wrap gap-1">
-            {TROOP_TYPES.map((troop) => (
-              <MiniChip
-                key={troop}
-                active={lineup.troop === troop}
-                onClick={() => updateLineup(lineup.id, { troop })}
-              >
-                {troopShort[troop]}
-              </MiniChip>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {MODES.map((mode) => (
-              <MiniChip
-                key={mode}
-                active={lineup.mode === mode}
-                onClick={() => updateLineup(lineup.id, { mode })}
-              >
-                {modeShort[mode]}
-              </MiniChip>
-            ))}
-          </div>
-          <p className="text-xs leading-snug text-amber-100/80">
-            {counter.beats
-              ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
-                  counter.losesTo
-                    ? `, lose to ${troopLabels[counter.losesTo]}`
-                    : ""
-                }.`
-              : counter.note}
-          </p>
-        </FormationBoard>
+        />
 
         {isTheory && selectedResolved ? (
           <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
@@ -294,52 +262,86 @@ export function LineupEditor({
           </p>
         ) : null}
 
-        {isTheory ? (
-          <div className="flex flex-wrap gap-1">
-            {(
-              [
-                ["all", "Hatchery"],
-                ["unowned", "Not owned"],
-                ["owned", "In pit"],
-              ] as const
-            ).map(([id, label]) => (
+        <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+          <div className="space-y-2 border-b border-border/50 p-2.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={
+                    isTheory ? "Search hatchery…" : "Search your pit…"
+                  }
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  enterKeyHint="search"
+                  className="pl-9"
+                />
+              </div>
               <MiniChip
-                key={id}
-                active={theoryPool === id}
-                onClick={() => setTheoryPool(id)}
+                active={showAbilities}
+                onClick={() => setShowAbilities((value) => !value)}
+                className="shrink-0"
               >
-                {label}
+                Abilities
               </MiniChip>
-            ))}
+            </div>
+            <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+              {TROOP_TYPES.map((troop) => (
+                <MiniChip
+                  key={troop}
+                  active={lineup.troop === troop}
+                  onClick={() => updateLineup(lineup.id, { troop })}
+                >
+                  {troopShort[troop]}
+                </MiniChip>
+              ))}
+            </div>
+            <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+              {MODES.map((mode) => (
+                <MiniChip
+                  key={mode}
+                  active={lineup.mode === mode}
+                  onClick={() => updateLineup(lineup.id, { mode })}
+                >
+                  {modeShort[mode]}
+                </MiniChip>
+              ))}
+            </div>
+            {isTheory ? (
+              <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+                {(
+                  [
+                    ["all", "Hatchery"],
+                    ["unowned", "Not owned"],
+                    ["owned", "In pit"],
+                  ] as const
+                ).map(([id, label]) => (
+                  <MiniChip
+                    key={id}
+                    active={theoryPool === id}
+                    onClick={() => setTheoryPool(id)}
+                  >
+                    {label}
+                  </MiniChip>
+                ))}
+              </div>
+            ) : null}
+            <p className="text-[13px] leading-snug text-muted-foreground">
+              {counter.beats
+                ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
+                    counter.losesTo
+                      ? `, lose to ${troopLabels[counter.losesTo]}`
+                      : ""
+                  }. Ranking favors this troop.`
+                : counter.note}
+            </p>
           </div>
-        ) : null}
-
-        <div className="flex min-w-0 items-center gap-1.5">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={
-                isTheory ? "Search hatchery…" : "Search your pit…"
-              }
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              enterKeyHint="search"
-              className="pl-9"
-            />
-          </div>
-          <MiniChip
-            active={showAbilities}
-            onClick={() => setShowAbilities((value) => !value)}
-            className="shrink-0"
-          >
-            Abilities
-          </MiniChip>
-        </div>
 
         {pitEmpty ? (
           <EmptyState
             title="Add your dragons first"
             description="Log hatched dragons in the pit, then come back and pick a team. Suggest team ranks what you own."
+            className="rounded-none border-0"
             action={
               <div className="grid w-full max-w-sm gap-2">
                 <Button onClick={loadSample}>Load sample pit</Button>
@@ -350,7 +352,7 @@ export function LineupEditor({
             }
           />
         ) : suggestions.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border/80 px-4 py-8 text-center text-sm text-muted-foreground">
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
             {isTheory
               ? "Nothing matches. Try Hatchery, or clear the search."
               : query.trim()
@@ -358,7 +360,7 @@ export function LineupEditor({
                 : "Everyone in your pit is already on this team. Clear a lane to see other picks."}
           </p>
         ) : (
-          <ul className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+          <ul className="divide-y divide-border/50">
             {suggestions.map((suggestion, index) => (
               <li key={suggestion.dragon.id}>
                 <SuggestTile
@@ -379,6 +381,7 @@ export function LineupEditor({
             ))}
           </ul>
         )}
+        </div>
       </section>
 
       <div className="col-span-full mt-3 space-y-2 lg:hidden">

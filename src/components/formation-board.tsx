@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
-import { slotShort } from "@/lib/labels";
+import { modeShort, slotShort, troopShort } from "@/lib/labels";
 import { vanguardBonus } from "@/lib/habits";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,9 @@ export function FormationBoard({
             {lineup.name}
           </p>
         )}
+        <span className="shrink-0 text-xs text-amber-100/75">
+          {troopShort[lineup.troop]} · {modeShort[lineup.mode]}
+        </span>
       </div>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {SLOT_IDS.map((slot) => (

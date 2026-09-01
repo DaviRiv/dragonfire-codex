@@ -10,8 +10,9 @@ with HBO, Warner Bros., or the game.
 - **Team** — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
-  for **this team** first, hiding anyone already slotted. Ranking favors
-  synergy plus damage and healing. The formation is large so you can
+  for **this team** first, hiding anyone already slotted. Troop, mode,
+  search, and hatchery/pit pool filters sit on that pick list, not on
+  the formation. Ranking favors synergy plus damage and healing. The formation is large so you can
   read the lane. Pick rows stay thin: name and synergy, or the
   **vanguard skill** when that lane is selected. Turn on **Abilities**
   for command and the unique **(6+ stars)** skill. Open a row for the
