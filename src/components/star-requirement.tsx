@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { TriangleAlert } from "lucide-react";
 import { qualifiesForStars, starGateHint } from "@/lib/stars";
 import { cn } from "@/lib/utils";
 
-/** Star gate. Red when the pit rank (or none) cannot use the ability yet. */
+/** Star gate. Red warning icon when the pit rank cannot use the ability yet. */
 export function StarRequirement({
   stars,
   ownedStars,
@@ -17,9 +18,22 @@ export function StarRequirement({
   const ok = qualifiesForStars(stars, ownedStars);
   return (
     <span
-      className={cn(!ok && "font-medium text-red-400", className)}
+      className={cn(
+        "inline-flex items-baseline gap-0.5",
+        !ok && "font-medium text-red-400",
+        className,
+      )}
       title={starGateHint(stars, ownedStars)}
     >
+      {!ok ? (
+        <>
+          <TriangleAlert
+            className="mb-px size-3 shrink-0 self-center"
+            aria-hidden
+          />
+          <span className="sr-only">Warning: </span>
+        </>
+      ) : null}
       {children ?? `${stars}★`}
     </span>
   );

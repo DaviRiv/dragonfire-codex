@@ -22,8 +22,8 @@ with HBO, Warner Bros., or the game.
   Healers always show the Recovery line with its star gate (Command,
   2★, 6★, 10★) so a 10★ habit is not mistaken for a Command heal.
   Gates you do not own yet (or that sit above the dragon in your pit)
-  render in red — a 10★ Velar heal stays a goal until you actually
-  have 10 stars.
+  render in red with a warning icon — a 10★ Velar heal stays a goal
+  until you actually have 10 stars.
   Turn on **Abilities** for command and the unique **(6+ stars)** skill.
   Open a row for the full command, Habits 1–5, vanguard skill, and stats
   at the bottom. Theory lines also show a compact **Pairing** summary
