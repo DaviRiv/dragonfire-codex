@@ -29,6 +29,11 @@ import {
   troopShort,
   slotHints,
 } from "@/lib/labels";
+import {
+  COMP_ROLES,
+  roleLabels,
+  type CompRole,
+} from "@/lib/roles";
 import { vanguardBonus } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
@@ -38,6 +43,7 @@ import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synerg
 import { Copy, Search, Sparkles, Trash2 } from "lucide-react";
 
 type TheoryPool = "all" | "owned" | "unowned";
+type RoleFilter = CompRole | "all";
 
 export function LineupEditor({
   lineupId,
@@ -62,6 +68,7 @@ export function LineupEditor({
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
   const [query, setQuery] = useState("");
   const [theoryPool, setTheoryPool] = useState<TheoryPool>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
   const [showAbilities, setShowAbilities] = useState(false);
   const pickRef = useRef<HTMLElement>(null);
@@ -84,6 +91,7 @@ export function LineupEditor({
     setSelectedSlot(empty ?? "vanguard");
     setQuery("");
     setTheoryPool("all");
+    setRoleFilter("all");
   }
 
   const report = useMemo(
@@ -103,8 +111,9 @@ export function LineupEditor({
       state,
       query,
       pool: lineup.kind === "theory" ? theoryPool : "all",
+      role: roleFilter,
     });
-  }, [lineup, selectedSlot, state, query, theoryPool]);
+  }, [lineup, selectedSlot, state, query, theoryPool, roleFilter]);
 
   if (!ready || !lineup || !report || !pairing) {
     return <p className="text-sm text-muted-foreground">Opening formation…</p>;
@@ -140,7 +149,7 @@ export function LineupEditor({
       toast(
         isTheory
           ? "Every lane is already filled."
-          : "Every lane is filled, or your pit has no more dragons for this troop.",
+          : "Every lane is filled, or your pit has no more dragons for this team.",
       );
       return;
     }
@@ -162,7 +171,6 @@ export function LineupEditor({
     toast.success("Copied lineup summary.");
   }
 
-  const counter = troopCounters[lineup.troop];
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
@@ -241,7 +249,9 @@ export function LineupEditor({
         <p className="text-[13px] leading-snug text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
-            : `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden.`}
+            : roleFilter === "all"
+              ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden.`
+              : `${suggestions.length} ${roleLabels[roleFilter].toLowerCase()} for ${slotShort[selectedSlot].toLowerCase()}.`}
         </p>
         {selectedSlot === "vanguard" ? (
           <p
@@ -286,24 +296,23 @@ export function LineupEditor({
               </MiniChip>
             </div>
             <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
-              {TROOP_TYPES.map((troop) => (
+              <MiniChip
+                active={roleFilter === "all"}
+                onClick={() => setRoleFilter("all")}
+              >
+                All
+              </MiniChip>
+              {COMP_ROLES.map((role) => (
                 <MiniChip
-                  key={troop}
-                  active={lineup.troop === troop}
-                  onClick={() => updateLineup(lineup.id, { troop })}
+                  key={role}
+                  active={roleFilter === role}
+                  onClick={() =>
+                    setRoleFilter((current) =>
+                      current === role ? "all" : role,
+                    )
+                  }
                 >
-                  {troopShort[troop]}
-                </MiniChip>
-              ))}
-            </div>
-            <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
-              {MODES.map((mode) => (
-                <MiniChip
-                  key={mode}
-                  active={lineup.mode === mode}
-                  onClick={() => updateLineup(lineup.id, { mode })}
-                >
-                  {modeShort[mode]}
+                  {roleLabels[role]}
                 </MiniChip>
               ))}
             </div>
@@ -327,13 +336,15 @@ export function LineupEditor({
               </div>
             ) : null}
             <p className="text-[13px] leading-snug text-muted-foreground">
-              {counter.beats
-                ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
-                    counter.losesTo
-                      ? `, lose to ${troopLabels[counter.losesTo]}`
-                      : ""
-                  }. Ranking favors this troop.`
-                : counter.note}
+              {roleFilter === "all"
+                ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group. Troop and mode live under Options."
+                : roleFilter === "healing"
+                  ? "Allies who apply Recovery, like Malachite. Hybrids who also deal damage still show here."
+                  : roleFilter === "tanking"
+                    ? "Taunt soaks, like Vhagar. They stay out of Damage so this list is the front line."
+                    : roleFilter === "damage"
+                      ? "Damage dealers, like Venator and Kalspire. Tanks are listed under Tanking instead."
+                      : "Hard crowd control — Stun, Panic, Slow, Stagger, Confusion. Kalspire is here and under Damage."}
             </p>
           </div>
 
@@ -354,9 +365,13 @@ export function LineupEditor({
         ) : suggestions.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">
             {isTheory
-              ? "Nothing matches. Try Hatchery, or clear the search."
-              : query.trim()
-                ? "Nothing in your pit matches. Clear the search."
+              ? roleFilter === "all"
+                ? "Nothing matches. Try Hatchery, or clear the search."
+                : `No ${roleLabels[roleFilter].toLowerCase()} matches. Try All, or clear the search.`
+              : query.trim() || roleFilter !== "all"
+                ? roleFilter === "all"
+                  ? "Nothing in your pit matches. Clear the search."
+                  : `No ${roleLabels[roleFilter].toLowerCase()} in your pit matches. Try All, or clear the search.`
                 : "Everyone in your pit is already on this team. Clear a lane to see other picks."}
           </p>
         ) : (
@@ -461,18 +476,48 @@ function TeamExtras({
   onDelete: () => void;
   onSaved: () => void;
 }) {
+  const counter = troopCounters[lineup.troop];
   return (
     <div className="space-y-2">
       <Disclosure
         title="Options"
-        badge={
-          isTheory
-            ? `Aim ★${lineup.craftStars}`
-            : lineup.ignoreLevel
-              ? "Ignore level"
-              : "Use reign"
-        }
+        badge={`${troopShort[lineup.troop]} · ${modeShort[lineup.mode]}`}
       >
+        <div className="mb-3 space-y-2">
+          <p className="text-label">March troop</p>
+          <div className="flex flex-wrap gap-1">
+            {TROOP_TYPES.map((troop) => (
+              <MiniChip
+                key={troop}
+                active={lineup.troop === troop}
+                onClick={() => onUpdate({ troop })}
+              >
+                {troopShort[troop]}
+              </MiniChip>
+            ))}
+          </div>
+          <p className="text-label">Mode</p>
+          <div className="flex flex-wrap gap-1">
+            {MODES.map((mode) => (
+              <MiniChip
+                key={mode}
+                active={lineup.mode === mode}
+                onClick={() => onUpdate({ mode })}
+              >
+                {modeShort[mode]}
+              </MiniChip>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {counter.beats
+              ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
+                  counter.losesTo
+                    ? `, lose to ${troopLabels[counter.losesTo]}`
+                    : ""
+                }. Ranking still favors this troop.`
+              : counter.note}
+          </p>
+        </div>
         {!isTheory ? (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-1">

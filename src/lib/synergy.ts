@@ -1,5 +1,6 @@
 import { investmentScore, placedInLineup } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
+import { missingCompRoles, hasCompRole } from "@/lib/roles";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
 import type { ResolvedSlot } from "@/lib/lineup";
 
@@ -122,16 +123,44 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
       });
     }
 
-    if (p.dragon.tags.includes("Taunt") && p.slot === "vanguard") {
+    if (hasCompRole(p.dragon, "tanking") && p.slot === "vanguard") {
       score += 8;
       notes.push({
         tone: "good",
         text: `${p.dragon.name}’s taunt belongs in the Vanguard so they soak the row.`,
       });
-    } else if (p.dragon.tags.includes("Taunt") && p.slot !== "vanguard") {
+    } else if (hasCompRole(p.dragon, "tanking") && p.slot !== "vanguard") {
       notes.push({
         tone: "info",
         text: `${p.dragon.name} can taunt — Vanguard is usually the safer home.`,
+      });
+    }
+  }
+
+  if (filled >= 2) {
+    const missing = missingCompRoles(placed.map((p) => p.dragon));
+    if (missing.includes("tanking")) {
+      notes.push({
+        tone: "warn",
+        text: "No tank. Slot a Taunt dragon (Vhagar, Vaeldra) in Vanguard so someone holds the row.",
+      });
+    }
+    if (missing.includes("healing")) {
+      notes.push({
+        tone: "warn",
+        text: "No healer. Add someone who applies Recovery to allies, like Malachite.",
+      });
+    }
+    if (missing.includes("control")) {
+      notes.push({
+        tone: "info",
+        text: "No crowd control. A Stun, Panic, Slow, Stagger, or Confusion kit (Kalspire) peels the other line.",
+      });
+    }
+    if (missing.includes("damage")) {
+      notes.push({
+        tone: "warn",
+        text: "No damage dealer. This line soaks and supports but will not finish fights.",
       });
     }
   }
@@ -147,10 +176,10 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
         ) / placed.length;
   score += Math.min(16, Math.round(avgPower / 12));
 
-  if (placed.some((p) => p.dragon.tags.includes("Recovery"))) {
+  if (placed.some((p) => hasCompRole(p.dragon, "healing"))) {
     notes.push({
       tone: "info",
-      text: "Recovery is in the lineup — good for PvE tiles and longer fights.",
+      text: "A healer is in the lineup — Recovery on allies helps PvE tiles and longer fights.",
     });
   }
 

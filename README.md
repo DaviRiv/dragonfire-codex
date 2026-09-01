@@ -10,18 +10,22 @@ with HBO, Warner Bros., or the game.
 - **Team** — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
-  for **this team** first, hiding anyone already slotted. Troop, mode,
-  search, and hatchery/pit pool filters sit on that pick list, not on
-  the formation. Ranking favors synergy plus damage and healing. The formation is large so you can
-  read the lane. Pick rows stay thin: name and synergy, or the
-  **vanguard skill** when that lane is selected. Turn on **Abilities**
-  for command and the unique **(6+ stars)** skill. Open a row for the
-  full command, Habits 1–5, vanguard skill, and stats at the bottom.
-  Theory lines also show a compact **Pairing** summary under the
-  formation (open it for the full pros and cons). Named partners come
-  from kit text (Moondancer wants an ally Sentinel) and Hub `needs`
-  (Caraxes wants First-Strike). Miss the partner and the panel spells
-  out what never fires; slot them and it flips to a payoff.
+  for **this team** first, hiding anyone already slotted. Role filters on
+  that list are dungeon jobs: **Healing**, **Tanking**, **Damage**, and
+  **Crowd control** (Kalspire is both Damage and CC). Troop type and
+  mode live under **Options** — they still steer ranking and affinity,
+  they just are not how you hide dragons. Search and the hatchery/pit
+  pool stay on the pick list. Ranking favors a missing healer, tank, or
+  crowd-control kit the same way a group finder does. The formation is
+  large so you can read the lane. Pick rows stay thin: name, role chips,
+  and synergy, or the **vanguard skill** when that lane is selected.
+  Turn on **Abilities** for command and the unique **(6+ stars)** skill.
+  Open a row for the full command, Habits 1–5, vanguard skill, and stats
+  at the bottom. Theory lines also show a compact **Pairing** summary
+  under the formation (open it for the full pros and cons). Named
+  partners come from kit text (Moondancer wants an ally Sentinel) and
+  Hub `needs` (Caraxes wants First-Strike). Miss the partner and the
+  panel spells out what never fires; slot them and it flips to a payoff.
   Ability text, stats-by-level, troop counts, and power come from
   [Dragonfire-Hub](https://dragonfire-hub.com/).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit

@@ -6,7 +6,8 @@ import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { commandLine, dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
-import { breedChipClass, breedLabels } from "@/lib/labels";
+import { breedLabels } from "@/lib/labels";
+import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { scaledStats } from "@/lib/scale-stats";
 import type { DragonSuggestion } from "@/lib/suggest";
 import type { SlotId } from "@/lib/types";
@@ -91,14 +92,17 @@ export function SuggestTile({
               <span className="font-heading truncate text-sm tracking-wide">
                 {dragon.name}
               </span>
-              <span
-                className={cn(
-                  "hidden shrink-0 rounded-full px-1.5 py-px text-[11px] tracking-wide ring-1 min-[380px]:inline",
-                  breedChipClass[dragon.breed],
-                )}
-              >
-                {breedLabels[dragon.breed]}
-              </span>
+              {dragonRoles(dragon).map((role) => (
+                <span
+                  key={role}
+                  className={cn(
+                    "hidden shrink-0 rounded-full px-1.5 py-px text-[11px] tracking-wide ring-1 min-[380px]:inline",
+                    roleChipClass[role],
+                  )}
+                >
+                  {roleShort[role]}
+                </span>
+              ))}
               <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                 {selected ? "Slotted" : meta}
               </span>
@@ -163,6 +167,13 @@ export function SuggestTile({
         <div className="space-y-3 border-t border-border/40 px-3 py-3">
           <div>
             <p className="text-label">With this team</p>
+            <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+              {dragonRoles(dragon)
+                .map((role) => roleShort[role])
+                .join(" · ")}
+              {" · "}
+              {breedLabels[dragon.breed]}
+            </p>
             <ul className="mt-1 space-y-0.5 text-[13px] leading-snug text-amber-100">
               {reasons.map((reason) => (
                 <li key={reason}>{reason}</li>

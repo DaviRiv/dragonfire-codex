@@ -10,6 +10,14 @@ import {
   type ResolvedSlot,
 } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
+import {
+  dragonRoles,
+  hasCompRole,
+  roleLabels,
+  roleShort,
+  teamCompRoles,
+  type CompRole,
+} from "@/lib/roles";
 import type { Dragon, Lineup, OwnedDragon, PitState, SlotId } from "@/lib/types";
 
 export interface DragonSuggestion {
@@ -120,10 +128,33 @@ function scoreDragon(
     }
   }
 
-  if (slot === "vanguard") {
-    if (dragon.tags.includes("Taunt")) {
+  const teamRoles = teamCompRoles(teammates.map((mate) => mate.dragon));
+
+  if (teammates.length > 0) {
+    if (hasCompRole(dragon, "healing") && !teamRoles.has("healing")) {
+      note("Your line still needs a healer", 96, 28);
+    }
+    if (hasCompRole(dragon, "tanking") && !teamRoles.has("tanking")) {
       note(
-        teammates.length ? "Taunt soak for this team" : "Taunt soak",
+        slot === "vanguard"
+          ? "Your line still needs a tank in Vanguard"
+          : "Your line still needs a tank",
+        slot === "vanguard" ? 98 : 72,
+        slot === "vanguard" ? 32 : 16,
+      );
+    }
+    if (hasCompRole(dragon, "control") && !teamRoles.has("control")) {
+      note("Your line still needs crowd control", 84, 16);
+    }
+    if (hasCompRole(dragon, "damage") && !teamRoles.has("damage")) {
+      note("Your line still needs a damage dealer", 88, 18);
+    }
+  }
+
+  if (slot === "vanguard") {
+    if (hasCompRole(dragon, "tanking")) {
+      note(
+        teammates.length ? "Tank soak for this team" : "Tank soak",
         80,
         28,
       );
@@ -132,10 +163,12 @@ function scoreDragon(
       note("Front-line warrior", 50, 10);
     }
   } else if (
-    !vanguard?.dragon.tags.includes("Taunt") &&
-    dragon.tags.includes("Taunt")
+    !vanguard?.dragon ||
+    (!hasCompRole(vanguard.dragon, "tanking") && hasCompRole(dragon, "tanking"))
   ) {
-    note("Taunt is usually better in Vanguard", 25);
+    if (hasCompRole(dragon, "tanking")) {
+      note("Tanks are usually better in Vanguard", 25);
+    }
   }
 
   if (slot === "left" && dragon.breed === "sentinel") {
@@ -168,27 +201,19 @@ function scoreDragon(
     if (lineup.mode === "pvp" || lineup.mode === "rally") score += 4;
   }
 
-  const heals =
-    dragon.tags.includes("Recovery") ||
-    /\brecovery\b/i.test(`${dragon.habit} ${dragon.command}`);
-  const teamHeals = teammates.some(
-    (mate) =>
-      mate.dragon.tags.includes("Recovery") ||
-      /\brecovery\b/i.test(`${mate.dragon.habit} ${mate.dragon.command}`),
-  );
-  if (heals) {
-    if (teammates.length > 0 && !teamHeals) {
-      note("Healing your line is missing", 92, 24);
-    } else if (lineup.mode === "pve" || lineup.mode === "defense") {
-      note("Healing for this mode", 74, 14);
-    } else {
-      note("Healing", 56, 10);
-    }
+  if (hasCompRole(dragon, "healing") && teammates.length === 0) {
+    note("Healer", 56, 10);
+    if (slot === "left") score += 4;
+  } else if (
+    hasCompRole(dragon, "healing") &&
+    (lineup.mode === "pve" || lineup.mode === "defense")
+  ) {
+    note("Healing for this mode", 74, 14);
     if (slot === "left") score += 4;
   }
 
-  if (lineup.mode === "defense" && dragon.tags.includes("Protect")) {
-    note("Protect for castle defense", 55, 10);
+  if (lineup.mode === "defense" && hasCompRole(dragon, "tanking")) {
+    note("Tank for castle defense", 55, 10);
   }
 
   for (const fit of pairingFit(dragon, teammates)) {
@@ -220,6 +245,7 @@ export function suggestDragons({
   query = "",
   includeSlotted = false,
   pool = "all",
+  role = "all",
 }: {
   lineup: Lineup;
   slot: SlotId;
@@ -227,6 +253,7 @@ export function suggestDragons({
   query?: string;
   includeSlotted?: boolean;
   pool?: "all" | "owned" | "unowned";
+  role?: CompRole | "all";
 }): DragonSuggestion[] {
   const used = slottedDragonIds(lineup, state);
   const teammates = teammatesForSlot(lineup, state, slot);
@@ -248,8 +275,12 @@ export function suggestDragons({
       const owned = ownedByCatalog.get(dragon.id) ?? null;
       if (pool === "owned" && !owned) return false;
       if (pool === "unowned" && owned) return false;
+      if (role !== "all" && !hasCompRole(dragon, role)) return false;
       if (!q) return true;
-      return `${dragon.name} ${dragon.epithet} ${dragon.breed} ${dragon.tags.join(" ")} ${dragon.command} ${dragon.habit}`
+      const roles = dragonRoles(dragon)
+        .map((item) => `${roleLabels[item]} ${roleShort[item]}`)
+        .join(" ");
+      return `${dragon.name} ${dragon.epithet} ${dragon.breed} ${roles} ${dragon.tags.join(" ")} ${dragon.command} ${dragon.habit}`
         .toLowerCase()
         .includes(q);
     })
