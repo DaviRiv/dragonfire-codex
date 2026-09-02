@@ -71,6 +71,23 @@ export function isTank(dragon: Dragon): boolean {
   );
 }
 
+/** Taunt soak, Bulwark, or a kit that cuts this dragon’s own Damage Received. */
+export function isMitigation(dragon: Dragon): boolean {
+  if (isTank(dragon)) return true;
+  const hay = kitLines(dragon).join("\n");
+  if (/\bBulwark\b/i.test(hay)) return true;
+  return kitLines(dragon).some((line) => {
+    if (/\bof (?:the Ally|\d+ (?:other )?All(?:y|ies))\b/i.test(line)) {
+      return false;
+    }
+    if (/\b\d+ other All(?:y|ies)\b/i.test(line)) return false;
+    return (
+      /Reduce(?:s)? (?:either )?your .{0,80}Damage Received/i.test(line) ||
+      /increase your Damage Received by\s+-/i.test(line)
+    );
+  });
+}
+
 /** Stun, Panic, Slow, Stagger, Confusion. Taunt is tanking; Weakened is a damage amp. */
 export function isCrowdControl(dragon: Dragon): boolean {
   return providesAny(dragon, HARD_CC);
@@ -108,6 +125,14 @@ export function dragonRoles(dragon: Dragon): CompRole[] {
 
 export function hasCompRole(dragon: Dragon, role: CompRole): boolean {
   return dragonRoles(dragon).includes(role);
+}
+
+/**
+ * Damage dealer who is not also the line’s healer. Malachite still counts as
+ * Recovery; Venator is the one who finishes.
+ */
+export function isFinisher(dragon: Dragon): boolean {
+  return hasCompRole(dragon, "damage") && !isHealer(dragon);
 }
 
 export function teamCompRoles(dragons: Dragon[]): Set<CompRole> {

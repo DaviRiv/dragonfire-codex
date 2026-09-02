@@ -1,3 +1,4 @@
+import { compPriority, suggestCompNotes } from "@/lib/comp";
 import { allDragons, findDragon } from "@/lib/dragons";
 import { pairingFit } from "@/lib/pairing";
 import {
@@ -129,26 +130,20 @@ function scoreDragon(
   }
 
   const teamRoles = teamCompRoles(teammates.map((mate) => mate.dragon));
+  const missingHeal =
+    teammates.length > 0 &&
+    !teamRoles.has("healing") &&
+    !hasCompRole(dragon, "healing");
 
-  if (teammates.length > 0) {
-    if (hasCompRole(dragon, "healing") && !teamRoles.has("healing")) {
-      note("Your line still needs a healer", 96, 28);
-    }
-    if (hasCompRole(dragon, "tanking") && !teamRoles.has("tanking")) {
-      note(
-        slot === "vanguard"
-          ? "Your line still needs a tank in Vanguard"
-          : "Your line still needs a tank",
-        slot === "vanguard" ? 98 : 72,
-        slot === "vanguard" ? 32 : 16,
-      );
-    }
-    if (hasCompRole(dragon, "control") && !teamRoles.has("control")) {
-      note("Your line still needs crowd control", 84, 16);
-    }
-    if (hasCompRole(dragon, "damage") && !teamRoles.has("damage")) {
-      note("Your line still needs a damage dealer", 88, 18);
-    }
+  for (const advice of suggestCompNotes(
+    dragon,
+    teammates.map((mate) => ({
+      dragon: mate.dragon,
+      atStars: mate.starRank,
+    })),
+    slot,
+  )) {
+    note(advice.text, advice.weight, advice.points);
   }
 
   if (slot === "vanguard") {
@@ -224,7 +219,15 @@ function scoreDragon(
     })),
     starRank,
   )) {
-    note(fit.text, 112, fit.points);
+    let text = fit.text;
+    let points = fit.points;
+    if (missingHeal) {
+      points = Math.min(points, 18);
+      if (/\bBurn\b/.test(text)) {
+        text = `${text} — this line still has no healer`;
+      }
+    }
+    note(text, 112, points);
   }
 
   const reasons = weighted
@@ -278,6 +281,11 @@ export function suggestDragons({
           .filter((d): d is Dragon => Boolean(d))
       : allDragons(state.customDragons);
 
+  const mates = teammates.map((mate) => ({
+    dragon: mate.dragon,
+    atStars: mate.starRank,
+  }));
+
   return source
     .filter((dragon) => {
       if (!includeSlotted && used.has(dragon.id)) return false;
@@ -305,7 +313,9 @@ export function suggestDragons({
     )
     .sort(
       (a, b) =>
-        b.score - a.score || a.dragon.name.localeCompare(b.dragon.name),
+        compPriority(a.dragon, mates) - compPriority(b.dragon, mates) ||
+        b.score - a.score ||
+        a.dragon.name.localeCompare(b.dragon.name),
     );
 }
 

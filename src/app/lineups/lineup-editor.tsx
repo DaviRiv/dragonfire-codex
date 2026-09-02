@@ -17,10 +17,12 @@ import { Input } from "@/components/ui/input";
 import {
   dragonsUsedOnOtherPitTeams,
   filledCount,
+  placedInLineup,
   resolveSlot,
   skipsUsedDragons,
   slotOfDragon,
 } from "@/lib/lineup";
+import { lineGapHeadline } from "@/lib/comp";
 import {
   MODES,
   TROOP_TYPES,
@@ -128,6 +130,16 @@ export function LineupEditor({
       excludeIds: leftoverIds,
     });
   }, [lineup, selectedSlot, state, query, theoryPool, roleFilter, leftoverIds]);
+
+  const gapHeadline = useMemo(() => {
+    if (!lineup) return null;
+    const mates = placedInLineup(lineup, state).filter(
+      (row) => row.slot !== selectedSlot,
+    );
+    return lineGapHeadline(
+      mates.map((row) => ({ dragon: row.dragon, atStars: row.starRank })),
+    );
+  }, [lineup, state, selectedSlot]);
 
   if (!ready || !lineup || !report || !pairing) {
     return <p className="text-sm text-muted-foreground">Opening formation…</p>;
@@ -335,6 +347,11 @@ export function LineupEditor({
                 ? `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}, skipping dragons already on another saved team.`
                 : `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}. Suggest never seats a dragon you do not own.`}
         </p>
+        {gapHeadline ? (
+          <p className="rounded-xl bg-amber-950/40 px-2.5 py-2 text-[13px] leading-snug text-amber-50 ring-1 ring-amber-500/25">
+            {gapHeadline}
+          </p>
+        ) : null}
         {selectedSlot === "vanguard" ? (
           <p
             className="line-clamp-2 rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[13px] leading-snug text-emerald-50 ring-1 ring-emerald-500/25"

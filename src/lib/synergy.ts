@@ -1,3 +1,4 @@
+import { lineGaps, lineProfile } from "@/lib/comp";
 import { investmentScore, placedInLineup } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import { missingCompRoles, hasCompRole } from "@/lib/roles";
@@ -138,29 +139,20 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
   }
 
   if (filled >= 2) {
+    const profile = lineProfile(
+      placed.map((row) => ({ dragon: row.dragon, atStars: row.starRank })),
+    );
+    for (const gap of lineGaps(profile)) {
+      notes.push({
+        tone: "warn",
+        text: `${gap.gap}.`,
+      });
+    }
     const missing = missingCompRoles(placed.map((p) => p.dragon));
-    if (missing.includes("tanking")) {
-      notes.push({
-        tone: "warn",
-        text: "No tank. Slot a Taunt dragon (Vhagar, Vaeldra) in Vanguard so someone holds the row.",
-      });
-    }
-    if (missing.includes("healing")) {
-      notes.push({
-        tone: "warn",
-        text: "No healer. Add someone who applies Recovery to allies, like Malachite.",
-      });
-    }
     if (missing.includes("control")) {
       notes.push({
         tone: "info",
         text: "No crowd control. A Stun, Panic, Slow, Stagger, or Confusion kit (Kalspire) peels the other line.",
-      });
-    }
-    if (missing.includes("damage")) {
-      notes.push({
-        tone: "warn",
-        text: "No damage dealer. This line soaks and supports but will not finish fights.",
       });
     }
   }

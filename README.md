@@ -15,8 +15,10 @@ with HBO, Warner Bros., or the game.
   **Crowd control** (Kalspire is both Damage and CC). Troop type and
   mode live under **Options** — they still steer ranking and affinity,
   they just are not how you hide dragons. Search and the hatchery/pit
-  pool stay on the pick list. Ranking favors a missing healer, tank, or
-  crowd-control kit the same way a group finder does. The formation is
+  pool stay on the pick list. Ranking fills composition in order: a
+  healer if nobody Recovers, then damage mitigation (Taunt or Damage
+  Received), then a damage dealer to finish. Feeding Burn so a tank’s
+  Taunt can hit 50% does not outrank a missing healer. The formation is
   large so you can read the lane. Pick rows stay thin: name, role chips,
   and synergy, or the **vanguard skill** when that lane is selected.
   Healers always show the Recovery line with its star gate (Command,
