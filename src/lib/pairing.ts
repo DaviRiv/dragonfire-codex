@@ -14,6 +14,13 @@ import {
   type ResolvedSlot,
 } from "@/lib/lineup";
 import { qualifiesForStars } from "@/lib/stars";
+import {
+  grantDetail,
+  kitStars,
+  needDetail,
+  type SynergyBuff,
+  type SynergyStatLine,
+} from "@/lib/synergy-buffs";
 import type { Breed, Dragon, Lineup, PitState } from "@/lib/types";
 
 export { dragonNeeds, dragonProvides } from "@/lib/abilities";
@@ -33,12 +40,15 @@ export type PairingNote = {
   cause?: WarnCause;
   stars?: number;
   ownedStars?: number | null;
+  ability?: string;
+  stats?: SynergyStatLine[];
 };
 
 export type PairingReport = {
   pros: PairingNote[];
   cons: PairingNote[];
   placedCount: number;
+  buffs: SynergyBuff[];
 };
 
 type PartnerRule = {
@@ -101,9 +111,6 @@ function hitBreedDetail(
   partners: string,
 ): string {
   const breed = breedLabels[rule.breed];
-  if (rule.gift && /crescent blade/i.test(rule.gift)) {
-    return `${partners} can stack Rising Tide when they deal Tactical Damage or apply Recovery.`;
-  }
   if (rule.gift) {
     return `${rule.gift} is on ${partners}.`;
   }
@@ -312,6 +319,7 @@ export function pairingReport(
   const placed = placedInLineup(lineup, state);
   const pros: PairingNote[] = [];
   const cons: PairingNote[] = [];
+  const buffs: SynergyBuff[] = [];
 
   for (const row of placed) {
     const mates = placed.filter((other) => other.dragon.id !== row.dragon.id);
@@ -342,13 +350,28 @@ export function pairingReport(
         });
       } else {
         const names = joinNames(partners.map((mate) => mate.dragon.name));
+        const first = partners[0];
+        const live =
+          rule.gift && first
+            ? grantDetail(
+                row.dragon,
+                rule.gift,
+                names,
+                first.dragon,
+                kitStars(row, lineup.kind),
+                breed,
+              )
+            : null;
+        if (live) buffs.push(...live.buffs);
         pros.push({
           id: `pro:${row.dragon.id}:breed:${rule.breed}`,
           tone: "pro",
           title: rule.gift
             ? `${row.dragon.name}’s ${rule.gift} is feeding ${names}`
             : `${row.dragon.name}’s ${breed} pairing is feeding ${names}`,
-          detail: hitBreedDetail(row.dragon, rule, names),
+          detail: live?.detail ?? hitBreedDetail(row.dragon, rule, names),
+          ability: rule.gift,
+          stats: live?.stats,
         });
       }
     }
@@ -377,11 +400,21 @@ export function pairingReport(
       if (live.length > 0) {
         const names = joinNames(live.map((mate) => mate.dragon.name));
         const verb = live.length === 1 ? "is feeding" : "are feeding";
+        const payoff = needDetail(
+          row.dragon,
+          need.ability,
+          names,
+          live[0].dragon,
+          kitStars(row, lineup.kind),
+        );
+        buffs.push(...payoff.buffs);
         pros.push({
           id: `pro:${row.dragon.id}:need:${need.ability.toLowerCase()}`,
           tone: "pro",
           title: `${names}’s ${need.ability} ${verb} ${row.dragon.name}`,
-          detail: `${row.dragon.name}’s kit is written to scale when a teammate brings ${need.ability}.`,
+          detail: payoff.detail,
+          ability: need.ability,
+          stats: payoff.stats,
         });
         continue;
       }
@@ -453,5 +486,12 @@ export function pairingReport(
     }
   }
 
-  return { pros, cons, placedCount: placed.length };
+  const uniqueBuffs: SynergyBuff[] = [];
+  const seen = new Set<string>();
+  for (const buff of buffs) {
+    if (seen.has(buff.id)) continue;
+    seen.add(buff.id);
+    uniqueBuffs.push(buff);
+  }
+  return { pros, cons, placedCount: placed.length, buffs: uniqueBuffs };
 }

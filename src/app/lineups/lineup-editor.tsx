@@ -235,6 +235,7 @@ export function LineupEditor({
           lineup={lineup}
           state={state}
           selectedSlot={selectedSlot}
+          buffs={pairing?.buffs}
           onSelectSlot={(slot) => {
             setSelectedSlot(slot);
             if (window.matchMedia("(max-width: 1023px)").matches) {
@@ -518,6 +519,12 @@ export function LineupEditor({
             ? (state.owned.find((row) => row.dragonId === inspecting.id)
                 ?.starRank ?? null)
             : null
+        }
+        synergyBuffs={
+          inspecting
+            ? (pairing?.buffs.filter((buff) => buff.dragonId === inspecting.id) ??
+              [])
+            : []
         }
         actionLabel={
           inspecting && slottedHere(inspecting.id) === selectedSlot

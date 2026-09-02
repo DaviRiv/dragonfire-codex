@@ -23,6 +23,8 @@ import {
   scaledStats,
   troopCount,
 } from "@/lib/scale-stats";
+import { SynergyBuffList } from "@/components/synergy-hover";
+import { coreStatMods, type SynergyBuff } from "@/lib/synergy-buffs";
 import type { Dragon, DragonStats } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -45,10 +47,12 @@ export function StatGrid({
   stats,
   compact,
   className,
+  mods,
 }: {
   stats: DragonStats;
   compact?: boolean;
   className?: string;
+  mods?: Partial<Record<(typeof STAT_KEYS)[number], string>>;
 }) {
   return (
     <div className={cn("grid grid-cols-2 gap-x-3 gap-y-2", className)}>
@@ -58,7 +62,14 @@ export function StatGrid({
             <span className={cn("tracking-wide", STAT_TEXT_CLASS[key])}>
               {compact ? statShort[key] : statLabels[key]}
             </span>
-            <span className="font-medium tabular-nums">{stats[key]}</span>
+            <span className="font-medium tabular-nums">
+              {stats[key]}
+              {mods?.[key] ? (
+                <span className="ml-1 font-normal text-emerald-300">
+                  {mods[key]}
+                </span>
+              ) : null}
+            </span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
@@ -80,6 +91,7 @@ export function DragonProfile({
   starRank = 1,
   reignLevel = 1,
   ownedStars,
+  synergyBuffs = [],
 }: {
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
@@ -87,10 +99,12 @@ export function DragonProfile({
   reignLevel?: number;
   /** Pit rank used to warn on star gates. `null` means not owned. */
   ownedStars?: number | null;
+  synergyBuffs?: SynergyBuff[];
 }) {
   const kit = dragonKit(dragon);
   const heals = healingAbilities(dragon);
   const stats = scaledStats(dragon, starRank, reignLevel);
+  const liveMods = coreStatMods(synergyBuffs);
   const troops = troopCount(dragon.rarity, starRank, reignLevel);
   const power = dragonPower(dragon.rarity, starRank, reignLevel);
   const qualifyStars = ownedStars === undefined ? starRank : ownedStars;
@@ -196,7 +210,16 @@ export function DragonProfile({
         <p className="text-label mb-2">
           Stats · ★{starRank} · Reign {reignLevel}
         </p>
-        <StatGrid stats={stats} />
+        <StatGrid stats={stats} mods={liveMods} />
+        {synergyBuffs.length > 0 ? (
+          <div className="mt-3 rounded-xl bg-emerald-950/40 p-3 ring-1 ring-emerald-500/25">
+            <p className="text-label mb-1.5 text-emerald-200">Live synergy</p>
+            <SynergyBuffList buffs={synergyBuffs} />
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Combat kit bonuses from this three — not added into Hub power.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <p className="text-muted-foreground">Troops</p>
           <p className="text-right tabular-nums">{troops.toLocaleString()}</p>

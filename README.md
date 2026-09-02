@@ -26,7 +26,12 @@ with HBO, Warner Bros., or the game.
   until you actually have 10 stars.
   Turn on **Abilities** for command and the unique **(6+ stars)** skill.
   Open a row for the full command, Habits 1–5, vanguard skill, and stats
-  at the bottom. **Watch out** under the formation names idle kit and
+  at the bottom. When a pairing is live — Moondancer granting Crescent
+  Blade to Malachite, or Syrax feeding First-Strike to Caraxes — the
+  formation slot names the granted ability, hover shows the combat
+  numbers, Watch out lists the same payoff, and stats show a Live synergy
+  block. Those bonuses are kit effects, not added into Hub power.
+  **Watch out** under the formation names idle kit and
   *why*: pit stars too low, the partner is not in this three, they are
   already on another saved team, the Vanguard flank is empty, or the
   march troop does not match. Named partners come from kit text

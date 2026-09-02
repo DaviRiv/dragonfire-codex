@@ -2,9 +2,16 @@
 
 import type { ReactNode } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
+import { SynergyBuffList } from "@/components/synergy-hover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import { modeShort, slotShort, troopShort } from "@/lib/labels";
 import { vanguardBonus } from "@/lib/habits";
+import { buffsOnDragon, type SynergyBuff } from "@/lib/synergy-buffs";
 import type { Lineup, PitState, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
@@ -16,6 +23,7 @@ export function FormationBoard({
   onSelectSlot,
   onClearSlot,
   onNameChange,
+  buffs = [],
   children,
 }: {
   lineup: Lineup;
@@ -24,6 +32,7 @@ export function FormationBoard({
   onSelectSlot?: (slot: SlotId) => void;
   onClearSlot?: (slot: SlotId) => void;
   onNameChange?: (name: string) => void;
+  buffs?: SynergyBuff[];
   children?: ReactNode;
 }) {
   return (
@@ -59,6 +68,7 @@ export function FormationBoard({
             selected={selectedSlot === slot}
             onSelect={onSelectSlot}
             onClear={onClearSlot}
+            buffs={buffs}
           />
         ))}
       </div>
@@ -78,6 +88,7 @@ function SlotButton({
   selected,
   onSelect,
   onClear,
+  buffs,
 }: {
   slot: SlotId;
   lineup: Lineup;
@@ -85,52 +96,92 @@ function SlotButton({
   selected: boolean;
   onSelect?: (slot: SlotId) => void;
   onClear?: (slot: SlotId) => void;
+  buffs: SynergyBuff[];
 }) {
   const resolved = resolveSlot(lineup, state, slot);
   const dragon = resolved?.dragon;
+  const live = dragon ? buffsOnDragon(buffs, dragon.id) : [];
+
+  const face = (
+    <>
+      <DragonIcon
+        dragonId={dragon?.id}
+        name={dragon?.name}
+        rarity={dragon?.rarity}
+        custom={dragon?.custom}
+        empty={!dragon}
+        selected={selected}
+        size="3xl"
+      />
+      <span className="text-label text-amber-200/90">
+        {slotShort[slot]}
+      </span>
+      <span className="max-w-full truncate px-0.5 text-sm font-medium">
+        {dragon?.name ?? "Tap to pick"}
+      </span>
+      {resolved ? (
+        <span className="text-xs text-amber-100/85">
+          {formatInvestment(resolved.starRank, resolved.reignLevel, {
+            kind: lineup.kind,
+            ignoreLevel: lineup.ignoreLevel,
+          })}
+        </span>
+      ) : null}
+      {live[0] ? (
+        <span className="max-w-full truncate rounded-full px-1.5 py-px text-[10px] tracking-wide text-emerald-100 ring-1 ring-emerald-400/45">
+          {live[0].ability}
+        </span>
+      ) : null}
+      {slot === "vanguard" && dragon ? (
+        <span
+          className="line-clamp-2 max-w-full px-1 text-center text-[11px] leading-snug text-emerald-100 sm:text-xs"
+          title={vanguardBonus(dragon, true)}
+        >
+          {vanguardBonus(dragon, true)}
+        </span>
+      ) : null}
+    </>
+  );
+
+  const slotClass = cn(
+    "flex min-h-[10.75rem] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 select-none sm:min-h-[15rem] sm:py-3",
+    selected && "bg-amber-500/20 ring-2 ring-amber-300",
+  );
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={() => onSelect?.(slot)}
-        className={cn(
-          "flex min-h-[10.75rem] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 select-none sm:min-h-[15rem] sm:py-3",
-          selected && "bg-amber-500/20 ring-2 ring-amber-300",
-        )}
-      >
-        <DragonIcon
-          dragonId={dragon?.id}
-          name={dragon?.name}
-          rarity={dragon?.rarity}
-          custom={dragon?.custom}
-          empty={!dragon}
-          selected={selected}
-          size="3xl"
-        />
-        <span className="text-label text-amber-200/90">
-          {slotShort[slot]}
-        </span>
-        <span className="max-w-full truncate px-0.5 text-sm font-medium">
-          {dragon?.name ?? "Tap to pick"}
-        </span>
-        {resolved ? (
-          <span className="text-xs text-amber-100/85">
-            {formatInvestment(resolved.starRank, resolved.reignLevel, {
-              kind: lineup.kind,
-              ignoreLevel: lineup.ignoreLevel,
-            })}
-          </span>
-        ) : null}
-        {slot === "vanguard" && dragon ? (
-          <span
-            className="line-clamp-2 max-w-full px-1 text-center text-[11px] leading-snug text-emerald-100 sm:text-xs"
-            title={vanguardBonus(dragon, true)}
+      {live.length > 0 ? (
+        <Tooltip>
+          <TooltipTrigger
+            delay={160}
+            closeOnClick={false}
+            render={
+              <button
+                type="button"
+                onClick={() => onSelect?.(slot)}
+                className={slotClass}
+              />
+            }
           >
-            {vanguardBonus(dragon, true)}
-          </span>
-        ) : null}
-      </button>
+            {face}
+          </TooltipTrigger>
+          <TooltipContent
+            side="bottom"
+            sideOffset={6}
+            className="max-w-[18rem] flex-col items-stretch gap-0 rounded-xl bg-stone-950 px-3 py-2.5 text-left text-stone-100 ring-1 ring-emerald-400/35"
+          >
+            <SynergyBuffList buffs={live} />
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onSelect?.(slot)}
+          className={slotClass}
+        >
+          {face}
+        </button>
+      )}
       {dragon && onClear ? (
         <button
           type="button"

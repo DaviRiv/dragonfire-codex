@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { Dragon, TroopType } from "@/lib/types";
+import type { SynergyBuff } from "@/lib/synergy-buffs";
 
 export function DragonSheet({
   dragon,
@@ -24,6 +25,7 @@ export function DragonSheet({
   onAction,
   actionDisabled,
   ownedStars,
+  synergyBuffs,
 }: {
   dragon: Dragon | null;
   open: boolean;
@@ -35,6 +37,7 @@ export function DragonSheet({
   onAction?: () => void;
   actionDisabled?: boolean;
   ownedStars?: number | null;
+  synergyBuffs?: SynergyBuff[];
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -65,6 +68,7 @@ export function DragonSheet({
                 starRank={starRank}
                 reignLevel={reignLevel}
                 ownedStars={ownedStars}
+                synergyBuffs={synergyBuffs}
               />
             </div>
             {onAction && actionLabel ? (

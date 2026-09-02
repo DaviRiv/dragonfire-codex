@@ -1,5 +1,7 @@
 import type { PairingNote, PairingReport, WarnCause } from "@/lib/pairing";
+import { AbilityText } from "@/components/ability-text";
 import { StarRequirement } from "@/components/star-requirement";
+import { SynergyStatRows } from "@/components/synergy-hover";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, ChevronDown, TriangleAlert } from "lucide-react";
 
@@ -150,8 +152,11 @@ function NoteColumn({
                 </p>
               ) : null}
               <p className="mt-1 pl-5 text-[13px] leading-relaxed text-foreground/80">
-                {note.detail}
+                <AbilityText text={note.detail} />
               </p>
+              {note.stats && note.stats.length > 0 ? (
+                <SynergyStatRows stats={note.stats} className="mt-1 pl-5" />
+              ) : null}
             </li>
           ))
         )}
