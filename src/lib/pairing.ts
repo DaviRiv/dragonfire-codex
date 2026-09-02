@@ -18,6 +18,9 @@ import {
   grantDetail,
   kitStars,
   needDetail,
+  needWhy,
+  needWhyShort,
+  withNeedWhy,
   type SynergyBuff,
   type SynergyStatLine,
 } from "@/lib/synergy-buffs";
@@ -143,8 +146,11 @@ export function pairingFit(
       if (!qualifiesForStars(need.unlockStars, mate.atStars)) continue;
       if (dragonProvides(mate.dragon, need.ability, mate.atStars)) continue;
       if (!dragonProvides(dragon, need.ability, atStars)) continue;
+      const payoff = needWhyShort(mate.dragon, need.ability, mate.atStars ?? null);
       fits.push({
-        text: `Gives ${mate.dragon.name} ${need.ability}`,
+        text: payoff
+          ? `Gives ${mate.dragon.name} ${need.ability} — ${payoff}`
+          : `Gives ${mate.dragon.name} ${need.ability}`,
         points: 32,
       });
     }
@@ -164,8 +170,11 @@ export function pairingFit(
       dragonProvides(mate.dragon, need.ability, mate.atStars),
     );
     if (!partner) continue;
+    const payoff = needWhyShort(dragon, need.ability, atStars ?? null);
     fits.push({
-      text: `Gets ${need.ability} from ${partner.dragon.name}`,
+      text: payoff
+        ? `Gets ${need.ability} from ${partner.dragon.name} — ${payoff}`
+        : `Gets ${need.ability} from ${partner.dragon.name}`,
       points: 30,
     });
   }
@@ -379,17 +388,26 @@ export function pairingReport(
     for (const need of dragonNeedGates(row.dragon)) {
       if (dragonProvides(row.dragon, need.ability, ownedStars)) continue;
       if (!qualifiesForStars(need.unlockStars, ownedStars)) {
+        const { why, stats } = needWhy(
+          row.dragon,
+          need.ability,
+          need.unlockStars ?? ownedStars,
+        );
         cons.push({
           id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:stars`,
           tone: "con",
           cause: "stars",
           stars: need.unlockStars ?? undefined,
           ownedStars,
+          ability: need.ability,
+          stats,
           title: `${row.dragon.name}’s ${need.ability} pairing unlocks at ${need.unlockStars}★`,
-          detail:
+          detail: withNeedWhy(
+            why,
             ownedStars == null
               ? `Not in your pit — treat the ${need.ability} payoff as a goal until they hatch.`
               : `You have ${ownedStars}★. Star them to ${need.unlockStars}★ before a ${need.ability} teammate does anything for this habit.`,
+          ),
         });
         continue;
       }
@@ -422,17 +440,26 @@ export function pairingReport(
       const locked = lockedProviders(mates, need.ability);
       if (locked.length > 0) {
         const first = locked[0];
+        const { why, stats } = needWhy(
+          row.dragon,
+          need.ability,
+          kitStars(row, lineup.kind),
+        );
         cons.push({
           id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:locked`,
           tone: "con",
           cause: "stars",
           stars: first.needStars,
           ownedStars: first.ownedStars,
+          ability: need.ability,
+          stats,
           title: `${first.dragon.name} has ${need.ability} at ${first.needStars}★`,
-          detail:
+          detail: withNeedWhy(
+            why,
             first.ownedStars == null
               ? `${row.dragon.name} wants ${need.ability}, but ${first.dragon.name} is not in your pit yet.`
               : `${row.dragon.name} wants ${need.ability} on this line. ${first.dragon.name} brings it at ${first.needStars}★ — you have ${first.ownedStars}★.`,
+          ),
         });
         continue;
       }
@@ -440,6 +467,11 @@ export function pairingReport(
       const parked = pickPitPartner(
         partnerOnOtherTeam(state, lineup.id, need.ability, row.dragon.id),
         partnerIdleInPit(state, lineup, need.ability, row.dragon.id),
+      );
+      const { why, stats } = needWhy(
+        row.dragon,
+        need.ability,
+        kitStars(row, lineup.kind),
       );
       cons.push({
         id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}`,
@@ -454,10 +486,15 @@ export function pairingReport(
             ? parked.needStars
             : undefined,
         ownedStars: parked && !parked.live ? parked.ownedStars : undefined,
+        ability: need.ability,
+        stats,
         title: `${row.dragon.name} wants ${need.ability} on a teammate`,
-        detail: parked
-          ? elsewhereDetail(need.ability, parked)
-          : `Nobody on this line provides ${need.ability}, so the habits that scale with it stay weak.${tryHint(need.ability, row.dragon.id)}`,
+        detail: withNeedWhy(
+          why,
+          parked
+            ? elsewhereDetail(need.ability, parked)
+            : `Nobody on this line provides ${need.ability}, so that payoff never fires.${tryHint(need.ability, row.dragon.id)}`,
+        ),
       });
     }
 

@@ -1,4 +1,4 @@
-import { DRAGON_HABIT_SHORTS } from "@/data/dragon-habits";
+import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
 import { HABIT_UNLOCK_STARS } from "@/lib/habits";
 import { qualifiesForStars } from "@/lib/stars";
 import type { Dragon, LineupKind } from "@/lib/types";
@@ -101,12 +101,13 @@ function orPayoffs(text: string, ability: string): SynergyStatLine[] {
   const stats: SynergyStatLine[] = [];
   const needle = escapeRe(ability);
   const re = new RegExp(
-    `([A-Za-z][A-Za-z ]*?)\\s*\\((\\+\\d+(?:\\.\\d+)?%) or (\\+\\d+(?:\\.\\d+)?%) w\\/ [^)]*${needle}[^)]*\\)`,
+    `([A-Za-z][A-Za-z ]*?)\\s*\\((\\+?\\d+(?:\\.\\d+)?%) or (\\+?\\d+(?:\\.\\d+)?%) w\\/ [^)]*${needle}[^)]*\\)`,
     "gi",
   );
   let match: RegExpExecArray | null;
   while ((match = re.exec(text))) {
     const label = tidyStat(match[1].replace(/^Command\s+/i, ""));
+    if (!label || /chance|round/i.test(label)) continue;
     stats.push({
       stat: label,
       amount: `${match[2]} → ${match[3]}`,
@@ -161,6 +162,197 @@ function timesPayoff(text: string, ability: string): SynergyStatLine[] {
   const match = text.match(re);
   if (!match) return [];
   return [{ stat: "Damage Rate", amount: `${match[2]} (${match[1]}x)` }];
+}
+
+function kitTextsForNeed(dragon: Dragon, ability: string, stars: number | null): {
+  full: string;
+  short: string;
+} {
+  const full = [dragon.command];
+  const short = [dragon.commandShort?.trim() || dragon.command];
+  const habits = DRAGON_HABITS[dragon.id] ?? [];
+  const shorts = DRAGON_HABIT_SHORTS[dragon.id] ?? [];
+  habits.forEach((habit, index) => {
+    const body = habit.level1?.trim() ?? "";
+    const line = shorts[index]?.level1?.trim() ?? "";
+    const blob = `${body} ${line}`;
+    const mentions = new RegExp(`\\b${escapeRe(ability)}\\b`, "i").test(blob);
+    const unlocked = qualifiesForStars(HABIT_UNLOCK_STARS[index], stars);
+    if (!mentions && !unlocked) return;
+    if (mentions || unlocked) {
+      if (body) full.push(body);
+      if (line) short.push(line);
+    }
+  });
+  return { full: full.join(" "), short: short.join(" | ") };
+}
+
+function doubledChance(text: string, ability: string): SynergyStatLine[] {
+  const re = new RegExp(
+    `(\\d+%) chance to ([A-Za-z][A-Za-z-]+)[\\s\\S]{0,160}?This chance is doubled \\((\\d+%)\\) against targets afflicted with ${escapeRe(ability)}`,
+    "i",
+  );
+  const match = text.match(re);
+  if (!match) return [];
+  return [{ stat: tidyStat(match[2]), amount: `${match[1]} → ${match[3]}` }];
+}
+
+function durationDoubled(text: string, ability: string): SynergyStatLine[] {
+  const re = new RegExp(
+    `duration is doubled \\((\\d+) rounds?\\) against targets afflicted with ${escapeRe(ability)}`,
+    "i",
+  );
+  const match = text.match(re);
+  if (!match) return [];
+  return [{ stat: "Duration", amount: `${match[1]} rounds with ${ability}` }];
+}
+
+function scaledIfAfflicted(text: string, ability: string): SynergyStatLine[] {
+  const re = new RegExp(
+    `increased by ([\\d.]+)x \\((\\+\\d+(?:\\.\\d+)?%)\\) if an Enemy is afflicted with ${escapeRe(ability)}`,
+    "i",
+  );
+  const match = text.match(re);
+  if (!match) return [];
+  return [{ stat: "Recovery", amount: `${match[1]}x (${match[2]})` }];
+}
+
+function vsAfflictedDamage(text: string, ability: string): SynergyStatLine[] {
+  const re = new RegExp(
+    `increased by ([\\d.]+)x against targets afflicted with ${escapeRe(ability)} \\(Damage Rate: (\\+\\d+%)\\)`,
+    "i",
+  );
+  const match = text.match(re);
+  if (!match) return [];
+  return [{ stat: "Damage Rate", amount: `${match[2]} (${match[1]}x)` }];
+}
+
+function whyFromKit(
+  dragon: Dragon,
+  ability: string,
+  full: string,
+  stats: SynergyStatLine[],
+): string {
+  const name = escapeRe(ability);
+  const doubled = full.match(
+    new RegExp(
+      `(\\d+%) chance to ([A-Za-z][A-Za-z-]+)[\\s\\S]{0,160}?This chance is doubled \\((\\d+%)\\) against targets afflicted with ${name}`,
+      "i",
+    ),
+  );
+  if (doubled) {
+    return `${doubled[2]} chance is ${doubled[1]}, or ${doubled[3]} against enemies with ${ability}.`;
+  }
+
+  const times = full.match(
+    new RegExp(
+      `increased by ([\\d.]+)x when you have ${name} \\(Damage Rate: (\\+\\d+%)\\)`,
+      "i",
+    ),
+  );
+  if (times) {
+    return `Command damage is ${times[1]}x (${times[2]}) when ${dragon.name} has ${ability}.`;
+  }
+
+  const duration = full.match(
+    new RegExp(
+      `duration is doubled \\((\\d+) rounds?\\) against targets afflicted with ${name}`,
+      "i",
+    ),
+  );
+  if (duration) {
+    return `The effect lasts ${duration[1]} rounds on enemies with ${ability} — twice as long.`;
+  }
+
+  const scaled = full.match(
+    new RegExp(
+      `increased by ([\\d.]+)x \\((\\+\\d+(?:\\.\\d+)?%)\\) if an Enemy is afflicted with ${name}`,
+      "i",
+    ),
+  );
+  if (scaled) {
+    return `Recovery is ${scaled[1]}x (${scaled[2]}) if an enemy has ${ability}.`;
+  }
+
+  const ally = full.match(
+    new RegExp(
+      `Double this chance \\((\\d+(?:\\.\\d+)?%)\\) if any [Aa]lly has ${name}`,
+      "i",
+    ),
+  );
+  if (ally) {
+    return `The chance doubles to ${ally[1]} if an ally has ${ability}.`;
+  }
+
+  const vs = full.match(
+    new RegExp(
+      `increased by ([\\d.]+)x against targets afflicted with ${name} \\(Damage Rate: (\\+\\d+%)\\)`,
+      "i",
+    ),
+  );
+  if (vs) {
+    return `That hit is ${vs[1]}x (${vs[2]}) against enemies with ${ability}.`;
+  }
+
+  if (stats.length > 0) {
+    return stats
+      .map((row) => `${row.stat} is ${row.amount} with ${ability}`)
+      .join("; ") + ".";
+  }
+
+  const sentence =
+    full
+      .split(/(?<=\.)\s+/)
+      .find((part) => new RegExp(`\\b${name}\\b`, "i").test(part) &&
+        /(afflicted with|when you have|if any|w\/ |with )/.test(part))
+      ?.trim() ?? "";
+  return sentence;
+}
+
+export type NeedWhy = {
+  why: string;
+  stats: SynergyStatLine[];
+};
+
+/** What the needed ability actually does in this dragon’s unlocked (or gated) kit. */
+export function needWhy(
+  dragon: Dragon,
+  ability: string,
+  stars: number | null,
+): NeedWhy {
+  const { full, short } = kitTextsForNeed(dragon, ability, stars);
+  const stats = uniqueStats([
+    ...orPayoffs(short, ability),
+    ...orPayoffs(full, ability),
+    ...timesPayoff(full, ability),
+    ...doubledChance(full, ability),
+    ...durationDoubled(full, ability),
+    ...scaledIfAfflicted(full, ability),
+    ...vsAfflictedDamage(full, ability),
+  ]).filter((row, _, all) => {
+    if (row.stat === "Damage Rate" && all.some((other) => /damage/i.test(other.stat) && other !== row)) {
+      return false;
+    }
+    return true;
+  });
+  return { why: whyFromKit(dragon, ability, full, stats), stats };
+}
+
+export function withNeedWhy(why: string, rest: string): string {
+  const lead = why.replace(/\s+/g, " ").trim();
+  const tail = rest.replace(/\s+/g, " ").trim();
+  if (!lead) return tail;
+  if (!tail) return lead;
+  const left = lead.endsWith(".") ? lead : `${lead}.`;
+  return `${left} ${tail}`;
+}
+
+export function needWhyShort(dragon: Dragon, ability: string, stars: number | null): string {
+  const { stats, why } = needWhy(dragon, ability, stars);
+  if (stats[0]) return `${stats[0].stat} ${stats[0].amount}`;
+  if (!why) return "";
+  const clip = why.replace(/\.$/, "");
+  return clip.length > 72 ? `${clip.slice(0, 69)}…` : clip;
 }
 
 /** Crescent Blade on the Sentinel, Rising Tide (and numbers) on Moondancer. */
@@ -255,19 +447,14 @@ export function needBuffs(
   provider: Dragon,
   neederStars: number | null,
 ): SynergyBuff[] {
-  const blob = kitBlob(needer, neederStars);
-  const shorts = unlockedShorts(needer, neederStars);
-  const fromOr = orPayoffs(shorts, ability);
-  const stats = uniqueStats(
-    fromOr.length > 0 ? fromOr : [...orPayoffs(blob, ability), ...timesPayoff(blob, ability)],
-  );
+  const { why, stats } = needWhy(needer, ability, neederStars);
   return [
     {
       id: `need:${needer.id}:${ability.toLowerCase()}`,
       dragonId: needer.id,
       ability,
       fromName: provider.name,
-      summary: `${ability} from ${provider.name}`,
+      summary: why || `${ability} from ${provider.name}`,
       stats,
     },
   ];
@@ -280,19 +467,20 @@ export function needDetail(
   provider: Dragon,
   neederStars: number | null,
 ): { detail: string; stats: SynergyStatLine[]; buffs: SynergyBuff[] } {
+  const { why, stats } = needWhy(needer, ability, neederStars);
   const buffs = needBuffs(needer, ability, provider, neederStars);
-  const stats = buffs[0]?.stats ?? [];
-  if (stats.length === 0) {
+  if (!why && stats.length === 0) {
     return {
-      detail: `${needer.name}’s kit is written to scale when a teammate brings ${ability}.`,
+      detail: `${providerNames} supplies ${ability}, which ${needer.name}’s kit is written to scale with.`,
       stats,
       buffs,
     };
   }
   return {
-    detail: `${providerNames} turns on ${needer.name}’s ${ability} payoff: ${stats
-      .map((row) => `${row.stat} ${row.amount}`)
-      .join("; ")}.`,
+    detail: withNeedWhy(
+      why,
+      `${providerNames} is supplying the ${ability} that turns it on.`,
+    ),
     stats,
     buffs,
   };

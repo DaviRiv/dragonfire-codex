@@ -32,7 +32,8 @@ with HBO, Warner Bros., or the game.
   numbers, Watch out lists the same payoff, and stats show a Live synergy
   block. Those bonuses are kit effects, not added into Hub power.
   **Watch out** under the formation names idle kit and
-  *why*: pit stars too low, the partner is not in this three, they are
+  *why* the kit wants it (Vhagar’s Taunt is 25%, or 50% against Burn),
+  plus whether stars are too low, the partner is not in this three, they are
   already on another saved team, the Vanguard flank is empty, or the
   march troop does not match. Named partners come from kit text
   (Moondancer wants an ally Sentinel) and Hub `needs` (Caraxes wants
