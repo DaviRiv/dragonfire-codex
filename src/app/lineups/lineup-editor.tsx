@@ -295,6 +295,17 @@ export function LineupEditor({
           </h2>
           <Button
             size="sm"
+            variant="outline"
+            className="shrink-0"
+            disabled={!selectedDragon}
+            onClick={() => {
+              if (selectedDragon) setInspecting(selectedDragon);
+            }}
+          >
+            Full stats
+          </Button>
+          <Button
+            size="sm"
             onClick={fillLine}
             className="shrink-0"
             disabled={pitEmpty}

@@ -116,6 +116,13 @@ function orPayoffs(text: string, ability: string): SynergyStatLine[] {
   return stats;
 }
 
+function withoutAllyChunks(text: string): string {
+  return text
+    .split("|")
+    .filter((chunk) => !/to 1 Ally /i.test(chunk))
+    .join(" | ");
+}
+
 function allyBreedPayoffs(text: string, breedLabel: string): SynergyStatLine[] {
   const stats: SynergyStatLine[] = [];
   for (const chunk of text.split("|")) {
@@ -371,10 +378,11 @@ export function grantBuffs(
     ...allyBreedPayoffs(shorts, breedLabel),
     ...orPayoffs(shorts, gift),
   ]);
+  const selfShorts = withoutAllyChunks(shorts);
   const giverStats = uniqueStats([
     ...stacks.stats,
-    ...orPayoffs(shorts, stackName),
-    ...orPayoffs(shorts, gift),
+    ...orPayoffs(selfShorts, stackName),
+    ...orPayoffs(selfShorts, gift),
   ]);
 
   const onPartner: SynergyBuff = {

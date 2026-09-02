@@ -29,8 +29,9 @@ with HBO, Warner Bros., or the game.
   at the bottom. When a pairing is live — Moondancer granting Crescent
   Blade to Malachite, or Syrax feeding First-Strike to Caraxes — the
   formation slot names the granted ability, hover shows the combat
-  numbers, Watch out lists the same payoff, and stats show a Live synergy
-  block. Those bonuses are kit effects, not added into Hub power.
+  numbers, Watch out lists the same payoff, and **Full stats** on the
+  selected slotted dragon opens the sheet with a Live synergy block.
+  Those bonuses are kit effects, not added into Hub power.
   **Watch out** under the formation names idle kit and
   *why* the kit wants it (Vhagar’s Taunt is 25%, or 50% against Burn),
   plus whether stars are too low, the partner is not in this three, they are
