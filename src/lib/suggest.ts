@@ -216,7 +216,14 @@ function scoreDragon(
     note("Tank for castle defense", 55, 10);
   }
 
-  for (const fit of pairingFit(dragon, teammates)) {
+  for (const fit of pairingFit(
+    dragon,
+    teammates.map((mate) => ({
+      dragon: mate.dragon,
+      atStars: mate.starRank,
+    })),
+    starRank,
+  )) {
     note(fit.text, 112, fit.points);
   }
 
@@ -246,6 +253,7 @@ export function suggestDragons({
   includeSlotted = false,
   pool = "all",
   role = "all",
+  excludeIds,
 }: {
   lineup: Lineup;
   slot: SlotId;
@@ -254,6 +262,7 @@ export function suggestDragons({
   includeSlotted?: boolean;
   pool?: "all" | "owned" | "unowned";
   role?: CompRole | "all";
+  excludeIds?: Set<string>;
 }): DragonSuggestion[] {
   const used = slottedDragonIds(lineup, state);
   const teammates = teammatesForSlot(lineup, state, slot);
@@ -272,6 +281,7 @@ export function suggestDragons({
   return source
     .filter((dragon) => {
       if (!includeSlotted && used.has(dragon.id)) return false;
+      if (excludeIds?.has(dragon.id) && !used.has(dragon.id)) return false;
       const owned = ownedByCatalog.get(dragon.id) ?? null;
       if (pool === "owned" && !owned) return false;
       if (pool === "unowned" && owned) return false;
@@ -302,20 +312,24 @@ export function suggestDragons({
 export function suggestFullLine(
   lineup: Lineup,
   state: PitState,
-  options?: { replace?: boolean },
+  options?: { replace?: boolean; excludeIds?: Set<string> },
 ): { slot: SlotId; dragon: Dragon }[] {
   const picks: { slot: SlotId; dragon: Dragon }[] = [];
   const working: Lineup = {
     ...lineup,
     slots: options?.replace ? emptySlots() : { ...lineup.slots },
   };
-  const exclude = slottedDragonIds(working, state);
+  const exclude = new Set(slottedDragonIds(working, state));
+  for (const id of options?.excludeIds ?? []) exclude.add(id);
 
   for (const slot of ["vanguard", "left", "right"] as SlotId[]) {
     if (resolveSlot(working, state, slot)) continue;
-    const next = suggestDragons({ lineup: working, slot, state }).find(
-      (s) => !exclude.has(s.dragon.id),
-    );
+    const next = suggestDragons({
+      lineup: working,
+      slot,
+      state,
+      excludeIds: options?.excludeIds,
+    }).find((s) => !exclude.has(s.dragon.id));
     if (!next) continue;
     picks.push({ slot, dragon: next.dragon });
     exclude.add(next.dragon.id);

@@ -56,6 +56,7 @@ export function samplePit(): PitState {
     },
     ignoreLevel: false,
     craftStars: 10,
+    excludeUsed: true,
     updatedAt: nowIso(),
   };
 
@@ -73,6 +74,7 @@ export function samplePit(): PitState {
     },
     ignoreLevel: false,
     craftStars: 10,
+    excludeUsed: true,
     updatedAt: nowIso(),
   };
 
@@ -90,6 +92,7 @@ export function samplePit(): PitState {
     },
     ignoreLevel: false,
     craftStars: 10,
+    excludeUsed: true,
     updatedAt: nowIso(),
   };
 
@@ -107,6 +110,7 @@ export function samplePit(): PitState {
     },
     ignoreLevel: false,
     craftStars: 10,
+    excludeUsed: true,
     updatedAt: nowIso(),
   };
 
@@ -124,6 +128,7 @@ export function samplePit(): PitState {
     },
     ignoreLevel: true,
     craftStars: 10,
+    excludeUsed: true,
     updatedAt: nowIso(),
   };
 

@@ -161,6 +161,7 @@ function blankLineup(name: string | undefined, kind: LineupKind): Lineup {
     slots: emptySlots(),
     ignoreLevel: false,
     craftStars: 10,
+    excludeUsed: kind === "pit",
     updatedAt: nowIso(),
   };
 }
@@ -403,6 +404,20 @@ export function PitProvider({ children }: { children: ReactNode }) {
       options?: { replace?: boolean },
     ) => {
       if (picks.length === 0 && !options?.replace) return;
+      const current = getClientSnapshot();
+      const lineup = current.lineups.find((l) => l.id === lineupId);
+      if (lineup?.kind === "pit") {
+        const missing = picks.find(
+          (pick) => !current.owned.some((o) => o.dragonId === pick.dragonId),
+        );
+        if (missing) {
+          const dragon = findDragon(missing.dragonId, current.customDragons);
+          toast.error(
+            `${dragon?.name ?? "That dragon"} is not in your pit. Add them first, or switch to Theory.`,
+          );
+          return;
+        }
+      }
       commit((prev) => {
         let next = prev;
         if (options?.replace) {

@@ -115,6 +115,21 @@ export function slottedDragonIds(
   return new Set(placedInLineup(lineup, state).map((p) => p.dragon.id));
 }
 
+export function dragonsUsedOnOtherPitTeams(
+  state: PitState,
+  exceptLineupId?: string,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const lineup of state.lineups) {
+    if (lineup.id === exceptLineupId) continue;
+    if (lineup.kind !== "pit") continue;
+    for (const row of placedInLineup(lineup, state)) {
+      ids.add(row.dragon.id);
+    }
+  }
+  return ids;
+}
+
 export function slotOfDragon(
   lineup: Lineup,
   state: PitState,
@@ -149,6 +164,10 @@ export function formatInvestment(
 ): string {
   if (opts?.kind === "theory" || opts?.ignoreLevel) return `★${starRank}`;
   return `★${starRank} · R${reignLevel}`;
+}
+
+export function skipsUsedDragons(lineup: Lineup): boolean {
+  return lineup.kind === "pit" && lineup.excludeUsed !== false;
 }
 
 export function lineupKindLabel(kind: LineupKind): string {

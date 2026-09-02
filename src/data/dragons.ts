@@ -1,8 +1,10 @@
 import { EPITHETS } from "@/data/epithets";
 import { HUB_DRAGONS, type HubDragon } from "@/data/hub-source";
+import { uniqueGates, unlockStarsForHabit } from "@/lib/abilities";
 import type {
   Breed,
   Dragon,
+  GatedAbility,
   MarchSpeed,
   Rarity,
   TroopType,
@@ -64,18 +66,15 @@ function tagsFor(raw: HubDragon): string[] {
   ).map(({ tag }) => tag);
 }
 
-function uniqueAbilities(values: string[]): string[] {
-  const seen = new Set<string>();
-  const next: string[] = [];
-  for (const value of values) {
-    const name = value.trim();
-    if (!name) continue;
-    const key = name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    next.push(name);
-  }
-  return next;
+function gatedFromHub(
+  items: { ability: string; habit?: number }[],
+): GatedAbility[] {
+  return uniqueGates(
+    items.map((item) => ({
+      ability: item.ability,
+      unlockStars: unlockStarsForHabit(item.habit),
+    })),
+  );
 }
 
 function mapAffinities(values: string[]): TroopType[] {
@@ -113,8 +112,8 @@ function mapDragon(raw: HubDragon): Dragon {
     command: raw.commandSkill,
     commandShort: raw.commandSkillShort,
     tags: tagsFor(raw),
-    needs: uniqueAbilities(raw.needs.map((item) => item.ability)),
-    provides: uniqueAbilities(raw.provides.ability.map((item) => item.ability)),
+    needs: gatedFromHub(raw.needs),
+    provides: gatedFromHub(raw.provides.ability),
     flankBonus: flank,
     released: raw.released,
   };

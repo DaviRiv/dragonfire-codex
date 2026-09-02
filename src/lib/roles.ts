@@ -1,4 +1,5 @@
 import { DRAGON_HABITS } from "@/data/dragon-habits";
+import { dragonProvides } from "@/lib/abilities";
 import { healingAbilities } from "@/lib/healing";
 import type { Dragon } from "@/lib/types";
 
@@ -45,8 +46,7 @@ function kitLines(dragon: Pick<Dragon, "id" | "command" | "habit">): string[] {
 }
 
 function providesNamed(dragon: Pick<Dragon, "provides">, name: string): boolean {
-  const want = name.toLowerCase();
-  return (dragon.provides ?? []).some((item) => item.toLowerCase() === want);
+  return dragonProvides(dragon as Dragon, name);
 }
 
 function providesAny(

@@ -1,4 +1,5 @@
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
+import { migrateGates } from "@/lib/abilities";
 import {
   clampReign,
   clampStar,
@@ -134,6 +135,7 @@ function migrateLineup(raw: unknown, owned: OwnedDragon[]): Lineup | null {
     slots: migrateSlots(v.slots, owned),
     ignoreLevel: Boolean(v.ignoreLevel),
     craftStars: clampStar(v.craftStars ?? 10),
+    excludeUsed: kind === "pit" ? v.excludeUsed !== false : false,
     updatedAt: typeof v.updatedAt === "string" ? v.updatedAt : nowIso(),
   };
 }
@@ -153,13 +155,18 @@ export function normalizePitState(value: unknown): PitState | null {
   }
   if (!Array.isArray(v.customDragons)) return null;
   const owned = v.owned as OwnedDragon[];
+  const customDragons = (v.customDragons as Dragon[]).map((dragon) => ({
+    ...dragon,
+    needs: migrateGates(dragon.needs),
+    provides: migrateGates(dragon.provides),
+  }));
   const lineups = v.lineups
     .map((lineup) => migrateLineup(lineup, owned))
     .filter((lineup): lineup is Lineup => Boolean(lineup));
   return {
     version: 2,
     owned,
-    customDragons: v.customDragons as Dragon[],
+    customDragons,
     lineups,
     teams: v.teams as PitState["teams"],
   };

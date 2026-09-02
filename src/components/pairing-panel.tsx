@@ -1,6 +1,15 @@
-import type { PairingNote, PairingReport } from "@/lib/pairing";
+import type { PairingNote, PairingReport, WarnCause } from "@/lib/pairing";
+import { StarRequirement } from "@/components/star-requirement";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, ChevronDown, TriangleAlert } from "lucide-react";
+
+const CAUSE_LABEL: Record<WarnCause, string> = {
+  stars: "Stars",
+  teammate: "This line",
+  "other-line": "Other team",
+  flank: "Flank",
+  troop: "Troop",
+};
 
 export function PairingPanel({ report }: { report: PairingReport }) {
   const { pros, cons, placedCount } = report;
@@ -22,7 +31,7 @@ export function PairingPanel({ report }: { report: PairingReport }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <p className="font-heading text-[15px] tracking-wide sm:text-base">
-              Pairing
+              Watch out
             </p>
             {empty || quiet ? null : (
               <p className="shrink-0 text-xs text-muted-foreground">
@@ -51,23 +60,25 @@ export function PairingPanel({ report }: { report: PairingReport }) {
       <div className="border-t border-border/50 p-3">
         {empty ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Moondancer wants a Sentinel. Caraxes wants First-Strike. Slot a
-            partner and the miss flips to a payoff.
+            Each warning names a cause: stars too low, the partner is not in
+            this three, they are on another saved team, an empty flank, or the
+            wrong troop.
           </p>
         ) : quiet ? (
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Flanks and troop affinity still live under Why this team.
+            Named pairings on this line are live. Flanks and troop still sit
+            under Why this team.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <NoteColumn
-              title="Cons"
+              title="Idle kit"
               empty="Nothing sitting idle."
               notes={cons}
               tone="con"
             />
             <NoteColumn
-              title="Pros"
+              title="Live"
               empty="No pairing payoffs yet."
               notes={pros}
               tone="pro"
@@ -125,6 +136,19 @@ function NoteColumn({
                 )}
                 <span className="min-w-0 font-medium">{note.title}</span>
               </p>
+              {note.cause ? (
+                <p className="mt-1 flex flex-wrap items-center gap-1.5 pl-5">
+                  <span className="rounded-full px-1.5 py-px text-[11px] tracking-wide text-amber-100 ring-1 ring-amber-400/35">
+                    {CAUSE_LABEL[note.cause]}
+                  </span>
+                  {note.cause === "stars" && note.stars != null ? (
+                    <StarRequirement
+                      stars={note.stars}
+                      ownedStars={note.ownedStars}
+                    />
+                  ) : null}
+                </p>
+              ) : null}
               <p className="mt-1 pl-5 text-[13px] leading-relaxed text-foreground/80">
                 {note.detail}
               </p>

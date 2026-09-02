@@ -1,14 +1,33 @@
 import { DRAGONS } from "@/data/dragons";
-import { dragonKit } from "@/lib/habits";
-import { breedLabels } from "@/lib/labels";
-import { placedInLineup } from "@/lib/lineup";
+import {
+  dragonNeedGates,
+  dragonProvides,
+  joinNames,
+  kitText,
+  provideUnlockStars,
+} from "@/lib/abilities";
+import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
+import { placedInLineup, type ResolvedSlot } from "@/lib/lineup";
+import { qualifiesForStars } from "@/lib/stars";
 import type { Breed, Dragon, Lineup, PitState } from "@/lib/types";
+
+export { dragonNeeds, dragonProvides } from "@/lib/abilities";
+
+export type WarnCause =
+  | "stars"
+  | "teammate"
+  | "other-line"
+  | "flank"
+  | "troop";
 
 export type PairingNote = {
   id: string;
   tone: "pro" | "con";
   title: string;
   detail: string;
+  cause?: WarnCause;
+  stars?: number;
+  ownedStars?: number | null;
 };
 
 export type PairingReport = {
@@ -22,40 +41,6 @@ type PartnerRule = {
   gift?: string;
 };
 
-const CONTROL_EFFECTS = [
-  "Stun",
-  "Panic",
-  "Slow",
-  "Confusion",
-  "Stagger",
-  "Weakened",
-  "Taunt",
-] as const;
-
-const STATUS_CANON: Record<string, string> = {
-  "first-strike": "First-Strike",
-  "double-strike": "Double-Strike",
-  advantage: "Advantage",
-  taunt: "Taunt",
-  burn: "Burn",
-  bleed: "Bleed",
-  panic: "Panic",
-  stun: "Stun",
-  slow: "Slow",
-  weakened: "Weakened",
-  confusion: "Confusion",
-  stagger: "Stagger",
-  vulnerable: "Vulnerable",
-  overwhelm: "Overwhelm",
-  protect: "Protect",
-  prey: "Prey",
-  evade: "Evade",
-  recovery: "Recovery",
-  cleanse: "Cleanse",
-  resistance: "Resistance",
-  "control effect": "Control Effect",
-};
-
 const BREED_FROM_LABEL: Record<string, Breed> = {
   sentinel: "sentinel",
   hunter: "hunter",
@@ -63,65 +48,14 @@ const BREED_FROM_LABEL: Record<string, Breed> = {
   champion: "champion",
 };
 
-function uniqueNames(values: string[]): string[] {
-  const seen = new Set<string>();
-  const next: string[] = [];
-  for (const value of values) {
-    const name = value.trim();
-    if (!name) continue;
-    const key = name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    next.push(name);
-  }
-  return next;
-}
-
-function canonAbility(value: string): string {
-  const trimmed = value.trim();
-  return STATUS_CANON[trimmed.toLowerCase()] ?? trimmed;
-}
-
-function kitText(dragon: Dragon): string {
-  const kit = dragonKit(dragon);
-  return [kit.command, ...kit.extras.map((line) => line.body)].join(" ");
-}
-
-function joinNames(names: string[]): string {
-  if (names.length <= 1) return names[0] ?? "";
-  if (names.length === 2) return `${names[0]} and ${names[1]}`;
-  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-}
-
-/** True when Hub lists this dragon as applying `ability` — not when kit text merely mentions it. */
-export function dragonProvides(dragon: Dragon, ability: string): boolean {
-  const want = canonAbility(ability).toLowerCase();
-  if (!want) return false;
-  if ((dragon.provides ?? []).some((item) => item.toLowerCase() === want)) {
-    return true;
-  }
-  if (want === "control effect") {
-    return CONTROL_EFFECTS.some((effect) => dragonProvides(dragon, effect));
-  }
-  return false;
-}
-
-function extraNeedsFromKit(text: string): string[] {
-  const found: string[] = [];
-  const re = /if any ally has ([A-Za-z][A-Za-z-]*)/gi;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(text))) {
-    const key = match[1].toLowerCase();
-    if (STATUS_CANON[key]) found.push(STATUS_CANON[key]);
-  }
-  return found;
-}
-
-export function dragonNeeds(dragon: Dragon): string[] {
-  return uniqueNames([
-    ...(dragon.needs ?? []),
-    ...extraNeedsFromKit(kitText(dragon)),
-  ]).map(canonAbility);
+function tryHint(ability: string, excludeId: string): string {
+  const names = DRAGONS.filter(
+    (dragon) => dragon.id !== excludeId && dragonProvides(dragon, ability),
+  )
+    .map((dragon) => dragon.name)
+    .slice(0, 3);
+  if (names.length === 0) return "";
+  return ` Try ${joinNames(names)}.`;
 }
 
 export function partnerRules(dragon: Dragon): PartnerRule[] {
@@ -145,24 +79,7 @@ export function partnerRules(dragon: Dragon): PartnerRule[] {
   return [...byBreed.values()];
 }
 
-function knownProviders(ability: string, excludeId: string): string[] {
-  return DRAGONS.filter(
-    (dragon) => dragon.id !== excludeId && dragonProvides(dragon, ability),
-  )
-    .map((dragon) => dragon.name)
-    .slice(0, 3);
-}
-
-function tryHint(ability: string, excludeId: string): string {
-  const names = knownProviders(ability, excludeId);
-  if (names.length === 0) return "";
-  return ` Try ${joinNames(names)}.`;
-}
-
-function missedBreedDetail(
-  dragon: Dragon,
-  rule: PartnerRule,
-): string {
+function missedBreedDetail(dragon: Dragon, rule: PartnerRule): string {
   const breed = breedLabels[rule.breed];
   if (rule.gift && /crescent blade/i.test(rule.gift)) {
     return `Without a ${breed}, Crescent Blade never lands, so Rising Tide never stacks off their hits.`;
@@ -188,9 +105,17 @@ function hitBreedDetail(
   return `${partners} ${partners.includes(" and ") ? "are" : "is"} the ${breed} ${dragon.name} is built around.`;
 }
 
+/** Pit rank used for “is this kit live?”, never Theory aim stars. */
+export function pitStars(row: {
+  owned: { starRank: number } | null;
+}): number | null {
+  return row.owned?.starRank ?? null;
+}
+
 export function pairingFit(
   dragon: Dragon,
-  teammates: { dragon: Dragon }[],
+  teammates: { dragon: Dragon; atStars?: number | null }[],
+  atStars?: number | null,
 ): { text: string; points: number }[] {
   const fits: { text: string; points: number }[] = [];
   for (const mate of teammates) {
@@ -202,11 +127,12 @@ export function pairingFit(
         points: 34,
       });
     }
-    for (const need of dragonNeeds(mate.dragon)) {
-      if (dragonProvides(mate.dragon, need)) continue;
-      if (!dragonProvides(dragon, need)) continue;
+    for (const need of dragonNeedGates(mate.dragon)) {
+      if (!qualifiesForStars(need.unlockStars, mate.atStars)) continue;
+      if (dragonProvides(mate.dragon, need.ability, mate.atStars)) continue;
+      if (!dragonProvides(dragon, need.ability, atStars)) continue;
       fits.push({
-        text: `Gives ${mate.dragon.name} ${need}`,
+        text: `Gives ${mate.dragon.name} ${need.ability}`,
         points: 32,
       });
     }
@@ -219,18 +145,80 @@ export function pairingFit(
       points: 30,
     });
   }
-  for (const need of dragonNeeds(dragon)) {
-    if (dragonProvides(dragon, need)) continue;
+  for (const need of dragonNeedGates(dragon)) {
+    if (!qualifiesForStars(need.unlockStars, atStars)) continue;
+    if (dragonProvides(dragon, need.ability, atStars)) continue;
     const partner = teammates.find((mate) =>
-      dragonProvides(mate.dragon, need),
+      dragonProvides(mate.dragon, need.ability, mate.atStars),
     );
     if (!partner) continue;
     fits.push({
-      text: `Gets ${need} from ${partner.dragon.name}`,
+      text: `Gets ${need.ability} from ${partner.dragon.name}`,
       points: 30,
     });
   }
   return fits;
+}
+
+function otherLineProvider(
+  state: PitState,
+  currentId: string,
+  ability: string,
+  excludeDragonId: string,
+): { lineupName: string; dragonName: string; stars: number } | null {
+  for (const lineup of state.lineups) {
+    if (lineup.id === currentId) continue;
+    if (lineup.kind !== "pit") continue;
+    for (const row of placedInLineup(lineup, state)) {
+      if (row.dragon.id === excludeDragonId) continue;
+      const stars = pitStars(row);
+      if (!dragonProvides(row.dragon, ability, stars)) continue;
+      return {
+        lineupName: lineup.name,
+        dragonName: row.dragon.name,
+        stars: stars ?? 0,
+      };
+    }
+  }
+  return null;
+}
+
+function otherLineBreed(
+  state: PitState,
+  currentId: string,
+  breed: Breed,
+  excludeDragonId: string,
+): { lineupName: string; dragonName: string } | null {
+  for (const lineup of state.lineups) {
+    if (lineup.id === currentId) continue;
+    if (lineup.kind !== "pit") continue;
+    for (const row of placedInLineup(lineup, state)) {
+      if (row.dragon.id === excludeDragonId) continue;
+      if (row.dragon.breed !== breed) continue;
+      return { lineupName: lineup.name, dragonName: row.dragon.name };
+    }
+  }
+  return null;
+}
+
+function lockedProviders(
+  mates: ResolvedSlot[],
+  ability: string,
+): { dragon: Dragon; ownedStars: number | null; needStars: number }[] {
+  const locked: {
+    dragon: Dragon;
+    ownedStars: number | null;
+    needStars: number;
+  }[] = [];
+  for (const mate of mates) {
+    const needStars = provideUnlockStars(mate.dragon, ability);
+    if (needStars === undefined) continue;
+    const ownedStars = pitStars(mate);
+    if (dragonProvides(mate.dragon, ability, ownedStars)) continue;
+    if (needStars == null) continue;
+    locked.push({ dragon: mate.dragon, ownedStars, needStars });
+  }
+  return locked;
 }
 
 export function pairingReport(
@@ -243,6 +231,7 @@ export function pairingReport(
 
   for (const row of placed) {
     const mates = placed.filter((other) => other.dragon.id !== row.dragon.id);
+    const ownedStars = pitStars(row);
 
     for (const rule of partnerRules(row.dragon)) {
       const partners = mates.filter(
@@ -250,13 +239,22 @@ export function pairingReport(
       );
       const breed = breedLabels[rule.breed];
       if (partners.length === 0) {
+        const elsewhere = otherLineBreed(
+          state,
+          lineup.id,
+          rule.breed,
+          row.dragon.id,
+        );
         cons.push({
           id: `con:${row.dragon.id}:breed:${rule.breed}`,
           tone: "con",
+          cause: elsewhere ? "other-line" : "teammate",
           title: rule.gift
             ? `${row.dragon.name}’s ${rule.gift} needs an ally ${breed}`
             : `${row.dragon.name} needs an ally ${breed}`,
-          detail: missedBreedDetail(row.dragon, rule),
+          detail: elsewhere
+            ? `${missedBreedDetail(row.dragon, rule)} ${elsewhere.dragonName} is a ${breed} on ${elsewhere.lineupName} — not this three.`
+            : missedBreedDetail(row.dragon, rule),
         });
       } else {
         const names = joinNames(partners.map((mate) => mate.dragon.name));
@@ -271,28 +269,96 @@ export function pairingReport(
       }
     }
 
-    for (const need of dragonNeeds(row.dragon)) {
-      if (dragonProvides(row.dragon, need)) continue;
-      const providers = mates.filter((mate) =>
-        dragonProvides(mate.dragon, need),
-      );
-      if (providers.length === 0) {
+    for (const need of dragonNeedGates(row.dragon)) {
+      if (dragonProvides(row.dragon, need.ability, ownedStars)) continue;
+      if (!qualifiesForStars(need.unlockStars, ownedStars)) {
         cons.push({
-          id: `con:${row.dragon.id}:need:${need.toLowerCase()}`,
+          id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:stars`,
           tone: "con",
-          title: `${row.dragon.name} wants ${need} on a teammate`,
-          detail: `Nobody on this line provides ${need}, so the habits that scale with it stay weak.${tryHint(need, row.dragon.id)}`,
+          cause: "stars",
+          stars: need.unlockStars ?? undefined,
+          ownedStars,
+          title: `${row.dragon.name}’s ${need.ability} pairing unlocks at ${need.unlockStars}★`,
+          detail:
+            ownedStars == null
+              ? `Not in your pit — treat the ${need.ability} payoff as a goal until they hatch.`
+              : `You have ${ownedStars}★. Star them to ${need.unlockStars}★ before a ${need.ability} teammate does anything for this habit.`,
         });
-      } else {
-        const names = joinNames(providers.map((mate) => mate.dragon.name));
-        const verb = providers.length === 1 ? "is feeding" : "are feeding";
+        continue;
+      }
+
+      const live = mates.filter((mate) =>
+        dragonProvides(mate.dragon, need.ability, pitStars(mate)),
+      );
+      if (live.length > 0) {
+        const names = joinNames(live.map((mate) => mate.dragon.name));
+        const verb = live.length === 1 ? "is feeding" : "are feeding";
         pros.push({
-          id: `pro:${row.dragon.id}:need:${need.toLowerCase()}`,
+          id: `pro:${row.dragon.id}:need:${need.ability.toLowerCase()}`,
           tone: "pro",
-          title: `${names}’s ${need} ${verb} ${row.dragon.name}`,
-          detail: `${row.dragon.name}’s kit is written to scale when a teammate brings ${need}.`,
+          title: `${names}’s ${need.ability} ${verb} ${row.dragon.name}`,
+          detail: `${row.dragon.name}’s kit is written to scale when a teammate brings ${need.ability}.`,
+        });
+        continue;
+      }
+
+      const locked = lockedProviders(mates, need.ability);
+      if (locked.length > 0) {
+        const first = locked[0];
+        cons.push({
+          id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:locked`,
+          tone: "con",
+          cause: "stars",
+          stars: first.needStars,
+          ownedStars: first.ownedStars,
+          title: `${first.dragon.name} has ${need.ability} at ${first.needStars}★`,
+          detail:
+            first.ownedStars == null
+              ? `${row.dragon.name} wants ${need.ability}, but ${first.dragon.name} is not in your pit yet.`
+              : `${row.dragon.name} wants ${need.ability} on this line. ${first.dragon.name} brings it at ${first.needStars}★ — you have ${first.ownedStars}★.`,
+        });
+        continue;
+      }
+
+      const elsewhere = otherLineProvider(
+        state,
+        lineup.id,
+        need.ability,
+        row.dragon.id,
+      );
+      cons.push({
+        id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}`,
+        tone: "con",
+        cause: elsewhere ? "other-line" : "teammate",
+        title: `${row.dragon.name} wants ${need.ability} on a teammate`,
+        detail: elsewhere
+          ? `${elsewhere.dragonName} supplies ${need.ability} on ${elsewhere.lineupName}, so it never fires here.${tryHint(need.ability, row.dragon.id)}`
+          : `Nobody on this line provides ${need.ability}, so the habits that scale with it stay weak.${tryHint(need.ability, row.dragon.id)}`,
+      });
+    }
+
+    if (row.slot === "vanguard") {
+      const targetSlot = row.dragon.flankBonus;
+      const target = placed.find((mate) => mate.slot === targetSlot);
+      if (!target) {
+        cons.push({
+          id: `con:${row.dragon.id}:flank:empty`,
+          tone: "con",
+          cause: "flank",
+          title: `${row.dragon.name} buffs ${slotLabels[targetSlot]}, which is empty`,
+          detail: `The Vanguard skill’s flank half never lands until someone stands ${targetSlot}.`,
         });
       }
+    }
+
+    if (!row.dragon.affinities.includes(lineup.troop)) {
+      cons.push({
+        id: `con:${row.dragon.id}:troop`,
+        tone: "con",
+        cause: "troop",
+        title: `${row.dragon.name} has no ${troopLabels[lineup.troop]} affinity`,
+        detail: `This march’s troop does not boost ${row.dragon.name}. Pair troops to a positive affinity, or expect a weaker stat line.`,
+      });
     }
   }
 

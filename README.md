@@ -26,13 +26,19 @@ with HBO, Warner Bros., or the game.
   until you actually have 10 stars.
   Turn on **Abilities** for command and the unique **(6+ stars)** skill.
   Open a row for the full command, Habits 1–5, vanguard skill, and stats
-  at the bottom. Theory lines also show a compact **Pairing** summary
-  under the formation (open it for the full pros and cons). Named
-  partners come from kit text (Moondancer wants an ally Sentinel) and
-  Hub `needs` (Caraxes wants First-Strike). Miss the partner and the
-  panel spells out what never fires; slot them and it flips to a payoff.
-  Ability text, stats-by-level, troop counts, and power come from
-  [Dragonfire-Hub](https://dragonfire-hub.com/).
+  at the bottom. **Watch out** under the formation names idle kit and
+  *why*: pit stars too low, the partner is not in this three, they are
+  already on another saved team, the Vanguard flank is empty, or the
+  march troop does not match. Named partners come from kit text
+  (Moondancer wants an ally Sentinel) and Hub `needs` (Caraxes wants
+  First-Strike). A 6★ Slow on a 4★ Caraxes is a star warning, not a
+  “missing teammate” guess. Suggest on a pit line only seats dragons you
+  own. **Next army** opens a new pit team from leftovers (skip dragons
+  already on another saved formation; **Allow reuse** if you want the
+  in-game overlap). Theory can still slot unowned dragons — those rows
+  are goals, not a march. Ability text, stats-by-level, troop counts,
+  and Hub power come from [Dragonfire-Hub](https://dragonfire-hub.com/).
+  Hub power is stars + reign only, not in-game Army Power.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -71,7 +77,13 @@ npx next dev --hostname 0.0.0.0 --port 43123
 ## Notes
 
 Saved formations can reuse the same dragon — matching how Army Formations
-work in-game even when a dragon is already marching.
+work in-game even when a dragon is already marching. **Skip other teams**
+(the default for new pit lines) hides those dragons from Suggest and
+Next army so your 3rd and 4th marches get leftovers. Turn on **Allow
+reuse** to mirror the game.
+
+Hub power is not Army Power. Heirlooms, stronghold upgrades, and riders
+are out of scope — we will not reverse-engineer those.
 
 Portraits for dragons listed on the official site are copied from
 [gotdragonfire.com](https://gotdragonfire.com/dragons/) for local use in

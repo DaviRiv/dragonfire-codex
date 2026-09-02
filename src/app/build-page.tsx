@@ -99,7 +99,7 @@ export function BuildPage() {
           ))}
         </div>
       ) : null}
-      <LineupEditor lineupId={resolvedId} embedded />
+      <LineupEditor lineupId={resolvedId} embedded onOpenLineup={setActiveId} />
     </div>
   );
 }

@@ -23,6 +23,12 @@ export interface DragonStats {
   initiative: number;
 }
 
+/** Hub ability plus the star gate that unlocks it. `null` = Command / always on. */
+export type GatedAbility = {
+  ability: string;
+  unlockStars: number | null;
+};
+
 export interface Dragon {
   id: string;
   name: string;
@@ -42,9 +48,9 @@ export interface Dragon {
   commandShort?: string;
   tags: string[];
   /** Named effects this kit is stronger with on a teammate (Hub `needs`). */
-  needs?: string[];
+  needs?: GatedAbility[];
   /** Named effects this dragon can apply (Hub `provides.ability`). */
-  provides?: string[];
+  provides?: GatedAbility[];
   flankBonus: "left" | "right";
   released?: boolean;
   custom?: boolean;
@@ -80,6 +86,12 @@ export interface Lineup {
   slots: LineupSlots;
   ignoreLevel: boolean;
   craftStars: number;
+  /**
+   * When true, Suggest / Next army skip dragons already seated on another
+   * saved pit formation. In-game you can reuse a dragon; turn this off to
+   * match that. Default true so 3rd/4th teams get leftovers.
+   */
+  excludeUsed?: boolean;
   updatedAt: string;
 }
 

@@ -15,8 +15,10 @@ import { SynergyPanel } from "@/components/synergy-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  dragonsUsedOnOtherPitTeams,
   filledCount,
   resolveSlot,
+  skipsUsedDragons,
   slotOfDragon,
 } from "@/lib/lineup";
 import {
@@ -48,9 +50,11 @@ type RoleFilter = CompRole | "all";
 export function LineupEditor({
   lineupId,
   embedded,
+  onOpenLineup,
 }: {
   lineupId: string;
   embedded?: boolean;
+  onOpenLineup?: (id: string) => void;
 }) {
   const {
     ready,
@@ -63,6 +67,7 @@ export function LineupEditor({
     deleteLineup,
     loadSample,
     updateOwned,
+    createLineup,
   } = usePit();
   const router = useRouter();
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
@@ -103,6 +108,14 @@ export function LineupEditor({
     [lineup, state],
   );
 
+  const leftoverIds = useMemo(
+    () =>
+      lineup && skipsUsedDragons(lineup)
+        ? dragonsUsedOnOtherPitTeams(state, lineup.id)
+        : undefined,
+    [lineup, state],
+  );
+
   const suggestions = useMemo(() => {
     if (!lineup) return [];
     return suggestDragons({
@@ -112,8 +125,9 @@ export function LineupEditor({
       query,
       pool: lineup.kind === "theory" ? theoryPool : "all",
       role: roleFilter,
+      excludeIds: leftoverIds,
     });
-  }, [lineup, selectedSlot, state, query, theoryPool, roleFilter]);
+  }, [lineup, selectedSlot, state, query, theoryPool, roleFilter, leftoverIds]);
 
   if (!ready || !lineup || !report || !pairing) {
     return <p className="text-sm text-muted-foreground">Opening formation…</p>;
@@ -144,12 +158,20 @@ export function LineupEditor({
 
   function fillLine() {
     const filled = filledCount(active, state);
-    const picks = suggestFullLine(active, state, { replace: filled === 3 });
+    const excludeIds = skipsUsedDragons(active)
+      ? dragonsUsedOnOtherPitTeams(state, active.id)
+      : undefined;
+    const picks = suggestFullLine(active, state, {
+      replace: filled === 3,
+      excludeIds,
+    });
     if (picks.length === 0) {
       toast(
         isTheory
           ? "Every lane is already filled."
-          : "Every lane is filled, or your pit has no more dragons for this team.",
+          : skipsUsedDragons(active)
+            ? "No pit dragons left that are not already on another saved team."
+            : "Every lane is filled, or your pit has no more dragons for this team.",
       );
       return;
     }
@@ -163,6 +185,39 @@ export function LineupEditor({
         ? `Suggested ${picks.map((p) => p.dragon.name).join(", ")}.`
         : `Slotted ${picks.map((p) => p.dragon.name).join(", ")}.`,
     );
+  }
+
+  function nextArmy() {
+    const pitCount = state.lineups.filter((row) => row.kind === "pit").length;
+    const created = createLineup(`Lineup ${pitCount + 1}`, "pit");
+    updateLineup(created.id, {
+      troop: active.troop,
+      mode: active.mode,
+      excludeUsed: true,
+    });
+    const draft = {
+      ...created,
+      troop: active.troop,
+      mode: active.mode,
+      excludeUsed: true as const,
+    };
+    const excludeIds = dragonsUsedOnOtherPitTeams(state, created.id);
+    const picks = suggestFullLine(draft, state, { excludeIds });
+    if (picks.length > 0) {
+      slotDragons(
+        created.id,
+        picks.map((p) => ({ slot: p.slot, dragonId: p.dragon.id })),
+      );
+      toast.success(
+        `Next army from leftovers: ${picks.map((p) => p.dragon.name).join(", ")}.`,
+      );
+    } else {
+      toast(
+        "Opened an empty team. Add pit dragons, or turn off skipping other saved teams.",
+      );
+    }
+    if (onOpenLineup) onOpenLineup(created.id);
+    else router.push(`/lineups/${created.id}`);
   }
 
   async function copySummary() {
@@ -207,7 +262,7 @@ export function LineupEditor({
           </div>
         ) : null}
 
-        {isTheory ? <PairingPanel report={pairing} /> : null}
+        {pairing ? <PairingPanel report={pairing} /> : null}
 
         <div className="hidden space-y-2 lg:block">
           <TeamExtras
@@ -217,6 +272,7 @@ export function LineupEditor({
             report={report}
             onUpdate={(patch) => updateLineup(lineup.id, patch)}
             onCopy={copySummary}
+            onNextArmy={isTheory || pitEmpty ? undefined : nextArmy}
             onDelete={() => {
               deleteLineup(lineup.id);
               router.push("/lineups");
@@ -230,7 +286,7 @@ export function LineupEditor({
         ref={pickRef}
         className="mt-3 min-w-0 scroll-mt-[4.25rem] space-y-2 lg:mt-0"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">
             {selectedDragon
               ? `Replace ${selectedDragon.name}`
@@ -245,13 +301,27 @@ export function LineupEditor({
             <Sparkles data-icon="inline-start" />
             Suggest
           </Button>
+          {!isTheory && !pitEmpty ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={nextArmy}
+              className="shrink-0"
+            >
+              Next army
+            </Button>
+          ) : null}
         </div>
         <p className="text-[13px] leading-snug text-muted-foreground">
           {pitEmpty
             ? "Log dragons in the pit to rank a team."
-            : roleFilter === "all"
-              ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden.`
-              : `${suggestions.length} ${roleLabels[roleFilter].toLowerCase()} for ${slotShort[selectedSlot].toLowerCase()}.`}
+            : isTheory
+              ? roleFilter === "all"
+                ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden. Unowned rows are goals, not a march.`
+                : `${suggestions.length} ${roleLabels[roleFilter].toLowerCase()} for ${slotShort[selectedSlot].toLowerCase()}.`
+              : skipsUsedDragons(active)
+                ? `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}, skipping dragons already on another saved team.`
+                : `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}. Suggest never seats a dragon you do not own.`}
         </p>
         {selectedSlot === "vanguard" ? (
           <p
@@ -407,6 +477,7 @@ export function LineupEditor({
           report={report}
           onUpdate={(patch) => updateLineup(lineup.id, patch)}
           onCopy={copySummary}
+          onNextArmy={isTheory || pitEmpty ? undefined : nextArmy}
           onDelete={() => {
             deleteLineup(lineup.id);
             router.push("/lineups");
@@ -470,6 +541,7 @@ function TeamExtras({
   report,
   onUpdate,
   onCopy,
+  onNextArmy,
   onDelete,
   onSaved,
 }: {
@@ -479,10 +551,12 @@ function TeamExtras({
   report: SynergyReport;
   onUpdate: (patch: Partial<Lineup>) => void;
   onCopy: () => void;
+  onNextArmy?: () => void;
   onDelete: () => void;
   onSaved: () => void;
 }) {
   const counter = troopCounters[lineup.troop];
+  const skipUsed = lineup.excludeUsed !== false;
   return (
     <div className="space-y-2">
       <Disclosure
@@ -545,6 +619,30 @@ function TeamExtras({
                 ? "Suggestions rank by stars and kit only. Reign is hidden."
                 : "Higher reign ranks a dragon above an equal-star alternative."}
             </p>
+            <div className="flex flex-wrap gap-1">
+              <MiniChip
+                active={skipUsed}
+                onClick={() => onUpdate({ excludeUsed: true })}
+              >
+                Skip other teams
+              </MiniChip>
+              <MiniChip
+                active={!skipUsed}
+                onClick={() => onUpdate({ excludeUsed: false })}
+              >
+                Allow reuse
+              </MiniChip>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {skipUsed
+                ? "Suggest and Next army leave dragons that are already on another saved pit team. In-game you can reuse them — Allow reuse to match that."
+                : "The same pit dragon can sit on more than one saved formation, like Army Formations in-game."}
+            </p>
+            {onNextArmy ? (
+              <Button variant="outline" size="sm" onClick={onNextArmy}>
+                Next army from leftovers
+              </Button>
+            ) : null}
           </div>
         ) : (
           <div className="space-y-2">
@@ -555,7 +653,8 @@ function TeamExtras({
             />
             <p className="text-xs text-muted-foreground">
               New slots use ★{lineup.craftStars}. Change a slotted dragon
-              without touching your pit.
+              without touching your pit. Unowned kit here is a goal, not a
+              march.
             </p>
           </div>
         )}
@@ -580,6 +679,10 @@ function TeamExtras({
         title="Why this team"
         badge={`${report.label} · ${report.score}`}
       >
+        <p className="mb-2 text-xs text-muted-foreground">
+          Hub power is stars + reign only — not in-game Army Power. Heirlooms,
+          stronghold, and riders are left out on purpose.
+        </p>
         <SynergyPanel report={report} compact />
       </Disclosure>
     </div>

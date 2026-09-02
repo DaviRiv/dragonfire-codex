@@ -200,14 +200,16 @@ export function DragonProfile({
         <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
           <p className="text-muted-foreground">Troops</p>
           <p className="text-right tabular-nums">{troops.toLocaleString()}</p>
-          <p className="text-muted-foreground">Power</p>
+          <p className="text-muted-foreground">Hub power</p>
           <p className="text-right tabular-nums">{formatPower(power)}</p>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Stats use Dragonfire-Hub’s level table
+          Hub power is stars + reign only — not the in-game Army Power number.
+          Heirlooms, stronghold upgrades, and riders are left out; we are not
+          going to reverse-engineer those. Stats use Dragonfire-Hub’s level
+          table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
-          multipliers. Power is stars + reign; habit ranks and heirlooms are
-          not included.
+          multipliers. Habit upgrade ranks are not in the pit yet.
         </p>
       </div>
     </div>
