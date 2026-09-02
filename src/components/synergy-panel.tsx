@@ -1,5 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { SynergyReport } from "@/lib/synergy";
+import type { SynergyNote, SynergyReport } from "@/lib/synergy";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react";
 
@@ -10,6 +9,11 @@ export function SynergyPanel({
   report: SynergyReport;
   compact?: boolean;
 }) {
+  const context = report.notes.filter((note) => note.tone === "info");
+  const pros = report.notes.filter((note) => note.tone === "good");
+  const cons = report.notes.filter((note) => note.tone === "warn");
+  const empty = report.notes.length === 0;
+
   return (
     <aside
       className={cn(
@@ -37,35 +41,91 @@ export function SynergyPanel({
           </div>
         </div>
       )}
-      <div className="space-y-2">
-        {report.notes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Slot three dragons to see affinity, flanks, and breed coverage.
-          </p>
+      {empty ? (
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          Slot three dragons to see affinity, flanks, and breed coverage.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {context.map((note, i) => (
+            <p
+              key={`info-${i}`}
+              className="flex gap-1.5 text-[13px] leading-snug text-muted-foreground"
+            >
+              <Info className="mt-0.5 size-3.5 shrink-0" />
+              <span>{note.text}</span>
+            </p>
+          ))}
+          <div className="grid grid-cols-2 gap-3">
+            <NoteColumn
+              title="Pros"
+              empty="Nothing working yet."
+              notes={pros}
+              tone="pro"
+            />
+            <NoteColumn
+              title="Cons"
+              empty="No gaps on this line."
+              notes={cons}
+              tone="con"
+            />
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function NoteColumn({
+  title,
+  empty,
+  notes,
+  tone,
+}: {
+  title: string;
+  empty: string;
+  notes: SynergyNote[];
+  tone: "pro" | "con";
+}) {
+  return (
+    <div>
+      <p
+        className={cn(
+          "text-label",
+          tone === "con" ? "text-amber-200" : "text-emerald-200",
+        )}
+      >
+        {title}
+        {notes.length ? ` · ${notes.length}` : ""}
+      </p>
+      <ul className="mt-1.5 max-h-[min(18rem,40vh)] space-y-1.5 overflow-y-auto">
+        {notes.length === 0 ? (
+          <li className="rounded-xl px-2.5 py-2 text-[13px] text-muted-foreground ring-1 ring-foreground/10">
+            {empty}
+          </li>
         ) : (
-          report.notes.map((note, i) => (
-            <Alert
-              key={i}
+          notes.map((note, i) => (
+            <li
+              key={`${tone}-${i}`}
               className={cn(
-                note.tone === "good" && "border-emerald-500/30 bg-emerald-500/10",
-                note.tone === "warn" && "border-amber-500/30 bg-amber-500/10",
+                "rounded-xl px-2.5 py-2 ring-1",
+                tone === "con"
+                  ? "bg-amber-500/10 ring-amber-500/30"
+                  : "bg-emerald-500/10 ring-emerald-500/30",
               )}
             >
-              {note.tone === "good" ? (
-                <CheckCircle2 />
-              ) : note.tone === "warn" ? (
-                <TriangleAlert />
-              ) : (
-                <Info />
-              )}
-              <AlertTitle className="sr-only">{note.tone}</AlertTitle>
-              <AlertDescription className="text-foreground/90">
-                {note.text}
-              </AlertDescription>
-            </Alert>
+              <p className="flex gap-1.5 text-[13px] leading-snug text-foreground">
+                {tone === "con" ? (
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-300" />
+                ) : (
+                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-300" />
+                )}
+                <span className="min-w-0">{note.text}</span>
+              </p>
+            </li>
           ))
         )}
-      </div>
-    </aside>
+      </ul>
+    </div>
   );
 }

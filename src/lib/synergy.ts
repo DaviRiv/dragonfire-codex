@@ -93,7 +93,7 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
     score += 5;
   } else if (breeds.length === 1 && placed.length === 3) {
     notes.push({
-      tone: "info",
+      tone: "warn",
       text: `All three are ${breedLabels[placed[0].dragon.breed]}s. Fine for a specialist march, but you lose kit variety.`,
     });
   }
@@ -102,12 +102,12 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
     const wants = p.dragon.flankBonus;
     if (wants === "left" && p.slot === "left") {
       notes.push({
-        tone: "info",
+        tone: "warn",
         text: `${p.dragon.name} buffs the Left Flank. On the left they mostly self-buff — try Vanguard or Right so a teammate gets it.`,
       });
     } else if (wants === "right" && p.slot === "right") {
       notes.push({
-        tone: "info",
+        tone: "warn",
         text: `${p.dragon.name} buffs the Right Flank. Slot them Left or Vanguard so the right dragon receives the habit.`,
       });
     } else if (wants === "left" && p.slot !== "left") {
@@ -132,7 +132,7 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
       });
     } else if (hasCompRole(p.dragon, "tanking") && p.slot !== "vanguard") {
       notes.push({
-        tone: "info",
+        tone: "warn",
         text: `${p.dragon.name} can taunt — Vanguard is usually the safer home.`,
       });
     }
@@ -151,7 +151,7 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
     const missing = missingCompRoles(placed.map((p) => p.dragon));
     if (missing.includes("control")) {
       notes.push({
-        tone: "info",
+        tone: "warn",
         text: "No crowd control. A Stun, Panic, Slow, Stagger, or Confusion kit (Kalspire) peels the other line.",
       });
     }
@@ -170,7 +170,7 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
 
   if (placed.some((p) => hasCompRole(p.dragon, "healing"))) {
     notes.push({
-      tone: "info",
+      tone: "good",
       text: "A healer is in the lineup — Recovery on allies helps PvE tiles and longer fights.",
     });
   }
