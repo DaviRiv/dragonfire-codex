@@ -141,7 +141,7 @@ function NoteColumn({
                   <span className="rounded-full px-1.5 py-px text-[11px] tracking-wide text-amber-100 ring-1 ring-amber-400/35">
                     {CAUSE_LABEL[note.cause]}
                   </span>
-                  {note.cause === "stars" && note.stars != null ? (
+                  {note.stars != null ? (
                     <StarRequirement
                       stars={note.stars}
                       ownedStars={note.ownedStars}

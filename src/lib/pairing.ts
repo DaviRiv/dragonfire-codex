@@ -6,8 +6,13 @@ import {
   kitText,
   provideUnlockStars,
 } from "@/lib/abilities";
+import { findDragon } from "@/lib/dragons";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
-import { placedInLineup, type ResolvedSlot } from "@/lib/lineup";
+import {
+  placedInLineup,
+  slottedDragonIds,
+  type ResolvedSlot,
+} from "@/lib/lineup";
 import { qualifiesForStars } from "@/lib/stars";
 import type { Breed, Dragon, Lineup, PitState } from "@/lib/types";
 
@@ -160,27 +165,106 @@ export function pairingFit(
   return fits;
 }
 
-function otherLineProvider(
+type PartnerHit = {
+  dragonName: string;
+  lineupName?: string;
+  live: boolean;
+  needStars: number | null | undefined;
+  ownedStars: number | null;
+};
+
+function onOtherPitTeam(
+  state: PitState,
+  currentId: string,
+  dragonId: string,
+): boolean {
+  return state.lineups.some(
+    (lineup) =>
+      lineup.id !== currentId &&
+      lineup.kind === "pit" &&
+      placedInLineup(lineup, state).some((row) => row.dragon.id === dragonId),
+  );
+}
+
+function partnerOnOtherTeam(
   state: PitState,
   currentId: string,
   ability: string,
   excludeDragonId: string,
-): { lineupName: string; dragonName: string; stars: number } | null {
+): PartnerHit | null {
+  const hits: PartnerHit[] = [];
   for (const lineup of state.lineups) {
-    if (lineup.id === currentId) continue;
-    if (lineup.kind !== "pit") continue;
+    if (lineup.id === currentId || lineup.kind !== "pit") continue;
     for (const row of placedInLineup(lineup, state)) {
       if (row.dragon.id === excludeDragonId) continue;
-      const stars = pitStars(row);
-      if (!dragonProvides(row.dragon, ability, stars)) continue;
-      return {
-        lineupName: lineup.name,
+      const needStars = provideUnlockStars(row.dragon, ability);
+      if (needStars === undefined) continue;
+      const ownedStars = pitStars(row);
+      hits.push({
         dragonName: row.dragon.name,
-        stars: stars ?? 0,
-      };
+        lineupName: lineup.name,
+        live: dragonProvides(row.dragon, ability, ownedStars),
+        needStars,
+        ownedStars,
+      });
     }
   }
-  return null;
+  return hits.find((hit) => hit.live) ?? hits[0] ?? null;
+}
+
+function partnerIdleInPit(
+  state: PitState,
+  current: Lineup,
+  ability: string,
+  excludeDragonId: string,
+): PartnerHit | null {
+  const seated = slottedDragonIds(current, state);
+  const hits: PartnerHit[] = [];
+  for (const owned of state.owned) {
+    if (owned.dragonId === excludeDragonId) continue;
+    if (seated.has(owned.dragonId)) continue;
+    if (onOtherPitTeam(state, current.id, owned.dragonId)) continue;
+    const dragon = findDragon(owned.dragonId, state.customDragons);
+    if (!dragon) continue;
+    const needStars = provideUnlockStars(dragon, ability);
+    if (needStars === undefined) continue;
+    hits.push({
+      dragonName: dragon.name,
+      live: dragonProvides(dragon, ability, owned.starRank),
+      needStars,
+      ownedStars: owned.starRank,
+    });
+  }
+  return hits.find((hit) => hit.live) ?? hits[0] ?? null;
+}
+
+/** Live kit first. Then an idle pit dragon (you can still seat them). Then parked. */
+function pickPitPartner(
+  other: PartnerHit | null,
+  idle: PartnerHit | null,
+): PartnerHit | null {
+  if (other?.live) return other;
+  if (idle?.live) return idle;
+  return idle ?? other;
+}
+
+function elsewhereDetail(ability: string, hit: PartnerHit): string {
+  if (hit.lineupName) {
+    if (hit.live) {
+      return `${hit.dragonName} supplies ${ability} on ${hit.lineupName}, so it never fires here.`;
+    }
+    if (hit.needStars != null) {
+      return `${hit.dragonName} is on ${hit.lineupName} and brings ${ability} at ${hit.needStars}★. You have ${hit.ownedStars ?? 0}★.`;
+    }
+    return `${hit.dragonName} is on ${hit.lineupName} — not this three.`;
+  }
+  if (hit.live) {
+    return `${hit.dragonName} is in your pit with ${ability} — slot them on this three.`;
+  }
+  if (hit.needStars != null) {
+    return `${hit.dragonName} is in your pit; ${ability} unlocks at ${hit.needStars}★ (you have ${hit.ownedStars ?? 0}★).`;
+  }
+  return `${hit.dragonName} is in your pit, not on this three.`;
 }
 
 function otherLineBreed(
@@ -320,19 +404,26 @@ export function pairingReport(
         continue;
       }
 
-      const elsewhere = otherLineProvider(
-        state,
-        lineup.id,
-        need.ability,
-        row.dragon.id,
+      const parked = pickPitPartner(
+        partnerOnOtherTeam(state, lineup.id, need.ability, row.dragon.id),
+        partnerIdleInPit(state, lineup, need.ability, row.dragon.id),
       );
       cons.push({
         id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}`,
         tone: "con",
-        cause: elsewhere ? "other-line" : "teammate",
+        cause: parked?.lineupName
+          ? "other-line"
+          : parked && !parked.live
+            ? "stars"
+            : "teammate",
+        stars:
+          parked && !parked.live && parked.needStars != null
+            ? parked.needStars
+            : undefined,
+        ownedStars: parked && !parked.live ? parked.ownedStars : undefined,
         title: `${row.dragon.name} wants ${need.ability} on a teammate`,
-        detail: elsewhere
-          ? `${elsewhere.dragonName} supplies ${need.ability} on ${elsewhere.lineupName}, so it never fires here.${tryHint(need.ability, row.dragon.id)}`
+        detail: parked
+          ? elsewhereDetail(need.ability, parked)
           : `Nobody on this line provides ${need.ability}, so the habits that scale with it stay weak.${tryHint(need.ability, row.dragon.id)}`,
       });
     }
