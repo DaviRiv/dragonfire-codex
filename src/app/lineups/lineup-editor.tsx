@@ -366,7 +366,7 @@ export function LineupEditor({
           </div>
         ) : null}
         {gapHeadline ? (
-          <p className="rounded-xl bg-red-950/50 px-2.5 py-2 text-[13px] leading-snug text-red-50 ring-1 ring-red-500/35">
+          <p className="rounded-xl bg-[#3a1210] px-2.5 py-2 text-[13px] leading-snug text-red-50 ring-1 ring-[#c34a2c]/70">
             {gapHeadline}
           </p>
         ) : null}
