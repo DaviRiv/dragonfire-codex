@@ -45,7 +45,7 @@ export function PairingPanel({ report }: { report: PairingReport }) {
             className={cn(
               "mt-0.5 text-[13px] leading-snug",
               cons.length
-                ? "text-amber-100"
+                ? "text-red-200"
                 : quiet || empty
                   ? "text-muted-foreground"
                   : "text-emerald-100",
@@ -72,18 +72,18 @@ export function PairingPanel({ report }: { report: PairingReport }) {
             under Why this team.
           </p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <NoteColumn
-              title="Idle kit"
-              empty="Nothing sitting idle."
-              notes={cons}
-              tone="con"
-            />
+          <div className="grid grid-cols-2 gap-3">
             <NoteColumn
               title="Live"
               empty="No pairing payoffs yet."
               notes={pros}
               tone="pro"
+            />
+            <NoteColumn
+              title="Idle kit"
+              empty="Nothing sitting idle."
+              notes={cons}
+              tone="con"
             />
           </div>
         )}
@@ -108,7 +108,7 @@ function NoteColumn({
       <p
         className={cn(
           "text-label",
-          tone === "con" ? "text-amber-200" : "text-emerald-200",
+          tone === "con" ? "text-red-300" : "text-emerald-200",
         )}
       >
         {title}
@@ -126,13 +126,13 @@ function NoteColumn({
               className={cn(
                 "rounded-xl px-2.5 py-2 ring-1",
                 tone === "con"
-                  ? "bg-amber-500/10 ring-amber-500/30"
+                  ? "bg-red-950/55 ring-red-500/45"
                   : "bg-emerald-500/10 ring-emerald-500/30",
               )}
             >
               <p className="flex gap-1.5 text-[13px] leading-snug text-foreground">
                 {tone === "con" ? (
-                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-300" />
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-red-400" />
                 ) : (
                   <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-300" />
                 )}
@@ -140,7 +140,7 @@ function NoteColumn({
               </p>
               {note.cause ? (
                 <p className="mt-1 flex flex-wrap items-center gap-1.5 pl-5">
-                  <span className="rounded-full px-1.5 py-px text-[11px] tracking-wide text-amber-100 ring-1 ring-amber-400/35">
+                  <span className="rounded-full px-1.5 py-px text-[11px] tracking-wide text-red-100 ring-1 ring-red-400/40">
                     {CAUSE_LABEL[note.cause]}
                   </span>
                   {note.stars != null ? (

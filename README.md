@@ -13,8 +13,7 @@ with HBO, Warner Bros., or the game.
   for **this team** first, hiding anyone already slotted. Role filters on
   that list are dungeon jobs: **Healing**, **Tanking**, **Damage**, and
   **Crowd control** (Kalspire is both Damage and CC). Troop type and
-  mode live under **Options** — they still steer ranking and affinity,
-  they just are not how you hide dragons. Search and the hatchery/pit
+  mode sit on the formation as chips. Search and the hatchery/pit
   pool stay on the pick list. Ranking fills composition in order: a
   healer if nobody Recovers, then damage mitigation (Taunt or Damage
   Received), then a damage dealer to finish. Feeding Burn so a tank’s
@@ -34,7 +33,7 @@ with HBO, Warner Bros., or the game.
   numbers, Watch out lists the same payoff, and **Full stats** on the
   selected slotted dragon opens the sheet with a Live synergy block.
   Those bonuses are kit effects, not added into Hub power.
-  **Watch out** under the formation names idle kit and
+  **Watch out** under the formation names idle kit (red) and
   *why* the kit wants it (Vhagar’s Taunt is 25%, or 50% against Burn),
   plus whether stars are too low, the partner is not in this three, they are
   already on another saved team, the Vanguard flank is empty, or the
@@ -48,6 +47,9 @@ with HBO, Warner Bros., or the game.
   are goals, not a march. Ability text, stats-by-level, troop counts,
   and Hub power come from [Dragonfire-Hub](https://dragonfire-hub.com/).
   Hub power is stars + reign only, not in-game Army Power.
+  **Game** is three bullets from public Reign metadata: a three-dragon
+  line, what survives a Campaign reset, and the troop triangle.
+  **Why this team** splits pros (green, left) and cons (red, right).
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them

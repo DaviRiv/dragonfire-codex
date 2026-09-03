@@ -8,11 +8,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { MiniChip } from "@/components/chip";
 import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
-import { modeShort, slotShort, troopShort } from "@/lib/labels";
+import {
+  MODES,
+  TROOP_TYPES,
+  modeShort,
+  slotShort,
+  troopShort,
+} from "@/lib/labels";
 import { vanguardBonus } from "@/lib/habits";
 import { buffsOnDragon, type SynergyBuff } from "@/lib/synergy-buffs";
-import type { Lineup, PitState, SlotId } from "@/lib/types";
+import type { Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -23,6 +30,8 @@ export function FormationBoard({
   onSelectSlot,
   onClearSlot,
   onNameChange,
+  onTroopChange,
+  onModeChange,
   buffs = [],
   children,
 }: {
@@ -32,6 +41,8 @@ export function FormationBoard({
   onSelectSlot?: (slot: SlotId) => void;
   onClearSlot?: (slot: SlotId) => void;
   onNameChange?: (name: string) => void;
+  onTroopChange?: (troop: TroopType) => void;
+  onModeChange?: (mode: LineupMode) => void;
   buffs?: SynergyBuff[];
   children?: ReactNode;
 }) {
@@ -54,10 +65,37 @@ export function FormationBoard({
             {lineup.name}
           </p>
         )}
-        <span className="shrink-0 text-xs text-amber-100/75">
-          {troopShort[lineup.troop]} · {modeShort[lineup.mode]}
-        </span>
       </div>
+      {onTroopChange || onModeChange ? (
+        <div className="mb-2 space-y-1.5 sm:mb-3">
+          <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+            {TROOP_TYPES.map((troop) => (
+              <MiniChip
+                key={troop}
+                active={lineup.troop === troop}
+                onClick={() => onTroopChange?.(troop)}
+              >
+                {troopShort[troop]}
+              </MiniChip>
+            ))}
+          </div>
+          <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+            {MODES.map((mode) => (
+              <MiniChip
+                key={mode}
+                active={lineup.mode === mode}
+                onClick={() => onModeChange?.(mode)}
+              >
+                {modeShort[mode]}
+              </MiniChip>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mb-2 text-xs text-amber-100/75 sm:mb-3">
+          {troopShort[lineup.troop]} · {modeShort[lineup.mode]}
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {SLOT_IDS.map((slot) => (
           <SlotButton

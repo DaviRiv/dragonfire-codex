@@ -7,6 +7,7 @@ import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { FormationBoard } from "@/components/formation-board";
+import { GameFacts } from "@/components/game-facts";
 import { PairingPanel } from "@/components/pairing-panel";
 import { EmptyState } from "@/components/empty-state";
 import { StarRank } from "@/components/star-rank";
@@ -23,16 +24,7 @@ import {
   slotOfDragon,
 } from "@/lib/lineup";
 import { lineGapHeadline } from "@/lib/comp";
-import {
-  MODES,
-  TROOP_TYPES,
-  modeShort,
-  slotShort,
-  troopCounters,
-  troopLabels,
-  troopShort,
-  slotHints,
-} from "@/lib/labels";
+import { slotShort, slotHints } from "@/lib/labels";
 import {
   COMP_ROLES,
   roleLabels,
@@ -41,7 +33,7 @@ import {
 import { vanguardBonus } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
-import type { Dragon, Lineup, SlotId } from "@/lib/types";
+import type { Dragon, SlotId } from "@/lib/types";
 import { pairingReport } from "@/lib/pairing";
 import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
 import { Copy, Search, Sparkles, Trash2 } from "lucide-react";
@@ -259,6 +251,8 @@ export function LineupEditor({
           }}
           onClearSlot={(slot) => setSlot(lineup.id, slot, null)}
           onNameChange={(name) => updateLineup(lineup.id, { name })}
+          onTroopChange={(troop) => updateLineup(lineup.id, { troop })}
+          onModeChange={(mode) => updateLineup(lineup.id, { mode })}
         />
 
         {isTheory && selectedResolved ? (
@@ -273,19 +267,27 @@ export function LineupEditor({
               }
             />
           </div>
+        ) : isTheory ? (
+          <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
+            <p className="text-label mb-1">Aim for stars</p>
+            <StarRank
+              value={lineup.craftStars}
+              onChange={(craftStars) => updateLineup(lineup.id, { craftStars })}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              New slots use ★{lineup.craftStars}. Unowned kit here is a goal,
+              not a march.
+            </p>
+          </div>
         ) : null}
 
         {pairing ? <PairingPanel report={pairing} /> : null}
 
         <div className="hidden space-y-2 lg:block">
           <TeamExtras
-            isTheory={isTheory}
-            lineup={lineup}
             embedded={embedded}
             report={report}
-            onUpdate={(patch) => updateLineup(lineup.id, patch)}
             onCopy={copySummary}
-            onNextArmy={isTheory || pitEmpty ? undefined : nextArmy}
             onDelete={() => {
               deleteLineup(lineup.id);
               router.push("/lineups");
@@ -347,8 +349,24 @@ export function LineupEditor({
                 ? `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}, skipping dragons already on another saved team.`
                 : `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}. Suggest never seats a dragon you do not own.`}
         </p>
+        {!isTheory && !pitEmpty ? (
+          <div className="flex flex-wrap gap-1">
+            <MiniChip
+              active={skipsUsedDragons(active)}
+              onClick={() => updateLineup(active.id, { excludeUsed: true })}
+            >
+              Skip other teams
+            </MiniChip>
+            <MiniChip
+              active={!skipsUsedDragons(active)}
+              onClick={() => updateLineup(active.id, { excludeUsed: false })}
+            >
+              Allow reuse
+            </MiniChip>
+          </div>
+        ) : null}
         {gapHeadline ? (
-          <p className="rounded-xl bg-amber-950/40 px-2.5 py-2 text-[13px] leading-snug text-amber-50 ring-1 ring-amber-500/25">
+          <p className="rounded-xl bg-red-950/50 px-2.5 py-2 text-[13px] leading-snug text-red-50 ring-1 ring-red-500/35">
             {gapHeadline}
           </p>
         ) : null}
@@ -436,7 +454,7 @@ export function LineupEditor({
             ) : null}
             <p className="text-[13px] leading-snug text-muted-foreground">
               {roleFilter === "all"
-                ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group. Troop and mode live under Options."
+                ? "Healer, tank, damage, and crowd control — same jobs as a dungeon group."
                 : roleFilter === "healing"
                   ? "Ally Recovery, with the star gate on the line. A red warning on the ★ means your pit is short of that rank — the kit is a goal, not live."
                   : roleFilter === "tanking"
@@ -500,13 +518,9 @@ export function LineupEditor({
 
       <div className="col-span-full mt-3 space-y-2 lg:hidden">
         <TeamExtras
-          isTheory={isTheory}
-          lineup={lineup}
           embedded={embedded}
           report={report}
-          onUpdate={(patch) => updateLineup(lineup.id, patch)}
           onCopy={copySummary}
-          onNextArmy={isTheory || pitEmpty ? undefined : nextArmy}
           onDelete={() => {
             deleteLineup(lineup.id);
             router.push("/lineups");
@@ -570,156 +584,43 @@ export function LineupEditor({
 }
 
 function TeamExtras({
-  isTheory,
-  lineup,
   embedded,
   report,
-  onUpdate,
   onCopy,
-  onNextArmy,
   onDelete,
   onSaved,
 }: {
-  isTheory: boolean;
-  lineup: Lineup;
   embedded?: boolean;
   report: SynergyReport;
-  onUpdate: (patch: Partial<Lineup>) => void;
   onCopy: () => void;
-  onNextArmy?: () => void;
   onDelete: () => void;
   onSaved: () => void;
 }) {
-  const counter = troopCounters[lineup.troop];
-  const skipUsed = lineup.excludeUsed !== false;
   return (
     <div className="space-y-2">
-      <Disclosure
-        title="Options"
-        badge={`${troopShort[lineup.troop]} · ${modeShort[lineup.mode]}`}
-      >
-        <div className="mb-3 space-y-2">
-          <p className="text-label">March troop</p>
-          <div className="flex flex-wrap gap-1">
-            {TROOP_TYPES.map((troop) => (
-              <MiniChip
-                key={troop}
-                active={lineup.troop === troop}
-                onClick={() => onUpdate({ troop })}
-              >
-                {troopShort[troop]}
-              </MiniChip>
-            ))}
-          </div>
-          <p className="text-label">Mode</p>
-          <div className="flex flex-wrap gap-1">
-            {MODES.map((mode) => (
-              <MiniChip
-                key={mode}
-                active={lineup.mode === mode}
-                onClick={() => onUpdate({ mode })}
-              >
-                {modeShort[mode]}
-              </MiniChip>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {counter.beats
-              ? `${troopLabels[lineup.troop]} beat ${troopLabels[counter.beats]}${
-                  counter.losesTo
-                    ? `, lose to ${troopLabels[counter.losesTo]}`
-                    : ""
-                }. Ranking still favors this troop.`
-              : counter.note}
-          </p>
-        </div>
-        {!isTheory ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-1">
-              <MiniChip
-                active={!lineup.ignoreLevel}
-                onClick={() => onUpdate({ ignoreLevel: false })}
-              >
-                Use reign level
-              </MiniChip>
-              <MiniChip
-                active={lineup.ignoreLevel}
-                onClick={() => onUpdate({ ignoreLevel: true })}
-              >
-                Ignore level
-              </MiniChip>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {lineup.ignoreLevel
-                ? "Suggestions rank by stars and kit only. Reign is hidden."
-                : "Higher reign ranks a dragon above an equal-star alternative."}
-            </p>
-            <div className="flex flex-wrap gap-1">
-              <MiniChip
-                active={skipUsed}
-                onClick={() => onUpdate({ excludeUsed: true })}
-              >
-                Skip other teams
-              </MiniChip>
-              <MiniChip
-                active={!skipUsed}
-                onClick={() => onUpdate({ excludeUsed: false })}
-              >
-                Allow reuse
-              </MiniChip>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {skipUsed
-                ? "Suggest and Next army leave dragons that are already on another saved pit team. In-game you can reuse them — Allow reuse to match that."
-                : "The same pit dragon can sit on more than one saved formation, like Army Formations in-game."}
-            </p>
-            {onNextArmy ? (
-              <Button variant="outline" size="sm" onClick={onNextArmy}>
-                Next army from leftovers
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-label">Aim for stars</p>
-            <StarRank
-              value={lineup.craftStars}
-              onChange={(craftStars) => onUpdate({ craftStars })}
-            />
-            <p className="text-xs text-muted-foreground">
-              New slots use ★{lineup.craftStars}. Change a slotted dragon
-              without touching your pit. Unowned kit here is a goal, not a
-              march.
-            </p>
-          </div>
-        )}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={onCopy}>
-            <Copy data-icon="inline-start" />
-            Copy
-          </Button>
-          {!embedded ? (
-            <Button variant="destructive" onClick={onDelete}>
-              <Trash2 data-icon="inline-start" />
-              Delete
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={onSaved}>
-              Saved teams
-            </Button>
-          )}
-        </div>
-      </Disclosure>
+      <GameFacts />
       <Disclosure
         title="Why this team"
         badge={`${report.label} · ${report.score}`}
       >
-        <p className="mb-2 text-xs text-muted-foreground">
-          Hub power is stars + reign only — not in-game Army Power. Heirlooms,
-          stronghold, and riders are left out on purpose.
-        </p>
         <SynergyPanel report={report} compact />
       </Disclosure>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={onCopy}>
+          <Copy data-icon="inline-start" />
+          Copy
+        </Button>
+        {!embedded ? (
+          <Button variant="destructive" onClick={onDelete}>
+            <Trash2 data-icon="inline-start" />
+            Delete
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={onSaved}>
+            Saved teams
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

@@ -21,13 +21,29 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "Dragonfire — Pick a team",
+  title: {
+    default: "Dragonfire Pit — Pick a three-dragon team",
+    template: "%s · Dragonfire Pit",
+  },
   description:
-    "Unofficial Game of Thrones: Dragonfire tool. Log your dragons, then pick a three-dragon team.",
+    "Unofficial Game of Thrones: Dragonfire pit and team tool. Log dragons, rank a three-dragon line, and read kit, troop affinity, and what survives a Reign.",
   icons: { icon: "/favicon.svg" },
+  openGraph: {
+    type: "website",
+    siteName: "Dragonfire Pit",
+    title: "Dragonfire Pit — Pick a three-dragon team",
+    description:
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Log dragons, rank a three-dragon line, and read kit, troop affinity, and what survives a Reign.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Dragonfire Pit — Pick a three-dragon team",
+    description:
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Log dragons, rank a three-dragon line, and read kit, troop affinity, and what survives a Reign.",
+  },
   appleWebApp: {
     capable: true,
-    title: "Dragonfire",
+    title: "Dragonfire Pit",
     statusBarStyle: "black-translucent",
   },
 };

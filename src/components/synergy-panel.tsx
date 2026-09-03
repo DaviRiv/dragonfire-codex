@@ -92,7 +92,7 @@ function NoteColumn({
       <p
         className={cn(
           "text-label",
-          tone === "con" ? "text-amber-200" : "text-emerald-200",
+          tone === "con" ? "text-red-300" : "text-emerald-200",
         )}
       >
         {title}
@@ -110,13 +110,13 @@ function NoteColumn({
               className={cn(
                 "rounded-xl px-2.5 py-2 ring-1",
                 tone === "con"
-                  ? "bg-amber-500/10 ring-amber-500/30"
+                  ? "bg-red-950/55 ring-red-500/45"
                   : "bg-emerald-500/10 ring-emerald-500/30",
               )}
             >
               <p className="flex gap-1.5 text-[13px] leading-snug text-foreground">
                 {tone === "con" ? (
-                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-300" />
+                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-red-400" />
                 ) : (
                   <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-300" />
                 )}
