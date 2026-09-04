@@ -1,20 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MiniChip } from "@/components/chip";
 import {
   PortraitStars,
   STAR_MAX,
   STAR_ROW,
-  type StarPick,
 } from "@/components/portrait-stars";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function starRankCaption(value: number): string {
   if (value <= 0) return "0★";
-  if (value <= STAR_ROW) return `★${value} yellow`;
-  return `★${value} · ${value - STAR_ROW} red`;
+  return `★${value}`;
 }
 
 export function StarStepper({
@@ -24,7 +20,6 @@ export function StarStepper({
   value: number;
   onDelta: (delta: number) => void;
 }) {
-  const atRed = value >= STAR_ROW;
   return (
     <div
       className="flex items-center justify-center gap-1"
@@ -55,13 +50,10 @@ export function StarStepper({
       <Button
         type="button"
         size="icon-sm"
-        variant={atRed && value < STAR_MAX ? "default" : "outline"}
-        aria-label={value >= STAR_ROW ? "Add a red star" : "One more star"}
+        variant="outline"
+        aria-label="One more star"
         disabled={value >= STAR_MAX}
-        className={cn(
-          "min-h-11 min-w-11",
-          atRed && value < STAR_MAX && "bg-red-600 text-white hover:bg-red-500",
-        )}
+        className="min-h-11 min-w-11"
         onClick={(event) => {
           event.stopPropagation();
           onDelta(1);
@@ -82,28 +74,11 @@ export function StarRank({
   onChange?: (value: number) => void;
   size?: "sm" | "md";
 }) {
-  const [mode, setMode] = useState<StarPick>(value > STAR_ROW ? "red" : "gold");
-
-  useEffect(() => {
-    setMode(value > STAR_ROW ? "red" : "gold");
-  }, [value]);
-
   return (
     <div className={cn("flex flex-col items-center gap-2", onChange && "w-full")}>
-      {onChange ? (
-        <div className="flex flex-wrap justify-center gap-1">
-          <MiniChip active={mode === "gold"} onClick={() => setMode("gold")}>
-            Yellow 1–5
-          </MiniChip>
-          <MiniChip active={mode === "red"} onClick={() => setMode("red")}>
-            Red 6–10
-          </MiniChip>
-        </div>
-      ) : null}
       <PortraitStars
         value={value}
         onChange={onChange}
-        pick={onChange ? mode : undefined}
         size={size === "sm" ? "lg" : "sheet"}
         layout="row"
       />
@@ -116,8 +91,7 @@ export function StarRank({
             }
           />
           <p className="text-center text-[13px] text-muted-foreground">
-            {starRankCaption(value)}. 0★ is not in your collection. Yellow
-            1–5 or Red 6–10, then a star — or use + / −.
+            {starRankCaption(value)}. 0★ is not in your collection.
           </p>
         </>
       ) : null}

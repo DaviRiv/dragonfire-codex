@@ -66,8 +66,8 @@ with HBO, Warner Bros., or the game.
   site has them. Kit text, base stats, and star/reign scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
   stars: yellow (1★ each), then red from the left (2★ each). 10★ is five
-  red. 0★ means you do not own them. Use − / + or open a dragon for
-  Yellow 1–5 / Red 6–10. The magnifying glass opens that dragon’s kit:
+  red. 0★ means you do not own them. Use − / + to set rank. The
+  magnifying glass opens that dragon’s kit:
   Vanguard, Command, and Habits 1–5. Live rows are highlighted; the list
   does not change as you star them. Uncheck a habit if you have not bought
   it — it stays out of the live kit.

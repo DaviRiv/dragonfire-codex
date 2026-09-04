@@ -82,20 +82,19 @@ export function GameStar({
 export function StarBand({
   value,
   onChange,
-  pick,
   size = "md",
   layout = "row",
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
-  pick?: StarPick;
   size?: StarSize;
   layout?: "row" | "arc";
   className?: string;
 }) {
   const slots = starSlots(value);
-  const interactive = Boolean(onChange && pick);
+  const interactive = Boolean(onChange);
+  const pick: StarPick = value > STAR_ROW ? "red" : "gold";
 
   return (
     <div
@@ -124,7 +123,7 @@ export function StarBand({
             </span>
           );
         }
-        const next = rankForPick(pick!, slot);
+        const next = rankForPick(pick, slot);
         return (
           <button
             key={slot}
@@ -150,14 +149,12 @@ export function StarBand({
 export function PortraitStars({
   value,
   onChange,
-  pick,
   size = "md",
   layout = "row",
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
-  pick?: StarPick;
   size?: StarSize;
   layout?: "row" | "arc";
   className?: string;
@@ -166,7 +163,6 @@ export function PortraitStars({
     <StarBand
       value={value}
       onChange={onChange}
-      pick={pick}
       size={size}
       layout={layout}
       className={className}
