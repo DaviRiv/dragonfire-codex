@@ -1,11 +1,9 @@
 import { localComboLines } from "@/lib/ai/local";
-import {
-  buildRosterBlock,
-  COACH_SYSTEM,
-  type AiLine,
-} from "@/lib/ai/prompt";
-import type { SuggestRequest } from "@/lib/ai/roster";
+import type { AiLine } from "@/lib/ai/prompt";
+import type { RosterCard, SuggestRequest } from "@/lib/ai/roster";
 import { makePick } from "@/lib/lineup";
+import { findDragon } from "@/lib/dragons";
+import { modeLabels, troopLabels } from "@/lib/labels";
 import type {
   Lineup,
   LineupKind,
@@ -13,11 +11,6 @@ import type {
   PitState,
   TroopType,
 } from "@/lib/types";
-
-export type CoachHistoryTurn = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 export const COACH_STARTERS = [
   "Build a shield PvP core from my pit",
@@ -45,21 +38,19 @@ export function guessTroopMode(text: string): {
   return { troop, mode };
 }
 
-export function buildCoachMessages(
-  request: SuggestRequest,
-  question: string,
-  history: CoachHistoryTurn[],
-): { role: "system" | "user" | "assistant"; content: string }[] {
-  const prior = history.slice(-4).map((turn) => ({
-    role: turn.role,
-    content: turn.content.slice(0, 1200),
-  }));
-  return [
-    { role: "system", content: COACH_SYSTEM },
-    { role: "user", content: buildRosterBlock(request) },
-    ...prior,
-    { role: "user", content: question.trim().slice(0, 800) },
-  ];
+function namesToSkip(question: string, roster: RosterCard[]): string[] {
+  const hay = question.toLowerCase();
+  if (
+    !/\b(skip|without|busy|marching|already|leave out|not use)\b/.test(hay)
+  ) {
+    return [];
+  }
+  return roster
+    .filter((card) => {
+      const name = card.name.toLowerCase();
+      return name.length >= 3 && (hay.includes(name) || hay.includes(card.id));
+    })
+    .map((card) => card.id);
 }
 
 export function localCoachAnswer(
@@ -69,16 +60,26 @@ export function localCoachAnswer(
   lineup: Lineup,
 ): { reply: string; lines: AiLine[] } {
   const guess = guessTroopMode(question);
+  const skip = namesToSkip(question, request.roster);
   const working: Lineup = {
     ...lineup,
     troop: guess.troop,
     mode: guess.mode,
   };
-  const lines = localComboLines(working, state, request.roster);
+  const lines = localComboLines(working, state, request.roster, skip);
   const head = lines[0];
   const pool = request.pool === "pit" ? "pit" : "hatchery";
+  const troop = troopLabels[guess.troop];
+  const mode = modeLabels[guess.mode];
+  const skipped = skip
+    .map((id) => findDragon(id, state.customDragons)?.name ?? id)
+    .join(", ");
+  const alts = lines
+    .slice(1)
+    .map((line) => line.name)
+    .join(", ");
   const reply = head
-    ? `From this ${pool}, I would run ${head.name}: ${head.why} Log in with OpenAI if you want a back-and-forth that follows this question.`
+    ? `Local copilot for ${troop} ${mode} from this ${pool}.${skipped ? ` Left out ${skipped}.` : ""} I would run ${head.name}: ${head.why}${alts ? ` Also: ${alts}.` : ""} Copy for ChatGPT if you want a longer take.`
     : "I need at least three dragons in this pool before I can seat a line.";
   return { reply, lines };
 }

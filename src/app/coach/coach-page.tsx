@@ -5,17 +5,20 @@ import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
-import { OpenAiLogin } from "@/components/openai-login";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { COACH_STARTERS, guessTroopMode, lineupFromAiLine } from "@/lib/ai/coach";
+import {
+  COACH_STARTERS,
+  guessTroopMode,
+  lineupFromAiLine,
+  localCoachAnswer,
+} from "@/lib/ai/coach";
 import {
   chatgptCoachExport,
   chatgptExportFilename,
 } from "@/lib/ai/export";
 import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool } from "@/lib/ai/roster";
-import { useOpenAiSession } from "@/lib/ai/session";
 import { newId, nowIso } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
 import { rememberBuild } from "@/lib/build-session";
@@ -30,7 +33,6 @@ type ChatTurn = {
   role: "user" | "assistant";
   text: string;
   lines?: AiLine[];
-  warning?: string;
 };
 
 function contextLineup(lineups: Lineup[], pool: AiPool): Lineup {
@@ -58,10 +60,8 @@ function turnId() {
 
 export function CoachPage() {
   const { ready, state, loadSample, addLineup } = usePit();
-  const { session } = useOpenAiSession();
   const [pool, setPool] = useState<AiPool>("pit");
   const [draft, setDraft] = useState("");
-  const [busy, setBusy] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -95,88 +95,37 @@ export function CoachPage() {
       draft,
     });
   }, [draft, turns, lineup, state, pool, roster]);
-  const lastAssistant = [...turns]
-    .reverse()
-    .find((turn) => turn.role === "assistant");
-  const quotaHint = lastAssistant?.warning;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [turns, busy]);
+  }, [turns]);
 
-  async function send(text: string) {
+  function send(text: string) {
     const question = text.trim();
-    if (!question || busy) return;
+    if (!question) return;
     if (roster.length < 3) {
       toast.error("Need at least three dragons in this pool.");
       return;
     }
     const guess = guessTroopMode(question);
-    const userTurn: ChatTurn = { id: turnId(), role: "user", text: question };
-    const history = turns.slice(-4).map((turn) => ({
-      role: turn.role,
-      content:
-        turn.role === "assistant" && turn.lines
-          ? `${turn.text}\n${turn.lines.map((line) => `${line.left}/${line.vanguard}/${line.right}`).join("; ")}`
-          : turn.text,
-    }));
-    setTurns((prev) => [...prev, userTurn]);
+    const request = makeSuggestRequest(
+      { ...lineup, troop: guess.troop, mode: guess.mode },
+      state,
+      pool,
+      roster,
+    );
+    const answer = localCoachAnswer(question, request, state, lineup);
+    setTurns((prev) => [
+      ...prev,
+      { id: turnId(), role: "user", text: question },
+      {
+        id: turnId(),
+        role: "assistant",
+        text: answer.reply,
+        lines: answer.lines,
+      },
+    ]);
     setDraft("");
-    setBusy(true);
-    try {
-      const response = await fetch("/api/ai/coach", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(session?.apiKey
-            ? { Authorization: `Bearer ${session.apiKey}` }
-            : {}),
-        },
-        body: JSON.stringify({
-          pool,
-          skipUsed: lineup.kind === "pit" && lineup.excludeUsed !== false,
-          troop: guess.troop,
-          mode: guess.mode,
-          lineupName: lineup.name,
-          question,
-          history,
-          roster,
-        }),
-      });
-      const json = (await response.json()) as {
-        reply?: string;
-        lines?: AiLine[];
-        warning?: string;
-        error?: string;
-      };
-      if (!response.ok) {
-        throw new Error(json.error || "Coach failed.");
-      }
-      setTurns((prev) => [
-        ...prev,
-        {
-          id: turnId(),
-          role: "assistant",
-          text: json.reply || "Here is a line from the roster.",
-          lines: json.lines ?? [],
-          warning: json.warning,
-        },
-      ]);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Coach failed.";
-      toast.error(message);
-      setTurns((prev) => [
-        ...prev,
-        {
-          id: turnId(),
-          role: "assistant",
-          text: message,
-        },
-      ]);
-    } finally {
-      setBusy(false);
-    }
   }
 
   function seat(line: AiLine) {
@@ -206,7 +155,7 @@ export function CoachPage() {
   }
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Opening coach…</p>;
+    return <p className="text-sm text-muted-foreground">Opening copilot…</p>;
   }
 
   const pitTooSmall = pool === "pit" && roster.length < 3;
@@ -215,20 +164,16 @@ export function CoachPage() {
     <div className="space-y-3">
       <div>
         <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
-          Coach
+          Copilot
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Talk about three-dragon lines. Boards appear here as the coach
-          picks them. Copy for ChatGPT if you would rather paste into
-          chatgpt.com than use an API key.
+          A local ranker for three-dragon lines — same rules as Suggest, no
+          API. Boards appear as it picks them. Copy for ChatGPT when you want
+          a longer take at chatgpt.com.
         </p>
       </div>
-      <OpenAiLogin />
       <div className="flex flex-wrap gap-1">
-        <MiniChip
-          active={pool === "pit"}
-          onClick={() => setPool("pit")}
-        >
+        <MiniChip active={pool === "pit"} onClick={() => setPool("pit")}>
           Pit · {state.owned.length}
         </MiniChip>
         <MiniChip
@@ -243,16 +188,11 @@ export function CoachPage() {
         filename={chatgptExportFilename("coach", pool)}
         disabled={roster.length === 0}
       />
-      {quotaHint ? (
-        <p className="text-[13px] leading-snug text-amber-100">
-          {quotaHint} Copy for ChatGPT and paste into chatgpt.com.
-        </p>
-      ) : null}
 
       {pitTooSmall ? (
         <EmptyState
           title="Log dragons first"
-          description="Coach needs at least three names in the pit, or switch the pool to Hatchery."
+          description="Copilot needs at least three names in the pit, or switch the pool to Hatchery."
           action={
             <div className="grid w-full max-w-sm gap-2">
               <Button onClick={loadSample}>Load sample pit</Button>
@@ -296,56 +236,47 @@ export function CoachPage() {
                         key={starter}
                         type="button"
                         className="rounded-xl px-3 py-2 text-left text-[13px] leading-snug ring-1 ring-foreground/15 hover:bg-muted"
-                        onClick={() => void send(starter)}
+                        onClick={() => send(starter)}
                       >
                         {starter}
                       </button>
                     ))}
                   </div>
                 </div>
-              ) : (
-                turns.map((turn) => (
-                  <div
-                    key={turn.id}
-                    className={cn(
-                      "max-w-[40rem] rounded-2xl px-3 py-2 text-[13px] leading-snug",
-                      turn.role === "user"
-                        ? "ml-auto bg-amber-500/20 text-amber-50"
-                        : "bg-card/70 ring-1 ring-foreground/10",
-                    )}
-                  >
-                    <p className="whitespace-pre-wrap">{turn.text}</p>
-                    {turn.warning ? (
-                      <p className="mt-1 text-amber-100">{turn.warning}</p>
-                    ) : null}
-                    {turn.role === "assistant" && turn.lines?.length ? (
-                      <div className="mt-2 space-y-2 lg:hidden">
-                        {turn.lines.map((line) => (
-                          <CoachFormation
-                            key={`${turn.id}-${line.vanguard}`}
-                            line={line}
-                            state={state}
-                            pool={pool}
-                            onSeat={seat}
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              )}
-              {busy ? (
-                <p className="text-[13px] text-muted-foreground">
-                  Reading the roster…
-                </p>
               ) : null}
+              {turns.map((turn) => (
+                <div
+                  key={turn.id}
+                  className={cn(
+                    "max-w-[40rem] rounded-2xl px-3 py-2 text-[13px] leading-snug",
+                    turn.role === "user"
+                      ? "ml-auto bg-amber-500/20 text-amber-50"
+                      : "bg-card/70 ring-1 ring-foreground/10",
+                  )}
+                >
+                  <p className="whitespace-pre-wrap">{turn.text}</p>
+                  {turn.role === "assistant" && turn.lines?.length ? (
+                    <div className="mt-2 space-y-2 lg:hidden">
+                      {turn.lines.map((line) => (
+                        <CoachFormation
+                          key={`${turn.id}-${line.vanguard}`}
+                          line={line}
+                          state={state}
+                          pool={pool}
+                          onSeat={seat}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
               <div ref={bottomRef} />
             </div>
             <form
               className="sticky bottom-[calc(3.6rem+env(safe-area-inset-bottom))] mt-3 flex gap-2 bg-background/90 py-2 md:bottom-0"
               onSubmit={(event) => {
                 event.preventDefault();
-                void send(draft);
+                send(draft);
               }}
             >
               <Textarea
@@ -358,14 +289,14 @@ export function CoachPage() {
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
-                    void send(draft);
+                    send(draft);
                   }
                 }}
               />
               <Button
                 type="submit"
                 size="icon"
-                disabled={busy || !draft.trim() || roster.length < 3}
+                disabled={!draft.trim() || roster.length < 3}
                 aria-label="Send"
               >
                 <Send />

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Team", icon: Swords },
-  { href: "/coach", label: "Coach", icon: Sparkles },
+  { href: "/coach", label: "Copilot", icon: Sparkles },
   { href: "/pit", label: "Pit", icon: Flame },
   { href: "/hatchery", label: "Hatchery", icon: Egg },
 ] as const;

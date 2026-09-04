@@ -4,11 +4,12 @@ import type { AiLine } from "@/lib/ai/prompt";
 import type { RosterCard } from "@/lib/ai/roster";
 import type { Lineup, PitState } from "@/lib/types";
 
-/** Deterministic stand-in when no API key is set. Uses the same ranker as Suggest. */
+/** Deterministic local ranker. Same composition rules as Suggest. */
 export function localComboLines(
   lineup: Lineup,
   state: PitState,
   roster: RosterCard[],
+  extraExclude: string[] = [],
 ): AiLine[] {
   const allowed = new Set(roster.map((card) => card.id));
   const notInRoster = allDragons(state.customDragons)
@@ -21,6 +22,7 @@ export function localComboLines(
   const blocked = new Set([
     ...notInRoster,
     ...(skipUsed ? seatedElsewhere : []),
+    ...extraExclude,
   ]);
   const working: Lineup = {
     ...lineup,
@@ -61,6 +63,7 @@ export function localComboLines(
       { ...lineup, excludeUsed: false },
       state,
       roster.map((card) => ({ ...card, otherTeam: undefined })),
+      extraExclude,
     );
   }
 

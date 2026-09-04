@@ -50,7 +50,7 @@ export function chatgptCoachExport(opts: {
   const conversation = opts.turns
     .map(
       (turn) =>
-        `${turn.role === "user" ? "Player" : "Coach"}: ${turn.text.trim()}`,
+        `${turn.role === "user" ? "Player" : "Copilot"}: ${turn.text.trim()}`,
     )
     .filter((line) => line.length > 8)
     .join("\n\n");

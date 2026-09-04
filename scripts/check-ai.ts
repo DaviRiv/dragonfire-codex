@@ -1,24 +1,13 @@
 /**
- * Ask AI roster + local fallback. Run: npx tsx --tsconfig tsconfig.json scripts/check-ai.ts
+ * Local copilot + ChatGPT export. Run: npx tsx --tsconfig tsconfig.json scripts/check-ai.ts
  */
 import { samplePit } from "@/data/sample";
 import { localComboLines } from "@/lib/ai/local";
 import { guessTroopMode, lineupFromAiLine, localCoachAnswer } from "@/lib/ai/coach";
-import { parseAiLines, parseCoachReply } from "@/lib/ai/parse";
 import { chatgptCoachExport, chatgptSuggestExport } from "@/lib/ai/export";
-import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
-import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
+import { makeSuggestRequest } from "@/lib/ai/prompt";
 import { collectRoster } from "@/lib/ai/roster";
-import { explainOpenAiFailure, parseOpenAiError } from "@/lib/ai/openai";
 import { stubLineup, stubState } from "@/lib/ai/stub";
-
-if (!isUserApiKey("sk-abcdefghijklmnopqrstuvwxyz")) {
-  throw new Error("valid key rejected");
-}
-if (isUserApiKey("not-a-key")) throw new Error("junk key accepted");
-if (maskOpenAiKey("sk-abcdefghijklmnopqrstuvwxyz") !== "sk-…wxyz") {
-  throw new Error("mask mismatch");
-}
 
 const state = samplePit();
 const lineup = state.lineups[0];
@@ -32,15 +21,13 @@ if (!pit.some((card) => card.otherTeam)) {
   throw new Error("pit roster should tag dragons already on other teams");
 }
 const request = makeSuggestRequest(lineup, state, "pit", pit, "need a healer");
-const prompt = filledPrompt(request);
-if (!prompt.includes("vhagar")) throw new Error("missing vhagar");
-if (!prompt.includes("Player note")) throw new Error("missing note");
-if (!prompt.includes("on:")) throw new Error("missing on: tags");
-if (!prompt.includes("Skip other teams is on")) {
-  throw new Error("missing skip-used instruction");
-}
 const chat = chatgptSuggestExport(request);
 if (!chat.includes("vhagar")) throw new Error("chatgpt export missing vhagar");
+if (!chat.includes("Player note")) throw new Error("missing note");
+if (!chat.includes("on:")) throw new Error("missing on: tags");
+if (!chat.includes("Skip other teams is on")) {
+  throw new Error("missing skip-used instruction");
+}
 if (!chat.includes("Left / Vanguard / Right")) {
   throw new Error("chatgpt export missing seat labels");
 }
@@ -63,28 +50,10 @@ if (!coachExport.includes("Do not return JSON")) {
 }
 const lines = localComboLines(lineup, state, pit);
 if (lines.length < 1) throw new Error("no local lines");
-const parsed = parseAiLines(
-  JSON.stringify({ lines }),
-  pit,
-  "shieldbearers",
-  "pvp",
-);
-if (parsed.length !== lines.length) throw new Error("parse mismatch");
 const spear = guessTroopMode("Spear rally with a healer");
 if (spear.troop !== "spearmen" || spear.mode !== "rally") {
   throw new Error("guess troop/mode failed");
 }
-const coach = parseCoachReply(
-  JSON.stringify({
-    reply: "Run the shield wall.",
-    lines,
-  }),
-  pit,
-  "shieldbearers",
-  "pvp",
-);
-if (coach.reply !== "Run the shield wall.") throw new Error("coach reply");
-if (coach.lines.length !== lines.length) throw new Error("coach lines");
 const local = localCoachAnswer(
   "shield pvp",
   request,
@@ -92,9 +61,28 @@ const local = localCoachAnswer(
   stubLineup(request),
 );
 if (local.lines.length < 1) throw new Error("local coach empty");
+if (/openai|api key/i.test(local.reply)) {
+  throw new Error("local copilot should not mention OpenAI");
+}
 const filled = lineupFromAiLine(local.lines[0], state, "pit");
 if (!filled.slots.left || !filled.slots.vanguard || !filled.slots.right) {
   throw new Error("seated line missing a slot");
+}
+const skipVhagar = localCoachAnswer(
+  "Who soaks if Vhagar is already marching?",
+  request,
+  stubState(request),
+  stubLineup(request),
+);
+if (
+  skipVhagar.lines.some(
+    (line) =>
+      line.left === "vhagar" ||
+      line.vanguard === "vhagar" ||
+      line.right === "vhagar",
+  )
+) {
+  throw new Error("copilot seated Vhagar after asked to skip");
 }
 console.log(
   "ok pit",
@@ -106,24 +94,3 @@ console.log(
     .map((line) => `${line.left}/${line.vanguard}/${line.right}`)
     .join(" | "),
 );
-const quota = parseOpenAiError(
-  429,
-  JSON.stringify({
-    error: {
-      message: "You exceeded your current quota",
-      code: "insufficient_quota",
-    },
-  }),
-  null,
-);
-if (
-  !explainOpenAiFailure(quota, "your OpenAI key").includes("out of OpenAI quota")
-) {
-  throw new Error("quota warning");
-}
-const limited = parseOpenAiError(429, "{}", "2");
-if (
-  !explainOpenAiFailure(limited, "your OpenAI key").includes("rate-limited")
-) {
-  throw new Error("rate-limit warning");
-}

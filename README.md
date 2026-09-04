@@ -50,17 +50,14 @@ with HBO, Warner Bros., or the game.
   **Game** is three bullets from public Reign metadata: a three-dragon
   line, what survives a Campaign reset, and the troop triangle.
   **Why this team** splits pros (green, left) and cons (red, right).
-  **Ask AI** fills a template with your pit or the full hatchery and
-  returns 2–3 combinations. **Log in with OpenAI** (a platform API key
-  kept in this browser) to run the model in the app, or **Copy for
-  ChatGPT** / **Export .txt** and paste into chatgpt.com. Without a login
-  it uses the same local ranker as Suggest.
-  **Coach** — a chat about three-dragon lines. Ask for a shield core, a
-  spear rally, or who soaks if Vhagar is busy. The boards the coach
+  **ChatGPT** copies a filled prompt with your pit or the full hatchery.
+  Paste it at chatgpt.com — this app never calls an API. Optional note
+  (spear rally, skip Vhagar) goes into the same text.
+  **Copilot** — a local ranker for three-dragon lines. Ask for a shield
+  core, a spear rally, or who soaks if Vhagar is busy. The boards it
   picks sit beside the thread (under each reply on a phone). **Seat on
-  Team** saves that line. Same OpenAI login as Ask AI; without a key it
-  ranks locally. **Copy for ChatGPT** and **Export .txt** fill a
-  plain-English prompt (roster + chat) you can paste at chatgpt.com.
+  Team** saves that line. **Copy for ChatGPT** and **Export .txt** fill
+  a plain-English prompt (roster + chat) you can paste at chatgpt.com.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -114,31 +111,11 @@ habit, stat, troop, and power tables are transcribed from
 [dragonfire-hub.com](https://dragonfire-hub.com/). Re-pull that catalog
 with `npm run sync-hub`.
 
-## Ask AI
+## ChatGPT and Copilot
 
-On Team, open **Ask AI** and **Log in with OpenAI**. Paste a secret key
-from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
-The key stays in this browser (`dragonfire-openai.v1`) and is sent only
-when you click **Suggest combinations**. **Log out** removes it.
+On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
+not JSON) and paste it at chatgpt.com. Copilot on `/coach` ranks a line
+locally with the same rules as Suggest — no API key, nothing sent.
 
-This is not ChatGPT password login. OpenAI does not give third-party apps
-API access through a ChatGPT account, so the app uses a platform API key.
-
-You can still set a server default in `.env.local` (used when nobody is
-logged in in the browser):
-
-```
-OPENAI_API_KEY=sk-...
-# optional
-# OPENAI_MODEL=gpt-4o-mini
-# OPENAI_BASE_URL=https://api.openai.com/v1
-```
-
-Without a browser login or server key, **Suggest combinations** uses the
-same local ranker as Suggest. **Copy for ChatGPT** and **Export .txt**
-always work — they fill a plain-English prompt (names, not JSON) you can
-paste at chatgpt.com. ChatGPT Plus is not the same as OpenAI API credits.
-
-If OpenAI returns 429, Coach retries a couple of times, then shows a
-local line with a plain-language note: rate limit (wait and send again)
-or quota (add billing at platform.openai.com/account/billing).
+ChatGPT Plus is not required by this app. If you want a longer take,
+copy the text and paste it yourself.
