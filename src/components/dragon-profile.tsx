@@ -4,7 +4,7 @@ import { AffinityBadges } from "@/components/affinity-badges";
 import { StarRequirement } from "@/components/star-requirement";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
-import { dragonKit, habitNumberForUnlockStars, kitProgress } from "@/lib/habits";
+import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import {
   breedLabels,
@@ -138,24 +138,8 @@ export function DragonProfile({
   const power = dragonPower(dragon.rarity, starRank, reignLevel);
   const qualifyStars = ownedStars === undefined ? starRank : ownedStars;
   const level = hubLevel(reignLevel);
-  const progress = kitProgress(
-    dragon,
-    qualifyStars ?? 0,
-    ownedHabits,
-  );
   const vanguard = kit.extras.find((extra) => extra.title === "Vanguard");
   const habitExtras = kit.extras.filter((extra) => extra.unlockStars != null);
-  const liveHabitExtras = habitExtras.filter((extra) => {
-    const habitNum = habitNumberForUnlockStars(extra.unlockStars);
-    const bought =
-      ownedHabits == null ||
-      habitNum == null ||
-      ownedHabits.includes(habitNum);
-    return bought && qualifiesForStars(extra.unlockStars, qualifyStars);
-  });
-  const nextHabitExtras = habitExtras.filter(
-    (extra) => !liveHabitExtras.includes(extra),
-  );
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -185,17 +169,11 @@ export function DragonProfile({
           ))}
         </div>
       ) : null}
-      {progress.liveEffects.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {progress.liveEffects.map((effect) => (
-            <AbilityTag key={`live-${effect.ability}`} tag={effect.ability} />
-          ))}
-        </div>
-      ) : null}
       {vanguard ? (
         <AbilityBlock
           title={`Vanguard · buffs ${slotLabels[dragon.flankBonus]}`}
           body={vanguard.body}
+          muted={qualifyStars == null || qualifyStars <= 0}
         />
       ) : null}
       {heals.length > 0 ? (
@@ -249,33 +227,20 @@ export function DragonProfile({
             : "Command"
         }
         body={kit.command}
+        muted={qualifyStars == null || qualifyStars <= 0}
       />
-      {liveHabitExtras.length > 0 ? (
-        <p className="text-label">
-          Live at ★{qualifyStars ?? 0}
-        </p>
-      ) : null}
-      {liveHabitExtras.map((extra) => (
-        <AbilityBlock
-          key={extra.title}
-          title={habitTitle(extra.unlockStars, qualifyStars, true)}
-          body={extra.body}
-          ranks={extra.ranks}
-        />
-      ))}
-      {nextHabitExtras.length > 0 ? (
-        <p className="text-label">If you keep starring</p>
-      ) : null}
-      {nextHabitExtras.map((extra) => {
+      {habitExtras.map((extra) => {
         const habitNum = habitNumberForUnlockStars(extra.unlockStars);
         const bought =
           ownedHabits == null ||
           habitNum == null ||
           ownedHabits.includes(habitNum);
+        const live =
+          bought && qualifiesForStars(extra.unlockStars, qualifyStars);
         return (
           <AbilityBlock
             key={extra.title}
-            muted
+            muted={!live}
             title={habitTitle(extra.unlockStars, qualifyStars, bought)}
             body={extra.body}
             ranks={extra.ranks}

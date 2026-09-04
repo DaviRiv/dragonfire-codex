@@ -61,7 +61,6 @@ export function HatcheryPage() {
         {DRAGONS.map((dragon) => {
           const owned = ownedById.get(dragon.id);
           const stars = owned?.starRank ?? 0;
-          const habitCount = owned?.habits.length ?? 0;
           return (
             <div
               key={dragon.id}
@@ -79,7 +78,6 @@ export function HatcheryPage() {
                 <span className="absolute top-1/2 right-0 -translate-y-1/2">
                   <HabitSearchButton
                     name={dragon.name}
-                    count={habitCount}
                     onClick={() => setHabitDragon(dragon)}
                   />
                 </span>
