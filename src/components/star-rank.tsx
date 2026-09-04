@@ -54,14 +54,24 @@ export function StarRank({
   );
 }
 
-/** Compact 1–10 control for Hatchery tiles. */
+/** Compact 1–10 control for Hatchery tiles. Prefer `onDelta` so rapid taps read the latest rank. */
 export function StarStepper({
   value,
   onChange,
+  onDelta,
 }: {
   value: number;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
+  onDelta?: (delta: number) => void;
 }) {
+  function bump(delta: number) {
+    if (onDelta) {
+      onDelta(delta);
+      return;
+    }
+    onChange?.(Math.min(10, Math.max(1, value + delta)));
+  }
+
   return (
     <div
       className="flex items-center justify-center gap-1"
@@ -75,7 +85,7 @@ export function StarStepper({
         disabled={value <= 1}
         onClick={(event) => {
           event.stopPropagation();
-          onChange(Math.max(1, value - 1));
+          bump(-1);
         }}
       >
         −
@@ -91,7 +101,7 @@ export function StarStepper({
         disabled={value >= 10}
         onClick={(event) => {
           event.stopPropagation();
-          onChange(Math.min(10, value + 1));
+          bump(1);
         }}
       >
         +

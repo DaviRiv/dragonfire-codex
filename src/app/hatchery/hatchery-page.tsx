@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 type OwnedFilter = "all" | "owned" | "missing";
 
 export function HatcheryPage() {
-  const { ready, state, setCatalogOwned } = usePit();
+  const { ready, state, setCatalogOwned, adjustOwnedStars } = usePit();
   const [query, setQuery] = useState("");
   const [breed, setBreed] = useState<Breed | "all">("all");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
@@ -165,9 +165,7 @@ export function HatcheryPage() {
                     <div className="mt-1 w-full">
                       <StarStepper
                         value={owned.starRank}
-                        onChange={(starRank) =>
-                          setCatalogOwned(dragon.id, { owned: true, starRank })
-                        }
+                        onDelta={(delta) => adjustOwnedStars(dragon.id, delta)}
                       />
                     </div>
                   ) : (

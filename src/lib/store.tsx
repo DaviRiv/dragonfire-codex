@@ -54,6 +54,7 @@ type PitContextValue = {
     dragonId: string,
     next: { owned: boolean; starRank?: number },
   ) => OwnedDragon | null;
+  adjustOwnedStars: (dragonId: string, delta: number) => void;
   addCustomDragon: (input: {
     name: string;
     epithet?: string;
@@ -261,6 +262,21 @@ export function PitProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const adjustOwnedStars = useCallback((dragonId: string, delta: number) => {
+    commit((prev) => {
+      const existing = prev.owned.find((row) => row.dragonId === dragonId);
+      if (!existing) return prev;
+      const starRank = clampStar(existing.starRank + delta);
+      if (starRank === existing.starRank) return prev;
+      return {
+        ...prev,
+        owned: prev.owned.map((row) =>
+          row.id === existing.id ? { ...row, starRank } : row,
+        ),
+      };
+    });
+  }, []);
 
   const addCustomDragon = useCallback(
     (input: {
@@ -613,6 +629,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       state,
       addFromCatalog,
       setCatalogOwned,
+      adjustOwnedStars,
       addCustomDragon,
       updateOwned,
       removeOwned,
@@ -637,6 +654,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       state,
       addFromCatalog,
       setCatalogOwned,
+      adjustOwnedStars,
       addCustomDragon,
       updateOwned,
       removeOwned,
