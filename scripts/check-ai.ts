@@ -34,6 +34,18 @@ if (!chat.includes("Left / Vanguard / Right")) {
 if (chat.includes("JSON only") || chat.includes("Reply with JSON")) {
   throw new Error("chatgpt export should not ask for JSON");
 }
+if (!chat.includes("Current meta")) {
+  throw new Error("chatgpt export missing current meta");
+}
+if (!chat.includes("Best online DPS lineup")) {
+  throw new Error("chatgpt export missing online DPS meta");
+}
+if (!chat.includes("meta:online-dps Left") || !chat.includes("meta:online-dps Vanguard")) {
+  throw new Error("chatgpt export missing meta roster tags");
+}
+if (!chat.includes("Do not invent a different")) {
+  throw new Error("chatgpt export missing meta lock");
+}
 const coachExport = chatgptCoachExport({
   request,
   turns: [{ role: "user", text: "Build a shield PvP core from my pit" }],
@@ -83,6 +95,34 @@ if (
   )
 ) {
   throw new Error("copilot seated Vhagar after asked to skip");
+}
+const freeRequest = { ...request, skipUsed: false };
+const metaAsk = localCoachAnswer(
+  "Seat the online DPS meta core",
+  freeRequest,
+  stubState(freeRequest),
+  stubLineup(freeRequest),
+);
+const metaHead = metaAsk.lines[0];
+if (
+  !metaHead ||
+  metaHead.left !== "malachite" ||
+  metaHead.vanguard !== "vhagar" ||
+  metaHead.right !== "venator"
+) {
+  throw new Error("copilot did not seat the online DPS meta core");
+}
+const spearAsk = localCoachAnswer(
+  "Spear rally with a healer",
+  freeRequest,
+  stubState(freeRequest),
+  stubLineup(freeRequest),
+);
+if (spearAsk.lines[0]?.name === "Online DPS core") {
+  throw new Error("spear rally should not force the online DPS core");
+}
+if (spearAsk.lines[0] && spearAsk.lines[0].troop !== "spearmen") {
+  throw new Error("spear rally should keep spearmen");
 }
 console.log(
   "ok pit",

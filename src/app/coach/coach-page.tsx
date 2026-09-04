@@ -5,6 +5,7 @@ import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
+import { MetaCard } from "@/components/meta-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -168,10 +169,11 @@ export function CoachPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           A local ranker for three-dragon lines — same rules as Suggest, no
-          API. Boards appear as it picks them. Copy for ChatGPT when you want
-          a longer take at chatgpt.com.
+          API. Copy for ChatGPT includes the current online meta (Malachite /
+          Vhagar / Venator).
         </p>
       </div>
+      <MetaCard />
       <div className="flex flex-wrap gap-1">
         <MiniChip active={pool === "pit"} onClick={() => setPool("pit")}>
           Pit · {state.owned.length}

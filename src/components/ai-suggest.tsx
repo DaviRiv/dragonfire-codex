@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
+import { MetaCard } from "@/components/meta-card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   chatgptExportFilename,
@@ -44,9 +45,12 @@ export function ChatGptAsk({
     >
       <p className="text-[13px] leading-snug text-muted-foreground">
         Copy a filled prompt with this roster and paste it at chatgpt.com.
-        There is no API key and nothing is sent from this app. Pit is every
-        dragon you own. Hatchery is the full catalog.
+        The paste includes the current online meta (Malachite / Vhagar /
+        Venator). There is no API key and nothing is sent from this app.
       </p>
+      <div className="mt-2">
+        <MetaCard />
+      </div>
       {request.skipUsed ? (
         <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
           Skip other teams is on — the whole pit still goes in the prompt, with

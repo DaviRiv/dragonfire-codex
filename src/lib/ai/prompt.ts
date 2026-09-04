@@ -30,7 +30,8 @@ Why: one sentence
 Rules:
 - Pick only dragons from the roster. Use their names (vhagar is Vhagar).
 - A line is Left Flank, Vanguard, Right Flank. Use each dragon at most once per line.
-- Fill composition in order: a healer if nobody Recovers, then soak / self Damage Received, then a damage dealer to finish.
+- Follow Current meta for online / PvP DPS. Do not override it with a different “best” core.
+- If the meta core is not free, fill composition in order: a healer if nobody Recovers, then soak / self Damage Received, then a damage dealer to finish.
 - Feeding Burn so a tank’s Taunt can hit 50% does not outrank a missing healer.
 - Prefer the Vanguard for Taunt soak.
 - Prefer the asked troop type when a dragon has that affinity, but a correct job mix beats a weak affinity.
@@ -62,6 +63,7 @@ export function buildRosterBlock(request: SuggestRequest): string {
 Default troop: ${troop} (${request.troop})
 Default mode: ${mode} (${request.mode})
 ${skip}
+Rows tagged meta:online-dps are the current PvP DPS core (Malachite Left, Vhagar Vanguard, Venator Right).
 
 Roster (id | name | jobs | rank | affinities | needs | gives):
 ${request.roster.map((card) => formatRosterLine(card, { compact: true })).join("\n")}`;

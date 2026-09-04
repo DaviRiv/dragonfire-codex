@@ -53,11 +53,11 @@ with HBO, Warner Bros., or the game.
   **ChatGPT** copies a filled prompt with your pit or the full hatchery.
   Paste it at chatgpt.com — this app never calls an API. Optional note
   (spear rally, skip Vhagar) goes into the same text.
-  **Copilot** — a local ranker for three-dragon lines. Ask for a shield
-  core, a spear rally, or who soaks if Vhagar is busy. The boards it
-  picks sit beside the thread (under each reply on a phone). **Seat on
-  Team** saves that line. **Copy for ChatGPT** and **Export .txt** fill
-  a plain-English prompt (roster + chat) you can paste at chatgpt.com.
+  **Copilot** — a local ranker for three-dragon lines. Ask for the online
+  DPS meta core, a shield PvP line, or who soaks if Vhagar is busy. The
+  boards it picks sit beside the thread. **Seat on Team** saves that
+  line. **Copy for ChatGPT** includes the current online meta: Left
+  Malachite, Vanguard Vhagar, Right Venator as the best PvP DPS lineup.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -114,8 +114,10 @@ with `npm run sync-hub`.
 ## ChatGPT and Copilot
 
 On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
-not JSON) and paste it at chatgpt.com. Copilot on `/coach` ranks a line
-locally with the same rules as Suggest — no API key, nothing sent.
+not JSON) and paste it at chatgpt.com. The prompt includes **current
+meta**: online PvP DPS is Left Malachite, Vanguard Vhagar, Right Venator.
+Copilot on `/coach` ranks locally with the same rules as Suggest, and
+seats that core when those names are free.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.

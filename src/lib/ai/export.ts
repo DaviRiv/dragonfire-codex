@@ -1,9 +1,10 @@
 import { GAME_FACTS } from "@/data/game-facts";
+import { chatgptMetaTemplate } from "@/data/meta";
 import { buildRosterBlock, CHATGPT_EXPORT_RULES } from "@/lib/ai/prompt";
 import type { AiPool, SuggestRequest } from "@/lib/ai/roster";
 
 export const DEFAULT_CHATGPT_QUESTION =
-  "Suggest 2–3 three-dragon lines from this roster and explain Left, Vanguard, and Right in plain English.";
+  "If this is online / PvP DPS and Malachite, Vhagar, and Venator are free in the roster, seat that meta core first. Then give 1–2 alternates from leftovers. Explain Left, Vanguard, and Right in plain English.";
 
 export type ChatGptExportTurn = {
   role: "user" | "assistant";
@@ -23,6 +24,8 @@ function header(role: "coach" | "builder") {
 
 Game facts:
 ${factsBlock()}
+
+${chatgptMetaTemplate()}
 
 ${CHATGPT_EXPORT_RULES}`;
 }

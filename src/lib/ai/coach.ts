@@ -1,6 +1,7 @@
 import { localComboLines } from "@/lib/ai/local";
 import type { AiLine } from "@/lib/ai/prompt";
 import type { RosterCard, SuggestRequest } from "@/lib/ai/roster";
+import { ONLINE_DPS_CORE, metaSeatIds } from "@/data/meta";
 import { makePick } from "@/lib/lineup";
 import { findDragon } from "@/lib/dragons";
 import { modeLabels, troopLabels } from "@/lib/labels";
@@ -13,6 +14,7 @@ import type {
 } from "@/lib/types";
 
 export const COACH_STARTERS = [
+  "Seat the online DPS meta core",
   "Build a shield PvP core from my pit",
   "Who soaks if Vhagar is already marching?",
   "Spear rally with a healer",
@@ -53,6 +55,35 @@ function namesToSkip(question: string, roster: RosterCard[]): string[] {
     .map((card) => card.id);
 }
 
+function wantsOnlineDps(question: string, troop: TroopType, mode: LineupMode) {
+  if (/\b(online|meta)\b/i.test(question)) return true;
+  if (/\bspear|\brally|\bpve|\bcampaign|\bdefen|\bgather/.test(question.toLowerCase())) {
+    return false;
+  }
+  return mode === "pvp" && troop === "shieldbearers";
+}
+
+function metaLineIfFree(
+  request: SuggestRequest,
+  skip: string[],
+): AiLine | null {
+  const core = ONLINE_DPS_CORE;
+  const ids = metaSeatIds(core);
+  if (ids.some((id) => skip.includes(id))) return null;
+  const cards = ids.map((id) => request.roster.find((card) => card.id === id));
+  if (cards.some((card) => !card)) return null;
+  if (request.skipUsed && cards.some((card) => card?.otherTeam)) return null;
+  return {
+    name: core.name,
+    troop: core.troop,
+    mode: core.mode,
+    left: core.left.id,
+    vanguard: core.vanguard.id,
+    right: core.right.id,
+    why: core.why,
+  };
+}
+
 export function localCoachAnswer(
   question: string,
   request: SuggestRequest,
@@ -66,7 +97,15 @@ export function localCoachAnswer(
     troop: guess.troop,
     mode: guess.mode,
   };
-  const lines = localComboLines(working, state, request.roster, skip);
+  const meta =
+    wantsOnlineDps(question, guess.troop, guess.mode)
+      ? metaLineIfFree(request, skip)
+      : null;
+  const extra = [...skip, ...(meta ? metaSeatIds() : [])];
+  const ranked = localComboLines(working, state, request.roster, extra);
+  const lines = meta
+    ? [meta, ...ranked.filter((line) => line.name !== meta.name)]
+    : ranked;
   const head = lines[0];
   const pool = request.pool === "pit" ? "pit" : "hatchery";
   const troop = troopLabels[guess.troop];
