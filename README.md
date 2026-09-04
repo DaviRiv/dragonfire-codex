@@ -50,6 +50,10 @@ with HBO, Warner Bros., or the game.
   **Game** is three bullets from public Reign metadata: a three-dragon
   line, what survives a Campaign reset, and the troop triangle.
   **Why this team** splits pros (green, left) and cons (red, right).
+  **Ask AI** fills a template with your pit or the full hatchery and
+  returns 2–3 combinations. Copy the prompt into ChatGPT, or set
+  `OPENAI_API_KEY` in `.env.local` to call the model from the app.
+  Without a key it uses the same local ranker as Suggest.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -102,3 +106,19 @@ this unofficial fan tool. Warner Bros. and HBO own that art. Command,
 habit, stat, troop, and power tables are transcribed from
 [dragonfire-hub.com](https://dragonfire-hub.com/). Re-pull that catalog
 with `npm run sync-hub`.
+
+## Ask AI
+
+Create `.env.local` in the repo root:
+
+```
+OPENAI_API_KEY=sk-...
+# optional
+# OPENAI_MODEL=gpt-4o-mini
+# OPENAI_BASE_URL=https://api.openai.com/v1
+```
+
+Restart `npm run dev`. **Ask AI** on Team then calls the model with the
+filled pit or hatchery prompt. Leave the key empty and the same button
+still returns ranked combinations locally, and **Copy prompt** still
+works.

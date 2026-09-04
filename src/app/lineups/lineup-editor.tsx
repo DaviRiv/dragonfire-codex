@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AiSuggest } from "@/components/ai-suggest";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
@@ -33,9 +34,10 @@ import {
 import { vanguardBonus } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
-import type { Dragon, SlotId } from "@/lib/types";
+import type { Dragon, Lineup, PitState, SlotId } from "@/lib/types";
 import { pairingReport } from "@/lib/pairing";
 import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
+import type { AiLine } from "@/lib/ai/prompt";
 import { Copy, Search, Sparkles, Trash2 } from "lucide-react";
 
 type TheoryPool = "all" | "owned" | "unowned";
@@ -230,6 +232,32 @@ export function LineupEditor({
     toast.success("Copied lineup summary.");
   }
 
+  function applyAiLine(line: AiLine) {
+    const ids = [line.left, line.vanguard, line.right];
+    if (active.kind === "pit") {
+      const missing = ids.find(
+        (id) => !state.owned.some((owned) => owned.dragonId === id),
+      );
+      if (missing) {
+        toast.error(
+          "That combination includes a dragon not in your pit. Use a Theory line for Hatchery picks.",
+        );
+        return;
+      }
+    }
+    slotDragons(
+      active.id,
+      [
+        { slot: "left", dragonId: line.left },
+        { slot: "vanguard", dragonId: line.vanguard },
+        { slot: "right", dragonId: line.right },
+      ],
+      { replace: true },
+    );
+    updateLineup(active.id, { troop: line.troop, mode: line.mode });
+    toast.success(`Seated ${line.name}.`);
+  }
+
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
@@ -285,8 +313,11 @@ export function LineupEditor({
 
         <div className="hidden space-y-2 lg:block">
           <TeamExtras
+            lineup={active}
+            state={state}
             embedded={embedded}
             report={report}
+            onApply={applyAiLine}
             onCopy={copySummary}
             onDelete={() => {
               deleteLineup(lineup.id);
@@ -518,8 +549,11 @@ export function LineupEditor({
 
       <div className="col-span-full mt-3 space-y-2 lg:hidden">
         <TeamExtras
+          lineup={active}
+          state={state}
           embedded={embedded}
           report={report}
+          onApply={applyAiLine}
           onCopy={copySummary}
           onDelete={() => {
             deleteLineup(lineup.id);
@@ -584,14 +618,20 @@ export function LineupEditor({
 }
 
 function TeamExtras({
+  lineup,
+  state,
   embedded,
   report,
+  onApply,
   onCopy,
   onDelete,
   onSaved,
 }: {
+  lineup: Lineup;
+  state: PitState;
   embedded?: boolean;
   report: SynergyReport;
+  onApply: (line: AiLine) => void;
   onCopy: () => void;
   onDelete: () => void;
   onSaved: () => void;
@@ -599,6 +639,12 @@ function TeamExtras({
   return (
     <div className="space-y-2">
       <GameFacts />
+      <AiSuggest
+        key={lineup.id}
+        lineup={lineup}
+        state={state}
+        onApply={onApply}
+      />
       <Disclosure
         title="Why this team"
         badge={`${report.label} · ${report.score}`}
