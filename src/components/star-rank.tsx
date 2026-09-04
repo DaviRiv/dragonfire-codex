@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function starRankCaption(value: number): string {
-  if (value <= 0) return "Not set";
+  if (value <= 0) return "0★";
   if (value <= STAR_ROW) return `★${value} yellow`;
   return `★${value} · ${value - STAR_ROW} red`;
 }
@@ -35,7 +35,7 @@ export function StarStepper({
         size="icon-sm"
         variant="outline"
         aria-label="One less star"
-        disabled={value <= 1}
+        disabled={value <= 0}
         className="min-h-11 min-w-11"
         onClick={(event) => {
           event.stopPropagation();
@@ -112,12 +112,12 @@ export function StarRank({
           <StarStepper
             value={value}
             onDelta={(delta) =>
-              onChange(Math.min(STAR_MAX, Math.max(1, (value || 0) + delta)))
+              onChange(Math.min(STAR_MAX, Math.max(0, (value || 0) + delta)))
             }
           />
           <p className="text-center text-[13px] text-muted-foreground">
-            {starRankCaption(value)}. Tap Yellow or Red, then a star — or use +
-            to walk 1–10.
+            {starRankCaption(value)}. 0★ is not in your collection. Yellow
+            1–5 or Red 6–10, then a star — or use + / −.
           </p>
         </>
       ) : null}

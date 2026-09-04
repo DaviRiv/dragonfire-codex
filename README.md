@@ -58,16 +58,16 @@ with HBO, Warner Bros., or the game.
   boards it picks sit beside the thread. **Seat on Team** saves that
   line. **Copy for ChatGPT** includes the current online meta: Left
   Malachite, Vanguard Vhagar, Right Venator as the best PvP DPS lineup.
-- **Pit** — reign, notes, and which teams owned dragons sit on. Mark
-  owned and stars in Hatchery. Slotting a team never changes ownership.
-- **Hatchery** — the roster, with official portraits from
+- **Pit** — reign, notes, and which teams they sit on. Stars live in
+  Hatchery (0★ means you do not have them). Slotting a team never changes
+  stars.
+- **Hatchery** — the full roster. Official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
   site has them. Kit text, base stats, and star/reign scaling are pulled
-  from [dragonfire-hub.com](https://dragonfire-hub.com/). Names Hub lists
-  as unreleased sit at the bottom. Portraits use one row of five stars:
-  yellow (1★ each), then red from the left (2★ each). 10★ is five red.
-  Use − / + on Hatchery, or Yellow 1–5 / Red 6–10 in the sheet, then pick
-  them on Team.
+  from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
+  stars: yellow (1★ each), then red from the left (2★ each). 10★ is five
+  red. 0★ means you do not own them. Use − / + or open a dragon for
+  Yellow 1–5 / Red 6–10.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 

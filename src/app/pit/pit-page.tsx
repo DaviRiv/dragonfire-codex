@@ -98,11 +98,11 @@ export function PitPage() {
 
       {state.owned.length === 0 ? (
         <EmptyState
-          title="Nobody marked owned"
-          description="Open Hatchery, mark the dragons you hatched, and set their stars. Pit is for reign, notes, and which teams they sit on."
+          title="Nobody in the collection"
+          description="Open Hatchery and set stars on the dragons you hatched. 0★ means you do not have them. Pit is for reign, notes, and which teams they sit on."
           action={
             <Button onClick={() => router.push("/hatchery")}>
-              Mark owned in Hatchery
+              Set stars in Hatchery
             </Button>
           }
         />
