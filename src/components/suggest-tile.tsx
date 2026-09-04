@@ -91,7 +91,8 @@ export function SuggestTile({
             rarity={dragon.rarity}
             custom={dragon.custom}
             selected={selected}
-            size="xs"
+            size="sm"
+            stars={starRank}
           />
           <span className="w-0 min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">

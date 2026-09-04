@@ -64,8 +64,8 @@ with HBO, Warner Bros., or the game.
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
   site has them. Kit text, base stats, and star/reign scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). Names Hub lists
-  as unreleased sit at the bottom. Mark a dragon owned and set their
-  stars here, then pick them on Team.
+  as unreleased sit at the bottom. Portraits use the in-game gold star
+  row — tap a star to mark owned at that rank, then pick them on Team.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 

@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MiniChip } from "@/components/chip";
-import { formatInvestment, lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
+import { lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import {
   MODES,
   TROOP_TYPES,
@@ -158,6 +158,7 @@ function SlotButton({
         empty={!dragon}
         selected={selected}
         size="3xl"
+        stars={resolved?.starRank}
       />
       <span className="text-label text-amber-200/90">
         {slotShort[slot]}
@@ -165,12 +166,9 @@ function SlotButton({
       <span className="max-w-full truncate px-0.5 text-sm font-medium">
         {dragon?.name ?? (pickable ? "Tap to pick" : "—")}
       </span>
-      {resolved ? (
+      {resolved && lineup.kind === "pit" && !lineup.ignoreLevel ? (
         <span className="text-xs text-amber-100/85">
-          {formatInvestment(resolved.starRank, resolved.reignLevel, {
-            kind: lineup.kind,
-            ignoreLevel: lineup.ignoreLevel,
-          })}
+          Reign {resolved.reignLevel}
         </span>
       ) : null}
       {live[0] ? (

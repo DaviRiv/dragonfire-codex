@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { dragonImageSrc } from "@/components/dragon-portrait";
+import { PortraitStars } from "@/components/portrait-stars";
 import type { Breed, Rarity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,12 +15,24 @@ const sizeClass = {
   "3xl": "size-24 sm:size-32",
 } as const;
 
+const starSize = {
+  xs: "xs",
+  sm: "sm",
+  md: "md",
+  lg: "md",
+  xl: "lg",
+  "2xl": "xl",
+  "3xl": "xl",
+} as const;
+
 const rarityRing: Record<Rarity, string> = {
   legendary:
     "ring-[3px] ring-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]",
   epic: "ring-[3px] ring-violet-400",
   rare: "ring-[3px] ring-sky-400",
 };
+
+type IconSize = keyof typeof sizeClass;
 
 export function DragonIcon({
   dragonId,
@@ -30,6 +43,11 @@ export function DragonIcon({
   selected,
   size = "md",
   className,
+  stars,
+  onStarsChange,
+  starsLayout = "arc",
+  dimmed,
+  onClick,
 }: {
   dragonId?: string;
   name?: string;
@@ -38,34 +56,85 @@ export function DragonIcon({
   custom?: boolean;
   empty?: boolean;
   selected?: boolean;
-  size?: keyof typeof sizeClass;
+  size?: IconSize;
   className?: string;
+  /** Filled rank 0–10. Omit to hide the in-game star badge. */
+  stars?: number;
+  onStarsChange?: (value: number) => void;
+  starsLayout?: "arc" | "row";
+  dimmed?: boolean;
+  onClick?: () => void;
 }) {
-  return (
-    <div
-      className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/50",
-        sizeClass[size],
-        empty
-          ? "ring-2 ring-dashed ring-foreground/25"
-          : rarity
-            ? rarityRing[rarity]
-            : "ring-2 ring-foreground/20",
-        selected && "ring-offset-2 ring-offset-background ring-amber-200",
-        className,
-      )}
-    >
+  const showStars = stars != null && !empty;
+  const faceClass = cn(
+    "relative block size-full overflow-hidden rounded-full bg-black/50",
+    empty
+      ? "ring-2 ring-dashed ring-foreground/25"
+      : rarity
+        ? rarityRing[rarity]
+        : "ring-2 ring-foreground/20",
+    selected && "ring-offset-2 ring-offset-background ring-amber-200",
+  );
+
+  const face = (
+    <>
       {empty || !dragonId ? (
-        <Plus className={cn("text-muted-foreground", size === "3xl" ? "size-10" : "size-5")} />
+        <Plus
+          className={cn(
+            "absolute inset-0 m-auto text-muted-foreground",
+            size === "3xl" ? "size-10" : "size-5",
+          )}
+        />
       ) : (
         <Image
           src={dragonImageSrc(dragonId, custom)}
           alt={name ?? ""}
           fill
           sizes="256px"
-          className="object-cover object-[center_30%]"
+          className={cn(
+            "object-cover object-[center_30%]",
+            dimmed && "grayscale contrast-75 opacity-70",
+          )}
         />
       )}
+    </>
+  );
+
+  return (
+    <div
+      className={cn(
+        "relative inline-flex flex-col items-center",
+        showStars && starsLayout === "row" && "gap-0.5",
+        showStars && starsLayout === "arc" && "pb-1.5",
+        className,
+      )}
+    >
+      <div className={cn("relative", sizeClass[size])}>
+        {onClick ? (
+          <button type="button" onClick={onClick} className={cn(faceClass, "border-0 p-0 select-none")}>
+            {face}
+          </button>
+        ) : (
+          <div className={faceClass}>{face}</div>
+        )}
+        {showStars && starsLayout === "arc" ? (
+          <PortraitStars
+            value={stars}
+            onChange={onStarsChange}
+            size={starSize[size]}
+            layout="arc"
+            className="pointer-events-none absolute inset-x-[-12%] bottom-[-3px] z-10 [&_button]:pointer-events-auto"
+          />
+        ) : null}
+      </div>
+      {showStars && starsLayout === "row" ? (
+        <PortraitStars
+          value={stars}
+          onChange={onStarsChange}
+          size={starSize[size]}
+          layout="row"
+        />
+      ) : null}
     </div>
   );
 }
