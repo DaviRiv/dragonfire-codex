@@ -107,7 +107,7 @@ export function PitPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+        <div className="rounded-2xl bg-card/70 ring-1 ring-foreground/10">
           <ListFilterBar
             query={query}
             onQueryChange={setQuery}
@@ -132,15 +132,16 @@ export function PitPage() {
                     key={owned.id}
                     type="button"
                     onClick={() => setEditing(owned)}
-                    className="flex min-h-14 w-full items-center gap-2.5 px-3 py-2 text-left select-none active:bg-amber-500/15"
+                    className="flex min-h-14 w-full items-center gap-2.5 overflow-visible px-3 py-2 text-left select-none active:bg-amber-500/15"
                   >
                     <DragonIcon
                       dragonId={dragon.id}
                       name={dragon.name}
                       rarity={dragon.rarity}
                       custom={dragon.custom}
-                      size="sm"
+                      size="md"
                       stars={owned.starRank}
+                      starsLayout="row"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="font-heading block truncate text-sm">

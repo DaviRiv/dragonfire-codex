@@ -93,6 +93,7 @@ export function SuggestTile({
             selected={selected}
             size="sm"
             stars={starRank}
+            starsLayout="row"
           />
           <span className="w-0 min-w-0 flex-1 overflow-hidden">
             <span className="flex min-w-0 items-center gap-1.5">

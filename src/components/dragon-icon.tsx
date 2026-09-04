@@ -108,7 +108,7 @@ export function DragonIcon({
   return (
     <div
       className={cn(
-        "relative inline-flex flex-col items-center",
+        "relative inline-flex shrink-0 flex-col items-center overflow-visible",
         showStars && starsLayout === "row" && "gap-0.5",
         showStars && starsLayout === "arc" && showGold && "pb-1.5",
         showRed && starsLayout === "arc" && "pt-1.5",

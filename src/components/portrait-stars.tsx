@@ -5,12 +5,12 @@ export const STAR_ROW = 5;
 export const STAR_MAX = 10;
 
 const sizeClass = {
-  xs: "size-1.5",
-  sm: "size-2",
-  md: "size-2.5",
-  lg: "size-[11px]",
-  xl: "size-3",
-  "2xl": "size-3.5",
+  xs: "size-2",
+  sm: "size-2.5",
+  md: "size-3",
+  lg: "size-3.5",
+  xl: "size-3.5",
+  "2xl": "size-4",
   sheet: "size-6",
 } as const;
 
