@@ -5,38 +5,44 @@ import Link from "next/link";
 import { LineupEditor } from "@/app/lineups/lineup-editor";
 import { MiniChip } from "@/components/chip";
 import { Button } from "@/components/ui/button";
+import {
+  readBuildKind,
+  readBuildLineupId,
+  rememberBuild,
+} from "@/lib/build-session";
 import { usePit } from "@/lib/store";
 import { troopShort } from "@/lib/labels";
 import type { LineupKind } from "@/lib/types";
 import { Plus } from "lucide-react";
 
-const KIND_KEY = "dragonfire-build-kind";
-
 function readKind(): LineupKind {
-  if (typeof window === "undefined") return "pit";
-  return window.sessionStorage.getItem(KIND_KEY) === "theory"
-    ? "theory"
-    : "pit";
+  return readBuildKind();
 }
 
 export function BuildPage() {
   const { ready, state, createLineup, ensureLineup } = usePit();
   const [kind, setKind] = useState<LineupKind>(() => readKind());
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(() =>
+    readBuildLineupId(),
+  );
 
   useEffect(() => {
     if (!ready) return;
     ensureLineup(kind === "theory" ? "New theory" : "New lineup", kind);
   }, [ready, kind, ensureLineup]);
 
+  function selectLineup(id: string, nextKind = kind) {
+    setActiveId(id);
+    rememberBuild(nextKind, id);
+  }
+
   function chooseKind(next: LineupKind) {
     setKind(next);
-    sessionStorage.setItem(KIND_KEY, next);
     const lineup = ensureLineup(
       next === "theory" ? "New theory" : "New lineup",
       next,
     );
-    setActiveId(lineup.id);
+    selectLineup(lineup.id, next);
   }
 
   const ofKind = state.lineups.filter((lineup) => lineup.kind === kind);
@@ -78,6 +84,7 @@ export function BuildPage() {
               kind,
             );
             setActiveId(lineup.id);
+            rememberBuild(kind, lineup.id);
           }}
           aria-label="New team"
         >
@@ -91,7 +98,7 @@ export function BuildPage() {
             <MiniChip
               key={lineup.id}
               active={resolvedId === lineup.id}
-              onClick={() => setActiveId(lineup.id)}
+              onClick={() => selectLineup(lineup.id)}
             >
               {lineup.name}
               <span className="ml-1 opacity-70">{troopShort[lineup.troop]}</span>
@@ -99,7 +106,11 @@ export function BuildPage() {
           ))}
         </div>
       ) : null}
-      <LineupEditor lineupId={resolvedId} embedded onOpenLineup={setActiveId} />
+      <LineupEditor
+        lineupId={resolvedId}
+        embedded
+        onOpenLineup={(id) => selectLineup(id)}
+      />
     </div>
   );
 }

@@ -7,11 +7,13 @@ import { EmptyState } from "@/components/empty-state";
 import { OpenAiLogin } from "@/components/openai-login";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { COACH_STARTERS, guessTroopMode } from "@/lib/ai/coach";
+import { COACH_STARTERS, guessTroopMode, lineupFromAiLine } from "@/lib/ai/coach";
 import type { AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool } from "@/lib/ai/roster";
 import { useOpenAiSession } from "@/lib/ai/session";
+import { newId, nowIso } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
+import { rememberBuild } from "@/lib/build-session";
 import { usePit } from "@/lib/store";
 import type { Lineup } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -50,8 +52,7 @@ function turnId() {
 }
 
 export function CoachPage() {
-  const { ready, state, loadSample, createLineup, slotDragons, updateLineup } =
-    usePit();
+  const { ready, state, loadSample, addLineup } = usePit();
   const { session } = useOpenAiSession();
   const [pool, setPool] = useState<AiPool>("pit");
   const [draft, setDraft] = useState("");
@@ -162,22 +163,18 @@ export function CoachPage() {
       );
       return;
     }
-    const kind = missing ? "theory" : "pit";
-    const created = createLineup(line.name, kind);
-    slotDragons(
-      created.id,
-      [
-        { slot: "left", dragonId: line.left },
-        { slot: "vanguard", dragonId: line.vanguard },
-        { slot: "right", dragonId: line.right },
-      ],
-      { replace: true },
-    );
-    updateLineup(created.id, {
-      troop: line.troop,
-      mode: line.mode,
-      notes: line.why,
-    });
+    const filled = lineupFromAiLine(line, state, pool);
+    if (!filled.slots.left || !filled.slots.vanguard || !filled.slots.right) {
+      toast.error("Could not fill all three seats.");
+      return;
+    }
+    const created = {
+      ...filled,
+      id: newId("lineup"),
+      updatedAt: nowIso(),
+    };
+    addLineup(created);
+    rememberBuild(created.kind, created.id);
     toast.success(`Seated ${line.name} on Team.`);
   }
 

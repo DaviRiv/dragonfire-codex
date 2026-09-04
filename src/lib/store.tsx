@@ -65,6 +65,7 @@ type PitContextValue = {
   ) => void;
   removeOwned: (id: string) => void;
   createLineup: (name?: string, kind?: LineupKind) => Lineup;
+  addLineup: (lineup: Lineup) => void;
   ensureLineup: (name?: string, kind?: LineupKind) => Lineup;
   updateLineup: (id: string, patch: Partial<Omit<Lineup, "id">>) => void;
   setSlot: (lineupId: string, slot: SlotId, dragonId: string | null) => void;
@@ -322,6 +323,13 @@ export function PitProvider({ children }: { children: ReactNode }) {
     return lineup;
   }, []);
 
+  const addLineup = useCallback((lineup: Lineup) => {
+    commit((prev) => ({
+      ...prev,
+      lineups: [lineup, ...prev.lineups.filter((row) => row.id !== lineup.id)],
+    }));
+  }, []);
+
   const ensureLineup = useCallback(
     (name?: string, kind: LineupKind = "pit"): Lineup => {
       const existing = getClientSnapshot().lineups.find((l) => l.kind === kind);
@@ -545,6 +553,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateOwned,
       removeOwned,
       createLineup,
+      addLineup,
       ensureLineup,
       updateLineup,
       setSlot,
@@ -567,6 +576,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateOwned,
       removeOwned,
       createLineup,
+      addLineup,
       ensureLineup,
       updateLineup,
       setSlot,

@@ -3,7 +3,7 @@
  */
 import { samplePit } from "@/data/sample";
 import { localComboLines } from "@/lib/ai/local";
-import { guessTroopMode, localCoachAnswer } from "@/lib/ai/coach";
+import { guessTroopMode, lineupFromAiLine, localCoachAnswer } from "@/lib/ai/coach";
 import { parseAiLines, parseCoachReply } from "@/lib/ai/parse";
 import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
 import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
@@ -68,6 +68,10 @@ const local = localCoachAnswer(
   stubLineup(request),
 );
 if (local.lines.length < 1) throw new Error("local coach empty");
+const filled = lineupFromAiLine(local.lines[0], state, "pit");
+if (!filled.slots.left || !filled.slots.vanguard || !filled.slots.right) {
+  throw new Error("seated line missing a slot");
+}
 console.log(
   "ok pit",
   pit.length,
