@@ -137,6 +137,9 @@ export function HatcheryPage() {
         onChange={(habits) => {
           if (habitDragon) setDragonHabits(habitDragon.id, habits);
         }}
+        onStarChange={(next) => {
+          if (habitDragon) setStars(habitDragon, next);
+        }}
       />
     </div>
   );

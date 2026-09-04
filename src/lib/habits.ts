@@ -1,5 +1,6 @@
 import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
-import type { Dragon, LineupKind } from "@/lib/types";
+import { qualifiesForStars } from "@/lib/stars";
+import type { Dragon, GatedAbility, LineupKind } from "@/lib/types";
 
 export const HABIT_UNLOCK_STARS = [2, 4, 6, 8, 10] as const;
 export const HABIT_SLOT_COUNT = HABIT_UNLOCK_STARS.length;
@@ -47,25 +48,13 @@ export function normalizeHabits(raw: unknown, starRank: number): number[] {
   return sanitizeHabits(raw);
 }
 
-/**
- * Starring up adds newly unlocked habits without restoring ones you
- * unchecked. Starring down drops habits whose gate is now closed; you can
- * still check those later as goals.
- */
+/** Starring sets habits to whatever those stars unlock. */
 export function habitsAfterStarChange(
-  prevHabits: number[],
-  prevStars: number,
+  _prevHabits: number[],
+  _prevStars: number,
   nextStars: number,
 ): number[] {
-  const nextUnlocked = defaultHabits(nextStars);
-  const newlyUnlocked = nextUnlocked.filter(
-    (habit) => !defaultHabits(prevStars).includes(habit),
-  );
-  const kept = sanitizeHabits(prevHabits).filter((habit) => {
-    const gate = starsForHabit(habit);
-    return gate != null && gate <= nextStars;
-  });
-  return sanitizeHabits([...kept, ...newlyUnlocked]);
+  return defaultHabits(nextStars);
 }
 
 export function maxStarsForHabits(habits: number[]): number {
@@ -124,6 +113,112 @@ export function habitPreview(dragonId: string, index: number): string {
   const short = DRAGON_HABIT_SHORTS[dragonId]?.[index]?.level1?.trim();
   if (short) return short;
   return DRAGON_HABITS[dragonId]?.[index]?.level1?.trim() || "Not recorded yet.";
+}
+
+export type KitHabitRow = {
+  habit: number;
+  stars: number;
+  body: string;
+  live: boolean;
+  selected: boolean;
+};
+
+export type KitEffect = {
+  ability: string;
+  unlockStars: number | null;
+  live: boolean;
+};
+
+export type KitStarGroup = {
+  stars: number;
+  habits: KitHabitRow[];
+  effects: string[];
+};
+
+export type KitProgress = {
+  owned: boolean;
+  starRank: number;
+  command: string;
+  vanguard: string;
+  habits: KitHabitRow[];
+  liveHabits: KitHabitRow[];
+  nextHabits: KitHabitRow[];
+  liveEffects: KitEffect[];
+  nextUnlocks: KitStarGroup[];
+};
+
+/** Command, vanguard, live habits, and what higher stars still open. */
+export function kitProgress(
+  dragon: Dragon,
+  starRank: number,
+  selectedHabits: number[] | null | undefined,
+): KitProgress {
+  const owned = starRank > 0;
+  const selected =
+    selectedHabits === undefined
+      ? [1, 2, 3, 4, 5]
+      : sanitizeHabits(selectedHabits);
+  const habits: KitHabitRow[] = HABIT_UNLOCK_STARS.map((stars, index) => {
+    const habit = index + 1;
+    const on = selected.includes(habit);
+    const open = owned && starRank >= stars;
+    return {
+      habit,
+      stars,
+      body: habitPreview(dragon.id, index),
+      live: open && on,
+      selected: on,
+    };
+  });
+  const effects: KitEffect[] = (dragon.provides ?? []).map(
+    (gate: GatedAbility) => {
+      const n = habitNumberForUnlockStars(gate.unlockStars);
+      const bought = n == null || selected.includes(n);
+      const live =
+        owned && qualifiesForStars(gate.unlockStars, starRank) && bought;
+      return {
+        ability: gate.ability,
+        unlockStars: gate.unlockStars,
+        live,
+      };
+    },
+  );
+  const nextByStar = new Map<number, KitStarGroup>();
+  for (const habit of habits) {
+    if (habit.live) continue;
+    if (owned && starRank >= habit.stars) continue;
+    const group = nextByStar.get(habit.stars) ?? {
+      stars: habit.stars,
+      habits: [],
+      effects: [],
+    };
+    group.habits.push(habit);
+    nextByStar.set(habit.stars, group);
+  }
+  for (const effect of effects) {
+    if (effect.live || effect.unlockStars == null) continue;
+    if (owned && starRank >= effect.unlockStars) continue;
+    const group = nextByStar.get(effect.unlockStars) ?? {
+      stars: effect.unlockStars,
+      habits: [],
+      effects: [],
+    };
+    if (!group.effects.includes(effect.ability)) {
+      group.effects.push(effect.ability);
+    }
+    nextByStar.set(effect.unlockStars, group);
+  }
+  return {
+    owned,
+    starRank,
+    command: commandLine(dragon, true),
+    vanguard: vanguardBonus(dragon, true),
+    habits,
+    liveHabits: habits.filter((row) => row.live),
+    nextHabits: habits.filter((row) => !row.live),
+    liveEffects: effects.filter((effect) => effect.live),
+    nextUnlocks: [...nextByStar.values()].sort((a, b) => a.stars - b.stars),
+  };
 }
 
 /** Self + flank text stored on each dragon — the in-game vanguard skill. */

@@ -4,7 +4,7 @@ import { AffinityBadges } from "@/components/affinity-badges";
 import { StarRequirement } from "@/components/star-requirement";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
-import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
+import { dragonKit, habitNumberForUnlockStars, kitProgress } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import {
   breedLabels,
@@ -23,12 +23,38 @@ import {
   scaledStats,
   troopCount,
 } from "@/lib/scale-stats";
+import { qualifiesForStars } from "@/lib/stars";
 import { SynergyBuffList } from "@/components/synergy-hover";
 import { coreStatMods, type SynergyBuff } from "@/lib/synergy-buffs";
 import type { Dragon, DragonStats } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const STAT_BAR_MAX = 400;
+
+function habitTitle(
+  unlockStars: number | undefined,
+  ownedStars: number | null,
+  bought: boolean,
+) {
+  if (unlockStars == null) return "Habit";
+  const habitNum = habitNumberForUnlockStars(unlockStars);
+  return (
+    <>
+      <span className="text-muted-foreground">
+        {habitNum ? `Habit ${habitNum}` : "Habit"}
+      </span>
+      <span className="text-muted-foreground" aria-hidden>
+        ·
+      </span>
+      <StarRequirement stars={unlockStars} ownedStars={ownedStars} />
+      {!bought ? (
+        <span className="font-normal tracking-normal text-amber-200/80 normal-case">
+          not bought
+        </span>
+      ) : null}
+    </>
+  );
+}
 
 export function StatLine({ stats }: { stats: DragonStats }) {
   return (
@@ -112,6 +138,24 @@ export function DragonProfile({
   const power = dragonPower(dragon.rarity, starRank, reignLevel);
   const qualifyStars = ownedStars === undefined ? starRank : ownedStars;
   const level = hubLevel(reignLevel);
+  const progress = kitProgress(
+    dragon,
+    qualifyStars ?? 0,
+    ownedHabits,
+  );
+  const vanguard = kit.extras.find((extra) => extra.title === "Vanguard");
+  const habitExtras = kit.extras.filter((extra) => extra.unlockStars != null);
+  const liveHabitExtras = habitExtras.filter((extra) => {
+    const habitNum = habitNumberForUnlockStars(extra.unlockStars);
+    const bought =
+      ownedHabits == null ||
+      habitNum == null ||
+      ownedHabits.includes(habitNum);
+    return bought && qualifiesForStars(extra.unlockStars, qualifyStars);
+  });
+  const nextHabitExtras = habitExtras.filter(
+    (extra) => !liveHabitExtras.includes(extra),
+  );
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -140,6 +184,19 @@ export function DragonProfile({
             <AbilityTag key={tag} tag={tag} />
           ))}
         </div>
+      ) : null}
+      {progress.liveEffects.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {progress.liveEffects.map((effect) => (
+            <AbilityTag key={`live-${effect.ability}`} tag={effect.ability} />
+          ))}
+        </div>
+      ) : null}
+      {vanguard ? (
+        <AbilityBlock
+          title={`Vanguard · buffs ${slotLabels[dragon.flankBonus]}`}
+          body={vanguard.body}
+        />
       ) : null}
       {heals.length > 0 ? (
         <div className="space-y-2">
@@ -193,42 +250,36 @@ export function DragonProfile({
         }
         body={kit.command}
       />
-      {kit.extras.map((extra) => {
+      {liveHabitExtras.length > 0 ? (
+        <p className="text-label">
+          Live at ★{qualifyStars ?? 0}
+        </p>
+      ) : null}
+      {liveHabitExtras.map((extra) => (
+        <AbilityBlock
+          key={extra.title}
+          title={habitTitle(extra.unlockStars, qualifyStars, true)}
+          body={extra.body}
+          ranks={extra.ranks}
+        />
+      ))}
+      {nextHabitExtras.length > 0 ? (
+        <p className="text-label">If you keep starring</p>
+      ) : null}
+      {nextHabitExtras.map((extra) => {
         const habitNum = habitNumberForUnlockStars(extra.unlockStars);
         const bought =
           ownedHabits == null ||
           habitNum == null ||
           ownedHabits.includes(habitNum);
         return (
-        <AbilityBlock
-          key={extra.title}
-          muted={!bought}
-          title={
-            extra.unlockStars != null ? (
-              <>
-                <span className="text-muted-foreground">
-                  {extra.title.replace(/ · \d+★$/, "")}
-                </span>
-                <span className="text-muted-foreground" aria-hidden>
-                  ·
-                </span>
-                <StarRequirement
-                  stars={extra.unlockStars}
-                  ownedStars={qualifyStars}
-                />
-                {!bought ? (
-                  <span className="font-normal tracking-normal text-amber-200/80 normal-case">
-                    not bought
-                  </span>
-                ) : null}
-              </>
-            ) : (
-              extra.title
-            )
-          }
-          body={extra.body}
-          ranks={extra.ranks}
-        />
+          <AbilityBlock
+            key={extra.title}
+            muted
+            title={habitTitle(extra.unlockStars, qualifyStars, bought)}
+            body={extra.body}
+            ranks={extra.ranks}
+          />
         );
       })}
       <div>
@@ -257,8 +308,9 @@ export function DragonProfile({
           going to reverse-engineer those. Stats use Dragonfire-Hub’s level
           table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
-          multipliers. Which habits you bought is set in Hatchery with the
-          search icon. Habit upgrade ranks 2–5 are not in the pit yet.
+          multipliers. Stars auto-select habits in Hatchery. Uncheck one on
+          the search icon if you have not bought it. Habit upgrade ranks 2–5
+          are not in the pit yet.
         </p>
       </div>
     </div>
