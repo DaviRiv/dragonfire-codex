@@ -3,10 +3,12 @@
  */
 import { samplePit } from "@/data/sample";
 import { localComboLines } from "@/lib/ai/local";
-import { parseAiLines } from "@/lib/ai/parse";
+import { guessTroopMode, localCoachAnswer } from "@/lib/ai/coach";
+import { parseAiLines, parseCoachReply } from "@/lib/ai/parse";
 import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
 import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
 import { collectRoster } from "@/lib/ai/roster";
+import { stubLineup, stubState } from "@/lib/ai/stub";
 
 if (!isUserApiKey("sk-abcdefghijklmnopqrstuvwxyz")) {
   throw new Error("valid key rejected");
@@ -44,6 +46,28 @@ const parsed = parseAiLines(
   "pvp",
 );
 if (parsed.length !== lines.length) throw new Error("parse mismatch");
+const spear = guessTroopMode("Spear rally with a healer");
+if (spear.troop !== "spearmen" || spear.mode !== "rally") {
+  throw new Error("guess troop/mode failed");
+}
+const coach = parseCoachReply(
+  JSON.stringify({
+    reply: "Run the shield wall.",
+    lines,
+  }),
+  pit,
+  "shieldbearers",
+  "pvp",
+);
+if (coach.reply !== "Run the shield wall.") throw new Error("coach reply");
+if (coach.lines.length !== lines.length) throw new Error("coach lines");
+const local = localCoachAnswer(
+  "shield pvp",
+  request,
+  stubState(request),
+  stubLineup(request),
+);
+if (local.lines.length < 1) throw new Error("local coach empty");
 console.log(
   "ok pit",
   pit.length,

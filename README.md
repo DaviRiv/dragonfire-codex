@@ -54,6 +54,11 @@ with HBO, Warner Bros., or the game.
   returns 2–3 combinations. **Log in with OpenAI** (a platform API key
   kept in this browser) to run the model in the app, or copy the prompt
   into ChatGPT. Without a login it uses the same local ranker as Suggest.
+  **Coach** — a chat about three-dragon lines. Ask for a shield core, a
+  spear rally, or who soaks if Vhagar is busy. The boards the coach
+  picks sit beside the thread (under each reply on a phone). **Seat on
+  Team** saves that line. Same OpenAI login as Ask AI; without a key it
+  ranks locally.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -67,7 +72,7 @@ with HBO, Warner Bros., or the game.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 
-The layout is built for a phone in one hand: three bottom tabs, the team
+The layout is built for a phone in one hand: four bottom tabs, the team
 then the ranked list, and on a wider screen the list is a full column on
 the right so the formation stays in view.
 

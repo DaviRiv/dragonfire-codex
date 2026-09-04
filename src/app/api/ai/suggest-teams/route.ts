@@ -4,9 +4,8 @@ import { completeChat, keyFromRequest } from "@/lib/ai/openai";
 import { parseAiLines } from "@/lib/ai/parse";
 import { buildUserPrompt } from "@/lib/ai/prompt";
 import { parseRosterCards, type SuggestRequest } from "@/lib/ai/roster";
+import { stubLineup, stubState } from "@/lib/ai/stub";
 import { MODES, TROOP_TYPES } from "@/lib/labels";
-import { emptySlots } from "@/lib/lineup";
-import type { Lineup, PitState } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -46,40 +45,6 @@ function readRequest(body: unknown): SuggestRequest {
       right: seat(row.current?.right),
     },
     roster,
-  };
-}
-
-function stubLineup(request: SuggestRequest): Lineup {
-  return {
-    id: "ai-stub",
-    name: request.lineupName,
-    kind: request.pool === "pit" ? "pit" : "theory",
-    mode: request.mode,
-    troop: request.troop,
-    notes: "",
-    slots: emptySlots(),
-    ignoreLevel: false,
-    craftStars: 10,
-    excludeUsed: request.skipUsed,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-function stubState(request: SuggestRequest): PitState {
-  return {
-    version: 2,
-    owned: request.roster
-      .filter((card) => card.owned)
-      .map((card) => ({
-        id: `own-${card.id}`,
-        dragonId: card.id,
-        starRank: card.stars ?? 1,
-        reignLevel: card.reign ?? 1,
-        notes: "",
-      })),
-    customDragons: [],
-    lineups: [stubLineup(request)],
-    teams: [],
   };
 }
 

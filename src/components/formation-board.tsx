@@ -34,6 +34,7 @@ export function FormationBoard({
   onModeChange,
   buffs = [],
   children,
+  compact = false,
 }: {
   lineup: Lineup;
   state: PitState;
@@ -45,6 +46,7 @@ export function FormationBoard({
   onModeChange?: (mode: LineupMode) => void;
   buffs?: SynergyBuff[];
   children?: ReactNode;
+  compact?: boolean;
 }) {
   return (
     <div className="rounded-2xl bg-gradient-to-b from-stone-900/80 to-black/50 p-3 ring-1 ring-amber-500/20 sm:p-4">
@@ -107,6 +109,8 @@ export function FormationBoard({
             onSelect={onSelectSlot}
             onClear={onClearSlot}
             buffs={buffs}
+            compact={compact}
+            pickable={Boolean(onSelectSlot)}
           />
         ))}
       </div>
@@ -127,6 +131,8 @@ function SlotButton({
   onSelect,
   onClear,
   buffs,
+  compact,
+  pickable,
 }: {
   slot: SlotId;
   lineup: Lineup;
@@ -135,6 +141,8 @@ function SlotButton({
   onSelect?: (slot: SlotId) => void;
   onClear?: (slot: SlotId) => void;
   buffs: SynergyBuff[];
+  compact: boolean;
+  pickable: boolean;
 }) {
   const resolved = resolveSlot(lineup, state, slot);
   const dragon = resolved?.dragon;
@@ -155,7 +163,7 @@ function SlotButton({
         {slotShort[slot]}
       </span>
       <span className="max-w-full truncate px-0.5 text-sm font-medium">
-        {dragon?.name ?? "Tap to pick"}
+        {dragon?.name ?? (pickable ? "Tap to pick" : "—")}
       </span>
       {resolved ? (
         <span className="text-xs text-amber-100/85">
@@ -182,7 +190,10 @@ function SlotButton({
   );
 
   const slotClass = cn(
-    "flex min-h-[10.75rem] w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 select-none sm:min-h-[15rem] sm:py-3",
+    "flex w-full flex-col items-center justify-center gap-1 rounded-2xl px-1 select-none",
+    compact
+      ? "min-h-[8.25rem] py-2 sm:min-h-[10.5rem]"
+      : "min-h-[10.75rem] py-2.5 sm:min-h-[15rem] sm:py-3",
     selected && "bg-amber-500/20 ring-2 ring-amber-300",
   );
 

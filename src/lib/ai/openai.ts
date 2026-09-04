@@ -39,9 +39,10 @@ export async function verifyOpenAiKey(key: string): Promise<void> {
   }
 }
 
-export async function completeChat(
+export async function completeMessages(
   key: string,
-  userPrompt: string,
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  options?: { temperature?: number; timeoutMs?: number },
 ): Promise<string> {
   const response = await fetch(`${openaiBaseUrl()}/chat/completions`, {
     method: "POST",
@@ -51,13 +52,10 @@ export async function completeChat(
     },
     body: JSON.stringify({
       model: openaiModel(),
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: TEAM_COMBO_SYSTEM },
-        { role: "user", content: userPrompt },
-      ],
+      temperature: options?.temperature ?? 0.4,
+      messages,
     }),
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(options?.timeoutMs ?? 25000),
   });
   if (!response.ok) {
     throw new Error(`model-${response.status}`);
@@ -68,4 +66,14 @@ export async function completeChat(
   const text = json.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error("empty-model");
   return text;
+}
+
+export async function completeChat(
+  key: string,
+  userPrompt: string,
+): Promise<string> {
+  return completeMessages(key, [
+    { role: "system", content: TEAM_COMBO_SYSTEM },
+    { role: "user", content: userPrompt },
+  ]);
 }

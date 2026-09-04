@@ -79,3 +79,27 @@ export function parseAiLines(
   }
   return lines.slice(0, 3);
 }
+
+export type CoachReply = {
+  reply: string;
+  lines: AiLine[];
+};
+
+export function parseCoachReply(
+  raw: string,
+  roster: RosterCard[],
+  fallbackTroop: TroopType,
+  fallbackMode: LineupMode,
+): CoachReply {
+  const parsed = extractJson(raw);
+  const object =
+    parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  const lines = parseAiLines(raw, roster, fallbackTroop, fallbackMode);
+  const reply =
+    typeof object?.reply === "string" && object.reply.trim()
+      ? object.reply.trim().slice(0, 800)
+      : lines.map((line) => line.why).join(" ");
+  return { reply, lines };
+}

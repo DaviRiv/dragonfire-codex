@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Egg, Flame, Swords } from "lucide-react";
+import { Egg, Flame, Sparkles, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Team", icon: Swords },
+  { href: "/coach", label: "Coach", icon: Sparkles },
   { href: "/pit", label: "Pit", icon: Flame },
   { href: "/hatchery", label: "Hatchery", icon: Egg },
 ] as const;
@@ -70,7 +71,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-3">
+        <ul className="mx-auto grid max-w-6xl grid-cols-4">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);
