@@ -4,7 +4,7 @@ import { AffinityBadges } from "@/components/affinity-badges";
 import { StarRequirement } from "@/components/star-requirement";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
-import { dragonKit } from "@/lib/habits";
+import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import {
   breedLabels,
@@ -91,6 +91,7 @@ export function DragonProfile({
   starRank = 1,
   reignLevel = 1,
   ownedStars,
+  ownedHabits,
   synergyBuffs = [],
 }: {
   dragon: Dragon;
@@ -99,6 +100,8 @@ export function DragonProfile({
   reignLevel?: number;
   /** Pit rank used to warn on star gates. `null` means not owned. */
   ownedStars?: number | null;
+  /** Habits marked bought in Hatchery. Omit to show the full kit. */
+  ownedHabits?: number[];
   synergyBuffs?: SynergyBuff[];
 }) {
   const kit = dragonKit(dragon);
@@ -141,10 +144,18 @@ export function DragonProfile({
       {heals.length > 0 ? (
         <div className="space-y-2">
           <p className="text-label">Healing</p>
-          {heals.map((heal) => (
+          {heals.map((heal) => {
+            const bought =
+              ownedHabits == null ||
+              heal.habit == null ||
+              ownedHabits.includes(heal.habit);
+            return (
             <div
               key={heal.id}
-              className="rounded-xl bg-emerald-950/35 p-3 text-[15px] leading-relaxed ring-1 ring-emerald-500/20"
+              className={cn(
+                "rounded-xl bg-emerald-950/35 p-3 text-[15px] leading-relaxed ring-1 ring-emerald-500/20",
+                !bought && "opacity-55",
+              )}
             >
               <div className="flex flex-wrap items-center gap-x-1.5">
                 {heal.stars == null ? (
@@ -170,7 +181,8 @@ export function DragonProfile({
                 <AbilityText text={heal.text} />
               </p>
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
       <AbilityBlock
@@ -181,9 +193,16 @@ export function DragonProfile({
         }
         body={kit.command}
       />
-      {kit.extras.map((extra) => (
+      {kit.extras.map((extra) => {
+        const habitNum = habitNumberForUnlockStars(extra.unlockStars);
+        const bought =
+          ownedHabits == null ||
+          habitNum == null ||
+          ownedHabits.includes(habitNum);
+        return (
         <AbilityBlock
           key={extra.title}
+          muted={!bought}
           title={
             extra.unlockStars != null ? (
               <>
@@ -197,6 +216,11 @@ export function DragonProfile({
                   stars={extra.unlockStars}
                   ownedStars={qualifyStars}
                 />
+                {!bought ? (
+                  <span className="font-normal tracking-normal text-amber-200/80 normal-case">
+                    not bought
+                  </span>
+                ) : null}
               </>
             ) : (
               extra.title
@@ -205,7 +229,8 @@ export function DragonProfile({
           body={extra.body}
           ranks={extra.ranks}
         />
-      ))}
+        );
+      })}
       <div>
         <p className="text-label mb-2">
           Stats · ★{starRank} · Reign {reignLevel}
@@ -232,7 +257,8 @@ export function DragonProfile({
           going to reverse-engineer those. Stats use Dragonfire-Hub’s level
           table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
-          multipliers. Habit upgrade ranks are not in the pit yet.
+          multipliers. Which habits you bought is set in Hatchery with the
+          search icon. Habit upgrade ranks 2–5 are not in the pit yet.
         </p>
       </div>
     </div>
@@ -243,13 +269,20 @@ export function AbilityBlock({
   title,
   body,
   ranks,
+  muted,
 }: {
   title: ReactNode;
   body: string;
   ranks?: string[];
+  muted?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-muted/50 p-3 text-[15px] leading-relaxed">
+    <div
+      className={cn(
+        "rounded-xl bg-muted/50 p-3 text-[15px] leading-relaxed",
+        muted && "opacity-55",
+      )}
+    >
       <div className="flex flex-wrap items-center gap-x-1.5 text-[0.6875rem] font-medium leading-[1.2] tracking-[0.12em] uppercase">
         {typeof title === "string" ? (
           <span className="text-muted-foreground">{title}</span>

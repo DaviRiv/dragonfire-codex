@@ -1,4 +1,5 @@
 import { lineGaps, lineProfile } from "@/lib/comp";
+import { liveOwnedHabits } from "@/lib/habits";
 import { investmentScore, placedInLineup } from "@/lib/lineup";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import { missingCompRoles, hasCompRole } from "@/lib/roles";
@@ -140,7 +141,11 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
 
   if (filled >= 2) {
     const profile = lineProfile(
-      placed.map((row) => ({ dragon: row.dragon, atStars: row.starRank })),
+      placed.map((row) => ({
+        dragon: row.dragon,
+        atStars: row.starRank,
+        habits: liveOwnedHabits(row.owned, lineup.kind),
+      })),
     );
     for (const gap of lineGaps(profile)) {
       notes.push({

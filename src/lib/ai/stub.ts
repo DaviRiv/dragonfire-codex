@@ -1,4 +1,5 @@
 import { emptySlots } from "@/lib/lineup";
+import { defaultHabits } from "@/lib/habits";
 import type { SuggestRequest } from "@/lib/ai/roster";
 import type { Lineup, PitState } from "@/lib/types";
 
@@ -23,13 +24,17 @@ export function stubState(request: SuggestRequest): PitState {
     version: 2,
     owned: request.roster
       .filter((card) => card.owned)
-      .map((card) => ({
-        id: `own-${card.id}`,
-        dragonId: card.id,
-        starRank: card.stars ?? 1,
-        reignLevel: card.reign ?? 1,
-        notes: "",
-      })),
+      .map((card) => {
+        const starRank = card.stars ?? 1;
+        return {
+          id: `own-${card.id}`,
+          dragonId: card.id,
+          starRank,
+          reignLevel: card.reign ?? 1,
+          notes: "",
+          habits: defaultHabits(starRank),
+        };
+      }),
     customDragons: [],
     lineups: [stubLineup(request)],
     teams: [],

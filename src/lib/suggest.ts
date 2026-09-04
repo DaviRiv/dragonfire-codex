@@ -1,6 +1,7 @@
 import { compPriority, suggestCompNotes } from "@/lib/comp";
 import { allDragons, findDragon } from "@/lib/dragons";
 import { pairingFit } from "@/lib/pairing";
+import { liveOwnedHabits } from "@/lib/habits";
 import {
   emptySlots,
   investmentScore,
@@ -140,6 +141,7 @@ function scoreDragon(
     teammates.map((mate) => ({
       dragon: mate.dragon,
       atStars: mate.starRank,
+      habits: liveOwnedHabits(mate.owned, lineup.kind),
     })),
     slot,
   )) {
@@ -216,8 +218,10 @@ function scoreDragon(
     teammates.map((mate) => ({
       dragon: mate.dragon,
       atStars: mate.starRank,
+      habits: liveOwnedHabits(mate.owned, lineup.kind),
     })),
     starRank,
+    liveOwnedHabits(owned, lineup.kind),
   )) {
     let text = fit.text;
     let points = fit.points;
@@ -284,6 +288,7 @@ export function suggestDragons({
   const mates = teammates.map((mate) => ({
     dragon: mate.dragon,
     atStars: mate.starRank,
+    habits: liveOwnedHabits(mate.owned, lineup.kind),
   }));
 
   return source

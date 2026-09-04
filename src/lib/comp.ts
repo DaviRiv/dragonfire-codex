@@ -15,7 +15,11 @@ export type CompNote = {
   points: number;
 };
 
-type Mate = { dragon: Dragon; atStars?: number | null };
+type Mate = {
+  dragon: Dragon;
+  atStars?: number | null;
+  habits?: number[] | null;
+};
 
 export type LineProfile = {
   dragons: Dragon[];
@@ -54,11 +58,15 @@ function findTankFeed(
   for (const tank of mates.filter((mate) => isTank(mate.dragon))) {
     for (const need of dragonNeedGates(tank.dragon)) {
       const tankStars = liveOnly ? tank.atStars : 10;
-      if (dragonProvides(tank.dragon, need.ability, tankStars)) continue;
+      if (
+        dragonProvides(tank.dragon, need.ability, tankStars, tank.habits)
+      ) {
+        continue;
+      }
       const feeder = mates.find((mate) => {
         if (mate.dragon.id === tank.dragon.id) return false;
         const atStars = liveOnly ? mate.atStars : 10;
-        return dragonProvides(mate.dragon, need.ability, atStars);
+        return dragonProvides(mate.dragon, need.ability, atStars, mate.habits);
       });
       if (!feeder) continue;
       return {

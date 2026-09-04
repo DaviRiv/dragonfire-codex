@@ -7,6 +7,10 @@ import {
   provideUnlockStars,
 } from "@/lib/abilities";
 import { findDragon } from "@/lib/dragons";
+import {
+  habitNumberForUnlockStars,
+  liveOwnedHabits,
+} from "@/lib/habits";
 import { breedLabels, slotLabels, troopLabels } from "@/lib/labels";
 import {
   placedInLineup,
@@ -24,7 +28,7 @@ import {
   type SynergyBuff,
   type SynergyStatLine,
 } from "@/lib/synergy-buffs";
-import type { Breed, Dragon, Lineup, PitState } from "@/lib/types";
+import type { Breed, Dragon, Lineup, LineupKind, PitState } from "@/lib/types";
 
 export { dragonNeeds, dragonProvides } from "@/lib/abilities";
 
@@ -76,8 +80,12 @@ function tryHint(ability: string, excludeId: string): string {
   return ` Try ${joinNames(names)}.`;
 }
 
-export function partnerRules(dragon: Dragon): PartnerRule[] {
-  const text = kitText(dragon);
+export function partnerRules(
+  dragon: Dragon,
+  atStars?: number | null,
+  habits?: number[] | null,
+): PartnerRule[] {
+  const text = kitText(dragon, atStars, habits);
   const byBreed = new Map<Breed, PartnerRule>();
   const grantRe =
     /Grant ([A-Za-z][A-Za-z' -]{0,40}?) to (?:1 |an |the )?(?:Ally )?(Sentinel|Hunter|Warrior|Champion)s?/gi;
@@ -129,12 +137,17 @@ export function pitStars(row: {
 
 export function pairingFit(
   dragon: Dragon,
-  teammates: { dragon: Dragon; atStars?: number | null }[],
+  teammates: {
+    dragon: Dragon;
+    atStars?: number | null;
+    habits?: number[] | null;
+  }[],
   atStars?: number | null,
+  habits?: number[] | null,
 ): { text: string; points: number }[] {
   const fits: { text: string; points: number }[] = [];
   for (const mate of teammates) {
-    for (const rule of partnerRules(mate.dragon)) {
+    for (const rule of partnerRules(mate.dragon, mate.atStars, mate.habits)) {
       if (dragon.breed !== rule.breed) continue;
       const gift = rule.gift ? `${rule.gift} ` : "";
       fits.push({
@@ -142,11 +155,20 @@ export function pairingFit(
         points: 34,
       });
     }
-    for (const need of dragonNeedGates(mate.dragon)) {
+    for (const need of dragonNeedGates(mate.dragon, mate.atStars, mate.habits)) {
       if (!qualifiesForStars(need.unlockStars, mate.atStars)) continue;
-      if (dragonProvides(mate.dragon, need.ability, mate.atStars)) continue;
-      if (!dragonProvides(dragon, need.ability, atStars)) continue;
-      const payoff = needWhyShort(mate.dragon, need.ability, mate.atStars ?? null);
+      if (
+        dragonProvides(mate.dragon, need.ability, mate.atStars, mate.habits)
+      ) {
+        continue;
+      }
+      if (!dragonProvides(dragon, need.ability, atStars, habits)) continue;
+      const payoff = needWhyShort(
+        mate.dragon,
+        need.ability,
+        mate.atStars ?? null,
+        mate.habits,
+      );
       fits.push({
         text: payoff
           ? `Gives ${mate.dragon.name} ${need.ability} — ${payoff}`
@@ -155,7 +177,7 @@ export function pairingFit(
       });
     }
   }
-  for (const rule of partnerRules(dragon)) {
+  for (const rule of partnerRules(dragon, atStars, habits)) {
     const partner = teammates.find((mate) => mate.dragon.breed === rule.breed);
     if (!partner) continue;
     fits.push({
@@ -163,14 +185,14 @@ export function pairingFit(
       points: 30,
     });
   }
-  for (const need of dragonNeedGates(dragon)) {
+  for (const need of dragonNeedGates(dragon, atStars, habits)) {
     if (!qualifiesForStars(need.unlockStars, atStars)) continue;
-    if (dragonProvides(dragon, need.ability, atStars)) continue;
+    if (dragonProvides(dragon, need.ability, atStars, habits)) continue;
     const partner = teammates.find((mate) =>
-      dragonProvides(mate.dragon, need.ability, mate.atStars),
+      dragonProvides(mate.dragon, need.ability, mate.atStars, mate.habits),
     );
     if (!partner) continue;
-    const payoff = needWhyShort(dragon, need.ability, atStars ?? null);
+    const payoff = needWhyShort(dragon, need.ability, atStars ?? null, habits);
     fits.push({
       text: payoff
         ? `Gets ${need.ability} from ${partner.dragon.name} — ${payoff}`
@@ -216,13 +238,14 @@ function partnerOnOtherTeam(
       const needStars = provideUnlockStars(row.dragon, ability);
       if (needStars === undefined) continue;
       const ownedStars = pitStars(row);
-      hits.push({
-        dragonName: row.dragon.name,
-        lineupName: lineup.name,
-        live: dragonProvides(row.dragon, ability, ownedStars),
-        needStars,
-        ownedStars,
-      });
+        const habits = liveOwnedHabits(row.owned, "pit");
+        hits.push({
+          dragonName: row.dragon.name,
+          lineupName: lineup.name,
+          live: dragonProvides(row.dragon, ability, ownedStars, habits),
+          needStars,
+          ownedStars,
+        });
     }
   }
   return hits.find((hit) => hit.live) ?? hits[0] ?? null;
@@ -246,7 +269,7 @@ function partnerIdleInPit(
     if (needStars === undefined) continue;
     hits.push({
       dragonName: dragon.name,
-      live: dragonProvides(dragon, ability, owned.starRank),
+      live: dragonProvides(dragon, ability, owned.starRank, owned.habits),
       needStars,
       ownedStars: owned.starRank,
     });
@@ -304,19 +327,44 @@ function otherLineBreed(
 function lockedProviders(
   mates: ResolvedSlot[],
   ability: string,
-): { dragon: Dragon; ownedStars: number | null; needStars: number }[] {
+  kind: LineupKind,
+): {
+  dragon: Dragon;
+  ownedStars: number | null;
+  needStars: number;
+  cause: "stars" | "habit";
+}[] {
   const locked: {
     dragon: Dragon;
     ownedStars: number | null;
     needStars: number;
+    cause: "stars" | "habit";
   }[] = [];
   for (const mate of mates) {
     const needStars = provideUnlockStars(mate.dragon, ability);
     if (needStars === undefined) continue;
     const ownedStars = pitStars(mate);
-    if (dragonProvides(mate.dragon, ability, ownedStars)) continue;
+    const habits = liveOwnedHabits(mate.owned, kind);
+    if (dragonProvides(mate.dragon, ability, ownedStars, habits)) continue;
     if (needStars == null) continue;
-    locked.push({ dragon: mate.dragon, ownedStars, needStars });
+    if (!qualifiesForStars(needStars, ownedStars)) {
+      locked.push({
+        dragon: mate.dragon,
+        ownedStars,
+        needStars,
+        cause: "stars",
+      });
+      continue;
+    }
+    const habitNum = habitNumberForUnlockStars(needStars);
+    if (habitNum != null && habits != null && !habits.includes(habitNum)) {
+      locked.push({
+        dragon: mate.dragon,
+        ownedStars,
+        needStars,
+        cause: "habit",
+      });
+    }
   }
   return locked;
 }
@@ -333,8 +381,9 @@ export function pairingReport(
   for (const row of placed) {
     const mates = placed.filter((other) => other.dragon.id !== row.dragon.id);
     const ownedStars = pitStars(row);
+    const habits = liveOwnedHabits(row.owned, lineup.kind);
 
-    for (const rule of partnerRules(row.dragon)) {
+    for (const rule of partnerRules(row.dragon, ownedStars, habits)) {
       const partners = mates.filter(
         (mate) => mate.dragon.breed === rule.breed,
       );
@@ -369,6 +418,7 @@ export function pairingReport(
                 first.dragon,
                 kitStars(row, lineup.kind),
                 breed,
+                habits,
               )
             : null;
         if (live) buffs.push(...live.buffs);
@@ -385,13 +435,14 @@ export function pairingReport(
       }
     }
 
-    for (const need of dragonNeedGates(row.dragon)) {
-      if (dragonProvides(row.dragon, need.ability, ownedStars)) continue;
+    for (const need of dragonNeedGates(row.dragon, ownedStars, habits)) {
+      if (dragonProvides(row.dragon, need.ability, ownedStars, habits)) continue;
       if (!qualifiesForStars(need.unlockStars, ownedStars)) {
         const { why, stats } = needWhy(
           row.dragon,
           need.ability,
           need.unlockStars ?? ownedStars,
+          habits,
         );
         cons.push({
           id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:stars`,
@@ -413,7 +464,12 @@ export function pairingReport(
       }
 
       const live = mates.filter((mate) =>
-        dragonProvides(mate.dragon, need.ability, pitStars(mate)),
+        dragonProvides(
+          mate.dragon,
+          need.ability,
+          pitStars(mate),
+          liveOwnedHabits(mate.owned, lineup.kind),
+        ),
       );
       if (live.length > 0) {
         const names = joinNames(live.map((mate) => mate.dragon.name));
@@ -424,6 +480,7 @@ export function pairingReport(
           names,
           live[0].dragon,
           kitStars(row, lineup.kind),
+          habits,
         );
         buffs.push(...payoff.buffs);
         pros.push({
@@ -437,28 +494,34 @@ export function pairingReport(
         continue;
       }
 
-      const locked = lockedProviders(mates, need.ability);
+      const locked = lockedProviders(mates, need.ability, lineup.kind);
       if (locked.length > 0) {
         const first = locked[0];
         const { why, stats } = needWhy(
           row.dragon,
           need.ability,
           kitStars(row, lineup.kind),
+          habits,
         );
         cons.push({
           id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}:locked`,
           tone: "con",
-          cause: "stars",
+          cause: first.cause === "habit" ? "teammate" : "stars",
           stars: first.needStars,
           ownedStars: first.ownedStars,
           ability: need.ability,
           stats,
-          title: `${first.dragon.name} has ${need.ability} at ${first.needStars}★`,
+          title:
+            first.cause === "habit"
+              ? `${first.dragon.name}’s ${need.ability} habit isn’t marked bought`
+              : `${first.dragon.name} has ${need.ability} at ${first.needStars}★`,
           detail: withNeedWhy(
             why,
-            first.ownedStars == null
-              ? `${row.dragon.name} wants ${need.ability}, but ${first.dragon.name} is not in your pit yet.`
-              : `${row.dragon.name} wants ${need.ability} on this line. ${first.dragon.name} brings it at ${first.needStars}★ — you have ${first.ownedStars}★.`,
+            first.cause === "habit"
+              ? `${row.dragon.name} wants ${need.ability} on this line. Open ${first.dragon.name} in Hatchery and check that habit.`
+              : first.ownedStars == null
+                ? `${row.dragon.name} wants ${need.ability}, but ${first.dragon.name} is not in your pit yet.`
+                : `${row.dragon.name} wants ${need.ability} on this line. ${first.dragon.name} brings it at ${first.needStars}★ — you have ${first.ownedStars}★.`,
           ),
         });
         continue;
@@ -472,6 +535,7 @@ export function pairingReport(
         row.dragon,
         need.ability,
         kitStars(row, lineup.kind),
+        habits,
       );
       cons.push({
         id: `con:${row.dragon.id}:need:${need.ability.toLowerCase()}`,

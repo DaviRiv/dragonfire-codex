@@ -31,7 +31,7 @@ import {
   roleLabels,
   type CompRole,
 } from "@/lib/roles";
-import { vanguardBonus } from "@/lib/habits";
+import { vanguardBonus, liveOwnedHabits } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, PitState, SlotId } from "@/lib/types";
@@ -130,7 +130,11 @@ export function LineupEditor({
       (row) => row.slot !== selectedSlot,
     );
     return lineGapHeadline(
-      mates.map((row) => ({ dragon: row.dragon, atStars: row.starRank })),
+      mates.map((row) => ({
+        dragon: row.dragon,
+        atStars: row.starRank,
+        habits: liveOwnedHabits(row.owned, lineup.kind),
+      })),
     );
   }, [lineup, state, selectedSlot]);
 
@@ -566,6 +570,11 @@ export function LineupEditor({
             ? (state.owned.find((row) => row.dragonId === inspecting.id)
                 ?.starRank ?? null)
             : null
+        }
+        ownedHabits={
+          inspecting && !isTheory
+            ? state.owned.find((row) => row.dragonId === inspecting.id)?.habits
+            : undefined
         }
         synergyBuffs={
           inspecting

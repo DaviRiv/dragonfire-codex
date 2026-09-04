@@ -62,6 +62,12 @@ export interface OwnedDragon {
   starRank: number;
   reignLevel: number;
   notes: string;
+  /**
+   * Habits 1–5 this dragon actually has. Stars only unlock the slot
+   * (2 / 4 / 6 / 8 / 10); you still buy each habit. Missing on old saves
+   * is filled from star rank when the pit is loaded.
+   */
+  habits: number[];
 }
 
 export interface LineupPick {

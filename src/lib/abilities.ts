@@ -1,4 +1,4 @@
-import { dragonKit, HABIT_UNLOCK_STARS } from "@/lib/habits";
+import { dragonKit, habitNumberForUnlockStars, HABIT_UNLOCK_STARS } from "@/lib/habits";
 import { qualifiesForStars } from "@/lib/stars";
 import type { Dragon, GatedAbility } from "@/lib/types";
 
@@ -84,9 +84,24 @@ export function migrateGates(raw: unknown): GatedAbility[] {
   return uniqueGates(next);
 }
 
-function kitText(dragon: Dragon): string {
+function kitText(
+  dragon: Dragon,
+  atStars?: number | null,
+  habits?: number[] | null,
+): string {
   const kit = dragonKit(dragon);
-  return [kit.command, ...kit.extras.map((line) => line.body)].join(" ");
+  const extras = kit.extras.filter((line) => {
+    if (line.unlockStars == null) return true;
+    if (atStars !== undefined && !qualifiesForStars(line.unlockStars, atStars)) {
+      return false;
+    }
+    if (habits != null) {
+      const n = habitNumberForUnlockStars(line.unlockStars);
+      if (n != null && !habits.includes(n)) return false;
+    }
+    return true;
+  });
+  return [kit.command, ...extras.map((line) => line.body)].join(" ");
 }
 
 function extraNeedsFromKit(text: string): GatedAbility[] {
@@ -102,10 +117,24 @@ function extraNeedsFromKit(text: string): GatedAbility[] {
   return found;
 }
 
-export function dragonNeedGates(dragon: Dragon): GatedAbility[] {
+function needMatchesHabits(
+  need: GatedAbility,
+  habits?: number[] | null,
+): boolean {
+  if (habits == null) return true;
+  const n = habitNumberForUnlockStars(need.unlockStars);
+  if (n == null) return true;
+  return habits.includes(n);
+}
+
+export function dragonNeedGates(
+  dragon: Dragon,
+  atStars?: number | null,
+  habits?: number[] | null,
+): GatedAbility[] {
   return uniqueGates([
-    ...(dragon.needs ?? []),
-    ...extraNeedsFromKit(kitText(dragon)),
+    ...(dragon.needs ?? []).filter((need) => needMatchesHabits(need, habits)),
+    ...extraNeedsFromKit(kitText(dragon, atStars, habits)),
   ]);
 }
 
@@ -123,24 +152,32 @@ function provideGate(dragon: Dragon, ability: string): GatedAbility | undefined 
 
 /**
  * Hub `provides`. Pass `atStars` to honor the habit gate (pit rank, or null
- * if the dragon is not owned). Omit `atStars` for catalog identity (role chips).
+ * if the dragon is not owned). Pass `habits` (1–5) so a deselected habit is
+ * not live. Omit both for catalog identity (role chips).
  */
 export function dragonProvides(
   dragon: Dragon,
   ability: string,
   atStars?: number | null,
+  habits?: number[] | null,
 ): boolean {
   const want = canonAbility(ability);
   if (!want) return false;
   if (want === "Control Effect") {
     return CONTROL_EFFECTS.some((effect) =>
-      dragonProvides(dragon, effect, atStars),
+      dragonProvides(dragon, effect, atStars, habits),
     );
   }
   const gate = provideGate(dragon, want);
   if (!gate) return false;
-  if (atStars === undefined) return true;
-  return qualifiesForStars(gate.unlockStars, atStars);
+  if (atStars !== undefined && !qualifiesForStars(gate.unlockStars, atStars)) {
+    return false;
+  }
+  if (habits != null) {
+    const n = habitNumberForUnlockStars(gate.unlockStars);
+    if (n != null && !habits.includes(n)) return false;
+  }
+  return true;
 }
 
 export function provideUnlockStars(

@@ -1,5 +1,6 @@
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { migrateGates } from "@/lib/abilities";
+import { defaultHabits, normalizeHabits, sanitizeHabits } from "@/lib/habits";
 import {
   clampReign,
   clampStar,
@@ -79,6 +80,38 @@ export function newId(prefix: string): string {
   return `${prefix}-${rand}`;
 }
 
+export function newOwnedDragon(
+  dragonId: string,
+  starRank: number,
+  reignLevel = 1,
+  habits?: number[],
+): OwnedDragon {
+  const stars = clampStar(starRank);
+  return {
+    id: newId("own"),
+    dragonId,
+    starRank: stars,
+    reignLevel: clampReign(reignLevel),
+    notes: "",
+    habits: habits ? sanitizeHabits(habits) : defaultHabits(stars),
+  };
+}
+
+function migrateOwned(raw: unknown): OwnedDragon | null {
+  if (!raw || typeof raw !== "object") return null;
+  const v = raw as Partial<OwnedDragon> & { habits?: unknown };
+  if (typeof v.id !== "string" || typeof v.dragonId !== "string") return null;
+  const starRank = clampStar(typeof v.starRank === "number" ? v.starRank : 1);
+  return {
+    id: v.id,
+    dragonId: v.dragonId,
+    starRank,
+    reignLevel: clampReign(typeof v.reignLevel === "number" ? v.reignLevel : 1),
+    notes: typeof v.notes === "string" ? v.notes : "",
+    habits: normalizeHabits(v.habits, starRank),
+  };
+}
+
 export function nowIso(): string {
   return new Date().toISOString();
 }
@@ -154,7 +187,9 @@ export function normalizePitState(value: unknown): PitState | null {
     return null;
   }
   if (!Array.isArray(v.customDragons)) return null;
-  const owned = v.owned as OwnedDragon[];
+  const owned = v.owned
+    .map(migrateOwned)
+    .filter((row): row is OwnedDragon => Boolean(row));
   const customDragons = (v.customDragons as Dragon[]).map((dragon) => ({
     ...dragon,
     needs: migrateGates(dragon.needs),

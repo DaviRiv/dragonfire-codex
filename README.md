@@ -67,7 +67,9 @@ with HBO, Warner Bros., or the game.
   from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
   stars: yellow (1★ each), then red from the left (2★ each). 10★ is five
   red. 0★ means you do not own them. Use − / + or open a dragon for
-  Yellow 1–5 / Red 6–10.
+  Yellow 1–5 / Red 6–10. The magnifying glass on each tile picks which
+  Habits 1–5 you bought (stars only unlock the slot). Unchecked habits
+  stay out of the live kit.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 

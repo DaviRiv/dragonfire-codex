@@ -26,6 +26,7 @@ export function DragonSheet({
   onAction,
   actionDisabled,
   ownedStars,
+  ownedHabits,
   synergyBuffs,
   extra,
 }: {
@@ -39,6 +40,7 @@ export function DragonSheet({
   onAction?: () => void;
   actionDisabled?: boolean;
   ownedStars?: number | null;
+  ownedHabits?: number[];
   synergyBuffs?: SynergyBuff[];
   extra?: ReactNode;
 }) {
@@ -72,6 +74,7 @@ export function DragonSheet({
                 starRank={starRank}
                 reignLevel={reignLevel}
                 ownedStars={ownedStars}
+                ownedHabits={ownedHabits}
                 synergyBuffs={synergyBuffs}
               />
             </div>

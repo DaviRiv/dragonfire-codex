@@ -78,8 +78,13 @@ export function healingAbilities(
 export function healUnlocked(
   heal: HealingAbility,
   starRank: number,
+  habits?: number[] | null,
 ): boolean {
-  return heal.stars == null || starRank >= heal.stars;
+  if (heal.stars != null && starRank < heal.stars) return false;
+  if (habits != null && heal.habit != null && !habits.includes(heal.habit)) {
+    return false;
+  }
+  return true;
 }
 
 /** Compact chip: "Heal" if Command recovers, otherwise the earliest star gate. */
@@ -100,9 +105,17 @@ export function healGateTitle(heal: HealingAbility): string {
 export function compactHealLine(
   heal: HealingAbility,
   starRank: number,
+  habits?: number[] | null,
 ): string {
-  if (healUnlocked(heal, starRank)) {
+  if (healUnlocked(heal, starRank, habits)) {
     return `${heal.label} · ${heal.short}`;
+  }
+  if (
+    habits != null &&
+    heal.habit != null &&
+    !habits.includes(heal.habit)
+  ) {
+    return `${heal.label} · not bought · ${heal.short}`;
   }
   return `${heal.label} · needs ${heal.stars}★ · ${heal.short}`;
 }
