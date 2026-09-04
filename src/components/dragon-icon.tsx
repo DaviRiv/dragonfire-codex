@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { dragonImageSrc } from "@/components/dragon-portrait";
-import { PortraitStars } from "@/components/portrait-stars";
+import { showRedStars, StarBand } from "@/components/portrait-stars";
 import type { Breed, Rarity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +65,9 @@ export function DragonIcon({
   dimmed?: boolean;
   onClick?: () => void;
 }) {
+  const rank = stars ?? 0;
   const showStars = stars != null && !empty;
+  const red = showStars && showRedStars(rank, { interactive: Boolean(onStarsChange) });
   const faceClass = cn(
     "relative block size-full overflow-hidden rounded-full bg-black/50",
     empty
@@ -106,9 +108,19 @@ export function DragonIcon({
         "relative inline-flex flex-col items-center",
         showStars && starsLayout === "row" && "gap-0.5",
         showStars && starsLayout === "arc" && "pb-1.5",
+        red && starsLayout === "arc" && "pt-1.5",
         className,
       )}
     >
+      {showStars && starsLayout === "row" && red ? (
+        <StarBand
+          tone="red"
+          value={rank}
+          onChange={onStarsChange}
+          size={starSize[size]}
+          layout="row"
+        />
+      ) : null}
       <div className={cn("relative", sizeClass[size])}>
         {onClick ? (
           <button type="button" onClick={onClick} className={cn(faceClass, "border-0 p-0 select-none")}>
@@ -117,9 +129,20 @@ export function DragonIcon({
         ) : (
           <div className={faceClass}>{face}</div>
         )}
+        {showStars && starsLayout === "arc" && red ? (
+          <StarBand
+            tone="red"
+            value={rank}
+            onChange={onStarsChange}
+            size={starSize[size]}
+            layout="arc"
+            className="pointer-events-none absolute inset-x-[-12%] top-[-3px] z-10 [&_button]:pointer-events-auto"
+          />
+        ) : null}
         {showStars && starsLayout === "arc" ? (
-          <PortraitStars
-            value={stars}
+          <StarBand
+            tone="gold"
+            value={rank}
             onChange={onStarsChange}
             size={starSize[size]}
             layout="arc"
@@ -128,8 +151,9 @@ export function DragonIcon({
         ) : null}
       </div>
       {showStars && starsLayout === "row" ? (
-        <PortraitStars
-          value={stars}
+        <StarBand
+          tone="gold"
+          value={rank}
           onChange={onStarsChange}
           size={starSize[size]}
           layout="row"

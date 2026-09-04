@@ -85,9 +85,9 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap stars on a portrait to mark them owned at that rank — the same
-          gold row as in-game. This is your collection, not a Pit row. Pit is
-          reign, notes, and teams.
+          Tap stars on a portrait to mark them owned at that rank. Gold is
+          1–5, same as in-game. From 6★, red stars fill in above, left to
+          right. This is your collection, not a Pit row.
         </p>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">

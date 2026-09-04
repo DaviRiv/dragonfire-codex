@@ -65,7 +65,8 @@ with HBO, Warner Bros., or the game.
   site has them. Kit text, base stats, and star/reign scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). Names Hub lists
   as unreleased sit at the bottom. Portraits use the in-game gold star
-  row — tap a star to mark owned at that rank, then pick them on Team.
+  row (1–5). From 6★, red stars fill in above, left to right. Tap a star
+  to mark owned at that rank, then pick them on Team.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 
