@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { dragonImageSrc } from "@/components/dragon-portrait";
-import { showRedStars, StarBand } from "@/components/portrait-stars";
+import { isAwakened, StarBand, STAR_ROW } from "@/components/portrait-stars";
 import type { Breed, Rarity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +67,10 @@ export function DragonIcon({
 }) {
   const rank = stars ?? 0;
   const showStars = stars != null && !empty;
-  const red = showStars && showRedStars(rank, { interactive: Boolean(onStarsChange) });
+  const awakened = showStars && isAwakened(rank);
+  const showRed =
+    showStars && (awakened || Boolean(onStarsChange && rank >= STAR_ROW));
+  const showGold = showStars && !awakened;
   const faceClass = cn(
     "relative block size-full overflow-hidden rounded-full bg-black/50",
     empty
@@ -107,12 +110,12 @@ export function DragonIcon({
       className={cn(
         "relative inline-flex flex-col items-center",
         showStars && starsLayout === "row" && "gap-0.5",
-        showStars && starsLayout === "arc" && "pb-1.5",
-        red && starsLayout === "arc" && "pt-1.5",
+        showStars && starsLayout === "arc" && showGold && "pb-1.5",
+        showRed && starsLayout === "arc" && "pt-1.5",
         className,
       )}
     >
-      {showStars && starsLayout === "row" && red ? (
+      {showStars && starsLayout === "row" && showRed ? (
         <StarBand
           tone="red"
           value={rank}
@@ -129,7 +132,7 @@ export function DragonIcon({
         ) : (
           <div className={faceClass}>{face}</div>
         )}
-        {showStars && starsLayout === "arc" && red ? (
+        {showStars && starsLayout === "arc" && showRed ? (
           <StarBand
             tone="red"
             value={rank}
@@ -139,7 +142,7 @@ export function DragonIcon({
             className="pointer-events-none absolute inset-x-[-12%] top-[-3px] z-10 [&_button]:pointer-events-auto"
           />
         ) : null}
-        {showStars && starsLayout === "arc" ? (
+        {showGold && starsLayout === "arc" ? (
           <StarBand
             tone="gold"
             value={rank}
@@ -150,7 +153,7 @@ export function DragonIcon({
           />
         ) : null}
       </div>
-      {showStars && starsLayout === "row" ? (
+      {showGold && starsLayout === "row" ? (
         <StarBand
           tone="gold"
           value={rank}

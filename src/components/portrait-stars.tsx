@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** In-game portraits show five gold slots. Ranks 6–10 sit above as red stars, left to right. */
+/** Five gold slots (1–5). At 6★ those convert to red and refill left to right (6–10). */
 export const STAR_ROW = 5;
 export const STAR_MAX = 10;
 
@@ -21,6 +21,18 @@ const arcTiltTop = ["rotate-[16deg]", "rotate-[8deg]", "rotate-0", "-rotate-[8de
 
 export type StarTone = "gold" | "red";
 export type StarSize = keyof typeof sizeClass;
+
+export function isAwakened(value: number): boolean {
+  return value > STAR_ROW;
+}
+
+export function goldFilled(value: number): number {
+  return isAwakened(value) ? 0 : Math.max(0, Math.min(STAR_ROW, value));
+}
+
+export function redFilled(value: number): number {
+  return isAwakened(value) ? Math.max(0, Math.min(STAR_ROW, value - STAR_ROW)) : 0;
+}
 
 export function GameStar({
   filled,
@@ -72,7 +84,6 @@ function StarSlot({
   arcTop,
   index,
   tone,
-  hideEmpty,
 }: {
   rank: number;
   filled: boolean;
@@ -82,11 +93,7 @@ function StarSlot({
   arcTop?: boolean;
   index: number;
   tone: StarTone;
-  hideEmpty?: boolean;
 }) {
-  if (hideEmpty && !filled && !onChange) {
-    return <span className={cn("inline-flex", sizeClass[size])} />;
-  }
   const star = (
     <GameStar
       filled={filled}
@@ -136,8 +143,8 @@ export function StarBand({
   className?: string;
 }) {
   const offset = tone === "red" ? STAR_ROW : 0;
+  const filledCount = tone === "red" ? redFilled(value) : goldFilled(value);
   const arcTop = tone === "red" && layout === "arc";
-  const hideEmpty = tone === "red" && !onChange;
 
   return (
     <div
@@ -146,7 +153,6 @@ export function StarBand({
         layout === "arc" ? "-space-x-px" : "gap-px",
         className,
       )}
-      aria-hidden={tone === "red" && value <= STAR_ROW ? true : undefined}
     >
       {Array.from({ length: STAR_ROW }, (_, i) => {
         const rank = offset + i + 1;
@@ -154,14 +160,13 @@ export function StarBand({
           <StarSlot
             key={rank}
             rank={rank}
-            filled={rank <= value}
+            filled={i < filledCount}
             size={size}
             onChange={onChange}
             arc={layout === "arc"}
             arcTop={arcTop}
             index={i}
             tone={tone}
-            hideEmpty={hideEmpty}
           />
         );
       })}
@@ -169,16 +174,7 @@ export function StarBand({
   );
 }
 
-export function showRedStars(
-  value: number,
-  opts?: { interactive?: boolean; always?: boolean },
-): boolean {
-  if (opts?.always) return true;
-  if (value > STAR_ROW) return true;
-  return Boolean(opts?.interactive && value >= STAR_ROW);
-}
-
-/** Gold 1–5 with optional red 6–10 above. Used by the sheet picker. */
+/** Gold under 1–5. At 6★ gold converts to red and refills above, left to right. */
 export function PortraitStars({
   value,
   onChange,
@@ -194,17 +190,16 @@ export function PortraitStars({
   alwaysTwoRows?: boolean;
   className?: string;
 }) {
-  const red = showRedStars(value, {
-    interactive: Boolean(onChange),
-    always: alwaysTwoRows,
-  });
+  const awakened = isAwakened(value);
+  const showRed = alwaysTwoRows || awakened || Boolean(onChange && value >= STAR_ROW);
+  const showGold = alwaysTwoRows || !awakened;
 
   return (
     <div
       className={cn("flex flex-col items-center gap-0.5", className)}
       aria-label={`${value} stars`}
     >
-      {red ? (
+      {showRed ? (
         <StarBand
           tone="red"
           value={value}
@@ -213,13 +208,15 @@ export function PortraitStars({
           layout={layout}
         />
       ) : null}
-      <StarBand
-        tone="gold"
-        value={value}
-        onChange={onChange}
-        size={size}
-        layout={layout}
-      />
+      {showGold ? (
+        <StarBand
+          tone="gold"
+          value={value}
+          onChange={onChange}
+          size={size}
+          layout={layout}
+        />
+      ) : null}
     </div>
   );
 }
