@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { localComboLines } from "@/lib/ai/local";
+import { completeChat, keyFromRequest } from "@/lib/ai/openai";
 import { parseAiLines } from "@/lib/ai/parse";
-import { buildUserPrompt, TEAM_COMBO_SYSTEM } from "@/lib/ai/prompt";
+import { buildUserPrompt } from "@/lib/ai/prompt";
 import { parseRosterCards, type SuggestRequest } from "@/lib/ai/roster";
 import { MODES, TROOP_TYPES } from "@/lib/labels";
 import { emptySlots } from "@/lib/lineup";
@@ -82,50 +83,13 @@ function stubState(request: SuggestRequest): PitState {
   };
 }
 
-async function callModel(userPrompt: string): Promise<string> {
-  const key = process.env.OPENAI_API_KEY?.trim();
-  if (!key) {
-    throw new Error("missing-key");
-  }
-  const base = (
-    process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1"
-  ).replace(/\/$/, "");
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
-  const response = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: TEAM_COMBO_SYSTEM },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(`model-${response.status}: ${detail.slice(0, 200)}`);
-  }
-  const json = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  const text = json.choices?.[0]?.message?.content?.trim();
-  if (!text) throw new Error("empty-model");
-  return text;
-}
-
 export async function POST(request: Request) {
   try {
     const payload = readRequest(await request.json());
     const userPrompt = buildUserPrompt(payload);
-    const key = process.env.OPENAI_API_KEY?.trim();
+    const auth = keyFromRequest(request);
 
-    if (!key) {
+    if (!auth) {
       const lines = localComboLines(
         stubLineup(payload),
         stubState(payload),
@@ -135,19 +99,23 @@ export async function POST(request: Request) {
         source: "local" as const,
         lines,
         warning:
-          "No OPENAI_API_KEY. Used the local ranker. Copy the prompt into ChatGPT, or add a key to .env.local.",
+          "Not logged in to OpenAI. Used the local ranker. Log in with an API key, or copy the prompt into ChatGPT.",
       });
     }
 
     try {
-      const raw = await callModel(userPrompt);
+      const raw = await completeChat(auth.key, userPrompt);
       const lines = parseAiLines(
         raw,
         payload.roster,
         payload.troop,
         payload.mode,
       );
-      return NextResponse.json({ source: "model" as const, lines });
+      return NextResponse.json({
+        source: "model" as const,
+        via: auth.source,
+        lines,
+      });
     } catch (error) {
       const lines = localComboLines(
         stubLineup(payload),
@@ -156,10 +124,12 @@ export async function POST(request: Request) {
       );
       const message =
         error instanceof Error ? error.message : "model failed";
+      const who =
+        auth.source === "user" ? "your OpenAI key" : "the server key";
       return NextResponse.json({
         source: "local" as const,
         lines,
-        warning: `Model failed (${message.slice(0, 120)}). Showing the local ranker instead.`,
+        warning: `OpenAI failed with ${who} (${message.slice(0, 80)}). Showing the local ranker instead.`,
       });
     }
   } catch (error) {

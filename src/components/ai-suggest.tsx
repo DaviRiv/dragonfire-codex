@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
+import { OpenAiLogin } from "@/components/openai-login";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { filledPrompt, makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool } from "@/lib/ai/roster";
+import { useOpenAiSession } from "@/lib/ai/session";
 import { findDragon } from "@/lib/dragons";
 import { modeShort, troopShort } from "@/lib/labels";
 import type { Lineup, PitState } from "@/lib/types";
@@ -30,6 +32,8 @@ export function AiSuggest({
   const [warning, setWarning] = useState<string | null>(null);
   const [lines, setLines] = useState<AiLine[]>([]);
   const [source, setSource] = useState<"model" | "local" | null>(null);
+  const [via, setVia] = useState<"user" | "env" | null>(null);
+  const { session } = useOpenAiSession();
 
   const roster = useMemo(
     () => collectRoster(state, lineup, pool),
@@ -59,15 +63,22 @@ export function AiSuggest({
     }
     setBusy(true);
     setWarning(null);
+    setVia(null);
     try {
       const response = await fetch("/api/ai/suggest-teams", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.apiKey
+            ? { Authorization: `Bearer ${session.apiKey}` }
+            : {}),
+        },
         body: JSON.stringify(request),
       });
       const json = (await response.json()) as {
         lines?: AiLine[];
         source?: "model" | "local";
+        via?: "user" | "env";
         warning?: string;
         error?: string;
       };
@@ -76,6 +87,7 @@ export function AiSuggest({
       }
       setLines(json.lines ?? []);
       setSource(json.source ?? null);
+      setVia(json.via ?? null);
       setWarning(json.warning ?? null);
       if (json.source === "model") {
         toast.success("AI combinations ready.");
@@ -94,9 +106,10 @@ export function AiSuggest({
     >
       <p className="text-[13px] leading-snug text-muted-foreground">
         Fills a template with this roster and asks for 2–3 lines. Pit is every
-        dragon you own. Hatchery is the full catalog. Copy the prompt into
-        ChatGPT if you have no API key.
+        dragon you own. Hatchery is the full catalog. Log in with an OpenAI
+        key to run the model here, or copy the prompt into ChatGPT.
       </p>
+      <OpenAiLogin />
       {request.skipUsed ? (
         <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
           Skip other teams is on — the whole pit still goes in the prompt, with
@@ -110,6 +123,7 @@ export function AiSuggest({
             setPool("pit");
             setLines([]);
             setSource(null);
+            setVia(null);
             setWarning(null);
           }}
         >
@@ -121,6 +135,7 @@ export function AiSuggest({
             setPool("hatchery");
             setLines([]);
             setSource(null);
+            setVia(null);
             setWarning(null);
           }}
         >
@@ -164,7 +179,13 @@ export function AiSuggest({
         <p className="mt-2 text-[13px] leading-snug text-amber-100">{warning}</p>
       ) : null}
       {source === "model" ? (
-        <p className="mt-2 text-[13px] text-emerald-200">From the model.</p>
+        <p className="mt-2 text-[13px] text-emerald-200">
+          {via === "user"
+            ? "From your OpenAI key."
+            : via === "env"
+              ? "From the server OpenAI key."
+              : "From the model."}
+        </p>
       ) : null}
       {lines.length > 0 ? (
         <ul className="mt-2 space-y-2">

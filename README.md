@@ -51,9 +51,9 @@ with HBO, Warner Bros., or the game.
   line, what survives a Campaign reset, and the troop triangle.
   **Why this team** splits pros (green, left) and cons (red, right).
   **Ask AI** fills a template with your pit or the full hatchery and
-  returns 2–3 combinations. Copy the prompt into ChatGPT, or set
-  `OPENAI_API_KEY` in `.env.local` to call the model from the app.
-  Without a key it uses the same local ranker as Suggest.
+  returns 2–3 combinations. **Log in with OpenAI** (a platform API key
+  kept in this browser) to run the model in the app, or copy the prompt
+  into ChatGPT. Without a login it uses the same local ranker as Suggest.
 - **Pit** — your collection. Search, breed, rarity, and troop filters sit
   on the list. Star rank stays between reigns; reign level is this
   campaign. Slotting a team never adds a dragon here — you add them
@@ -109,7 +109,16 @@ with `npm run sync-hub`.
 
 ## Ask AI
 
-Create `.env.local` in the repo root:
+On Team, open **Ask AI** and **Log in with OpenAI**. Paste a secret key
+from [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+The key stays in this browser (`dragonfire-openai.v1`) and is sent only
+when you click **Suggest combinations**. **Log out** removes it.
+
+This is not ChatGPT password login. OpenAI does not give third-party apps
+API access through a ChatGPT account, so the app uses a platform API key.
+
+You can still set a server default in `.env.local` (used when nobody is
+logged in in the browser):
 
 ```
 OPENAI_API_KEY=sk-...
@@ -118,7 +127,5 @@ OPENAI_API_KEY=sk-...
 # OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-Restart `npm run dev`. **Ask AI** on Team then calls the model with the
-filled pit or hatchery prompt. Leave the key empty and the same button
-still returns ranked combinations locally, and **Copy prompt** still
-works.
+Without a browser login or server key, **Suggest combinations** uses the
+same local ranker as Suggest. **Copy prompt** always works.

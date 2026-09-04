@@ -5,7 +5,16 @@ import { samplePit } from "@/data/sample";
 import { localComboLines } from "@/lib/ai/local";
 import { parseAiLines } from "@/lib/ai/parse";
 import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
+import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
 import { collectRoster } from "@/lib/ai/roster";
+
+if (!isUserApiKey("sk-abcdefghijklmnopqrstuvwxyz")) {
+  throw new Error("valid key rejected");
+}
+if (isUserApiKey("not-a-key")) throw new Error("junk key accepted");
+if (maskOpenAiKey("sk-abcdefghijklmnopqrstuvwxyz") !== "sk-…wxyz") {
+  throw new Error("mask mismatch");
+}
 
 const state = samplePit();
 const lineup = state.lineups[0];
