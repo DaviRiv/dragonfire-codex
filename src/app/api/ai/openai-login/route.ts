@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  bearerFromHeader,
-  hasServerOpenAiKey,
-  isUserApiKey,
-  verifyOpenAiKey,
-} from "@/lib/ai/openai";
+import { bearerFromHeader, isUserApiKey } from "@/lib/ai/keys";
+import { hasServerOpenAiKey, verifyOpenAiKey } from "@/lib/ai/openai";
 
 export const runtime = "nodejs";
 

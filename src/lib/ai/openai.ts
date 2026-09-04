@@ -1,8 +1,6 @@
 import { bearerFromHeader, isUserApiKey } from "@/lib/ai/keys";
 import { TEAM_COMBO_SYSTEM } from "@/lib/ai/prompt";
 
-export { bearerFromHeader, isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
-
 export function openaiBaseUrl(): string {
   return (
     process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1"
