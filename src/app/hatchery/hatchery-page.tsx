@@ -5,7 +5,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
 import { MiniChip } from "@/components/chip";
 import { ListFilterBar } from "@/components/list-filter-bar";
-import { StarRank } from "@/components/star-rank";
+import { StarRank, StarStepper } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { DRAGONS, UNRELEASED_DRAGONS } from "@/data/dragons";
 import { lineupsUsingDragon } from "@/lib/dragons";
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 type OwnedFilter = "all" | "owned" | "missing";
 
 export function HatcheryPage() {
-  const { ready, state, setCatalogOwned } = usePit();
+  const { ready, state, setCatalogOwned, adjustOwnedStars } = usePit();
   const [query, setQuery] = useState("");
   const [breed, setBreed] = useState<Breed | "all">("all");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
@@ -85,9 +85,10 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap stars on a portrait to mark them owned. One row of five: yellow
-          is 1★ each, then they turn red from the left (a red is 2★). 10★ is
-          five red. This is your collection, not a Pit row.
+          Mark owned, then set rank with − / +. The portrait shows one row of
+          five: yellow through 5★, then red from the left (a red is 2★). Use
+          + past 5★ — or open the dragon and pick Red 6–10. This is your
+          collection, not a Pit row.
         </p>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
@@ -157,9 +158,16 @@ export function HatcheryPage() {
                     dimmed={!owned}
                     stars={owned?.starRank ?? 0}
                     starsLayout="row"
-                    onStarsChange={(starRank) => setStars(dragon, starRank)}
                     onClick={() => setInspecting(dragon)}
                   />
+                  {owned ? (
+                    <div className="mt-0.5">
+                      <StarStepper
+                        value={owned.starRank}
+                        onDelta={(delta) => adjustOwnedStars(dragon.id, delta)}
+                      />
+                    </div>
+                  ) : null}
                   <MiniChip
                     active={Boolean(owned)}
                     className="mt-1"
@@ -232,8 +240,8 @@ export function HatcheryPage() {
                 />
                 {!inspectingOwned ? (
                   <p className="mt-1 text-[13px] text-muted-foreground">
-                    Tap a star to mark owned at that rank. This does not add
-                    them to Pit.
+                    Tap Yellow 1–5 or Red 6–10, then a star — or use +. This
+                    does not add them to Pit.
                   </p>
                 ) : null}
               </div>

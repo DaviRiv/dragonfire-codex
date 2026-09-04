@@ -20,6 +20,7 @@ const arcTilt = ["-rotate-[16deg]", "-rotate-[8deg]", "rotate-0", "rotate-[8deg]
 export type StarTone = "gold" | "red";
 export type StarFill = "empty" | StarTone;
 export type StarSize = keyof typeof sizeClass;
+export type StarPick = "gold" | "red";
 
 export function starSlots(value: number): StarFill[] {
   const n = Math.max(0, Math.min(STAR_MAX, Math.round(value) || 0));
@@ -32,19 +33,9 @@ export function starSlots(value: number): StarFill[] {
   });
 }
 
-/** Tap a slot (1–5) on the single row to set Hub rank 1–10. */
-export function rankAfterTap(current: number, slot: number): number {
-  const cur = Math.max(0, Math.min(STAR_MAX, current));
+export function rankForPick(mode: StarPick, slot: number): number {
   const i = Math.min(STAR_ROW, Math.max(1, slot));
-  if (cur <= STAR_ROW) {
-    if (cur === STAR_ROW && i === STAR_ROW) return STAR_ROW + 1;
-    return i;
-  }
-  const red = cur - STAR_ROW;
-  if (i < red) return STAR_ROW + i;
-  if (i === red) return cur === STAR_ROW + 1 ? STAR_ROW : cur - 1;
-  if (i === red + 1) return Math.min(STAR_MAX, cur + 1);
-  return i;
+  return mode === "red" ? STAR_ROW + i : i;
 }
 
 export function GameStar({
@@ -91,17 +82,20 @@ export function GameStar({
 export function StarBand({
   value,
   onChange,
+  pick,
   size = "md",
   layout = "row",
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
+  pick?: StarPick;
   size?: StarSize;
   layout?: "row" | "arc";
   className?: string;
 }) {
   const slots = starSlots(value);
+  const interactive = Boolean(onChange && pick);
 
   return (
     <div
@@ -123,25 +117,26 @@ export function StarBand({
             className={layout === "arc" ? cn(arcLift[i], arcTilt[i]) : undefined}
           />
         );
-        if (!onChange) {
+        if (!interactive) {
           return (
             <span key={slot} className="inline-flex">
               {star}
             </span>
           );
         }
+        const next = rankForPick(pick!, slot);
         return (
           <button
             key={slot}
             type="button"
-            aria-label={`${rankAfterTap(value, slot)} stars`}
+            aria-label={`${next} stars`}
             className={cn(
               "inline-flex items-center justify-center rounded-sm",
               size === "sheet" ? "min-h-11 min-w-11" : "p-0.5",
             )}
             onClick={(event) => {
               event.stopPropagation();
-              onChange(rankAfterTap(value, slot));
+              onChange?.(next);
             }}
           >
             {star}
@@ -155,12 +150,14 @@ export function StarBand({
 export function PortraitStars({
   value,
   onChange,
+  pick,
   size = "md",
   layout = "row",
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
+  pick?: StarPick;
   size?: StarSize;
   layout?: "row" | "arc";
   className?: string;
@@ -169,6 +166,7 @@ export function PortraitStars({
     <StarBand
       value={value}
       onChange={onChange}
+      pick={pick}
       size={size}
       layout={layout}
       className={className}

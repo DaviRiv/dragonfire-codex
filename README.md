@@ -66,7 +66,8 @@ with HBO, Warner Bros., or the game.
   from [dragonfire-hub.com](https://dragonfire-hub.com/). Names Hub lists
   as unreleased sit at the bottom. Portraits use one row of five stars:
   yellow (1★ each), then red from the left (2★ each). 10★ is five red.
-  Tap a star to mark owned at that rank, then pick them on Team.
+  Use − / + on Hatchery, or Yellow 1–5 / Red 6–10 in the sheet, then pick
+  them on Team.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 

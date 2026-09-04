@@ -44,7 +44,6 @@ export function DragonIcon({
   size = "md",
   className,
   stars,
-  onStarsChange,
   starsLayout = "arc",
   dimmed,
   onClick,
@@ -60,7 +59,6 @@ export function DragonIcon({
   className?: string;
   /** Hub rank 0–10. Shown as five slots: yellow then red. */
   stars?: number;
-  onStarsChange?: (value: number) => void;
   starsLayout?: "arc" | "row";
   dimmed?: boolean;
   onClick?: () => void;
@@ -104,12 +102,11 @@ export function DragonIcon({
   const band = showStars ? (
     <StarBand
       value={rank}
-      onChange={onStarsChange}
       size={starSize[size]}
       layout={starsLayout === "arc" ? "arc" : "row"}
       className={
         starsLayout === "arc"
-          ? "pointer-events-none absolute inset-x-[-12%] bottom-[-3px] z-10 [&_button]:pointer-events-auto"
+          ? "absolute inset-x-[-12%] bottom-[-3px] z-10"
           : undefined
       }
     />
