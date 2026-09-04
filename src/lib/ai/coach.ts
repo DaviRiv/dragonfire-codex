@@ -60,8 +60,8 @@ Default troop: ${troop} (${request.troop})
 Default mode: ${mode} (${request.mode})
 ${skip}
 
-Roster (id | name | breed | jobs | rank | affinities | flank | needs | gives | kit):
-${request.roster.map(formatRosterLine).join("\n")}`;
+Roster (id | name | jobs | rank | affinities | needs | gives):
+${request.roster.map((card) => formatRosterLine(card, { compact: true })).join("\n")}`;
 }
 
 export function buildCoachMessages(
@@ -69,7 +69,7 @@ export function buildCoachMessages(
   question: string,
   history: CoachHistoryTurn[],
 ): { role: "system" | "user" | "assistant"; content: string }[] {
-  const prior = history.slice(-8).map((turn) => ({
+  const prior = history.slice(-4).map((turn) => ({
     role: turn.role,
     content: turn.content.slice(0, 1200),
   }));

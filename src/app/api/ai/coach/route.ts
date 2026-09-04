@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildCoachMessages, localCoachAnswer } from "@/lib/ai/coach";
-import { completeMessages, keyFromRequest } from "@/lib/ai/openai";
+import { completeMessages, explainOpenAiFailure, keyFromRequest } from "@/lib/ai/openai";
 import { parseCoachReply } from "@/lib/ai/parse";
 import { parseRosterCards, type SuggestRequest } from "@/lib/ai/roster";
 import { stubLineup, stubState } from "@/lib/ai/stub";
@@ -50,7 +50,7 @@ function readCoachRequest(body: unknown): {
         .filter(
           (turn) => turn.role === "user" || turn.role === "assistant",
         )
-        .slice(-8)
+        .slice(-4)
         .map((turn) => ({
           role: turn.role,
           content: turn.content.slice(0, 1200),
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       const raw = await completeMessages(
         auth.key,
         buildCoachMessages(payload, question, history),
-        { temperature: 0.5, timeoutMs: 40000 },
+        { temperature: 0.5, timeoutMs: 40000, maxTokens: 800 },
       );
       const parsed = parseCoachReply(
         raw,
@@ -115,15 +115,13 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       const answer = localCoachAnswer(question, payload, state, lineup);
-      const message =
-        error instanceof Error ? error.message : "model failed";
       const who =
         auth.source === "user" ? "your OpenAI key" : "the server key";
       return NextResponse.json({
         source: "local" as const,
         reply: answer.reply,
         lines: answer.lines,
-        warning: `OpenAI failed with ${who} (${message.slice(0, 80)}). Showing a local line instead.`,
+        warning: explainOpenAiFailure(error, who),
       });
     }
   } catch (error) {

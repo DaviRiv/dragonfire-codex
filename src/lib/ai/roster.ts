@@ -145,10 +145,16 @@ export function collectRoster(
   });
 }
 
-export function formatRosterLine(card: RosterCard): string {
+export function formatRosterLine(
+  card: RosterCard,
+  opts?: { compact?: boolean },
+): string {
   const jobs = card.jobs.join("/");
   const on = card.otherTeam ? ` | on:${card.otherTeam}` : "";
   const theory = card.owned ? "" : " | not-owned";
+  if (opts?.compact) {
+    return `${card.id} | ${card.name} | ${jobs} | ${card.stars}★/R${card.reign} | aff:${card.aff} | needs:${card.needs} | gives:${card.gives}${on}${theory}`;
+  }
   return `${card.id} | ${card.name} | ${card.breed} | ${jobs} | ${card.stars}★/R${card.reign} | aff:${card.aff} | flank:${card.flank} | needs:${card.needs} | gives:${card.gives} | ${card.kit}${on}${theory}`;
 }
 

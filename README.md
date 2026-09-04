@@ -134,3 +134,7 @@ OPENAI_API_KEY=sk-...
 
 Without a browser login or server key, **Suggest combinations** uses the
 same local ranker as Suggest. **Copy prompt** always works.
+
+If OpenAI returns 429, Coach retries a couple of times, then shows a
+local line with a plain-language note: rate limit (wait and send again)
+or quota (add billing at platform.openai.com/account/billing).

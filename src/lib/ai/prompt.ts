@@ -93,7 +93,7 @@ Pool: ${poolLabel}
 ${skip}
 ${note}
 Roster (id | name | breed | jobs | rank | affinities | flank | needs | gives | kit):
-${request.roster.map(formatRosterLine).join("\n")}
+${request.roster.map((card) => formatRosterLine(card)).join("\n")}
 
 Suggest 2-3 combinations from that roster.`;
 }

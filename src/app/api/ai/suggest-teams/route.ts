@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { localComboLines } from "@/lib/ai/local";
-import { completeChat, keyFromRequest } from "@/lib/ai/openai";
+import { completeChat, explainOpenAiFailure, keyFromRequest } from "@/lib/ai/openai";
 import { parseAiLines } from "@/lib/ai/parse";
 import { buildUserPrompt } from "@/lib/ai/prompt";
 import { parseRosterCards, type SuggestRequest } from "@/lib/ai/roster";
@@ -87,14 +87,12 @@ export async function POST(request: Request) {
         stubState(payload),
         payload.roster,
       );
-      const message =
-        error instanceof Error ? error.message : "model failed";
       const who =
         auth.source === "user" ? "your OpenAI key" : "the server key";
       return NextResponse.json({
         source: "local" as const,
         lines,
-        warning: `OpenAI failed with ${who} (${message.slice(0, 80)}). Showing the local ranker instead.`,
+        warning: explainOpenAiFailure(error, who),
       });
     }
   } catch (error) {

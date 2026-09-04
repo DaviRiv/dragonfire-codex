@@ -86,11 +86,11 @@ export function CoachPage() {
     }
     const guess = guessTroopMode(question);
     const userTurn: ChatTurn = { id: turnId(), role: "user", text: question };
-    const history = turns.slice(-8).map((turn) => ({
+    const history = turns.slice(-4).map((turn) => ({
       role: turn.role,
       content:
         turn.role === "assistant" && turn.lines
-          ? JSON.stringify({ reply: turn.text, lines: turn.lines })
+          ? `${turn.text}\n${turn.lines.map((line) => `${line.left}/${line.vanguard}/${line.right}`).join("; ")}`
           : turn.text,
     }));
     setTurns((prev) => [...prev, userTurn]);

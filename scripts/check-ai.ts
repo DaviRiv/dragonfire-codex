@@ -8,6 +8,7 @@ import { parseAiLines, parseCoachReply } from "@/lib/ai/parse";
 import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
 import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
 import { collectRoster } from "@/lib/ai/roster";
+import { explainOpenAiFailure, parseOpenAiError } from "@/lib/ai/openai";
 import { stubLineup, stubState } from "@/lib/ai/stub";
 
 if (!isUserApiKey("sk-abcdefghijklmnopqrstuvwxyz")) {
@@ -82,4 +83,24 @@ console.log(
     .map((line) => `${line.left}/${line.vanguard}/${line.right}`)
     .join(" | "),
 );
-console.log("prompt chars", prompt.length);
+const quota = parseOpenAiError(
+  429,
+  JSON.stringify({
+    error: {
+      message: "You exceeded your current quota",
+      code: "insufficient_quota",
+    },
+  }),
+  null,
+);
+if (
+  !explainOpenAiFailure(quota, "your OpenAI key").includes("out of OpenAI quota")
+) {
+  throw new Error("quota warning");
+}
+const limited = parseOpenAiError(429, "{}", "2");
+if (
+  !explainOpenAiFailure(limited, "your OpenAI key").includes("rate-limited")
+) {
+  throw new Error("rate-limit warning");
+}
