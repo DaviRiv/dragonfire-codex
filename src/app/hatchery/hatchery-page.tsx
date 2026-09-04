@@ -85,9 +85,9 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap stars on a portrait to mark them owned at that rank. Gold is
-          1–5 under the circle. At 6★ those convert to red and refill above,
-          left to right. This is your collection, not a Pit row.
+          Tap stars on a portrait to mark them owned. One row of five: yellow
+          is 1★ each, then they turn red from the left (a red is 2★). 10★ is
+          five red. This is your collection, not a Pit row.
         </p>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">

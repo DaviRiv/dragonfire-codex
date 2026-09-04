@@ -16,7 +16,6 @@ export function StarRank({
       onChange={onChange}
       size={size === "sm" ? "lg" : "sheet"}
       layout="row"
-      alwaysTwoRows
       className={cn(onChange ? "w-full" : undefined)}
     />
   );

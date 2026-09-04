@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Five gold slots (1–5). At 6★ those convert to red and refill left to right (6–10). */
+/** Five slots. Yellow = 1★, red = 2★. 1★ is one yellow; 10★ is five red. */
 export const STAR_ROW = 5;
 export const STAR_MAX = 10;
 
@@ -16,22 +16,35 @@ const sizeClass = {
 
 const arcLift = ["translate-y-0.5", "translate-y-px", "translate-y-0", "translate-y-px", "translate-y-0.5"];
 const arcTilt = ["-rotate-[16deg]", "-rotate-[8deg]", "rotate-0", "rotate-[8deg]", "rotate-[16deg]"];
-const arcLiftTop = ["-translate-y-0.5", "-translate-y-px", "translate-y-0", "-translate-y-px", "-translate-y-0.5"];
-const arcTiltTop = ["rotate-[16deg]", "rotate-[8deg]", "rotate-0", "-rotate-[8deg]", "-rotate-[16deg]"];
 
 export type StarTone = "gold" | "red";
+export type StarFill = "empty" | StarTone;
 export type StarSize = keyof typeof sizeClass;
 
-export function isAwakened(value: number): boolean {
-  return value > STAR_ROW;
+export function starSlots(value: number): StarFill[] {
+  const n = Math.max(0, Math.min(STAR_MAX, Math.round(value) || 0));
+  const red = Math.max(0, n - STAR_ROW);
+  const gold = n <= STAR_ROW ? n : STAR_ROW - red;
+  return Array.from({ length: STAR_ROW }, (_, i) => {
+    if (i < red) return "red";
+    if (i < red + gold) return "gold";
+    return "empty";
+  });
 }
 
-export function goldFilled(value: number): number {
-  return isAwakened(value) ? 0 : Math.max(0, Math.min(STAR_ROW, value));
-}
-
-export function redFilled(value: number): number {
-  return isAwakened(value) ? Math.max(0, Math.min(STAR_ROW, value - STAR_ROW)) : 0;
+/** Tap a slot (1–5) on the single row to set Hub rank 1–10. */
+export function rankAfterTap(current: number, slot: number): number {
+  const cur = Math.max(0, Math.min(STAR_MAX, current));
+  const i = Math.min(STAR_ROW, Math.max(1, slot));
+  if (cur <= STAR_ROW) {
+    if (cur === STAR_ROW && i === STAR_ROW) return STAR_ROW + 1;
+    return i;
+  }
+  const red = cur - STAR_ROW;
+  if (i < red) return STAR_ROW + i;
+  if (i === red) return cur === STAR_ROW + 1 ? STAR_ROW : cur - 1;
+  if (i === red + 1) return Math.min(STAR_MAX, cur + 1);
+  return i;
 }
 
 export function GameStar({
@@ -75,76 +88,20 @@ export function GameStar({
   );
 }
 
-function StarSlot({
-  rank,
-  filled,
-  size,
-  onChange,
-  arc,
-  arcTop,
-  index,
-  tone,
-}: {
-  rank: number;
-  filled: boolean;
-  size: StarSize;
-  onChange?: (value: number) => void;
-  arc?: boolean;
-  arcTop?: boolean;
-  index: number;
-  tone: StarTone;
-}) {
-  const star = (
-    <GameStar
-      filled={filled}
-      size={size}
-      tone={tone}
-      className={
-        arc
-          ? cn(arcTop ? arcLiftTop[index] : arcLift[index], arcTop ? arcTiltTop[index] : arcTilt[index])
-          : undefined
-      }
-    />
-  );
-  if (!onChange) {
-    return <span className="inline-flex">{star}</span>;
-  }
-  return (
-    <button
-      type="button"
-      aria-label={`${rank} stars`}
-      className={cn(
-        "inline-flex items-center justify-center rounded-sm",
-        size === "sheet" ? "min-h-11 min-w-11" : "p-0.5",
-      )}
-      onClick={(event) => {
-        event.stopPropagation();
-        onChange(rank);
-      }}
-    >
-      {star}
-    </button>
-  );
-}
-
 export function StarBand({
   value,
   onChange,
   size = "md",
-  tone,
   layout = "row",
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
   size?: StarSize;
-  tone: StarTone;
   layout?: "row" | "arc";
   className?: string;
 }) {
-  const offset = tone === "red" ? STAR_ROW : 0;
-  const filledCount = tone === "red" ? redFilled(value) : goldFilled(value);
-  const arcTop = tone === "red" && layout === "arc";
+  const slots = starSlots(value);
 
   return (
     <div
@@ -153,70 +110,68 @@ export function StarBand({
         layout === "arc" ? "-space-x-px" : "gap-px",
         className,
       )}
+      aria-label={`${value} stars`}
     >
-      {Array.from({ length: STAR_ROW }, (_, i) => {
-        const rank = offset + i + 1;
-        return (
-          <StarSlot
-            key={rank}
-            rank={rank}
-            filled={i < filledCount}
+      {slots.map((fill, i) => {
+        const slot = i + 1;
+        const filled = fill !== "empty";
+        const star = (
+          <GameStar
+            filled={filled}
             size={size}
-            onChange={onChange}
-            arc={layout === "arc"}
-            arcTop={arcTop}
-            index={i}
-            tone={tone}
+            tone={fill === "red" ? "red" : "gold"}
+            className={layout === "arc" ? cn(arcLift[i], arcTilt[i]) : undefined}
           />
+        );
+        if (!onChange) {
+          return (
+            <span key={slot} className="inline-flex">
+              {star}
+            </span>
+          );
+        }
+        return (
+          <button
+            key={slot}
+            type="button"
+            aria-label={`${rankAfterTap(value, slot)} stars`}
+            className={cn(
+              "inline-flex items-center justify-center rounded-sm",
+              size === "sheet" ? "min-h-11 min-w-11" : "p-0.5",
+            )}
+            onClick={(event) => {
+              event.stopPropagation();
+              onChange(rankAfterTap(value, slot));
+            }}
+          >
+            {star}
+          </button>
         );
       })}
     </div>
   );
 }
 
-/** Gold under 1–5. At 6★ gold converts to red and refills above, left to right. */
 export function PortraitStars({
   value,
   onChange,
   size = "md",
   layout = "row",
-  alwaysTwoRows = false,
   className,
 }: {
   value: number;
   onChange?: (value: number) => void;
   size?: StarSize;
   layout?: "row" | "arc";
-  alwaysTwoRows?: boolean;
   className?: string;
 }) {
-  const awakened = isAwakened(value);
-  const showRed = alwaysTwoRows || awakened || Boolean(onChange && value >= STAR_ROW);
-  const showGold = alwaysTwoRows || !awakened;
-
   return (
-    <div
-      className={cn("flex flex-col items-center gap-0.5", className)}
-      aria-label={`${value} stars`}
-    >
-      {showRed ? (
-        <StarBand
-          tone="red"
-          value={value}
-          onChange={onChange}
-          size={size}
-          layout={layout}
-        />
-      ) : null}
-      {showGold ? (
-        <StarBand
-          tone="gold"
-          value={value}
-          onChange={onChange}
-          size={size}
-          layout={layout}
-        />
-      ) : null}
-    </div>
+    <StarBand
+      value={value}
+      onChange={onChange}
+      size={size}
+      layout={layout}
+      className={className}
+    />
   );
 }
