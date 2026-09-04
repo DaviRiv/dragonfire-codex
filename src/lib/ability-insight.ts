@@ -1,5 +1,6 @@
 import { DRAGONS } from "@/data/dragons";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
+import { habitDisplayName } from "@/data/habit-names";
 import {
   commandLine,
   HABIT_UNLOCK_STARS,
@@ -7,6 +8,8 @@ import {
   vanguardBonus,
 } from "@/lib/habits";
 import type { Dragon } from "@/lib/types";
+
+export { habitDisplayName };
 
 export type AbilitySourceKind = "command" | "vanguard" | "habit";
 
@@ -186,10 +189,23 @@ export function definedStacksIn(text: string): string[] {
   return [...names];
 }
 
-function labelForPercent(text: string, index: number): string {
+function isDerivedPercent(text: string, index: number): boolean {
+  const before = text.slice(Math.max(0, index - 64), index);
+  if (/double this chance/i.test(before)) return true;
+  if (/double this damage/i.test(before)) return true;
+  if (/1\.5x/i.test(before)) return true;
+  return false;
+}
+
+function labelForPercent(
+  text: string,
+  index: number,
+  habitTitle?: string,
+): string {
   const after = text.slice(index, index + 160);
   const before = text.slice(Math.max(0, index - 90), index);
-  const stackAfter = after.match(
+  const chanceClause = after.split(/\.\s/)[0] ?? after;
+  const stackAfter = chanceClause.match(
     /(?:stack|stacks) of ([A-Z][A-Za-z][A-Za-z'’]*(?:[ -][A-Z][A-Za-z'’]*)*)/i,
   );
   const stackBefore = before.match(
@@ -197,28 +213,50 @@ function labelForPercent(text: string, index: number): string {
   );
   const stackName = keepName(stackAfter?.[1] ?? stackBefore?.[1]);
 
-  if (/double this chance/i.test(before.slice(-28))) {
-    return stackName ? `${stackName} chance (doubled)` : "Double chance";
-  }
   if (
     /^[^.]{0,24}chance/i.test(after) ||
     /chance\s*$/i.test(before.slice(-18))
   ) {
-    return stackName ? `${stackName} chance` : "Chance";
+    if (/afflict\s+Bleed/i.test(after)) return "Bleed Chance";
+    if (stackName) return `${stackName} Chance`;
+    if (habitTitle) return `${habitTitle} Chance`;
+    return "Chance";
   }
-  if (/damage rate/i.test(before.slice(-24)) || /damage rate/i.test(after.slice(0, 24))) {
+  if (
+    /damage rate/i.test(before.slice(-24)) ||
+    /damage rate/i.test(after.slice(0, 24)) ||
+    /damage dealt to/i.test(before.slice(-36))
+  ) {
     return "Damage Rate";
+  }
+  const byStat = before.match(
+    /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
+  );
+  if (byStat) {
+    const label = byStat[1];
+    if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
+      return "Damage Dealt";
+    }
+    return label;
   }
   const stat = `${before} ${after}`.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/i,
   );
-  if (stackName && stat) return `${stackName} · ${stat[1]}`;
-  if (stat) return stat[1];
+  if (stat) {
+    const label = stat[1];
+    if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
+      return "Damage Dealt";
+    }
+    return label;
+  }
   if (stackName) return stackName;
   return "Value";
 }
 
-export function scaleRowsFromRanks(ranks: string[]): AbilityScaleRow[] {
+export function scaleRowsFromRanks(
+  ranks: string[],
+  habitTitle?: string,
+): AbilityScaleRow[] {
   if (ranks.length < 2) return [];
   const tokenLists = ranks.map((text) => [...text.matchAll(PERCENT_RE)]);
   const width = tokenLists[0]?.length ?? 0;
@@ -228,9 +266,13 @@ export function scaleRowsFromRanks(ranks: string[]): AbilityScaleRow[] {
   const rows: AbilityScaleRow[] = [];
   const usedLabels = new Map<string, number>();
   for (let i = 0; i < width; i++) {
-    const values = tokenLists.map((list) => list[i]?.[0] ?? "");
+    const index = tokenLists[0][i].index ?? 0;
+    if (isDerivedPercent(ranks[0], index)) continue;
+    const values = tokenLists.map((list) =>
+      (list[i]?.[0] ?? "").replace(/^\+/, ""),
+    );
     if (new Set(values).size <= 1) continue;
-    let label = labelForPercent(ranks[0], tokenLists[0][i].index ?? 0);
+    let label = labelForPercent(ranks[0], index, habitTitle);
     const seen = usedLabels.get(label) ?? 0;
     usedLabels.set(label, seen + 1);
     if (seen > 0) label = `${label} (${seen + 1})`;
@@ -240,12 +282,29 @@ export function scaleRowsFromRanks(ranks: string[]): AbilityScaleRow[] {
 }
 
 function sourceTitle(
+  dragonId: string,
   kind: AbilitySourceKind,
   habit: number | undefined,
   names: string[],
   defines: string[],
 ): string {
+  if (kind === "habit") {
+    const official = habitDisplayName(dragonId, habit);
+    if (official) return official;
+  }
   return defines[0] ?? names[0] ?? sourceLabel(kind, habit);
+}
+
+export function namedChips(insight: AbilityInsight): string[] {
+  const chips: string[] = [];
+  const add = (value: string | undefined) => {
+    if (!value || /^habit \d+$/i.test(value)) return;
+    if (chips.some((chip) => keyName(chip) === keyName(value))) return;
+    chips.push(value);
+  };
+  add(insight.title);
+  for (const name of insight.defines) add(name);
+  return chips;
 }
 
 export function sourceLabel(kind: AbilitySourceKind, habit?: number): string {
@@ -270,6 +329,7 @@ function makeInsight(
   const ranks = extra?.ranks;
   const unlockStars =
     kind === "habit" && habit != null ? HABIT_UNLOCK_STARS[habit - 1] : undefined;
+  const title = sourceTitle(dragon.id, kind, habit, names, defines);
   return {
     id:
       kind === "habit"
@@ -280,12 +340,12 @@ function makeInsight(
     kind,
     habit,
     unlockStars,
-    title: sourceTitle(kind, habit, names, defines),
+    title,
     names,
     defines,
     body: trimmed,
     ranks,
-    scale: ranks ? scaleRowsFromRanks(ranks) : [],
+    scale: ranks ? scaleRowsFromRanks(ranks, title) : [],
   };
 }
 

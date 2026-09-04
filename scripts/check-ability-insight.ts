@@ -88,4 +88,48 @@ if (moonKit.some((item) => item.names.includes("Moondancer"))) {
   fail("dragon names must not be treated as abilities");
 }
 
+const moonNames: [number, string, string[]][] = [
+  [1, "New Moon", ["Rising Tide Chance", "Instinct", "Damage Dealt"]],
+  [2, "Reactive Instincts", ["Instinct", "Initiative"]],
+  [3, "Full Moon", ["Rising Tide Chance", "Damage Rate"]],
+  [4, "Blood Moon", ["Damage Dealt", "Bleed Chance"]],
+  [5, "Eclipsing Strike", ["Eclipsing Strike Chance"]],
+];
+for (const [habit, title, labels] of moonNames) {
+  const row = insightForSource("moondancer", { kind: "habit", habit });
+  if (!row) fail(`Moondancer habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Moondancer habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  if (row.scale.some((line) => /doubled|1\.5x/i.test(line.label))) {
+    fail(`${title} should hide doubled / 1.5x derived rows`);
+  }
+}
+
+const newMoon = insightForSource("moondancer", { kind: "habit", habit: 1 });
+if (newMoon?.scale.find((row) => row.label === "Rising Tide Chance")?.values.join(",") !== "25%,30%,35%,42.5%,50%") {
+  fail(`New Moon chance ${newMoon?.scale.find((row) => row.label === "Rising Tide Chance")?.values.join(",")}`);
+}
+const eclipse = insightForSource("moondancer", { kind: "habit", habit: 5 });
+if (eclipse?.scale.find((row) => row.label === "Eclipsing Strike Chance")?.values.join(",") !== "20%,26%,32%,40%,50%") {
+  fail("Eclipsing Strike chance mismatch");
+}
+if (findAbilityInsight("New Moon", { dragonId: "moondancer" })?.id !== newMoon?.id) {
+  fail("hovering New Moon should open Moondancer habit 1");
+}
+if (findAbilityInsight("Blood Moon", { dragonId: "moondancer" })?.title !== "Blood Moon") {
+  fail("hovering Blood Moon should open that habit");
+}
+
 console.log("ability insight checks passed");

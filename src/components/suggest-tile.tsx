@@ -7,6 +7,7 @@ import { StarRequirement } from "@/components/star-requirement";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { commandLine, dragonKit, habitNumberForUnlockStars, star6Ability, vanguardBonus } from "@/lib/habits";
+import { habitDisplayName } from "@/data/habit-names";
 import { healingAbilities } from "@/lib/healing";
 import { starGateHint } from "@/lib/stars";
 import { breedLabels } from "@/lib/labels";
@@ -265,7 +266,10 @@ export function SuggestTile({
             dragonId={dragon.id}
             source={{ kind: "command" }}
           />
-          {kit.extras.map((extra) => (
+          {kit.extras.map((extra) => {
+            const habitNum = habitNumberForUnlockStars(extra.unlockStars);
+            const official = habitDisplayName(dragon.id, habitNum);
+            return (
             <AbilityBlock
               key={extra.title}
               title={
@@ -273,6 +277,7 @@ export function SuggestTile({
                   <>
                     <span className="text-muted-foreground">
                       {extra.title.replace(/ · \d+★$/, "")}
+                      {official ? ` · ${official}` : ""}
                     </span>
                     <span className="text-muted-foreground" aria-hidden>
                       ·
@@ -293,12 +298,13 @@ export function SuggestTile({
                 extra.unlockStars != null
                   ? {
                       kind: "habit",
-                      habit: habitNumberForUnlockStars(extra.unlockStars) ?? undefined,
+                      habit: habitNum ?? undefined,
                     }
                   : { kind: "vanguard" }
               }
             />
-          ))}
+            );
+          })}
           <div>
             <p className="text-label">Stats</p>
             <StatGrid

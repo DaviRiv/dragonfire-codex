@@ -13,6 +13,7 @@ import {
   insightForSource,
   type AbilitySourceRef,
 } from "@/lib/ability-insight";
+import { habitDisplayName } from "@/data/habit-names";
 import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import {
@@ -41,17 +42,27 @@ import { cn } from "@/lib/utils";
 const STAT_BAR_MAX = 400;
 
 function habitTitle(
+  dragonId: string,
   unlockStars: number | undefined,
   ownedStars: number | null,
   bought: boolean,
 ) {
   if (unlockStars == null) return "Habit";
   const habitNum = habitNumberForUnlockStars(unlockStars);
+  const official = habitDisplayName(dragonId, habitNum);
   return (
     <>
       <span className="text-muted-foreground">
         {habitNum ? `Habit ${habitNum}` : "Habit"}
       </span>
+      {official ? (
+        <>
+          <span className="text-muted-foreground" aria-hidden>
+            ·
+          </span>
+          <span>{official}</span>
+        </>
+      ) : null}
       <span className="text-muted-foreground" aria-hidden>
         ·
       </span>
@@ -262,7 +273,12 @@ export function DragonProfile({
           <AbilityBlock
             key={extra.title}
             muted={!live}
-            title={habitTitle(extra.unlockStars, qualifyStars, bought)}
+            title={habitTitle(
+              dragon.id,
+              extra.unlockStars,
+              qualifyStars,
+              bought,
+            )}
             body={extra.body}
             ranks={extra.ranks}
             dragonId={dragon.id}

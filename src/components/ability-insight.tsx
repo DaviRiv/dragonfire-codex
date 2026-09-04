@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { TONE_TEXT_CLASS, tokenizeAbilityText } from "@/lib/ability-text";
 import {
+  namedChips,
   resolveAbilityInsight,
   sourceLabel,
   type AbilityInsight,
@@ -89,14 +90,11 @@ export function AbilityRankTable({
 
 export function AbilityInsightCard({
   insight,
-  highlight,
   locked,
 }: {
   insight: AbilityInsight;
-  highlight?: string;
   locked?: boolean;
 }) {
-  const title = highlight?.trim() || insight.title;
   const source = [
     insight.dragonName,
     sourceLabel(insight.kind, insight.habit),
@@ -110,7 +108,7 @@ export function AbilityInsightCard({
       <div>
         <p className="font-heading flex items-center gap-1.5 text-[15px] tracking-[0.14em] text-amber-200 uppercase">
           {locked ? <Lock className="size-3.5 shrink-0" aria-hidden /> : null}
-          {title}
+          {insight.title}
         </p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">{source}</p>
       </div>
@@ -176,11 +174,7 @@ export function AbilityHover({
         className="z-[80] w-[min(24rem,calc(100vw-1.25rem))] max-h-[min(70dvh,32rem)] overflow-y-auto bg-zinc-950 p-3 text-stone-100 shadow-xl ring-1 ring-amber-200/25"
         positionerClassName="z-[80]"
       >
-        <AbilityInsightCard
-          insight={resolved}
-          highlight={name}
-          locked={locked}
-        />
+        <AbilityInsightCard insight={resolved} locked={locked} />
       </PopoverContent>
     </Popover>
   );
@@ -198,10 +192,11 @@ export function NamedAbilities({
   className?: string;
 }) {
   const insight = insightForSourceSafe(dragonId, source);
-  if (!insight || insight.names.length === 0) return null;
+  const chips = insight ? namedChips(insight) : [];
+  if (!insight || chips.length === 0) return null;
   return (
     <p className={cn("mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5", className)}>
-      {insight.names.map((item) => (
+      {chips.map((item) => (
         <AbilityHover
           key={item}
           name={item}

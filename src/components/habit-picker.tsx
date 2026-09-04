@@ -20,6 +20,7 @@ import {
 } from "@/lib/habits";
 import { slotLabels } from "@/lib/labels";
 import type { AbilitySourceRef } from "@/lib/ability-insight";
+import { habitDisplayName } from "@/data/habit-names";
 import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +102,7 @@ function HabitRow({
   onToggle: (habit: number) => void;
 }) {
   const source: AbilitySourceRef = { kind: "habit", habit: row.habit };
+  const official = habitDisplayName(dragonId, row.habit);
   return (
     <div
       className={cn(
@@ -132,6 +134,12 @@ function HabitRow({
         <AbilityHover dragonId={dragonId} source={source} locked={!row.live}>
           <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.6875rem] font-medium tracking-[0.12em] uppercase">
             <span>Habit {row.habit}</span>
+            {official ? (
+              <>
+                <span className="text-muted-foreground">·</span>
+                <span>{official}</span>
+              </>
+            ) : null}
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">{row.stars}★</span>
           </span>
@@ -202,7 +210,7 @@ export function HabitPickerDialog({
           </DialogTitle>
           <DialogDescription>
             The list stays the same. Highlighted rows are live on this dragon.
-            Hover or tap a named ability — Rallying Flame, Taunt, and the rest —
+            Hover or tap a named ability — Rallying Flame, New Moon, Taunt —
             for the full card and rank chances. Uncheck a habit if you have not
             bought it.
           </DialogDescription>
