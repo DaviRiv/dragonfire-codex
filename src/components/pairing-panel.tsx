@@ -152,7 +152,7 @@ function NoteColumn({
                 </p>
               ) : null}
               <p className="mt-1 pl-5 text-[13px] leading-relaxed text-foreground/80">
-                <AbilityText text={note.detail} />
+                <AbilityText text={note.detail} interactive />
               </p>
               {note.stats && note.stats.length > 0 ? (
                 <SynergyStatRows stats={note.stats} className="mt-1 pl-5" />

@@ -1,3 +1,4 @@
+import { namedAbilityPhrases } from "@/lib/ability-insight";
 import type { DragonStats } from "@/lib/types";
 
 /**
@@ -130,9 +131,19 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Fire", tone: "fire" },
 ];
 
-const SORTED_PHRASES = [...ABILITY_PHRASES].sort(
-  (a, b) => b.phrase.length - a.phrase.length,
-);
+let SORTED_PHRASES: { phrase: string; tone: GameTone }[] | null = null;
+
+function phraseList(): { phrase: string; tone: GameTone }[] {
+  if (SORTED_PHRASES) return SORTED_PHRASES;
+  const extra = namedAbilityPhrases().map((phrase) => ({
+    phrase,
+    tone: "status" as const,
+  }));
+  SORTED_PHRASES = [...ABILITY_PHRASES, ...extra].sort(
+    (a, b) => b.phrase.length - a.phrase.length,
+  );
+  return SORTED_PHRASES;
+}
 
 const BUFF_RE = /\+\d+(?:\.\d+)?%?/g;
 const DEBUFF_RE = /(?:\u2212|(?<!\d)-)\d+(?:\.\d+)?%?/g;
@@ -177,7 +188,7 @@ export function tokenizeAbilityText(text: string): AbilityToken[] {
   const hits: Hit[] = [];
   const lower = text.toLowerCase();
 
-  for (const { phrase, tone } of SORTED_PHRASES) {
+  for (const { phrase, tone } of phraseList()) {
     const needle = phrase.toLowerCase();
     let from = 0;
     while (from <= lower.length - needle.length) {

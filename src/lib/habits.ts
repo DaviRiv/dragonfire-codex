@@ -265,6 +265,14 @@ function rankList(dragonId: string, index: number): string[] | undefined {
   return ranks;
 }
 
+/** Rank 1–5 text when a habit actually changes by upgrade. */
+export function habitRankTexts(
+  dragonId: string,
+  index: number,
+): string[] | undefined {
+  return rankList(dragonId, index);
+}
+
 /** Command plus star-unlocked habits and the vanguard skill. */
 export function dragonKit(
   dragon: Pick<Dragon, "id" | "habit" | "habitShort" | "command">,

@@ -70,7 +70,11 @@ with HBO, Warner Bros., or the game.
   magnifying glass opens that dragon’s kit:
   Vanguard, Command, and Habits 1–5. Live rows are highlighted; the list
   does not change as you star them. Uncheck a habit if you have not bought
-  it — it stays out of the live kit.
+  it — it stays out of the live kit. Hover or tap a named ability
+  (Rallying Flame, Spreading Blaze, Taunt, …) or the habit title for the
+  full in-game card: complete text plus rank 1–5 chances when those
+  numbers change. Habit upgrade Power is not in the Hub dump, so it is
+  not shown.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 

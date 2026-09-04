@@ -6,7 +6,7 @@ import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { StarRequirement } from "@/components/star-requirement";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { commandLine, dragonKit, star6Ability, vanguardBonus } from "@/lib/habits";
+import { commandLine, dragonKit, habitNumberForUnlockStars, star6Ability, vanguardBonus } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import { starGateHint } from "@/lib/stars";
 import { breedLabels } from "@/lib/labels";
@@ -262,6 +262,8 @@ export function SuggestTile({
                 : "Command"
             }
             body={kit.command}
+            dragonId={dragon.id}
+            source={{ kind: "command" }}
           />
           {kit.extras.map((extra) => (
             <AbilityBlock
@@ -286,6 +288,15 @@ export function SuggestTile({
               }
               body={extra.body}
               ranks={extra.ranks}
+              dragonId={dragon.id}
+              source={
+                extra.unlockStars != null
+                  ? {
+                      kind: "habit",
+                      habit: habitNumberForUnlockStars(extra.unlockStars) ?? undefined,
+                    }
+                  : { kind: "vanguard" }
+              }
             />
           ))}
           <div>

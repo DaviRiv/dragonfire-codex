@@ -1,9 +1,18 @@
 import type { ReactNode } from "react";
+import {
+  AbilityHover,
+  AbilityRankTable,
+  NamedAbilities,
+} from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { StarRequirement } from "@/components/star-requirement";
 import { Badge } from "@/components/ui/badge";
 import { STAT_BAR_CLASS, STAT_TEXT_CLASS } from "@/lib/ability-text";
+import {
+  insightForSource,
+  type AbilitySourceRef,
+} from "@/lib/ability-insight";
 import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
 import { healingAbilities } from "@/lib/healing";
 import {
@@ -165,7 +174,7 @@ export function DragonProfile({
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {dragon.tags.map((tag) => (
-            <AbilityTag key={tag} tag={tag} />
+            <AbilityTag key={tag} tag={tag} dragonId={dragon.id} />
           ))}
         </div>
       ) : null}
@@ -174,6 +183,8 @@ export function DragonProfile({
           title={`Vanguard · buffs ${slotLabels[dragon.flankBonus]}`}
           body={vanguard.body}
           muted={qualifyStars == null || qualifyStars <= 0}
+          dragonId={dragon.id}
+          source={{ kind: "vanguard" }}
         />
       ) : null}
       {heals.length > 0 ? (
@@ -184,6 +195,10 @@ export function DragonProfile({
               ownedHabits == null ||
               heal.habit == null ||
               ownedHabits.includes(heal.habit);
+            const source: AbilitySourceRef =
+              heal.habit != null
+                ? { kind: "habit", habit: heal.habit }
+                : { kind: "command" };
             return (
             <div
               key={heal.id}
@@ -213,7 +228,11 @@ export function DragonProfile({
                 )}
               </div>
               <p className="mt-1 leading-relaxed">
-                <AbilityText text={heal.text} />
+                <AbilityText
+                  text={heal.text}
+                  dragonId={dragon.id}
+                  source={source}
+                />
               </p>
             </div>
             );
@@ -228,6 +247,8 @@ export function DragonProfile({
         }
         body={kit.command}
         muted={qualifyStars == null || qualifyStars <= 0}
+        dragonId={dragon.id}
+        source={{ kind: "command" }}
       />
       {habitExtras.map((extra) => {
         const habitNum = habitNumberForUnlockStars(extra.unlockStars);
@@ -244,6 +265,12 @@ export function DragonProfile({
             title={habitTitle(extra.unlockStars, qualifyStars, bought)}
             body={extra.body}
             ranks={extra.ranks}
+            dragonId={dragon.id}
+            source={
+              habitNum != null
+                ? { kind: "habit", habit: habitNum }
+                : undefined
+            }
           />
         );
       })}
@@ -274,8 +301,9 @@ export function DragonProfile({
           table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
           multipliers. Stars auto-select habits in Hatchery. Uncheck one on
-          the search icon if you have not bought it. Habit upgrade ranks 2–5
-          are not in the pit yet.
+          the search icon if you have not bought it. Hover or tap a named
+          ability for the full card and rank chances. Habit upgrade Power is
+          not in the catalog.
         </p>
       </div>
     </div>
@@ -287,12 +315,24 @@ export function AbilityBlock({
   body,
   ranks,
   muted,
+  dragonId,
+  source,
 }: {
   title: ReactNode;
   body: string;
   ranks?: string[];
   muted?: boolean;
+  dragonId?: string;
+  source?: AbilitySourceRef;
 }) {
+  const insight =
+    dragonId && source ? insightForSource(dragonId, source) : undefined;
+  const heading =
+    typeof title === "string" ? (
+      <span className="text-muted-foreground">{title}</span>
+    ) : (
+      title
+    );
   return (
     <div
       className={cn(
@@ -301,26 +341,47 @@ export function AbilityBlock({
       )}
     >
       <div className="flex flex-wrap items-center gap-x-1.5 text-[0.6875rem] font-medium leading-[1.2] tracking-[0.12em] uppercase">
-        {typeof title === "string" ? (
-          <span className="text-muted-foreground">{title}</span>
+        {dragonId && source ? (
+          <AbilityHover
+            dragonId={dragonId}
+            source={source}
+            insight={insight}
+            locked={muted}
+          >
+            {heading}
+          </AbilityHover>
         ) : (
-          title
+          heading
         )}
       </div>
+      {dragonId && source ? (
+        <NamedAbilities
+          dragonId={dragonId}
+          source={source}
+          locked={muted}
+        />
+      ) : null}
       <p className="mt-1 leading-relaxed">
-        <AbilityText text={body} />
+        <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
+      {insight && insight.scale.length > 0 ? (
+        <AbilityRankTable rows={insight.scale} className="mt-2" />
+      ) : null}
       {ranks && ranks.length > 1 ? (
         <details className="mt-2">
           <summary className="cursor-pointer text-[13px] text-muted-foreground">
-            Ranks 2–5
+            Full rank text
           </summary>
           <ul className="mt-2 space-y-2">
             {ranks.slice(1).map((text, index) => (
               <li key={index} className="text-[13px] leading-relaxed">
                 <span className="text-label">Rank {index + 2}</span>
                 <span className="mt-0.5 block">
-                  <AbilityText text={text} />
+                  <AbilityText
+                    text={text}
+                    dragonId={dragonId}
+                    source={source}
+                  />
                 </span>
               </li>
             ))}

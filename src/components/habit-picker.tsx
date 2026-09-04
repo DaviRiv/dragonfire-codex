@@ -2,6 +2,7 @@
 
 import { Check, Search } from "lucide-react";
 import { useEffect } from "react";
+import { AbilityHover, NamedAbilities } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { StarStepper } from "@/components/star-rank";
 import {
@@ -18,6 +19,7 @@ import {
   type KitHabitRow,
 } from "@/lib/habits";
 import { slotLabels } from "@/lib/labels";
+import type { AbilitySourceRef } from "@/lib/ability-insight";
 import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -48,11 +50,15 @@ function KitBlock({
   extra,
   body,
   live,
+  dragonId,
+  source,
 }: {
   title: string;
   extra?: string;
   body: string;
   live?: boolean;
+  dragonId: string;
+  source: AbilitySourceRef;
 }) {
   return (
     <div
@@ -64,15 +70,22 @@ function KitBlock({
       )}
     >
       <p className="text-label flex flex-wrap items-baseline gap-x-1.5">
-        <span>{title}</span>
+        <AbilityHover dragonId={dragonId} source={source} locked={!live}>
+          <span>{title}</span>
+        </AbilityHover>
         {extra ? (
           <span className="font-normal tracking-normal text-muted-foreground normal-case">
             {extra}
           </span>
         ) : null}
       </p>
+      <NamedAbilities
+        dragonId={dragonId}
+        source={source}
+        locked={!live}
+      />
       <p className="mt-1 text-[13px] leading-relaxed">
-        <AbilityText text={body} />
+        <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
     </div>
   );
@@ -80,45 +93,59 @@ function KitBlock({
 
 function HabitRow({
   row,
+  dragonId,
   onToggle,
 }: {
   row: KitHabitRow;
+  dragonId: string;
   onToggle: (habit: number) => void;
 }) {
+  const source: AbilitySourceRef = { kind: "habit", habit: row.habit };
   return (
-    <button
-      type="button"
-      aria-pressed={row.selected}
-      onClick={() => onToggle(row.habit)}
+    <div
       className={cn(
-        "flex w-full items-start gap-2.5 rounded-xl p-3 text-left ring-1 select-none",
+        "flex w-full items-start gap-2.5 rounded-xl p-3 ring-1",
         row.live
           ? "bg-amber-500/20 ring-amber-300/60"
-          : "bg-muted/40 ring-foreground/10 hover:bg-muted",
+          : "bg-muted/40 ring-foreground/10",
       )}
     >
-      <span
+      <button
+        type="button"
+        aria-pressed={row.selected}
+        aria-label={
+          row.selected
+            ? `Habit ${row.habit} bought`
+            : `Mark habit ${row.habit} bought`
+        }
+        onClick={() => onToggle(row.habit)}
         className={cn(
-          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md ring-1",
+          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md ring-1 select-none",
           row.live
             ? "bg-amber-400 text-black ring-amber-200"
-            : "ring-foreground/25",
+            : "ring-foreground/25 hover:bg-muted",
         )}
-        aria-hidden
       >
         {row.live ? <Check className="size-3.5" /> : null}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.6875rem] font-medium tracking-[0.12em] uppercase">
-          <span>Habit {row.habit}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="text-muted-foreground">{row.stars}★</span>
-        </span>
-        <span className="mt-1 block text-[13px] leading-relaxed">
-          <AbilityText text={row.body} />
-        </span>
-      </span>
-    </button>
+      </button>
+      <div className="min-w-0 flex-1">
+        <AbilityHover dragonId={dragonId} source={source} locked={!row.live}>
+          <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.6875rem] font-medium tracking-[0.12em] uppercase">
+            <span>Habit {row.habit}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">{row.stars}★</span>
+          </span>
+        </AbilityHover>
+        <NamedAbilities
+          dragonId={dragonId}
+          source={source}
+          locked={!row.live}
+        />
+        <p className="mt-1 text-[13px] leading-relaxed">
+          <AbilityText text={row.body} dragonId={dragonId} source={source} />
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -175,8 +202,9 @@ export function HabitPickerDialog({
           </DialogTitle>
           <DialogDescription>
             The list stays the same. Highlighted rows are live on this dragon.
-            Command and Vanguard turn on when they hatch. Uncheck a habit if
-            you have not bought it.
+            Hover or tap a named ability — Rallying Flame, Taunt, and the rest —
+            for the full card and rank chances. Uncheck a habit if you have not
+            bought it.
           </DialogDescription>
         </DialogHeader>
         {dragon && kit ? (
@@ -194,7 +222,11 @@ export function HabitPickerDialog({
             {kit.liveEffects.length > 0 ? (
               <div className="flex flex-wrap gap-1 pb-1">
                 {kit.liveEffects.map((effect) => (
-                  <AbilityTag key={effect.ability} tag={effect.ability} />
+                  <AbilityTag
+                    key={effect.ability}
+                    tag={effect.ability}
+                    dragonId={dragon.id}
+                  />
                 ))}
               </div>
             ) : null}
@@ -203,15 +235,28 @@ export function HabitPickerDialog({
               title="Vanguard"
               extra={`Buffs ${slotLabels[dragon.flankBonus]}`}
               live={hatched}
+              dragonId={dragon.id}
+              source={{ kind: "vanguard" }}
               body={
                 kit.vanguard && kit.vanguard !== "Habits not recorded yet."
                   ? kit.vanguard
                   : "Vanguard skill not recorded yet."
               }
             />
-            <KitBlock title="Command" live={hatched} body={kit.command} />
+            <KitBlock
+              title="Command"
+              live={hatched}
+              dragonId={dragon.id}
+              source={{ kind: "command" }}
+              body={kit.command}
+            />
             {kit.habits.map((row) => (
-              <HabitRow key={row.habit} row={row} onToggle={toggle} />
+              <HabitRow
+                key={row.habit}
+                row={row}
+                dragonId={dragon.id}
+                onToggle={toggle}
+              />
             ))}
           </div>
         ) : null}
