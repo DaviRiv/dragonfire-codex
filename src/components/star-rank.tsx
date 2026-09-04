@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function StarRank({
@@ -49,6 +50,52 @@ export function StarRank({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Compact 1–10 control for Hatchery tiles. */
+export function StarStepper({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div
+      className="flex items-center justify-center gap-1"
+      aria-label={`${value} stars`}
+    >
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="outline"
+        aria-label="One less star"
+        disabled={value <= 1}
+        onClick={(event) => {
+          event.stopPropagation();
+          onChange(Math.max(1, value - 1));
+        }}
+      >
+        −
+      </Button>
+      <span className="min-w-10 text-center text-[13px] tabular-nums">
+        ★{value}
+      </span>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="outline"
+        aria-label="One more star"
+        disabled={value >= 10}
+        onClick={(event) => {
+          event.stopPropagation();
+          onChange(Math.min(10, value + 1));
+        }}
+      >
+        +
+      </Button>
     </div>
   );
 }

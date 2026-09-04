@@ -143,7 +143,7 @@ export function CatalogTile({
             disabled={owned}
             className="mt-3 min-h-11 w-full rounded-lg bg-primary/90 text-sm font-medium text-primary-foreground disabled:opacity-40 sm:h-8 sm:min-h-0"
           >
-            {owned ? "In your pit" : "Add to pit"}
+            {owned ? "Owned" : "Mark owned"}
           </button>
         ) : null}
       </div>

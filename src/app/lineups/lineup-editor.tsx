@@ -343,7 +343,7 @@ export function LineupEditor({
         </div>
         <p className="text-[13px] leading-snug text-muted-foreground">
           {pitEmpty
-            ? "Log dragons in the pit to rank a team."
+            ? "Mark owned dragons in Hatchery to rank a team."
             : isTheory
               ? roleFilter === "all"
                 ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden. Unowned rows are goals, not a march.`
@@ -442,7 +442,7 @@ export function LineupEditor({
                   [
                     ["all", "Hatchery"],
                     ["unowned", "Not owned"],
-                    ["owned", "In pit"],
+                    ["owned", "Owned"],
                   ] as const
                 ).map(([id, label]) => (
                   <MiniChip

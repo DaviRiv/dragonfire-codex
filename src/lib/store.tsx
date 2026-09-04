@@ -50,6 +50,10 @@ type PitContextValue = {
     starRank?: number,
     reignLevel?: number,
   ) => OwnedDragon | null;
+  setCatalogOwned: (
+    dragonId: string,
+    next: { owned: boolean; starRank?: number },
+  ) => OwnedDragon | null;
   addCustomDragon: (input: {
     name: string;
     epithet?: string;
@@ -182,7 +186,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       const dragon = findDragon(dragonId, current.customDragons);
       if (!dragon) return null;
       if (current.owned.some((o) => o.dragonId === dragonId)) {
-        toast.error(`${dragon.name} is already in your pit.`);
+        toast.error(`${dragon.name} is already marked owned.`);
         return null;
       }
       const owned: OwnedDragon = {
@@ -193,7 +197,66 @@ export function PitProvider({ children }: { children: ReactNode }) {
         notes: "",
       };
       commit((prev) => ({ ...prev, owned: [...prev.owned, owned] }));
-      toast.success(`${dragon.name} added to your pit.`);
+      toast.success(`${dragon.name} marked owned · ★${owned.starRank}.`);
+      return owned;
+    },
+    [],
+  );
+
+  const setCatalogOwned = useCallback(
+    (
+      dragonId: string,
+      next: { owned: boolean; starRank?: number },
+    ): OwnedDragon | null => {
+      const current = getClientSnapshot();
+      const dragon = findDragon(dragonId, current.customDragons);
+      if (!dragon) return null;
+      const existing = current.owned.find((row) => row.dragonId === dragonId);
+      if (!next.owned) {
+        if (!existing) return null;
+        commit((prev) => {
+          const owned = prev.owned.find((row) => row.id === existing.id);
+          return {
+            ...prev,
+            owned: prev.owned.filter((row) => row.id !== existing.id),
+            customDragons: prev.customDragons.filter((row) => {
+              if (!owned) return true;
+              return row.id !== owned.dragonId;
+            }),
+            lineups: prev.lineups.map((lineup) => {
+              if (!owned || lineup.kind !== "pit") return lineup;
+              return {
+                ...lineup,
+                slots: clearDragonFromSlots(lineup.slots, owned.dragonId),
+                updatedAt: nowIso(),
+              };
+            }),
+          };
+        });
+        toast(`${dragon.name} unmarked.`);
+        return null;
+      }
+      const starRank = clampStar(next.starRank ?? existing?.starRank ?? 1);
+      if (existing) {
+        if (starRank !== existing.starRank) {
+          commit((prev) => ({
+            ...prev,
+            owned: prev.owned.map((row) =>
+              row.id === existing.id ? { ...row, starRank } : row,
+            ),
+          }));
+        }
+        return { ...existing, starRank };
+      }
+      const owned: OwnedDragon = {
+        id: newId("own"),
+        dragonId,
+        starRank,
+        reignLevel: 1,
+        notes: "",
+      };
+      commit((prev) => ({ ...prev, owned: [...prev.owned, owned] }));
+      toast.success(`${dragon.name} marked owned · ★${starRank}.`);
       return owned;
     },
     [],
@@ -396,7 +459,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       const dragon = findDragon(dragonId, current.customDragons);
       if (lineup?.kind === "pit" && !current.owned.some((o) => o.dragonId === dragonId)) {
         toast.error(
-          `${dragon?.name ?? "That dragon"} is not in your pit. Add them first, or switch to Theory.`,
+          `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in Hatchery, or switch to Theory.`,
         );
         return;
       }
@@ -421,7 +484,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
         if (missing) {
           const dragon = findDragon(missing.dragonId, current.customDragons);
           toast.error(
-            `${dragon?.name ?? "That dragon"} is not in your pit. Add them first, or switch to Theory.`,
+            `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in Hatchery, or switch to Theory.`,
           );
           return;
         }
@@ -549,6 +612,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       ready,
       state,
       addFromCatalog,
+      setCatalogOwned,
       addCustomDragon,
       updateOwned,
       removeOwned,
@@ -572,6 +636,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       ready,
       state,
       addFromCatalog,
+      setCatalogOwned,
       addCustomDragon,
       updateOwned,
       removeOwned,

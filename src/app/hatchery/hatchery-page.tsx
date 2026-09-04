@@ -3,39 +3,76 @@
 import { useMemo, useState } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
+import { MiniChip } from "@/components/chip";
 import { ListFilterBar } from "@/components/list-filter-bar";
+import { StarRank, StarStepper } from "@/components/star-rank";
+import { Button } from "@/components/ui/button";
 import { DRAGONS, UNRELEASED_DRAGONS } from "@/data/dragons";
+import { lineupsUsingDragon } from "@/lib/dragons";
 import { breedLabels, rarityLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Dragon, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+type OwnedFilter = "all" | "owned" | "missing";
+
 export function HatcheryPage() {
-  const { ready, state, addFromCatalog } = usePit();
+  const { ready, state, setCatalogOwned } = usePit();
   const [query, setQuery] = useState("");
   const [breed, setBreed] = useState<Breed | "all">("all");
   const [rarity, setRarity] = useState<Rarity | "all">("all");
   const [troop, setTroop] = useState<TroopType | "all">("all");
+  const [ownedFilter, setOwnedFilter] = useState<OwnedFilter>("all");
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
+
+  const ownedById = useMemo(
+    () => new Map(state.owned.map((row) => [row.dragonId, row] as const)),
+    [state.owned],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return DRAGONS.filter((d) => {
-      if (q && !`${d.name} ${d.epithet}`.toLowerCase().includes(q)) return false;
-      if (breed !== "all" && d.breed !== breed) return false;
-      if (rarity !== "all" && d.rarity !== rarity) return false;
-      if (troop !== "all" && !d.affinities.includes(troop)) return false;
+    return DRAGONS.filter((dragon) => {
+      if (q && !`${dragon.name} ${dragon.epithet}`.toLowerCase().includes(q)) {
+        return false;
+      }
+      if (breed !== "all" && dragon.breed !== breed) return false;
+      if (rarity !== "all" && dragon.rarity !== rarity) return false;
+      if (troop !== "all" && !dragon.affinities.includes(troop)) return false;
+      const owned = ownedById.has(dragon.id);
+      if (ownedFilter === "owned" && !owned) return false;
+      if (ownedFilter === "missing" && owned) return false;
       return true;
     });
-  }, [query, breed, rarity, troop]);
+  }, [query, breed, rarity, troop, ownedFilter, ownedById]);
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Opening the hatchery…</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Opening the hatchery…</p>
+    );
   }
 
   const inspectingOwned = inspecting
-    ? state.owned.some((o) => o.dragonId === inspecting.id)
-    : false;
+    ? (ownedById.get(inspecting.id) ?? null)
+    : null;
+
+  function markOwned(dragon: Dragon, nextOwned: boolean, starRank?: number) {
+    if (!nextOwned) {
+      const row = ownedById.get(dragon.id);
+      if (row) {
+        const used = lineupsUsingDragon(state, row.id);
+        if (
+          used.length > 0 &&
+          !window.confirm(
+            `${dragon.name} sits on ${used.length} saved team${used.length === 1 ? "" : "s"}. Unmark anyway?`,
+          )
+        ) {
+          return;
+        }
+      }
+    }
+    setCatalogOwned(dragon.id, { owned: nextOwned, starRank });
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -44,8 +81,9 @@ export function HatcheryPage() {
           Hatchery
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap a dragon, add it to your pit, then pick a team. Commands, habits,
-          and stats come from Dragonfire-Hub.
+          Mark who you own and their star rank. That is your collection — it
+          does not add a row to Pit. Pit is for reign, notes, and which teams
+          they sit on.
         </p>
       </div>
       <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
@@ -60,6 +98,26 @@ export function HatcheryPage() {
           troop={troop}
           onTroopChange={setTroop}
         />
+        <div className="flex flex-wrap gap-1 px-3 pt-2">
+          <MiniChip
+            active={ownedFilter === "all"}
+            onClick={() => setOwnedFilter("all")}
+          >
+            All
+          </MiniChip>
+          <MiniChip
+            active={ownedFilter === "owned"}
+            onClick={() => setOwnedFilter("owned")}
+          >
+            Owned · {state.owned.length}
+          </MiniChip>
+          <MiniChip
+            active={ownedFilter === "missing"}
+            onClick={() => setOwnedFilter("missing")}
+          >
+            Not owned
+          </MiniChip>
+        </div>
         <p className="px-3 py-2 text-[13px] text-muted-foreground">
           {filtered.length} dragon{filtered.length === 1 ? "" : "s"}
         </p>
@@ -69,32 +127,55 @@ export function HatcheryPage() {
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2 p-2 sm:grid-cols-4 lg:grid-cols-6">
-            {filtered.map((d) => {
-              const owned = state.owned.some((o) => o.dragonId === d.id);
+            {filtered.map((dragon) => {
+              const owned = ownedById.get(dragon.id);
               return (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setInspecting(d)}
+                <div
+                  key={dragon.id}
                   className={cn(
-                    "flex min-h-[8.25rem] flex-col items-center gap-1.5 rounded-2xl bg-background/50 px-1 py-3 ring-1 ring-foreground/10 select-none",
-                    owned && "ring-amber-400/30",
+                    "flex min-h-[10.5rem] flex-col items-center rounded-2xl bg-background/50 px-1 py-2 ring-1 ring-foreground/10",
+                    owned && "ring-amber-400/40",
                   )}
                 >
-                  <DragonIcon
-                    dragonId={d.id}
-                    name={d.name}
-                    rarity={d.rarity}
-                    size="xl"
-                  />
-                  <span className="line-clamp-2 w-full text-center text-[13px] leading-snug font-medium">
-                    {d.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {breedLabels[d.breed]}
-                    {owned ? " · In pit" : ""}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setInspecting(dragon)}
+                    className="flex w-full flex-col items-center gap-1 select-none"
+                  >
+                    <DragonIcon
+                      dragonId={dragon.id}
+                      name={dragon.name}
+                      rarity={dragon.rarity}
+                      size="xl"
+                    />
+                    <span className="line-clamp-2 w-full text-center text-[13px] leading-snug font-medium">
+                      {dragon.name}
+                    </span>
+                  </button>
+                  <MiniChip
+                    active={Boolean(owned)}
+                    className="mt-1.5"
+                    onClick={() =>
+                      markOwned(dragon, !owned, owned ? owned.starRank : 1)
+                    }
+                  >
+                    {owned ? "Owned" : "Own"}
+                  </MiniChip>
+                  {owned ? (
+                    <div className="mt-1 w-full">
+                      <StarStepper
+                        value={owned.starRank}
+                        onChange={(starRank) =>
+                          setCatalogOwned(dragon.id, { owned: true, starRank })
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {breedLabels[dragon.breed]}
+                    </p>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -127,19 +208,49 @@ export function HatcheryPage() {
         onOpenChange={(next) => {
           if (!next) setInspecting(null);
         }}
-        ownedStars={
-          inspecting
-            ? (state.owned.find((row) => row.dragonId === inspecting.id)
-                ?.starRank ?? null)
-            : null
+        starRank={inspectingOwned?.starRank}
+        reignLevel={inspectingOwned?.reignLevel}
+        ownedStars={inspectingOwned?.starRank ?? null}
+        extra={
+          inspecting ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={inspectingOwned ? "default" : "outline"}
+                  onClick={() =>
+                    markOwned(
+                      inspecting,
+                      !inspectingOwned,
+                      inspectingOwned?.starRank ?? 1,
+                    )
+                  }
+                >
+                  {inspectingOwned ? "Owned" : "Mark owned"}
+                </Button>
+              </div>
+              {inspectingOwned ? (
+                <div>
+                  <p className="text-label mb-1">Star rank</p>
+                  <StarRank
+                    value={inspectingOwned.starRank}
+                    onChange={(starRank) =>
+                      setCatalogOwned(inspecting.id, {
+                        owned: true,
+                        starRank,
+                      })
+                    }
+                  />
+                </div>
+              ) : (
+                <p className="text-[13px] text-muted-foreground">
+                  Mark owned, then set stars. This does not add them to Pit.
+                </p>
+              )}
+            </>
+          ) : null
         }
-        actionLabel={inspectingOwned ? "Already in your pit" : "Add to pit"}
-        actionDisabled={inspectingOwned}
-        onAction={() => {
-          if (!inspecting || inspectingOwned) return;
-          addFromCatalog(inspecting.id);
-          setInspecting(null);
-        }}
       />
     </div>
   );

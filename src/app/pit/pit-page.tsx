@@ -32,6 +32,7 @@ import { toast } from "sonner";
 export function PitPage() {
   const { ready, state, updateOwned, removeOwned, loadSample, resetPit, importState } =
     usePit();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [breed, setBreed] = useState<Breed | "all">("all");
@@ -76,8 +77,7 @@ export function PitPage() {
             Your pit
           </h1>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {state.owned.length} dragon
-            {state.owned.length === 1 ? "" : "s"} you hatched
+            {state.owned.length} owned · reign, notes, and teams
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -86,21 +86,23 @@ export function PitPage() {
               Sample
             </Button>
           ) : null}
+          <Button variant="outline" onClick={() => router.push("/hatchery")}>
+            Hatchery
+          </Button>
           <Button onClick={() => setOpen(true)}>
             <Plus data-icon="inline-start" />
-            Add
+            Unlisted
           </Button>
         </div>
       </div>
 
       {state.owned.length === 0 ? (
         <EmptyState
-          title="Log the dragons you hatched"
-          description="Add them here with stars and reign. Then open Team and pick a three-dragon line — slotting never adds to the pit."
+          title="Nobody marked owned"
+          description="Open Hatchery, mark the dragons you hatched, and set their stars. Pit is for reign, notes, and which teams they sit on."
           action={
-            <Button onClick={() => setOpen(true)}>
-              <Plus data-icon="inline-start" />
-              Add your first dragon
+            <Button onClick={() => router.push("/hatchery")}>
+              Mark owned in Hatchery
             </Button>
           }
         />

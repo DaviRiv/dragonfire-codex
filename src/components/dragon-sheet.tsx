@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { DragonPortrait } from "@/components/dragon-portrait";
 import { DragonProfile } from "@/components/dragon-profile";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export function DragonSheet({
   actionDisabled,
   ownedStars,
   synergyBuffs,
+  extra,
 }: {
   dragon: Dragon | null;
   open: boolean;
@@ -38,6 +40,7 @@ export function DragonSheet({
   actionDisabled?: boolean;
   ownedStars?: number | null;
   synergyBuffs?: SynergyBuff[];
+  extra?: ReactNode;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -62,6 +65,7 @@ export function DragonSheet({
               sizes="500px"
             />
             <div className="px-4 pb-2">
+              {extra ? <div className="mb-3 space-y-3">{extra}</div> : null}
               <DragonProfile
                 dragon={dragon}
                 highlightTroop={highlightTroop}

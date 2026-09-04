@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Chip, ChoiceButton } from "@/components/chip";
-import { DragonIcon } from "@/components/dragon-icon";
+import { useState } from "react";
+import { Chip } from "@/components/chip";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DRAGONS } from "@/data/dragons";
-import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels, troopShort } from "@/lib/labels";
+import { BREEDS, RARITIES, TROOP_TYPES, breedLabels, rarityLabels, troopLabels } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
 
@@ -26,159 +24,26 @@ export function AddDragonDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { state, addFromCatalog, addCustomDragon } = usePit();
-  const [tab, setTab] = useState<"catalog" | "custom">("catalog");
-  const [query, setQuery] = useState("");
-  const [breed, setBreed] = useState<Breed | "all">("all");
-  const [rarity, setRarity] = useState<Rarity | "all">("all");
-  const [troop, setTroop] = useState<TroopType | "all">("all");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return DRAGONS.filter((d) => {
-      if (q && !`${d.name} ${d.epithet} ${d.tags.join(" ")}`.toLowerCase().includes(q)) {
-        return false;
-      }
-      if (breed !== "all" && d.breed !== breed) return false;
-      if (rarity !== "all" && d.rarity !== rarity) return false;
-      if (troop !== "all" && !d.affinities.includes(troop)) return false;
-      return true;
-    });
-  }, [query, breed, rarity, troop]);
+  const { addCustomDragon } = usePit();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-heading tracking-wide">Add a dragon</DialogTitle>
+          <DialogTitle className="font-heading tracking-wide">
+            Unlisted dragon
+          </DialogTitle>
           <DialogDescription>
-            Pull from the hatchery roster, or log an unlisted dragon you already hatched.
+            Catalog names are marked owned in Hatchery. Use this only for a
+            dragon Hub does not list yet.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={tab === "catalog" ? "default" : "outline"}
-            onClick={() => setTab("catalog")}
-          >
-            Hatchery
-          </Button>
-          <Button
-            size="sm"
-            variant={tab === "custom" ? "default" : "outline"}
-            onClick={() => setTab("custom")}
-          >
-            Unlisted
-          </Button>
-        </div>
-        {tab === "catalog" ? (
-          <div className="flex min-h-0 flex-col gap-3">
-            <Input
-              placeholder="Search name, habit, or command…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="grid grid-cols-3 gap-2">
-              <ChoiceButton
-                active={breed === "all"}
-                onClick={() => setBreed("all")}
-              >
-                All
-              </ChoiceButton>
-              {BREEDS.map((b) => (
-                <ChoiceButton
-                  key={b}
-                  active={breed === b}
-                  onClick={() => setBreed(b)}
-                >
-                  {breedLabels[b]}
-                </ChoiceButton>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <ChoiceButton
-                active={rarity === "all"}
-                onClick={() => setRarity("all")}
-              >
-                Any
-              </ChoiceButton>
-              {RARITIES.map((r) => (
-                <ChoiceButton
-                  key={r}
-                  active={rarity === r}
-                  onClick={() => setRarity(r)}
-                >
-                  {rarityLabels[r]}
-                </ChoiceButton>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <ChoiceButton
-                active={troop === "all"}
-                onClick={() => setTroop("all")}
-              >
-                Any
-              </ChoiceButton>
-              {TROOP_TYPES.map((t) => (
-                <ChoiceButton
-                  key={t}
-                  active={troop === t}
-                  onClick={() => setTroop(t)}
-                >
-                  {troopShort[t]}
-                </ChoiceButton>
-              ))}
-            </div>
-            <ul className="max-h-[50dvh] divide-y divide-border/50 overflow-y-auto rounded-2xl ring-1 ring-foreground/10 sm:max-h-[46vh]">
-              {filtered.length === 0 ? (
-                <li className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No dragons match those filters. Add them as unlisted instead.
-                </li>
-              ) : (
-                filtered.map((d) => {
-                  const owned = state.owned.some((o) => o.dragonId === d.id);
-                  return (
-                    <li key={d.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!owned) addFromCatalog(d.id);
-                        }}
-                        disabled={owned}
-                        className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left disabled:opacity-50"
-                      >
-                        <DragonIcon
-                          dragonId={d.id}
-                          name={d.name}
-                          rarity={d.rarity}
-                          size="lg"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="font-heading block truncate">
-                            {d.name}
-                          </span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {d.epithet}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {owned ? "In pit" : "Tap to add"}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>
-        ) : (
-          <CustomDragonForm
-            onSubmit={(payload) => {
-              const added = addCustomDragon(payload);
-              if (added) onOpenChange(false);
-            }}
-          />
-        )}
+        <CustomDragonForm
+          onSubmit={(payload) => {
+            const added = addCustomDragon(payload);
+            if (added) onOpenChange(false);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -205,18 +70,26 @@ function CustomDragonForm({
   const [starRank, setStarRank] = useState(1);
   const [reignLevel, setReignLevel] = useState(1);
 
-  function toggleTroop(t: TroopType) {
+  function toggleTroop(troop: TroopType) {
     setAffinities((prev) =>
-      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
+      prev.includes(troop) ? prev.filter((row) => row !== troop) : [...prev, troop],
     );
   }
 
   return (
     <form
       className="grid gap-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit({ name, epithet, rarity, breed, affinities, starRank, reignLevel });
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit({
+          name,
+          epithet,
+          rarity,
+          breed,
+          affinities,
+          starRank,
+          reignLevel,
+        });
       }}
     >
       <div className="grid gap-1.5">
@@ -224,7 +97,7 @@ function CustomDragonForm({
         <Input
           id="custom-name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event) => setName(event.target.value)}
           placeholder="Vega, Termite, Meleys…"
           required
         />
@@ -234,7 +107,7 @@ function CustomDragonForm({
         <Input
           id="custom-epithet"
           value={epithet}
-          onChange={(e) => setEpithet(e.target.value)}
+          onChange={(event) => setEpithet(event.target.value)}
           placeholder="The one that actually wins rallies"
         />
       </div>
@@ -242,9 +115,13 @@ function CustomDragonForm({
         <div className="grid gap-1.5">
           <Label>Breed</Label>
           <div className="flex flex-wrap gap-1.5">
-            {BREEDS.map((b) => (
-              <Chip key={b} active={breed === b} onClick={() => setBreed(b)}>
-                {breedLabels[b]}
+            {BREEDS.map((row) => (
+              <Chip
+                key={row}
+                active={breed === row}
+                onClick={() => setBreed(row)}
+              >
+                {breedLabels[row]}
               </Chip>
             ))}
           </div>
@@ -252,9 +129,13 @@ function CustomDragonForm({
         <div className="grid gap-1.5">
           <Label>Rarity</Label>
           <div className="flex flex-wrap gap-1.5">
-            {RARITIES.map((r) => (
-              <Chip key={r} active={rarity === r} onClick={() => setRarity(r)}>
-                {rarityLabels[r]}
+            {RARITIES.map((row) => (
+              <Chip
+                key={row}
+                active={rarity === row}
+                onClick={() => setRarity(row)}
+              >
+                {rarityLabels[row]}
               </Chip>
             ))}
           </div>
@@ -263,13 +144,13 @@ function CustomDragonForm({
       <div className="grid gap-1.5">
         <Label>Positive affinities</Label>
         <div className="flex flex-wrap gap-1.5">
-          {TROOP_TYPES.map((t) => (
+          {TROOP_TYPES.map((troop) => (
             <Chip
-              key={t}
-              active={affinities.includes(t)}
-              onClick={() => toggleTroop(t)}
+              key={troop}
+              active={affinities.includes(troop)}
+              onClick={() => toggleTroop(troop)}
             >
-              {troopLabels[t]}
+              {troopLabels[troop]}
             </Chip>
           ))}
         </div>
@@ -283,7 +164,7 @@ function CustomDragonForm({
             min={1}
             max={10}
             value={starRank}
-            onChange={(e) => setStarRank(Number(e.target.value))}
+            onChange={(event) => setStarRank(Number(event.target.value))}
           />
         </div>
         <div className="grid gap-1.5">
@@ -294,12 +175,12 @@ function CustomDragonForm({
             min={1}
             max={80}
             value={reignLevel}
-            onChange={(e) => setReignLevel(Number(e.target.value))}
+            onChange={(event) => setReignLevel(Number(event.target.value))}
           />
         </div>
       </div>
       <DialogFooter>
-        <Button type="submit">Add to pit</Button>
+        <Button type="submit">Save unlisted</Button>
       </DialogFooter>
     </form>
   );

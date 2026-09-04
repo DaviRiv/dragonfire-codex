@@ -193,8 +193,8 @@ export function CoachPage() {
 
       {pitTooSmall ? (
         <EmptyState
-          title="Log dragons first"
-          description="Copilot needs at least three names in the pit, or switch the pool to Hatchery."
+          title="Mark owned dragons first"
+          description="Copilot needs at least three owned names, or switch the pool to Hatchery."
           action={
             <div className="grid w-full max-w-sm gap-2">
               <Button onClick={loadSample}>Load sample pit</Button>
