@@ -1,11 +1,11 @@
 import { localComboLines } from "@/lib/ai/local";
-import { COACH_SYSTEM, type AiLine } from "@/lib/ai/prompt";
 import {
-  formatRosterLine,
-  type SuggestRequest,
-} from "@/lib/ai/roster";
+  buildRosterBlock,
+  COACH_SYSTEM,
+  type AiLine,
+} from "@/lib/ai/prompt";
+import type { SuggestRequest } from "@/lib/ai/roster";
 import { makePick } from "@/lib/lineup";
-import { modeLabels, troopLabels } from "@/lib/labels";
 import type {
   Lineup,
   LineupKind,
@@ -43,25 +43,6 @@ export function guessTroopMode(text: string): {
   else if (/\bgather/.test(hay)) mode = "gathering";
   else if (/\bpve|\bcampaign|\btile/.test(hay)) mode = "pve";
   return { troop, mode };
-}
-
-export function buildRosterBlock(request: SuggestRequest): string {
-  const troop = troopLabels[request.troop];
-  const mode = modeLabels[request.mode];
-  const poolLabel =
-    request.pool === "pit"
-      ? `PIT ONLY (${request.roster.length} owned). Do not pick anyone missing from this list.`
-      : `FULL HATCHERY (${request.roster.length} dragons). Unowned rows are theory goals, not a live march.`;
-  const skip = request.skipUsed
-    ? "Skip other teams is on. Rows tagged on:NAME already sit on another saved pit formation. Prefer dragons without that tag unless the player asks to reuse them."
-    : "The same dragon may appear on more than one saved team.";
-  return `Pool: ${poolLabel}
-Default troop: ${troop} (${request.troop})
-Default mode: ${mode} (${request.mode})
-${skip}
-
-Roster (id | name | jobs | rank | affinities | needs | gives):
-${request.roster.map((card) => formatRosterLine(card, { compact: true })).join("\n")}`;
 }
 
 export function buildCoachMessages(

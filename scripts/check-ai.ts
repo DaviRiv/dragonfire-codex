@@ -5,6 +5,7 @@ import { samplePit } from "@/data/sample";
 import { localComboLines } from "@/lib/ai/local";
 import { guessTroopMode, lineupFromAiLine, localCoachAnswer } from "@/lib/ai/coach";
 import { parseAiLines, parseCoachReply } from "@/lib/ai/parse";
+import { chatgptCoachExport, chatgptSuggestExport } from "@/lib/ai/export";
 import { filledPrompt, makeSuggestRequest } from "@/lib/ai/prompt";
 import { isUserApiKey, maskOpenAiKey } from "@/lib/ai/keys";
 import { collectRoster } from "@/lib/ai/roster";
@@ -37,6 +38,28 @@ if (!prompt.includes("Player note")) throw new Error("missing note");
 if (!prompt.includes("on:")) throw new Error("missing on: tags");
 if (!prompt.includes("Skip other teams is on")) {
   throw new Error("missing skip-used instruction");
+}
+const chat = chatgptSuggestExport(request);
+if (!chat.includes("vhagar")) throw new Error("chatgpt export missing vhagar");
+if (!chat.includes("Left / Vanguard / Right")) {
+  throw new Error("chatgpt export missing seat labels");
+}
+if (chat.includes("JSON only") || chat.includes("Reply with JSON")) {
+  throw new Error("chatgpt export should not ask for JSON");
+}
+const coachExport = chatgptCoachExport({
+  request,
+  turns: [{ role: "user", text: "Build a shield PvP core from my pit" }],
+  draft: "Who soaks if Vhagar is already marching?",
+});
+if (!coachExport.includes("Player:")) {
+  throw new Error("coach export missing conversation");
+}
+if (!coachExport.includes("Who soaks if Vhagar is already marching?")) {
+  throw new Error("coach export missing draft question");
+}
+if (!coachExport.includes("Do not return JSON")) {
+  throw new Error("coach export missing ChatGPT rules");
 }
 const lines = localComboLines(lineup, state, pit);
 if (lines.length < 1) throw new Error("no local lines");

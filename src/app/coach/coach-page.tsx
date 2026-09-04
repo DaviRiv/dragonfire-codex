@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
@@ -8,7 +9,11 @@ import { OpenAiLogin } from "@/components/openai-login";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { COACH_STARTERS, guessTroopMode, lineupFromAiLine } from "@/lib/ai/coach";
-import type { AiLine } from "@/lib/ai/prompt";
+import {
+  chatgptCoachExport,
+  chatgptExportFilename,
+} from "@/lib/ai/export";
+import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool } from "@/lib/ai/roster";
 import { useOpenAiSession } from "@/lib/ai/session";
 import { newId, nowIso } from "@/lib/dragons";
@@ -72,6 +77,28 @@ export function CoachPage() {
     .reverse()
     .find((turn) => turn.role === "assistant" && (turn.lines?.length ?? 0) > 0)
     ?.lines;
+  const exportText = useMemo(() => {
+    const hint =
+      draft.trim() ||
+      [...turns].reverse().find((turn) => turn.role === "user")?.text ||
+      "";
+    const guess = guessTroopMode(hint);
+    const request = makeSuggestRequest(
+      { ...lineup, troop: guess.troop, mode: guess.mode },
+      state,
+      pool,
+      roster,
+    );
+    return chatgptCoachExport({
+      request,
+      turns: turns.map((turn) => ({ role: turn.role, text: turn.text })),
+      draft,
+    });
+  }, [draft, turns, lineup, state, pool, roster]);
+  const lastAssistant = [...turns]
+    .reverse()
+    .find((turn) => turn.role === "assistant");
+  const quotaHint = lastAssistant?.warning;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -192,7 +219,8 @@ export function CoachPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Talk about three-dragon lines. Boards appear here as the coach
-          picks them.
+          picks them. Copy for ChatGPT if you would rather paste into
+          chatgpt.com than use an API key.
         </p>
       </div>
       <OpenAiLogin />
@@ -210,6 +238,16 @@ export function CoachPage() {
           Hatchery
         </MiniChip>
       </div>
+      <ChatGptExportBar
+        text={exportText}
+        filename={chatgptExportFilename("coach", pool)}
+        disabled={roster.length === 0}
+      />
+      {quotaHint ? (
+        <p className="text-[13px] leading-snug text-amber-100">
+          {quotaHint} Copy for ChatGPT and paste into chatgpt.com.
+        </p>
+      ) : null}
 
       {pitTooSmall ? (
         <EmptyState

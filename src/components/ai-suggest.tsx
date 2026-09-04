@@ -1,18 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { OpenAiLogin } from "@/components/openai-login";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { filledPrompt, makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
+import {
+  chatgptExportFilename,
+  chatgptSuggestExport,
+} from "@/lib/ai/export";
+import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool } from "@/lib/ai/roster";
 import { useOpenAiSession } from "@/lib/ai/session";
 import { findDragon } from "@/lib/dragons";
 import { modeShort, troopShort } from "@/lib/labels";
 import type { Lineup, PitState } from "@/lib/types";
-import { Copy, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export function AiSuggest({
@@ -43,18 +48,7 @@ export function AiSuggest({
     () => makeSuggestRequest(lineup, state, pool, roster, note),
     [lineup, state, pool, roster, note],
   );
-  const prompt = useMemo(() => filledPrompt(request), [request]);
-
-  async function copyPrompt() {
-    try {
-      await navigator.clipboard.writeText(prompt);
-      toast.success(
-        `Copied ${roster.length}-dragon ${pool} prompt. Paste it into ChatGPT or Claude.`,
-      );
-    } catch {
-      toast.error("Could not copy. Open Preview filled prompt and select it.");
-    }
-  }
+  const chatgptText = useMemo(() => chatgptSuggestExport(request), [request]);
 
   async function ask() {
     if (roster.length < 3) {
@@ -107,7 +101,8 @@ export function AiSuggest({
       <p className="text-[13px] leading-snug text-muted-foreground">
         Fills a template with this roster and asks for 2–3 lines. Pit is every
         dragon you own. Hatchery is the full catalog. Log in with an OpenAI
-        key to run the model here, or copy the prompt into ChatGPT.
+        key to run the model here, or copy the ChatGPT text and paste it at
+        chatgpt.com.
       </p>
       <OpenAiLogin />
       {request.skipUsed ? (
@@ -158,15 +153,13 @@ export function AiSuggest({
           <Sparkles data-icon="inline-start" />
           {busy ? "Asking…" : "Suggest combinations"}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => void copyPrompt()}
+      </div>
+      <div className="mt-2">
+        <ChatGptExportBar
+          text={chatgptText}
+          filename={chatgptExportFilename("suggest", pool)}
           disabled={roster.length === 0}
-        >
-          <Copy data-icon="inline-start" />
-          Copy prompt
-        </Button>
+        />
       </div>
       {roster.length < 3 ? (
         <p className="mt-2 text-[13px] text-muted-foreground">
@@ -176,7 +169,10 @@ export function AiSuggest({
         </p>
       ) : null}
       {warning ? (
-        <p className="mt-2 text-[13px] leading-snug text-amber-100">{warning}</p>
+        <p className="mt-2 text-[13px] leading-snug text-amber-100">
+          {warning} Copy for ChatGPT and paste into chatgpt.com if the API is
+          out of quota.
+        </p>
       ) : null}
       {source === "model" ? (
         <p className="mt-2 text-[13px] text-emerald-200">
@@ -229,14 +225,6 @@ export function AiSuggest({
           ))}
         </ul>
       ) : null}
-      <details className="mt-2">
-        <summary className="cursor-pointer text-[13px] text-muted-foreground">
-          Preview filled prompt
-        </summary>
-        <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-black/30 p-2 text-[11px] leading-snug text-foreground/80">
-          {prompt}
-        </pre>
-      </details>
     </Disclosure>
   );
 }
