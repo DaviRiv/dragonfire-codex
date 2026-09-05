@@ -84,6 +84,109 @@ if (!stacks.includes("Rallying Flame") || !stacks.includes("Spreading Blaze")) {
   fail(`stack parse ${stacks.join(", ")}`);
 }
 
+const vermaxNames: [number, string, string[], string][] = [
+  [1, "Trial by Flame", ["Fire Damage Received (<75%)", "Fire Damage Received (<50%)", "Fire Damage Received (<25%)"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [2, "Reactive Instincts", ["Instinct", "Initiative"], "18%,21.6%,25.2%,30.6%,36%"],
+  [3, "Rallying Flame", ["Rallying Flame Chance", "Spreading Blaze Chance"], "50%,60%,70%,85%,100%"],
+  [4, "Dragon's Valor", ["Damage Received", "Strength"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [5, "Unyielding Resolve", ["Advantage Chance"], "20%,26%,32%,40%,50%"],
+];
+for (const [habit, title, labels, firstValues] of vermaxNames) {
+  const row = insightForSource("vermax", { kind: "habit", habit });
+  if (!row) fail(`Vermax habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Vermax habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const trial = insightForSource("vermax", { kind: "habit", habit: 1 });
+if (
+  trial?.scale.find((row) => row.label === "Fire Damage Received (<50%)")?.values.join(
+    ",",
+  ) !== "-10%,-12%,-14%,-17%,-20%"
+) {
+  fail("Trial by Flame <50% mismatch");
+}
+if (
+  trial?.scale.find((row) => row.label === "Fire Damage Received (<25%)")?.values.join(
+    ",",
+  ) !== "-15%,-18%,-21%,-25.5%,-30%"
+) {
+  fail("Trial by Flame <25% mismatch");
+}
+if (
+  trial?.scale.some((row) =>
+    ["75%", "50%", "25%"].every((value) => row.values.includes(value)),
+  )
+) {
+  fail("Trial by Flame should skip constant troop-capacity percents");
+}
+if (/allies below 75%/i.test(trial?.body ?? "")) {
+  fail("do not rewrite Hub Trial by Flame spelling");
+}
+const instincts = insightForSource("vermax", { kind: "habit", habit: 2 });
+if (
+  instincts?.scale.find((row) => row.label === "Initiative")?.values.join(",") !==
+  "9%,10.8%,12.6%,15.3%,18%"
+) {
+  fail("Reactive Instincts Initiative mismatch");
+}
+const valor = insightForSource("vermax", { kind: "habit", habit: 4 });
+if (
+  valor?.scale.find((row) => row.label === "Strength")?.values.join(",") !==
+  "8.5%,10.2%,11.9%,14.45%,17%"
+) {
+  fail("Dragon's Valor Strength mismatch");
+}
+const resolve = insightForSource("vermax", { kind: "habit", habit: 5 });
+if (resolve?.scale.some((row) => row.values.join(",") === "30%,39%,48%,60%,75%")) {
+  fail("Unyielding Resolve should skip 1.5x derived Advantage chance");
+}
+if (resolve?.scale.some((row) => row.values.join(",") === "15%,15%,15%,15%,15%")) {
+  fail("Unyielding Resolve should skip constant Advantage +15%");
+}
+if (
+  glossNames(resolve).includes("Advantage") === false ||
+  glossNames(resolve).includes("Weakened") === false
+) {
+  fail("Unyielding Resolve should gloss Advantage and Weakened");
+}
+if (
+  findAbilityInsight("Trial by Flame", { dragonId: "vermax" })?.title !==
+  "Trial by Flame"
+) {
+  fail("hovering Trial by Flame should open Vermax habit 1");
+}
+if (
+  findAbilityInsight("Reactive Instincts", { dragonId: "vermax" })?.habit !== 2
+) {
+  fail("hovering Reactive Instincts on Vermax should open Vermax habit 2");
+}
+if (
+  findAbilityInsight("Unyielding Resolve", { dragonId: "vermax" })?.title !==
+  "Unyielding Resolve"
+) {
+  fail("hovering Unyielding Resolve should open Vermax habit 5");
+}
+const vermaxCatalog = catalogFor(vermax);
+if (vermaxCatalog.namedCount !== 5 || vermaxCatalog.needsScreenshot) {
+  fail("Vermax habit names from Star Progression should be complete");
+}
+
 const moondancer = getCatalogDragon("moondancer");
 if (!moondancer) fail("missing Moondancer");
 const moonKit = insightsForDragon(moondancer);

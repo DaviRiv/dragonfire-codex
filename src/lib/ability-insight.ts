@@ -243,6 +243,30 @@ function collapseScaleLabel(label: string): string {
   return label;
 }
 
+function fireReceivedBand(before: string, after: string): string | null {
+  const tail = before.slice(-56);
+  const head = after.slice(0, 56);
+  if (/75%\s*troop|bellow 75%|below 75%/i.test(before) && /by\s+$/i.test(before)) {
+    return "Fire Damage Received (<75%)";
+  }
+  if (/\btripled\b/i.test(tail) || /below 25%/i.test(head)) {
+    return "Fire Damage Received (<25%)";
+  }
+  if (/\bdoubled\b/i.test(tail) || /below 50%/i.test(head)) {
+    return "Fire Damage Received (<50%)";
+  }
+  return null;
+}
+
+function withFireReceivedBand(
+  label: string,
+  before: string,
+  after: string,
+): string {
+  if (!/^Fire Damage Received$/i.test(label)) return label;
+  return fireReceivedBand(before, after) ?? label;
+}
+
 const STAT_LABEL_RE =
   /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/gi;
 
@@ -347,7 +371,11 @@ function labelForPercent(
   );
   // "Enemy with the highest Intelligence by −10%" scales Damage Dealt, not Intelligence.
   if (byStat && !isHighestTargeting(statBefore, byStat.index ?? 0)) {
-    const label = collapseScaleLabel(byStat[1]);
+    const label = withFireReceivedBand(
+      collapseScaleLabel(byStat[1]),
+      statBefore,
+      after,
+    );
     if (
       /^Initiative$/i.test(label) &&
       /\bincrease\s+initiative\b/i.test(text) &&
@@ -359,12 +387,16 @@ function labelForPercent(
     return label;
   }
   const nearest = nearestStatLabel(statBefore);
-  if (nearest) return nearest;
+  if (nearest) return withFireReceivedBand(nearest, statBefore, after);
   const afterStat = after.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/i,
   );
-  if (afterStat) return collapseScaleLabel(afterStat[1]);
+  if (afterStat) {
+    return withFireReceivedBand(collapseScaleLabel(afterStat[1]), before, after);
+  }
   if (stackName) return stackName;
+  const band = fireReceivedBand(statBefore, after);
+  if (band) return band;
   return "Value";
 }
 

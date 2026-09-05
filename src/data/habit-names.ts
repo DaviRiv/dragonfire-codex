@@ -4,7 +4,13 @@
  * Index 0 is Habit 1 (2★). Unknown slots stay unset.
  */
 export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
-  vermax: [undefined, undefined, "Rallying Flame"],
+  vermax: [
+    "Trial by Flame",
+    "Reactive Instincts",
+    "Rallying Flame",
+    "Dragon's Valor",
+    "Unyielding Resolve",
+  ],
   moondancer: [
     "New Moon",
     "Reactive Instincts",
