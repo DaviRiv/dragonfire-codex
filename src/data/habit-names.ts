@@ -54,6 +54,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Mass Enfeeble",
     "Blood Wyrm",
   ],
+  syrax: [
+    "Mindful Synergy",
+    "Flight Mastery",
+    "Strategic Revival",
+    "Tactical Inferno",
+    "Mother's Mercy",
+  ],
 };
 
 export function habitDisplayName(

@@ -551,6 +551,120 @@ if (carCatalog.namedCount !== 5 || carCatalog.needsScreenshot) {
   fail("Caraxes habit names from Star Progression should be complete");
 }
 
+const syrax = getCatalogDragon("syrax");
+if (!syrax) fail("missing Syrax");
+const syraxNames: [number, string, string[], string][] = [
+  [1, "Mindful Synergy", ["Intelligence/Instinct"], "6.5%,7.8%,9.1%,11.05%,13%"],
+  [2, "Flight Mastery", ["Initiative (Increase)", "Initiative (Reduction)"], "6%,7.2%,8.4%,10.2%,12%"],
+  [3, "Strategic Revival", ["Recovery Rate", "Resistance Chance"], "50%,60%,70%,85%,100%"],
+  [4, "Tactical Inferno", ["Damage Dealt"], "18%,21.6%,25.2%,30.6%,36%"],
+  [5, "Mother's Mercy", ["Cleanse Chance"], "14%,18.2%,22.4%,28%,35%"],
+];
+for (const [habit, title, labels, firstValues] of syraxNames) {
+  const row = insightForSource("syrax", { kind: "habit", habit });
+  if (!row) fail(`Syrax habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Syrax habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const flight = insightForSource("syrax", { kind: "habit", habit: 2 });
+if (
+  flight?.scale.find((row) => row.label === "Initiative (Reduction)")?.values.join(
+    ",",
+  ) !== "-6%,-7.2%,-8.4%,-10.2%,-12%"
+) {
+  fail("Flight Mastery Initiative (Reduction) mismatch");
+}
+const revival = insightForSource("syrax", { kind: "habit", habit: 3 });
+if (
+  revival?.scale.find((row) => row.label === "Resistance Chance")?.values.join(
+    ",",
+  ) !== "25%,30%,35%,42.5%,50%"
+) {
+  fail("Strategic Revival Resistance Chance mismatch");
+}
+if (revival?.scale.some((row) => row.values.join(",") === "75%,90%,105%,127.5%,150%")) {
+  fail("Strategic Revival should skip 1.5x derived Recovery percents");
+}
+if (revival?.scale.some((row) => /^-20%/.test(row.values[0] ?? ""))) {
+  fail("Strategic Revival should skip constant Resistance -20%");
+}
+if (/25% chance to grant/i.test(revival?.body ?? "")) {
+  fail("do not rewrite Hub Strategic Revival text to screenshot wording");
+}
+if (!/Blazing Fury gains/i.test(revival?.body ?? "")) {
+  fail("keep Hub Strategic Revival Blazing Fury gains text");
+}
+if (glossNames(revival).includes("Resistance")) {
+  fail("Strategic Revival already explains Resistance; do not duplicate the glossary");
+}
+if (
+  findAbilityInsight("Mindful Synergy", { dragonId: "syrax" })?.title !==
+  "Mindful Synergy"
+) {
+  fail("hovering Mindful Synergy should open Syrax habit 1");
+}
+if (
+  findAbilityInsight("Mother's Mercy", { dragonId: "syrax" })?.title !==
+  "Mother's Mercy"
+) {
+  fail("hovering Mother's Mercy should open Syrax habit 5");
+}
+const syraxCommand = insightForSource("syrax", { kind: "command" });
+if (!syraxCommand) fail("Syrax command missing");
+if (syraxCommand.title !== "Blazing Fury") {
+  fail(`Syrax command title is ${syraxCommand.title}, expected Blazing Fury`);
+}
+if (/Blazing Fury gains/i.test(syraxCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Blazing Fury", { dragonId: "syrax" })?.kind !== "command"
+) {
+  fail("hovering Blazing Fury should open Syrax's Command");
+}
+if (!namedChips(syraxCommand).includes("Blazing Fury")) {
+  fail("Syrax command chips should include Blazing Fury");
+}
+const syraxCatalog = catalogFor(syrax);
+if (syraxCatalog.namedCount !== 5 || syraxCatalog.needsScreenshot) {
+  fail("Syrax habit names from Star Progression should be complete");
+}
+if (syraxCatalog.command.names.includes("Blazing Fury") === false) {
+  fail("Dev catalog should list Blazing Fury on Syrax's Command");
+}
+
+const control = findAbilityInsight("Control", { dragonId: "syrax" });
+if (!control || control.title !== "Control" || control.kind !== "buff") {
+  fail(`Control hover opened ${control?.kind}:${control?.title}`);
+}
+if (control.polarity !== "debuff") fail("Control is a crowd-control category");
+if (!/Stun, Stagger, Overwhelm, and Confusion/i.test(control.body)) {
+  fail(`Control glossary missing Star Progression line: ${control.body}`);
+}
+if (
+  glossNames(insightForSource("syrax", { kind: "habit", habit: 5 })).includes(
+    "Control",
+  ) === false
+) {
+  fail("Mother's Mercy should gloss Control");
+}
+
 const burn = findAbilityInsight("Burn", { dragonId: "caraxes" });
 if (!burn || burn.title !== "Burn" || burn.kind !== "buff") {
   fail(`Burn hover opened ${burn?.kind}:${burn?.title}`);

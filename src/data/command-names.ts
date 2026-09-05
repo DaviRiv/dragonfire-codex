@@ -5,6 +5,7 @@
  */
 export const COMMAND_NAMES: Record<string, string> = {
   kalspire: "Tactical Strike",
+  syrax: "Blazing Fury",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

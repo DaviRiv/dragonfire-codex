@@ -15,6 +15,7 @@ export const STATUS_GLOSSARY: Record<string, string> = {
   Panic: "Deals Tactical Damage to the target each round.",
   Burn: "Deals Fire Damage to the target each round.",
   Slow: "Causes the target to attack after all other combatants each round.",
+  Control: "Includes Stun, Stagger, Overwhelm, and Confusion.",
 };
 
 export function statusGlossaryName(name: string): string | undefined {

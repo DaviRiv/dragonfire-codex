@@ -288,7 +288,8 @@ function labelForPercent(
   if (
     /^[^.]{0,24}chance/i.test(after) ||
     /chance\s*$/i.test(before.slice(-18)) ||
-    /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before)
+    /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before) ||
+    /^[^.]{0,24}to grant\b/i.test(after)
   ) {
     const gainStatus = STATUS_NAMES.find((name) =>
       new RegExp(String.raw`(?:gain|gains)\s+${name}`, "i").test(before),
@@ -322,8 +323,8 @@ function labelForPercent(
     return "Damage Rate";
   }
   if (
-    /recovery rate/i.test(before.slice(-24)) ||
-    /recovery rate/i.test(after.slice(0, 24))
+    /recover(?:y)? rate/i.test(before.slice(-24)) ||
+    /recover(?:y)? rate/i.test(after.slice(0, 24))
   ) {
     return "Recovery Rate";
   }
@@ -336,12 +337,24 @@ function labelForPercent(
   if (/\bStrength and Initiative\b/i.test(before) && /by\s+$/i.test(before)) {
     return "Strength/Initiative";
   }
+  if (/\bIntelligence and Instinct\b/i.test(before) && /by\s+$/i.test(before)) {
+    return "Intelligence/Instinct";
+  }
   const byStat = before.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
   );
   // "Enemy with the highest Intelligence by −10%" scales Damage Dealt, not Intelligence.
   if (byStat && !isHighestTargeting(before, byStat.index ?? 0)) {
-    return collapseScaleLabel(byStat[1]);
+    const label = collapseScaleLabel(byStat[1]);
+    if (
+      /^Initiative$/i.test(label) &&
+      /\bincrease\s+initiative\b/i.test(text) &&
+      /\breduce\s+initiative\b/i.test(text)
+    ) {
+      if (/\breduce\b/i.test(before)) return "Initiative (Reduction)";
+      if (/\bincrease\b/i.test(before)) return "Initiative (Increase)";
+    }
+    return label;
   }
   const nearest = nearestStatLabel(before);
   if (nearest) return nearest;

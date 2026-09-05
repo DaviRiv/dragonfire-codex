@@ -27,6 +27,7 @@ const DEBUFF_NAMES = new Set(
     "Stagger",
     "Vulnerable",
     "Prey",
+    "Control",
   ].map(keyName),
 );
 
