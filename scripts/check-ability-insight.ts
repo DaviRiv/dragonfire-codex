@@ -132,4 +132,58 @@ if (findAbilityInsight("Blood Moon", { dragonId: "moondancer" })?.title !== "Blo
   fail("hovering Blood Moon should open that habit");
 }
 
+const venator = getCatalogDragon("venator");
+if (!venator) fail("missing Venator");
+const venatorNames: [number, string, string[], string][] = [
+  [1, "Hunter's Bane", ["Intelligence"], "-30%,-36%,-42%,-51%,-60%"],
+  [2, "Dragon's Might", ["Damage Dealt"], "12.5%,15%,17.5%,21.25%,25%"],
+  [3, "Feral Precision", ["Damage Rate", "Double-Strike Chance"], "20%,24%,28%,34%,40%"],
+  [4, "Armor Break", ["Damage Received"], "8%,9.6%,11.2%,13.6%,16%"],
+  [5, "Desperate Ambush", ["Damage Rate", "Overwhelm Chance"], "60%,78%,96%,120%,150%"],
+];
+for (const [habit, title, labels, firstValues] of venatorNames) {
+  const row = insightForSource("venator", { kind: "habit", habit });
+  if (!row) fail(`Venator habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Venator habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const feral = insightForSource("venator", { kind: "habit", habit: 3 });
+if (
+  feral?.scale.find((row) => row.label === "Double-Strike Chance")?.values.join(
+    ",",
+  ) !== "40%,42%,44%,47%,50%"
+) {
+  fail("Feral Precision Double-Strike chance mismatch");
+}
+const ambush = insightForSource("venator", { kind: "habit", habit: 5 });
+if (
+  ambush?.scale.find((row) => row.label === "Overwhelm Chance")?.values.join(
+    ",",
+  ) !== "12%,15.6%,19.2%,24%,30%"
+) {
+  fail("Desperate Ambush Overwhelm chance mismatch");
+}
+if (findAbilityInsight("Hunter's Bane", { dragonId: "venator" })?.title !== "Hunter's Bane") {
+  fail("hovering Hunter's Bane should open Venator habit 1");
+}
+if (findAbilityInsight("Feral Strike", { dragonId: "venator" })?.title !== "Feral Precision") {
+  fail("hovering Feral Strike should open Feral Precision");
+}
+
 console.log("ability insight checks passed");

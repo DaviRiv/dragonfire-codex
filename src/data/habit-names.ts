@@ -12,6 +12,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Blood Moon",
     "Eclipsing Strike",
   ],
+  venator: [
+    "Hunter's Bane",
+    "Dragon's Might",
+    "Feral Precision",
+    "Armor Break",
+    "Desperate Ambush",
+  ],
 };
 
 export function habitDisplayName(

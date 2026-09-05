@@ -189,6 +189,14 @@ export function definedStacksIn(text: string): string[] {
   return [...names];
 }
 
+function collapseScaleLabel(label: string): string {
+  if (/Damage Received$/i.test(label)) return "Damage Received";
+  if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
+    return "Damage Dealt";
+  }
+  return label;
+}
+
 function isDerivedPercent(text: string, index: number): boolean {
   const before = text.slice(Math.max(0, index - 64), index);
   if (/double this chance/i.test(before)) return true;
@@ -215,9 +223,20 @@ function labelForPercent(
 
   if (
     /^[^.]{0,24}chance/i.test(after) ||
-    /chance\s*$/i.test(before.slice(-18))
+    /chance\s*$/i.test(before.slice(-18)) ||
+    /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before)
   ) {
-    if (/afflict\s+Bleed/i.test(after)) return "Bleed Chance";
+    const afflictStatus = STATUS_NAMES.find((name) =>
+      new RegExp(
+        String.raw`afflict(?:s|ing)?(?:\s+the target)?(?:\s+with)?\s+${name}`,
+        "i",
+      ).test(after),
+    );
+    if (afflictStatus) return `${afflictStatus} Chance`;
+    const gainStatus = STATUS_NAMES.find((name) =>
+      new RegExp(String.raw`(?:gain|gains)\s+${name}`, "i").test(before),
+    );
+    if (gainStatus) return `${gainStatus} Chance`;
     if (stackName) return `${stackName} Chance`;
     if (habitTitle) return `${habitTitle} Chance`;
     return "Chance";
@@ -232,23 +251,11 @@ function labelForPercent(
   const byStat = before.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
   );
-  if (byStat) {
-    const label = byStat[1];
-    if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
-      return "Damage Dealt";
-    }
-    return label;
-  }
+  if (byStat) return collapseScaleLabel(byStat[1]);
   const stat = `${before} ${after}`.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/i,
   );
-  if (stat) {
-    const label = stat[1];
-    if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
-      return "Damage Dealt";
-    }
-    return label;
-  }
+  if (stat) return collapseScaleLabel(stat[1]);
   if (stackName) return stackName;
   return "Value";
 }
