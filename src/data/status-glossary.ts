@@ -21,6 +21,8 @@ export const STATUS_GLOSSARY: Record<string, string> = {
     "Causes each instance of damage against the target to have a chance to be ignored.",
   Vulnerable: "Increases the target's Damage Received.",
   Prey: "Reduces the target's Recovery Received.",
+  Confusion:
+    "Causes the target to have a 50% chance to mistake Allies for Enemies and vice versa each time they activate a Command or Habit, or launch a Basic Attack on their turn.",
 };
 
 export function statusGlossaryName(name: string): string | undefined {

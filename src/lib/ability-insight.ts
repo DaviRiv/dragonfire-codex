@@ -406,6 +406,12 @@ function labelForPercent(
     return "Fire Damage Dealt (Non-player)";
   }
   if (
+    /Physical,\s*Tactical\s+OR\s+Fire Damage Received/i.test(statBefore) &&
+    /by\s+$/i.test(statBefore)
+  ) {
+    return "Damage Received";
+  }
+  if (
     /Physical Damage Received/i.test(statBefore) &&
     /Fire Damage Received/i.test(statBefore) &&
     /by\s+$/i.test(statBefore)

@@ -1411,6 +1411,137 @@ if (huntTone !== "command") {
   fail(`Wild Hunt text tone is ${huntTone}, expected command`);
 }
 
+const daemoros = getCatalogDragon("daemoros");
+if (!daemoros) fail("missing Daemoros");
+const daemorosNames: [number, string, string[], string][] = [
+  [1, "Instill Fear", ["Panic Chance"], "25%,30%,35%,42.5%,50%"],
+  [2, "Powerful Reflexes", ["Strength/Initiative"], "16%,19.2%,22.4%,27.2%,32%"],
+  [3, "Shroud of Shadows", ["Confusion Chance"], "15%,18%,21%,25.5%,30%"],
+  [4, "Darkening Fear", ["Panic Chance"], "25%,30%,35%,42.5%,50%"],
+  [5, "Phantom's Veil", ["Damage Received"], "-15%,-19.5%,-24%,-30%,-37.5%"],
+];
+for (const [habit, title, labels, firstValues] of daemorosNames) {
+  const row = insightForSource("daemoros", { kind: "habit", habit });
+  if (!row) fail(`Daemoros habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Daemoros habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const instillFear = insightForSource("daemoros", { kind: "habit", habit: 1 });
+if (!/Right Flank/i.test(instillFear?.body ?? "")) {
+  fail("keep Hub Instill Fear Right Flank targeting");
+}
+if (!/Enemey/i.test(instillFear?.body ?? "")) {
+  fail("do not rewrite Hub Instill Fear Enemey spelling");
+}
+if (instillFear?.scale.some((row) => row.values.join(",") === "-25%,-25%,-25%,-25%,-25%")) {
+  fail("Instill Fear should skip constant Intelligence/Instinct -25%");
+}
+if (instillFear?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Instill Fear should skip constant Panic Damage Rate +20%");
+}
+if (glossNames(instillFear).includes("Panic") === false) {
+  fail("Instill Fear should gloss Panic");
+}
+const powerfulReflexes = insightForSource("daemoros", { kind: "habit", habit: 2 });
+if (!/Strength and Initiative/i.test(powerfulReflexes?.body ?? "")) {
+  fail("keep Hub Powerful Reflexes Strength and Initiative text");
+}
+const shroud = insightForSource("daemoros", { kind: "habit", habit: 3 });
+if (/mistake Allies for Enemies/i.test(shroud?.body ?? "")) {
+  fail("do not copy Confusion glossary into Hub Shroud of Shadows text");
+}
+if (glossNames(shroud).includes("Confusion") === false) {
+  fail("Shroud of Shadows should gloss Confusion");
+}
+const darkeningFear = insightForSource("daemoros", { kind: "habit", habit: 4 });
+if (!/Left Flank/i.test(darkeningFear?.body ?? "")) {
+  fail("keep Hub Darkening Fear Left Flank targeting");
+}
+if (!/Each Round 1:/i.test(darkeningFear?.body ?? "")) {
+  fail("do not rewrite Hub Darkening Fear Each Round 1: to screenshot wording");
+}
+if (glossNames(darkeningFear).includes("Panic") === false) {
+  fail("Darkening Fear should gloss Panic");
+}
+const phantomVeil = insightForSource("daemoros", { kind: "habit", habit: 5 });
+if (/Start of Each Round/i.test(phantomVeil?.body ?? "")) {
+  fail("do not rewrite Hub Phantom's Veil Each Round to screenshot wording");
+}
+if (!/Each Round: Reduce either your Physical, Tactical OR Fire Damage Received/i.test(
+  phantomVeil?.body ?? "",
+)) {
+  fail("keep Hub Phantom's Veil Each Round text");
+}
+if (
+  findAbilityInsight("Instill Fear", { dragonId: "daemoros" })?.title !==
+  "Instill Fear"
+) {
+  fail("hovering Instill Fear should open Daemoros habit 1");
+}
+if (
+  findAbilityInsight("Shroud of Shadows", { dragonId: "daemoros" })?.kind !==
+  "habit"
+) {
+  fail("hovering Shroud of Shadows should open Daemoros habit 3");
+}
+if (
+  findAbilityInsight("Phantom's Veil", { dragonId: "daemoros" })?.title !==
+  "Phantom's Veil"
+) {
+  fail("hovering Phantom's Veil should open Daemoros habit 5");
+}
+const daeCommand = insightForSource("daemoros", { kind: "command" });
+if (!daeCommand) fail("Daemoros command missing");
+if (daeCommand.title !== "Command") {
+  fail(`Daemoros command title is ${daeCommand.title}, expected Command`);
+}
+const daeCatalog = catalogFor(daemoros);
+if (daeCatalog.namedCount !== 5 || daeCatalog.needsScreenshot) {
+  fail("Daemoros habit names from Star Progression should be complete");
+}
+const daeConfusion = findAbilityInsight("Confusion", { dragonId: "daemoros" });
+if (!daeConfusion || daeConfusion.kind !== "buff") {
+  fail(`Confusion hover opened ${daeConfusion?.kind}:${daeConfusion?.title}`);
+}
+if (daeConfusion.polarity !== "debuff") fail("Confusion is a debuff");
+if (!/mistake Allies for Enemies/i.test(daeConfusion.body)) {
+  fail(`Confusion glossary missing Star Progression line: ${daeConfusion.body}`);
+}
+if (daeConfusion.dragonName !== "Daemoros" || daeConfusion.unlockStars !== 6) {
+  fail(
+    `Confusion on Daemoros should be 6★ Shroud of Shadows, got ${daeConfusion.dragonName} ${daeConfusion.unlockStars}`,
+  );
+}
+const daePanic = findAbilityInsight("Panic", { dragonId: "daemoros" });
+if (daePanic?.dragonName !== "Daemoros" || daePanic.unlockStars !== 2) {
+  fail(
+    `Panic on Daemoros should be 2★ Instill Fear, got ${daePanic?.dragonName} ${daePanic?.unlockStars}`,
+  );
+}
+if (statusMarkPolarity("Confusion") !== "debuff") fail("Confusion mark is a debuff");
+const confusionTone = tokenizeAbilityText("afflict Confusion").find(
+  (part) => part.value === "Confusion",
+)?.tone;
+if (confusionTone !== "debuff") {
+  fail(`Confusion text tone is ${confusionTone}, expected debuff`);
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

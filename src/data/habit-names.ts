@@ -95,6 +95,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Wary Beast",
     "Savage Claim",
   ],
+  daemoros: [
+    "Instill Fear",
+    "Powerful Reflexes",
+    "Shroud of Shadows",
+    "Darkening Fear",
+    "Phantom's Veil",
+  ],
 };
 
 export function habitDisplayName(
