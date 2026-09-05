@@ -186,4 +186,64 @@ if (findAbilityInsight("Feral Strike", { dragonId: "venator" })?.title !== "Fera
   fail("hovering Feral Strike should open Feral Precision");
 }
 
+const malachite = getCatalogDragon("malachite");
+if (!malachite) fail("missing Malachite");
+const malachiteNames: [number, string, string[], string][] = [
+  [1, "Forest's Instinct", ["Damage Dealt", "Damage Received"], "8%,9.6%,11.2%,13.6%,16%"],
+  [2, "Wise Vigor", ["Instinct", "Recovery Dealt"], "20%,24%,28%,34%,40%"],
+  [3, "Thunderous Roar", ["Advantage Chance"], "10%,12%,14%,17%,20%"],
+  [4, "Collective Might", ["Strength"], "12.5%,15%,17.5%,21.25%,25%"],
+  [5, "Lightning Strike", ["Lightning Strike Chance"], "40%,52%,64%,80%,100%"],
+];
+for (const [habit, title, labels, firstValues] of malachiteNames) {
+  const row = insightForSource("malachite", { kind: "habit", habit });
+  if (!row) fail(`Malachite habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Malachite habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const forest = insightForSource("malachite", { kind: "habit", habit: 1 });
+if (
+  forest?.scale.find((row) => row.label === "Damage Received")?.values.join(
+    ",",
+  ) !== "-8%,-9.6%,-11.2%,-13.6%,-16%"
+) {
+  fail("Forest's Instinct Damage Received mismatch");
+}
+const roar = insightForSource("malachite", { kind: "habit", habit: 3 });
+if (roar?.scale.some((row) => row.values.includes("20%") && row.label !== "Advantage Chance")) {
+  fail("Thunderous Roar should skip the constant Advantage +20%");
+}
+const bolt = insightForSource("malachite", { kind: "habit", habit: 5 });
+if (bolt?.scale.some((row) => /strength/i.test(row.label))) {
+  fail("Lightning Strike should skip the constant Strength +25%");
+}
+if (
+  findAbilityInsight("Forest's Instinct", { dragonId: "malachite" })?.title !==
+  "Forest's Instinct"
+) {
+  fail("hovering Forest's Instinct should open Malachite habit 1");
+}
+if (
+  findAbilityInsight("Lightning Strike", { dragonId: "malachite" })?.title !==
+  "Lightning Strike"
+) {
+  fail("hovering Lightning Strike should open Malachite habit 5");
+}
+
 console.log("ability insight checks passed");

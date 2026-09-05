@@ -238,6 +238,10 @@ function labelForPercent(
     );
     if (gainStatus) return `${gainStatus} Chance`;
     if (stackName) return `${stackName} Chance`;
+    const granted = STATUS_NAMES.filter((name) =>
+      new RegExp(String.raw`\b${name}\b`).test(chanceClause),
+    );
+    if (granted.length === 1) return `${granted[0]} Chance`;
     if (habitTitle) return `${habitTitle} Chance`;
     return "Chance";
   }

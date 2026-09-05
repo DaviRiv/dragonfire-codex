@@ -19,6 +19,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Armor Break",
     "Desperate Ambush",
   ],
+  malachite: [
+    "Forest's Instinct",
+    "Wise Vigor",
+    "Thunderous Roar",
+    "Collective Might",
+    "Lightning Strike",
+  ],
 };
 
 export function habitDisplayName(
