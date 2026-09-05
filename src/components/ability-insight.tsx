@@ -15,12 +15,39 @@ import {
   type AbilityInsight,
   type AbilityScaleRow,
   type AbilitySourceRef,
+  type StatusPolarity,
 } from "@/lib/ability-insight";
 import { cn } from "@/lib/utils";
-import { Lock } from "lucide-react";
+import { ArrowDown, ArrowUp, Lock } from "lucide-react";
 
 const PERSIST_NOTE =
   "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
+
+function StatusName({
+  name,
+  polarity,
+  className,
+}: {
+  name: string;
+  polarity: StatusPolarity;
+  className?: string;
+}) {
+  const Arrow = polarity === "debuff" ? ArrowDown : ArrowUp;
+  const color = polarity === "debuff" ? "text-df-debuff" : "text-df-buff";
+  return (
+    <span
+      className={cn("inline-flex items-baseline gap-0.5 font-medium", color, className)}
+    >
+      <Arrow
+        className="size-3.5 shrink-0 translate-y-px"
+        strokeWidth={2.75}
+        aria-hidden
+      />
+      <span className="sr-only">{polarity === "debuff" ? "Debuff" : "Buff"}: </span>
+      <span>{name}</span>
+    </span>
+  );
+}
 
 function ColoredText({ text }: { text: string }) {
   const parts = tokenizeAbilityText(text);
@@ -104,7 +131,7 @@ export function AbilityGlossList({
       {glosses.map((row) => (
         <p key={row.name} className="text-[13px] leading-relaxed text-stone-100">
           <AbilityHover name={row.name} dragonId={dragonId}>
-            <ColoredText text={row.name} />
+            <StatusName name={row.name} polarity={row.polarity} />
           </AbilityHover>{" "}
           <ColoredText text={row.body} />
         </p>
@@ -122,7 +149,9 @@ export function AbilityInsightCard({
 }) {
   const source =
     insight.kind === "buff"
-      ? insight.dragonName || "Status"
+      ? [insight.dragonName || null, sourceLabel(insight.kind, insight.habit, insight.polarity)]
+          .filter(Boolean)
+          .join(" · ")
       : [
           insight.dragonName,
           sourceLabel(insight.kind, insight.habit),
@@ -131,12 +160,32 @@ export function AbilityInsightCard({
           .filter(Boolean)
           .join(" · ");
 
+  const titleClass =
+    insight.kind === "buff" && insight.polarity === "debuff"
+      ? "text-df-debuff"
+      : insight.kind === "buff"
+        ? "text-df-buff"
+        : "text-amber-200";
+
   return (
     <div className="flex flex-col gap-2.5">
       <div>
-        <p className="font-heading flex items-center gap-1.5 text-[15px] tracking-[0.14em] text-amber-200 uppercase">
+        <p
+          className={cn(
+            "font-heading flex items-center gap-1.5 text-[15px] tracking-[0.14em] uppercase",
+            titleClass,
+          )}
+        >
           {locked ? <Lock className="size-3.5 shrink-0" aria-hidden /> : null}
-          {insight.title}
+          {insight.kind === "buff" && insight.polarity ? (
+            <StatusName
+              name={insight.title}
+              polarity={insight.polarity}
+              className="font-heading tracking-[0.14em] uppercase"
+            />
+          ) : (
+            insight.title
+          )}
         </p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">{source}</p>
       </div>
@@ -228,18 +277,27 @@ export function NamedAbilities({
   if (!insight || chips.length === 0) return null;
   return (
     <p className={cn("mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5", className)}>
-      {chips.map((item) => (
-        <AbilityHover
-          key={item}
-          name={item}
-          dragonId={dragonId}
-          source={source}
-          insight={insight}
-          locked={locked}
-        >
-          <span className={TONE_TEXT_CLASS.status}>{item}</span>
-        </AbilityHover>
-      ))}
+      {chips.map((item) => {
+        const resolved = resolveAbilityInsight({ name: item, dragonId, source });
+        const polarity =
+          resolved?.kind === "buff" ? resolved.polarity : undefined;
+        return (
+          <AbilityHover
+            key={item}
+            name={item}
+            dragonId={dragonId}
+            source={source}
+            insight={insight}
+            locked={locked}
+          >
+            {polarity ? (
+              <StatusName name={item} polarity={polarity} />
+            ) : (
+              <span className={TONE_TEXT_CLASS.status}>{item}</span>
+            )}
+          </AbilityHover>
+        );
+      })}
     </p>
   );
 }

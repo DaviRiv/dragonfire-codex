@@ -12,6 +12,7 @@ import {
   HABIT_UNLOCK_STARS,
   vanguardBonus,
 } from "@/lib/habits";
+import { polarityForName } from "@/lib/status-polarity";
 import type { Dragon } from "@/lib/types";
 
 export type CatalogSkill = {
@@ -116,6 +117,7 @@ function uniqueBuffs(
       byKey.set(keyOf(insight.title), {
         name: insight.title,
         body: insight.body,
+        polarity: insight.polarity ?? polarityForName(insight.title, insight.body),
       });
     }
     for (const row of insight.glosses) {

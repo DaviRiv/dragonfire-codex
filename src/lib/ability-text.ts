@@ -1,4 +1,4 @@
-import { namedAbilityPhrases } from "@/lib/ability-insight";
+import { namedAbilityPhrases, namePolarity } from "@/lib/ability-insight";
 import type { DragonStats } from "@/lib/types";
 
 /**
@@ -94,10 +94,10 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Physical Dmg", tone: "physical" },
   { phrase: "Fire Dmg", tone: "fire" },
   { phrase: "Command & Habits", tone: "status" },
-  { phrase: "First-Strike", tone: "status" },
-  { phrase: "Double-Strike", tone: "status" },
-  { phrase: "Crescent Blade", tone: "status" },
-  { phrase: "Rising Tide", tone: "status" },
+  { phrase: "First-Strike", tone: "buff" },
+  { phrase: "Double-Strike", tone: "buff" },
+  { phrase: "Crescent Blade", tone: "buff" },
+  { phrase: "Rising Tide", tone: "buff" },
   { phrase: "Solar Flare", tone: "status" },
   { phrase: "Right Flank", tone: "status" },
   { phrase: "Left Flank", tone: "status" },
@@ -109,13 +109,13 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Recovery", tone: "recovery" },
   { phrase: "Healing", tone: "recovery" },
   { phrase: "Heal", tone: "recovery" },
-  { phrase: "Resistance", tone: "received" },
-  { phrase: "Advantage", tone: "dealt" },
+  { phrase: "Resistance", tone: "buff" },
+  { phrase: "Advantage", tone: "buff" },
   { phrase: "Vulnerable", tone: "debuff" },
   { phrase: "Weakened", tone: "debuff" },
-  { phrase: "Overwhelm", tone: "status" },
-  { phrase: "Confusion", tone: "status" },
-  { phrase: "Protect", tone: "status" },
+  { phrase: "Overwhelm", tone: "debuff" },
+  { phrase: "Confusion", tone: "debuff" },
+  { phrase: "Protect", tone: "buff" },
   { phrase: "Cleanse", tone: "recovery" },
   { phrase: "Stagger", tone: "physical" },
   { phrase: "Control", tone: "status" },
@@ -124,11 +124,11 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Bleed", tone: "physical" },
   { phrase: "Panic", tone: "tactical" },
   { phrase: "Burn", tone: "fire" },
-  { phrase: "Taunt", tone: "status" },
-  { phrase: "Stun", tone: "status" },
-  { phrase: "Prey", tone: "status" },
-  { phrase: "Slow", tone: "tactical" },
-  { phrase: "Evade", tone: "status" },
+  { phrase: "Taunt", tone: "buff" },
+  { phrase: "Stun", tone: "debuff" },
+  { phrase: "Prey", tone: "debuff" },
+  { phrase: "Slow", tone: "debuff" },
+  { phrase: "Evade", tone: "buff" },
   { phrase: "Fire", tone: "fire" },
 ];
 
@@ -136,10 +136,13 @@ let SORTED_PHRASES: { phrase: string; tone: GameTone }[] | null = null;
 
 function phraseList(): { phrase: string; tone: GameTone }[] {
   if (SORTED_PHRASES) return SORTED_PHRASES;
-  const extra = namedAbilityPhrases().map((phrase) => ({
-    phrase,
-    tone: "status" as const,
-  }));
+  const extra = namedAbilityPhrases().map((phrase) => {
+    const polarity = namePolarity(phrase);
+    return {
+      phrase,
+      tone: (polarity ?? "status") as GameTone,
+    };
+  });
   SORTED_PHRASES = [...ABILITY_PHRASES, ...extra].sort(
     (a, b) => b.phrase.length - a.phrase.length,
   );

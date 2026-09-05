@@ -29,7 +29,7 @@ import {
   slotLabels,
 } from "@/lib/labels";
 import { cn } from "@/lib/utils";
-import { Search, Wrench } from "lucide-react";
+import { ArrowDown, ArrowUp, Search, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 type CoverageFilter = "all" | "needs" | "named";
@@ -239,11 +239,27 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
         </div>
       ) : null}
 
-      {entry.buffs.length > 0 ? (
+      {entry.buffs.some((row) => row.polarity !== "debuff") ? (
         <section className="rounded-xl bg-muted/40 p-3 ring-1 ring-foreground/10">
-          <p className="text-label">Buffs</p>
+          <p className="flex items-center gap-1 text-[0.6875rem] font-medium tracking-[0.12em] text-df-buff uppercase">
+            <ArrowUp className="size-3.5" aria-hidden />
+            Buffs
+          </p>
           <AbilityGlossList
-            glosses={entry.buffs}
+            glosses={entry.buffs.filter((row) => row.polarity !== "debuff")}
+            dragonId={dragon.id}
+            className="mt-2"
+          />
+        </section>
+      ) : null}
+      {entry.buffs.some((row) => row.polarity === "debuff") ? (
+        <section className="rounded-xl bg-muted/40 p-3 ring-1 ring-foreground/10">
+          <p className="flex items-center gap-1 text-[0.6875rem] font-medium tracking-[0.12em] text-df-debuff uppercase">
+            <ArrowDown className="size-3.5" aria-hidden />
+            Debuffs
+          </p>
+          <AbilityGlossList
+            glosses={entry.buffs.filter((row) => row.polarity === "debuff")}
             dragonId={dragon.id}
             className="mt-2"
           />

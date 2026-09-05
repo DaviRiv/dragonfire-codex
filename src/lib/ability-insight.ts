@@ -11,15 +11,21 @@ import {
   habitRankTexts,
   vanguardBonus,
 } from "@/lib/habits";
+import {
+  polarityForName,
+  type StatusPolarity,
+} from "@/lib/status-polarity";
 import type { Dragon } from "@/lib/types";
 
 export { habitDisplayName };
+export type { StatusPolarity };
 
 export type AbilitySourceKind = "command" | "vanguard" | "habit" | "buff";
 
 export type AbilityGloss = {
   name: string;
   body: string;
+  polarity: StatusPolarity;
 };
 
 export type AbilitySourceRef = {
@@ -46,6 +52,7 @@ export type AbilityInsight = {
   ranks?: string[];
   scale: AbilityScaleRow[];
   glosses: AbilityGloss[];
+  polarity?: StatusPolarity;
 };
 
 const STATUS_NAMES = [
@@ -357,8 +364,12 @@ export function namedChips(insight: AbilityInsight): string[] {
   return chips;
 }
 
-export function sourceLabel(kind: AbilitySourceKind, habit?: number): string {
-  if (kind === "buff") return "Status";
+export function sourceLabel(
+  kind: AbilitySourceKind,
+  habit?: number,
+  polarity?: StatusPolarity,
+): string {
+  if (kind === "buff") return polarity === "debuff" ? "Debuff" : "Buff";
   if (kind === "habit") return habit ? `Habit ${habit}` : "Habit";
   if (kind === "vanguard") return "Vanguard";
   return "Command";
@@ -409,6 +420,7 @@ function makeBuffInsight(
     body,
     scale: [],
     glosses: [],
+    polarity: polarityForName(name, body),
   };
 }
 
@@ -484,7 +496,12 @@ export function glossesForText(
   buffs: AbilityInsight[],
   skipTitle?: string,
 ): AbilityGloss[] {
-  const rows: { name: string; body: string; index: number }[] = [];
+  const rows: {
+    name: string;
+    body: string;
+    polarity: StatusPolarity;
+    index: number;
+  }[] = [];
   const seen = new Set<string>();
   const skip = skipTitle ? keyName(skipTitle) : "";
   for (const buff of buffs) {
@@ -494,9 +511,16 @@ export function glossesForText(
     if (idx < 0) continue;
     if (alreadyExplains(text, buff.title, buff.body)) continue;
     seen.add(key);
-    rows.push({ name: buff.title, body: buff.body, index: idx });
+    rows.push({
+      name: buff.title,
+      body: buff.body,
+      polarity: buff.polarity ?? polarityForName(buff.title, buff.body),
+      index: idx,
+    });
   }
-  return rows.sort((a, b) => a.index - b.index).map(({ name, body }) => ({ name, body }));
+  return rows
+    .sort((a, b) => a.index - b.index)
+    .map(({ name, body, polarity }) => ({ name, body, polarity }));
 }
 
 function kitBlob(
@@ -713,6 +737,16 @@ export function namedAbilityPhrases(): string[] {
   }
   namedPhrases = [...names].sort((a, b) => b.length - a.length);
   return namedPhrases;
+}
+
+/** Buff/debuff color for a named status or stack. Habits stay untyped. */
+export function namePolarity(name: string): StatusPolarity | null {
+  const key = keyName(name);
+  if (!key) return null;
+  warmCatalog();
+  const matches = byName.get(key) ?? [];
+  const buff = matches.find((item) => item.kind === "buff" && item.polarity);
+  return buff?.polarity ?? null;
 }
 
 export function resolveAbilityInsight(

@@ -10,6 +10,7 @@ import {
   scaleRowsFromRanks,
 } from "@/lib/ability-insight";
 import { habitRankTexts } from "@/lib/habits";
+import { tokenizeAbilityText } from "@/lib/ability-text";
 
 function fail(message: string): never {
   console.error(`FAIL: ${message}`);
@@ -399,6 +400,7 @@ if (!firstStrike || firstStrike.title !== "First-Strike") {
   fail(`First-Strike hover opened ${firstStrike?.title ?? "nothing"}`);
 }
 if (firstStrike.kind !== "buff") fail("First-Strike should be the status card");
+if (firstStrike.polarity !== "buff") fail("First-Strike is a buff");
 if (!/act before all other combatants/i.test(firstStrike.body)) {
   fail("First-Strike body missing the Star Progression glossary line");
 }
@@ -415,9 +417,16 @@ const advantage = findAbilityInsight("Advantage", { dragonId: "malachite" });
 if (advantage?.title !== "Advantage" || advantage.kind !== "buff") {
   fail(`Advantage hover opened ${advantage?.title ?? "nothing"}`);
 }
+if (advantage.polarity !== "buff") fail("Advantage is a buff");
 if (!/Damage Dealt/i.test(advantage.body)) {
   fail("Advantage body missing Damage Dealt");
 }
+
+const overwhelm = findAbilityInsight("Overwhelm", { dragonId: "venator" });
+if (overwhelm?.title !== "Overwhelm" || overwhelm.kind !== "buff") {
+  fail(`Overwhelm hover opened ${overwhelm?.title ?? "nothing"}`);
+}
+if (overwhelm.polarity !== "debuff") fail("Overwhelm is a debuff");
 
 const lightning = insightForSource("malachite", { kind: "habit", habit: 5 });
 if (!glossNames(lightning).includes("First-Strike")) {
@@ -425,6 +434,9 @@ if (!glossNames(lightning).includes("First-Strike")) {
 }
 if (!glossNames(lightning).includes("Double-Strike")) {
   fail(`Lightning Strike glosses missing Double-Strike: ${glossNames(lightning)}`);
+}
+if (lightning?.glosses.some((row) => row.polarity !== "buff")) {
+  fail("Lightning Strike glossary lines should be buffs");
 }
 
 const roarGloss = insightForSource("malachite", { kind: "habit", habit: 3 });
@@ -450,6 +462,7 @@ if (!/Max 8 stacks/i.test(risingTide.body)) {
 if (!/^Each stack of Rising Tide /i.test(risingTide.body)) {
   fail(`Rising Tide name was swallowed by the extractor: ${risingTide.body}`);
 }
+if (risingTide.polarity !== "buff") fail("Rising Tide is a defensive buff");
 
 const crescent = findAbilityInsight("Crescent Blade", { dragonId: "moondancer" });
 if (crescent?.kind !== "buff" || crescent.title !== "Crescent Blade") {
@@ -457,6 +470,23 @@ if (crescent?.kind !== "buff" || crescent.title !== "Crescent Blade") {
 }
 if (!/Sentinel/i.test(crescent.body) || !/Rising Tide/i.test(crescent.body)) {
   fail(`Crescent Blade body should be the grant line: ${crescent.body}`);
+}
+if (crescent.polarity !== "buff") fail("Crescent Blade is a buff");
+
+const wrath = findAbilityInsight("Infectious Wrath", { dragonId: "seasmoke" });
+if (wrath?.kind !== "buff") {
+  fail(`Infectious Wrath should extract as a stack: ${wrath?.kind}:${wrath?.title}`);
+}
+if (wrath.polarity !== "debuff") {
+  fail(`Infectious Wrath should be a debuff: ${wrath.body}`);
+}
+
+const erosion = findAbilityInsight("Steady Erosion", { dragonId: "solstryker" });
+if (erosion?.kind !== "buff") {
+  fail(`Steady Erosion should extract as a stack: ${erosion?.kind}:${erosion?.title}`);
+}
+if (erosion.polarity !== "debuff") {
+  fail(`Steady Erosion should be a debuff: ${erosion.body}`);
 }
 
 const moonCommand = insightForSource("moondancer", { kind: "command" });
@@ -498,6 +528,19 @@ if (findAbilityInsight("Lightning Strike", { dragonId: "malachite" })?.kind !== 
 
 if (lightning?.scale.some((row) => /power/i.test(row.label))) {
   fail("Lightning Strike must not invent Power");
+}
+
+const firstStrikeTone = tokenizeAbilityText("grant First-Strike").find(
+  (part) => part.value === "First-Strike",
+)?.tone;
+if (firstStrikeTone !== "buff") {
+  fail(`First-Strike text tone is ${firstStrikeTone}, expected buff`);
+}
+const overwhelmTone = tokenizeAbilityText("afflict Overwhelm").find(
+  (part) => part.value === "Overwhelm",
+)?.tone;
+if (overwhelmTone !== "debuff") {
+  fail(`Overwhelm text tone is ${overwhelmTone}, expected debuff`);
 }
 
 console.log("ability insight checks passed");
