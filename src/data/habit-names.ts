@@ -26,6 +26,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Collective Might",
     "Lightning Strike",
   ],
+  rhysarion: [
+    "Ebbing Fury",
+    "Sharp Resolve",
+    "Echoing Melody",
+    "Unbroken Devotion",
+    "Inspiring Melody",
+  ],
 };
 
 export function habitDisplayName(

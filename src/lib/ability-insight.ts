@@ -241,7 +241,11 @@ function labelForPercent(
     const granted = STATUS_NAMES.filter((name) =>
       new RegExp(String.raw`\b${name}\b`).test(chanceClause),
     );
-    if (granted.length === 1) return `${granted[0]} Chance`;
+    const alsoBuffsStat =
+      /increase\s+(?:your\s+)?(?:Strength|Instinct|Intelligence|Initiative)\b/i.test(
+        chanceClause,
+      );
+    if (granted.length === 1 && !alsoBuffsStat) return `${granted[0]} Chance`;
     if (habitTitle) return `${habitTitle} Chance`;
     return "Chance";
   }
@@ -251,6 +255,15 @@ function labelForPercent(
     /damage dealt to/i.test(before.slice(-36))
   ) {
     return "Damage Rate";
+  }
+  if (
+    /recovery rate/i.test(before.slice(-24)) ||
+    /recovery rate/i.test(after.slice(0, 24))
+  ) {
+    return "Recovery Rate";
+  }
+  if (/\bStrength and Intelligence\s+by\s+$/i.test(before)) {
+    return "Strength/Intelligence";
   }
   const byStat = before.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,

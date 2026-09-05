@@ -246,4 +246,62 @@ if (
   fail("hovering Lightning Strike should open Malachite habit 5");
 }
 
+const rhysarion = getCatalogDragon("rhysarion");
+if (!rhysarion) fail("missing Rhysarion");
+const rhysarionNames: [number, string, string[], string][] = [
+  [1, "Ebbing Fury", ["Damage Dealt", "Recovery Rate"], "-27.5%,-33%,-38.5%,-46.75%,-55%"],
+  [2, "Sharp Resolve", ["Strength/Intelligence"], "16%,19.2%,22.4%,27.2%,32%"],
+  [3, "Echoing Melody", ["Recovery Rate"], "60%,72%,84%,102%,120%"],
+  [4, "Unbroken Devotion", ["Recovery Received"], "20%,24%,28%,34%,40%"],
+  [5, "Inspiring Melody", ["Inspiring Melody Chance"], "20%,26%,32%,40%,50%"],
+];
+for (const [habit, title, labels, firstValues] of rhysarionNames) {
+  const row = insightForSource("rhysarion", { kind: "habit", habit });
+  if (!row) fail(`Rhysarion habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Rhysarion habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const fury = insightForSource("rhysarion", { kind: "habit", habit: 1 });
+if (
+  fury?.scale.find((row) => row.label === "Recovery Rate")?.values.join(",") !==
+  "25%,30%,35%,42.5%,50%"
+) {
+  fail("Ebbing Fury Recovery Rate mismatch");
+}
+const melody = insightForSource("rhysarion", { kind: "habit", habit: 5 });
+if (melody?.scale.some((row) => row.label === "Initiative")) {
+  fail("Inspiring Melody should skip the constant Initiative +20%");
+}
+if (melody?.scale.some((row) => /^Resistance$/i.test(row.label))) {
+  fail("Inspiring Melody should skip the constant Resistance -15%");
+}
+if (
+  findAbilityInsight("Ebbing Fury", { dragonId: "rhysarion" })?.title !==
+  "Ebbing Fury"
+) {
+  fail("hovering Ebbing Fury should open Rhysarion habit 1");
+}
+if (
+  findAbilityInsight("Inspiring Melody", { dragonId: "rhysarion" })?.title !==
+  "Inspiring Melody"
+) {
+  fail("hovering Inspiring Melody should open Rhysarion habit 5");
+}
+
 console.log("ability insight checks passed");
