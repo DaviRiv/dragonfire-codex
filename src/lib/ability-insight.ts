@@ -16,6 +16,7 @@ import {
 import { joinNames } from "@/lib/abilities";
 import {
   polarityForName,
+  namedStatusPolarity,
   type StatusPolarity,
 } from "@/lib/status-polarity";
 import type { Dragon } from "@/lib/types";
@@ -1052,7 +1053,12 @@ export function namePolarity(name: string): StatusPolarity | null {
   warmCatalog();
   const matches = byName.get(key) ?? [];
   const buff = matches.find((item) => item.kind === "buff" && item.polarity);
-  return buff?.polarity ?? null;
+  return buff?.polarity ?? namedStatusPolarity(name);
+}
+
+/** Arrow mark in kit text: named buffs, debuffs, and spreading buffs only. */
+export function statusMarkPolarity(name: string): StatusPolarity | null {
+  return namePolarity(name);
 }
 
 export function resolveAbilityInsight(

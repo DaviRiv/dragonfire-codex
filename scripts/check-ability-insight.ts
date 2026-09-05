@@ -10,7 +10,9 @@ import {
   namedChips,
   namedStacksIn,
   scaleRowsFromRanks,
+  statusMarkPolarity,
 } from "@/lib/ability-insight";
+import { namedStatusPolarity } from "@/lib/status-polarity";
 import { habitRankTexts } from "@/lib/habits";
 import { tokenizeAbilityText } from "@/lib/ability-text";
 
@@ -646,6 +648,26 @@ const overwhelmTone = tokenizeAbilityText("afflict Overwhelm").find(
 )?.tone;
 if (overwhelmTone !== "debuff") {
   fail(`Overwhelm text tone is ${overwhelmTone}, expected debuff`);
+}
+
+if (namedStatusPolarity("Advantage") !== "buff") fail("Advantage mark is a buff");
+if (namedStatusPolarity("Overwhelm") !== "debuff") fail("Overwhelm mark is a debuff");
+if (namedStatusPolarity("Bleed") !== "debuff") fail("Bleed mark is a debuff");
+if (namedStatusPolarity("Crescent Blade") !== "spread") {
+  fail("Crescent Blade mark is a spreading buff");
+}
+if (namedStatusPolarity("Physical Damage") != null) {
+  fail("Physical Damage is not a buff/debuff mark");
+}
+if (namedStatusPolarity("+8%") != null) fail("percents are not named statuses");
+if (statusMarkPolarity("Rising Tide") !== "buff") {
+  fail("Rising Tide in habit text should get a buff arrow");
+}
+if (statusMarkPolarity("Advantage") !== "buff") {
+  fail("Advantage in habit text should get a buff arrow");
+}
+if (statusMarkPolarity("Physical Damage") != null) {
+  fail("stat names should not get buff arrows");
 }
 
 console.log("ability insight checks passed");

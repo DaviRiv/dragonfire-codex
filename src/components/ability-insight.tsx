@@ -13,6 +13,7 @@ import {
   namedChips,
   resolveAbilityInsight,
   sourceLabel,
+  statusMarkPolarity,
   unlockLabel,
   type AbilityGloss,
   type AbilityInsight,
@@ -26,7 +27,7 @@ import { ArrowDown, ArrowUp, Lock, Share2 } from "lucide-react";
 const PERSIST_NOTE =
   "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
 
-function StatusName({
+export function StatusName({
   name,
   polarity,
   className,
@@ -73,12 +74,15 @@ function HoverableColoredText({
   return (
     <span>
       {parts.map((part, i) => {
-        const colored = part.tone ? (
+        const polarity = statusMarkPolarity(part.value);
+        const colored = polarity ? (
+          <StatusName name={part.value} polarity={polarity} />
+        ) : part.tone ? (
           <span className={TONE_TEXT_CLASS[part.tone]}>{part.value}</span>
         ) : (
           <span>{part.value}</span>
         );
-        if (!part.tone) return <span key={i}>{colored}</span>;
+        if (!part.tone && !polarity) return <span key={i}>{colored}</span>;
         const resolved = resolveAbilityInsight({ name: part.value, dragonId });
         if (!resolved) return <span key={i}>{colored}</span>;
         return (

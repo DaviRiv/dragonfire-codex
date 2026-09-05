@@ -76,10 +76,15 @@ export function polarityFromBody(body: string): StatusPolarity {
   return "buff";
 }
 
-export function polarityForName(name: string, body = ""): StatusPolarity {
+export function namedStatusPolarity(name: string): StatusPolarity | null {
   const key = keyName(name);
+  if (!key) return null;
   if (BUFF_NAMES.has(key)) return "buff";
   if (DEBUFF_NAMES.has(key)) return "debuff";
   if (SPREAD_NAMES.has(key)) return "spread";
-  return polarityFromBody(body);
+  return null;
+}
+
+export function polarityForName(name: string, body = ""): StatusPolarity {
+  return namedStatusPolarity(name) ?? polarityFromBody(body);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { AbilityHover } from "@/components/ability-insight";
+import { AbilityHover, StatusName } from "@/components/ability-insight";
 import { Badge } from "@/components/ui/badge";
 import {
   TONE_BADGE_CLASS,
@@ -9,7 +9,7 @@ import {
   toneForPhrase,
 } from "@/lib/ability-text";
 import type { AbilitySourceRef } from "@/lib/ability-insight";
-import { findAbilityInsight } from "@/lib/ability-insight";
+import { findAbilityInsight, statusMarkPolarity } from "@/lib/ability-insight";
 import { cn } from "@/lib/utils";
 
 export function AbilityText({
@@ -30,17 +30,20 @@ export function AbilityText({
   return (
     <span className={className}>
       {parts.map((part, i) => {
-        const colored = part.tone ? (
+        const polarity = statusMarkPolarity(part.value);
+        const marked = polarity ? (
+          <StatusName name={part.value} polarity={polarity} />
+        ) : part.tone ? (
           <span className={TONE_TEXT_CLASS[part.tone]}>{part.value}</span>
         ) : (
           <span>{part.value}</span>
         );
-        if (!enableHover || !part.tone) {
-          return <span key={i}>{colored}</span>;
+        if (!enableHover || (!part.tone && !polarity)) {
+          return <span key={i}>{marked}</span>;
         }
         const insight = findAbilityInsight(part.value, { dragonId, source });
         if (!insight) {
-          return <span key={i}>{colored}</span>;
+          return <span key={i}>{marked}</span>;
         }
         return (
           <AbilityHover
@@ -50,7 +53,7 @@ export function AbilityText({
             source={source}
             insight={insight}
           >
-            {colored}
+            {marked}
           </AbilityHover>
         );
       })}
