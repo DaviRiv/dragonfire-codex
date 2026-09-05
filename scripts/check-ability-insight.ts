@@ -1542,6 +1542,213 @@ if (confusionTone !== "debuff") {
   fail(`Confusion text tone is ${confusionTone}, expected debuff`);
 }
 
+const shadowsong = getCatalogDragon("shadowsong");
+if (!shadowsong) fail("missing Shadowsong");
+const shadowNames: [number, string, string[], string][] = [
+  [1, "Ensnare", ["Instinct/Initiative"], "-18%,-21.6%,-25.2%,-30.6%,-36%"],
+  [2, "Blazing Onslaught", ["Damage Received"], "15%,18%,21%,25.5%,30%"],
+  [3, "Scorched Earth", ["Vulnerable Chance"], "10%,12%,14%,17%,20%"],
+  [4, "Dragon's Intellect", ["Damage Received", "Intelligence"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [5, "Blazing Conductor", ["Damage Rate", "Burn Chance", "Damage Rate (2)", "Burn Chance (2)"], "60%,78%,96%,120%,150%"],
+];
+for (const [habit, title, labels, firstValues] of shadowNames) {
+  const row = insightForSource("shadowsong", { kind: "habit", habit });
+  if (!row) fail(`Shadowsong habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Shadowsong habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const ensnare = insightForSource("shadowsong", { kind: "habit", habit: 1 });
+if (!/Instinct and Initiative/i.test(ensnare?.body ?? "")) {
+  fail("keep Hub Ensnare Instinct and Initiative text");
+}
+if (!/3 rounds/i.test(ensnare?.body ?? "")) {
+  fail("keep Hub Ensnare 3 rounds wording");
+}
+if (/3 round\(s\)/i.test(ensnare?.body ?? "")) {
+  fail("do not rewrite Hub Ensnare rounds to screenshot round(s)");
+}
+const shadowOnslaught = insightForSource("shadowsong", { kind: "habit", habit: 2 });
+if (/excluding Basic Attacks/i.test(shadowOnslaught?.body ?? "")) {
+  fail("do not rewrite Hub Blazing Onslaught Command & Habits to screenshot wording");
+}
+if (!/Physical Damage \(Command & Habits\) Received/i.test(shadowOnslaught?.body ?? "")) {
+  fail("keep Hub Blazing Onslaught Physical Damage (Command & Habits) Received");
+}
+if (!/Left Flank/i.test(shadowOnslaught?.body ?? "") || !/Right Flank/i.test(shadowOnslaught?.body ?? "")) {
+  fail("keep Hub Blazing Onslaught Left Flank and Right Flank targeting");
+}
+if (shadowOnslaught?.scale.length !== 1) {
+  fail(
+    `Blazing Onslaught should be one Damage Received row, got ${shadowOnslaught?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const scorchedEarth = insightForSource("shadowsong", { kind: "habit", habit: 3 });
+if (scorchedEarth?.scale.some((row) => row.values.join(",") === "15%,15%,15%,15%,15%")) {
+  fail("Scorched Earth should skip constant Vulnerable +15%");
+}
+if (scorchedEarth?.scale.some((row) => row.values.join(",") === "20%,24%,28%,34%,40%")) {
+  fail("Scorched Earth should skip doubled Vulnerable chance");
+}
+if (!/This chance is doubled \(\+20%\)/i.test(scorchedEarth?.body ?? "")) {
+  fail("keep Hub Scorched Earth doubled (+20%)");
+}
+if (/This chance is doubled \(20%\)/i.test(scorchedEarth?.body ?? "")) {
+  fail("do not rewrite Hub Scorched Earth doubled (+20%) to screenshot (24%) flavor");
+}
+if (/Increases the target's Damage Received/i.test(scorchedEarth?.body ?? "")) {
+  fail("do not copy Vulnerable glossary into Hub Scorched Earth text");
+}
+if (glossNames(scorchedEarth).includes("Vulnerable") === false) {
+  fail("Scorched Earth should gloss Vulnerable");
+}
+if (glossNames(scorchedEarth).includes("Panic") === false) {
+  fail("Scorched Earth should gloss Panic");
+}
+const shadowIntellect = insightForSource("shadowsong", { kind: "habit", habit: 4 });
+if (
+  shadowIntellect?.scale.find((row) => row.label === "Intelligence")?.values.join(
+    ",",
+  ) !== "8.5%,10.2%,11.9%,14.45%,17%"
+) {
+  fail("Shadowsong Dragon's Intellect Intelligence mismatch");
+}
+if (
+  findAbilityInsight("Dragon's Intellect", { dragonId: "shadowsong" })?.id !==
+  shadowIntellect?.id
+) {
+  fail("hovering Dragon's Intellect on Shadowsong should open habit 4, not Crimson");
+}
+if (
+  findAbilityInsight("Dragon's Intellect", { dragonId: "crimson" })?.id ===
+  shadowIntellect?.id
+) {
+  fail("Crimson Dragon's Intellect must stay distinct from Shadowsong");
+}
+const blazingConductor = insightForSource("shadowsong", { kind: "habit", habit: 5 });
+if (
+  blazingConductor?.scale.find((row) => row.label === "Burn Chance")?.values.join(
+    ",",
+  ) !== "40%,52%,64%,80%,100%"
+) {
+  fail("Blazing Conductor Burn Chance mismatch");
+}
+if (
+  blazingConductor?.scale.find((row) => row.label === "Damage Rate (2)")?.values.join(
+    ",",
+  ) !== "30%,39%,48%,60%,75%"
+) {
+  fail("Blazing Conductor Damage Rate (2) mismatch");
+}
+if (
+  blazingConductor?.scale.find((row) => row.label === "Burn Chance (2)")?.values.join(
+    ",",
+  ) !== "20%,26%,32%,40%,50%"
+) {
+  fail("Blazing Conductor Burn Chance (2) mismatch");
+}
+if (/Breath of Fire gains/i.test(blazingConductor?.body ?? "")) {
+  fail("do not rewrite Hub Blazing Conductor Command deal to Breath of Fire gains");
+}
+if (!/Command deal Fire Damage/i.test(blazingConductor?.body ?? "")) {
+  fail("keep Hub Blazing Conductor Command deal Fire Damage");
+}
+if (glossNames(blazingConductor).includes("Burn") === false) {
+  fail("Blazing Conductor should gloss Burn");
+}
+if (
+  findAbilityInsight("Blazing Onslaught", { dragonId: "shadowsong" })?.id !==
+  shadowOnslaught?.id
+) {
+  fail("hovering Blazing Onslaught on Shadowsong should open habit 2, not Vhagar");
+}
+if (
+  findAbilityInsight("Blazing Onslaught", { dragonId: "vhagar" })?.id ===
+  shadowOnslaught?.id
+) {
+  fail("Vhagar Blazing Onslaught must stay distinct from Shadowsong");
+}
+if (
+  findAbilityInsight("Ensnare", { dragonId: "shadowsong" })?.title !== "Ensnare"
+) {
+  fail("hovering Ensnare should open Shadowsong habit 1");
+}
+if (
+  findAbilityInsight("Blazing Conductor", { dragonId: "shadowsong" })?.title !==
+  "Blazing Conductor"
+) {
+  fail("hovering Blazing Conductor should open Shadowsong habit 5");
+}
+const shadowCommand = insightForSource("shadowsong", { kind: "command" });
+if (!shadowCommand) fail("Shadowsong command missing");
+if (shadowCommand.title !== "Breath of Fire") {
+  fail(`Shadowsong command title is ${shadowCommand.title}, expected Breath of Fire`);
+}
+if (/Breath of Fire gains/i.test(shadowCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (!/1\.5x/i.test(shadowCommand.body) || !/\+150%/.test(shadowCommand.body)) {
+  fail("keep Hub Breath of Fire 1.5x Panic Damage Rate");
+}
+if (shadowCommand.scale.some((row) => /power/i.test(row.label))) {
+  fail("Breath of Fire must not invent Power");
+}
+if (
+  findAbilityInsight("Breath of Fire", { dragonId: "shadowsong" })?.kind !==
+  "command"
+) {
+  fail("hovering Breath of Fire should open Shadowsong's Command");
+}
+if (!namedChips(shadowCommand).includes("Breath of Fire")) {
+  fail("Shadowsong command chips should include Breath of Fire");
+}
+if (glossNames(shadowCommand).includes("Panic") === false) {
+  fail("Breath of Fire should gloss Panic");
+}
+const breathTone = tokenizeAbilityText("Breath of Fire").find(
+  (part) => part.value === "Breath of Fire",
+)?.tone;
+if (breathTone !== "command") {
+  fail(`Breath of Fire text tone is ${breathTone}, expected command`);
+}
+const shadowCatalog = catalogFor(shadowsong);
+if (shadowCatalog.namedCount !== 5 || shadowCatalog.needsScreenshot) {
+  fail("Shadowsong habit names from Star Progression should be complete");
+}
+if (shadowCatalog.command.names.includes("Breath of Fire") === false) {
+  fail("Dev catalog should list Breath of Fire on Shadowsong's Command");
+}
+const songVulnerable = findAbilityInsight("Vulnerable", { dragonId: "shadowsong" });
+if (
+  songVulnerable?.dragonName !== "Shadowsong" ||
+  songVulnerable.unlockStars !== 6
+) {
+  fail(
+    `Vulnerable on Shadowsong should be 6★ Scorched Earth, got ${songVulnerable?.dragonName} ${songVulnerable?.unlockStars}`,
+  );
+}
+const songBurn = findAbilityInsight("Burn", { dragonId: "shadowsong" });
+if (songBurn?.dragonName !== "Shadowsong" || songBurn.unlockStars !== 10) {
+  fail(
+    `Burn on Shadowsong should be 10★ Blazing Conductor, got ${songBurn?.dragonName} ${songBurn?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

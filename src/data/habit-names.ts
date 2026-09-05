@@ -102,6 +102,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Darkening Fear",
     "Phantom's Veil",
   ],
+  shadowsong: [
+    "Ensnare",
+    "Blazing Onslaught",
+    "Scorched Earth",
+    "Dragon's Intellect",
+    "Blazing Conductor",
+  ],
 };
 
 export function habitDisplayName(

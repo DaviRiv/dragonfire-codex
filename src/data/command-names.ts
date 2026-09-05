@@ -9,6 +9,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   seasmoke: "Cleansing Wrath",
   crimson: "Bloodscale Terror",
   sheepstealer: "Wild Hunt",
+  shadowsong: "Breath of Fire",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

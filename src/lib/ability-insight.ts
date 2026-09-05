@@ -234,6 +234,23 @@ export function definedStacksIn(text: string): string[] {
   return [...names];
 }
 
+function clauseAround(text: string, index: number): string {
+  const before = text.slice(0, index);
+  const after = text.slice(index);
+  const startHit = before.lastIndexOf(". ");
+  const start = startHit >= 0 ? startHit + 2 : 0;
+  const next = after.search(/\.\s/);
+  const end = next >= 0 ? index + next : text.length;
+  return text.slice(start, end);
+}
+
+function isCombinedPhysicalFireReceived(clause: string): boolean {
+  if (!/Fire Damage Received/i.test(clause)) return false;
+  return /Physical Damage(?: \(Command(?: &| and) Habits\))? Received(?: \(Command(?: &| and) Habits\))?/i.test(
+    clause,
+  );
+}
+
 function collapseScaleLabel(label: string): string {
   if (/^Fire Damage Received$/i.test(label)) return "Fire Damage Received";
   if (/Damage Received$/i.test(label)) return "Damage Received";
@@ -412,9 +429,8 @@ function labelForPercent(
     return "Damage Received";
   }
   if (
-    /Physical Damage Received/i.test(statBefore) &&
-    /Fire Damage Received/i.test(statBefore) &&
-    /by\s+$/i.test(statBefore)
+    /by\s+$/i.test(statBefore) &&
+    isCombinedPhysicalFireReceived(clauseAround(text, index))
   ) {
     return "Damage Received";
   }
