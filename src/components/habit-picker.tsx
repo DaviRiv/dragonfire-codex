@@ -22,6 +22,7 @@ import {
 } from "@/lib/habits";
 import { slotLabels } from "@/lib/labels";
 import type { AbilitySourceRef } from "@/lib/ability-insight";
+import { commandHeading } from "@/data/command-names";
 import { habitDisplayName } from "@/data/habit-names";
 import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -275,7 +276,7 @@ export function HabitPickerDialog({
               }
             />
             <KitBlock
-              title="Command"
+              title={commandHeading(dragon.id)}
               live={hatched}
               dragonId={dragon.id}
               source={{ kind: "command" }}

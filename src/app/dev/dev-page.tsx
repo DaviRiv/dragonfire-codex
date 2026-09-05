@@ -12,6 +12,7 @@ import { StatGrid } from "@/components/dragon-profile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { commandHeading } from "@/data/command-names";
 import { persistDevMode } from "@/lib/dev-mode";
 import {
   allCatalogs,
@@ -283,7 +284,7 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
         dragonId={dragon.id}
       />
       <SkillBlock
-        title="Command"
+        title={commandHeading(dragon.id)}
         skill={entry.command}
         dragonId={dragon.id}
       />

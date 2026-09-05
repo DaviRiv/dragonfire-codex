@@ -358,6 +358,8 @@ export function NamedAbilities({
           >
             {polarity ? (
               <StatusName name={item} polarity={polarity} />
+            ) : resolved?.kind === "command" ? (
+              <span className={TONE_TEXT_CLASS.command}>{item}</span>
             ) : (
               <span className={TONE_TEXT_CLASS.status}>{item}</span>
             )}

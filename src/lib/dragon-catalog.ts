@@ -1,5 +1,6 @@
 import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
 import { DRAGONS } from "@/data/dragons";
+import { commandDisplayName } from "@/data/command-names";
 import { HABIT_NAMES, habitDisplayName } from "@/data/habit-names";
 import {
   findAbilityInsight,
@@ -93,7 +94,10 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
     command: {
       body: commandLine(dragon),
       short: dragon.commandShort?.trim() || "",
-      names: commandInsight?.names ?? [],
+      names: uniqueNames([
+        commandDisplayName(dragon.id),
+        ...(commandInsight?.names ?? []),
+      ]),
       glosses: commandInsight?.glosses ?? [],
     },
     vanguard: {
@@ -105,6 +109,20 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
     habits,
     buffs,
   };
+}
+
+function uniqueNames(values: (string | undefined)[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const name = value?.trim();
+    if (!name) continue;
+    const key = name.replace(/[’']/g, "'").toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
 }
 
 function uniqueBuffs(

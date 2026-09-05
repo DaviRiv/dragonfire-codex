@@ -13,6 +13,7 @@ import {
   insightForSource,
   type AbilitySourceRef,
 } from "@/lib/ability-insight";
+import { commandHeading } from "@/data/command-names";
 import { habitDisplayName } from "@/data/habit-names";
 import { dragonKit, habitNumberForUnlockStars, habitRankOf } from "@/lib/habits";
 import { provideUnlockStars } from "@/lib/abilities";
@@ -266,7 +267,7 @@ export function DragonProfile({
         title={
           heals.some((heal) => heal.stars === null)
             ? "Command · Heal · always on"
-            : "Command"
+            : commandHeading(dragon.id)
         }
         body={kit.command}
         muted={qualifyStars == null || qualifyStars <= 0}

@@ -447,9 +447,33 @@ if (
 ) {
   fail("hovering Radiant Conqueror should open Kalspire habit 5");
 }
+const kalCommand = insightForSource("kalspire", { kind: "command" });
+if (!kalCommand) fail("Kalspire command missing");
+if (kalCommand.title !== "Tactical Strike") {
+  fail(`Kalspire command title is ${kalCommand.title}, expected Tactical Strike`);
+}
+if (/Tactical Strike gains/i.test(kalCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+const assaultBody = insightForSource("kalspire", { kind: "habit", habit: 3 })?.body ?? "";
+if (/Tactical Strike gains/i.test(assaultBody)) {
+  fail("do not rewrite Hub Tactical Assault text to screenshot wording");
+}
+if (
+  findAbilityInsight("Tactical Strike", { dragonId: "kalspire" })?.kind !==
+  "command"
+) {
+  fail("hovering Tactical Strike should open Kalspire's Command");
+}
+if (!namedChips(kalCommand).includes("Tactical Strike")) {
+  fail("Kalspire command chips should include Tactical Strike");
+}
 const kalCatalog = catalogFor(kalspire);
 if (kalCatalog.namedCount !== 5 || kalCatalog.needsScreenshot) {
   fail("Kalspire habit names from Star Progression should be complete");
+}
+if (kalCatalog.command.names.includes("Tactical Strike") === false) {
+  fail("Dev catalog should list Tactical Strike on Kalspire's Command");
 }
 
 const stun = findAbilityInsight("Stun", { dragonId: "kalspire" });

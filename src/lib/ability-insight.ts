@@ -1,5 +1,6 @@
 import { DRAGONS } from "@/data/dragons";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
+import { commandDisplayName } from "@/data/command-names";
 import { habitDisplayName } from "@/data/habit-names";
 import { HUB_DRAGONS } from "@/data/hub-source";
 import {
@@ -22,6 +23,7 @@ import {
 import type { Dragon } from "@/lib/types";
 
 export { habitDisplayName };
+export { commandDisplayName } from "@/data/command-names";
 export type { StatusPolarity };
 
 export type AbilitySourceKind = "command" | "vanguard" | "habit" | "buff";
@@ -387,7 +389,7 @@ function sourceTitle(
     const official = habitDisplayName(dragonId, habit);
     if (official) return official;
   }
-  if (kind === "command") return "Command";
+  if (kind === "command") return commandDisplayName(dragonId) ?? "Command";
   if (kind === "vanguard") return "Vanguard";
   return defines[0] ?? names[0] ?? sourceLabel(kind, habit);
 }
@@ -494,6 +496,8 @@ function skipExtractedBuff(dragonId: string, name: string): boolean {
     const official = habitDisplayName(dragonId, habit);
     if (official && keyName(official) === keyName(name)) return true;
   }
+  const command = commandDisplayName(dragonId);
+  if (command && keyName(command) === keyName(name)) return true;
   return false;
 }
 
@@ -951,6 +955,17 @@ function officialHabitInsight(
   return undefined;
 }
 
+function officialCommandInsight(
+  dragonId: string,
+  nameKey: string,
+): AbilityInsight | undefined {
+  const official = commandDisplayName(dragonId);
+  if (official && keyName(official) === nameKey) {
+    return insightForSource(dragonId, { kind: "command" });
+  }
+  return undefined;
+}
+
 function warmCatalog() {
   if (catalogWarmed) return;
   catalogWarmed = true;
@@ -1023,6 +1038,8 @@ export function findAbilityInsight(
   if (scope?.dragonId) {
     const official = officialHabitInsight(scope.dragonId, key);
     if (official) return official;
+    const command = officialCommandInsight(scope.dragonId, key);
+    if (command) return command;
   }
   const matches = byName.get(key) ?? [];
   const status = matches.find(

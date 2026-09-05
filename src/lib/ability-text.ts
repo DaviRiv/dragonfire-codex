@@ -104,6 +104,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "First-Strike", tone: "buff" },
   { phrase: "Double-Strike", tone: "buff" },
   { phrase: "Crescent Blade", tone: "spread" },
+  { phrase: "Tactical Strike", tone: "command" },
   { phrase: "Rising Tide", tone: "buff" },
   { phrase: "Solar Flare", tone: "status" },
   { phrase: "Right Flank", tone: "status" },
