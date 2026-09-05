@@ -276,6 +276,7 @@ function labelForPercent(
 ): string {
   const after = text.slice(index, index + 160);
   const before = text.slice(Math.max(0, index - 90), index);
+  const statBefore = text.slice(Math.max(0, index - 160), index);
   const chanceClause = after.split(/\.\s/)[0] ?? after;
   const stackAfter = chanceClause.match(
     /(?:stack|stacks) of ([A-Z][A-Za-z][A-Za-z'’]*(?:[ -][A-Z][A-Za-z'’]*)*)/i,
@@ -286,6 +287,7 @@ function labelForPercent(
   const stackName = keepName(stackAfter?.[1] ?? stackBefore?.[1]);
 
   if (
+    /^[+\u2212-]?\d+(?:\.\d+)?%\s*chance/i.test(after) ||
     /^[^.]{0,24}chance/i.test(after) ||
     /chance\s*$/i.test(before.slice(-18)) ||
     /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before) ||
@@ -337,26 +339,26 @@ function labelForPercent(
   if (/\bStrength and Initiative\b/i.test(before) && /by\s+$/i.test(before)) {
     return "Strength/Initiative";
   }
-  if (/\bIntelligence and Instinct\b/i.test(before) && /by\s+$/i.test(before)) {
+  if (/\bIntelligence and Instinct\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Intelligence/Instinct";
   }
-  const byStat = before.match(
+  const byStat = statBefore.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
   );
   // "Enemy with the highest Intelligence by −10%" scales Damage Dealt, not Intelligence.
-  if (byStat && !isHighestTargeting(before, byStat.index ?? 0)) {
+  if (byStat && !isHighestTargeting(statBefore, byStat.index ?? 0)) {
     const label = collapseScaleLabel(byStat[1]);
     if (
       /^Initiative$/i.test(label) &&
       /\bincrease\s+initiative\b/i.test(text) &&
       /\breduce\s+initiative\b/i.test(text)
     ) {
-      if (/\breduce\b/i.test(before)) return "Initiative (Reduction)";
-      if (/\bincrease\b/i.test(before)) return "Initiative (Increase)";
+      if (/\breduce\b/i.test(statBefore)) return "Initiative (Reduction)";
+      if (/\bincrease\b/i.test(statBefore)) return "Initiative (Increase)";
     }
     return label;
   }
-  const nearest = nearestStatLabel(before);
+  const nearest = nearestStatLabel(statBefore);
   if (nearest) return nearest;
   const afterStat = after.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/i,

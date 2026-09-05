@@ -8,6 +8,7 @@ export const STATUS_GLOSSARY: Record<string, string> = {
   "Double-Strike":
     "Grants the target a 2nd Basic Attack each round.",
   Advantage: "Increases the target's Damage Dealt.",
+  Weakened: "Reduces the target's Damage Dealt.",
   Resistance: "Reduces the target's Damage Received.",
   Overwhelm:
     "Prevents the target from using Active Commands and Habits on their turn.",

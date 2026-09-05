@@ -61,6 +61,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Tactical Inferno",
     "Mother's Mercy",
   ],
+  vhagar: [
+    "Ancestral Shield",
+    "Battle Leader",
+    "Eclipse Cover",
+    "Blazing Onslaught",
+    "Skyward Titan",
+  ],
 };
 
 export function habitDisplayName(

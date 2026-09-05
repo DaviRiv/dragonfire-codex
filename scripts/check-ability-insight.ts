@@ -665,6 +665,124 @@ if (
   fail("Mother's Mercy should gloss Control");
 }
 
+const vhagar = getCatalogDragon("vhagar");
+if (!vhagar) fail("missing Vhagar");
+const vhagarNames: [number, string, string[], string][] = [
+  [1, "Ancestral Shield", ["Damage Received", "Recovery Received"], "-12%,-14.4%,-16.8%,-20.4%,-24%"],
+  [2, "Battle Leader", ["Damage Dealt"], "12.5%,15%,17.5%,21.25%,25%"],
+  [3, "Eclipse Cover", ["Advantage & Weakened Chance"], "17.5%,21%,24.5%,29.8%,35%"],
+  [4, "Blazing Onslaught", ["Damage Received"], "18%,21.6%,25.2%,30.6%,36%"],
+  [5, "Skyward Titan", ["Strength", "Damage Received", "Damage Rate"], "5%,6.5%,8%,10%,12.5%"],
+];
+for (const [habit, title, labels, firstValues] of vhagarNames) {
+  const row = insightForSource("vhagar", { kind: "habit", habit });
+  if (!row) fail(`Vhagar habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Vhagar habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const shield = insightForSource("vhagar", { kind: "habit", habit: 1 });
+if (
+  shield?.scale.find((row) => row.label === "Recovery Received")?.values.join(
+    ",",
+  ) !== "15%,18%,21%,25.5%,30%"
+) {
+  fail("Ancestral Shield Recovery Received mismatch");
+}
+const leader = insightForSource("vhagar", { kind: "habit", habit: 2 });
+if (/excluding Basic Attacks/i.test(leader?.body ?? "")) {
+  fail("do not rewrite Hub Battle Leader text to screenshot wording");
+}
+if (!/\(Command & Habits\)/.test(leader?.body ?? "")) {
+  fail("keep Hub Battle Leader Command & Habits wording");
+}
+const eclipseCover = insightForSource("vhagar", { kind: "habit", habit: 3 });
+if (/18% chance/i.test(eclipseCover?.body ?? "")) {
+  fail("do not rewrite Hub Eclipse Cover 17.5% to screenshot 18%");
+}
+if (eclipseCover?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Eclipse Cover should skip constant Advantage/Weakened 20%");
+}
+if (
+  glossNames(eclipseCover).includes("Advantage") === false ||
+  glossNames(eclipseCover).includes("Weakened") === false
+) {
+  fail("Eclipse Cover should gloss Advantage and Weakened");
+}
+const onslaught = insightForSource("vhagar", { kind: "habit", habit: 4 });
+if (/excluding Basic Attacks/i.test(onslaught?.body ?? "")) {
+  fail("do not rewrite Hub Blazing Onslaught text to screenshot wording");
+}
+const titan = insightForSource("vhagar", { kind: "habit", habit: 5 });
+if (
+  titan?.scale.find((row) => row.label === "Damage Received")?.values.join(",") !==
+  "-2.5%,-3.25%,-4%,-5%,-6.25%"
+) {
+  fail("Skyward Titan Damage Received mismatch");
+}
+if (
+  titan?.scale.find((row) => row.label === "Damage Rate")?.values.join(",") !==
+  "100%,130%,160%,200%,250%"
+) {
+  fail("Skyward Titan Damage Rate mismatch");
+}
+if (titan?.scale.some((row) => row.values.join(",") === "30%,30%,30%,30%,30%")) {
+  fail("Skyward Titan should skip constant 30% Bulwark chance");
+}
+if (/-2%(?!\.)/.test(titan?.body ?? "") && !/-2\.5%/.test(titan?.body ?? "")) {
+  fail("do not rewrite Hub Skyward Titan -2.5% to screenshot flavor -2%");
+}
+if (
+  findAbilityInsight("Ancestral Shield", { dragonId: "vhagar" })?.title !==
+  "Ancestral Shield"
+) {
+  fail("hovering Ancestral Shield should open Vhagar habit 1");
+}
+if (
+  findAbilityInsight("Skyward Titan", { dragonId: "vhagar" })?.title !==
+  "Skyward Titan"
+) {
+  fail("hovering Skyward Titan should open Vhagar habit 5");
+}
+const vhagarCommand = insightForSource("vhagar", { kind: "command" });
+if (!vhagarCommand) fail("Vhagar command missing");
+if (vhagarCommand.title !== "Command") {
+  fail(`Vhagar command title is ${vhagarCommand.title}, expected Command`);
+}
+const vhagarCatalog = catalogFor(vhagar);
+if (vhagarCatalog.namedCount !== 5 || vhagarCatalog.needsScreenshot) {
+  fail("Vhagar habit names from Star Progression should be complete");
+}
+
+const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
+if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
+  fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
+}
+if (weakened.polarity !== "debuff") fail("Weakened is a debuff");
+if (!/Damage Dealt/i.test(weakened.body) || !/reduces/i.test(weakened.body)) {
+  fail(`Weakened glossary missing Star Progression line: ${weakened.body}`);
+}
+if (weakened.dragonName !== "Vhagar" || weakened.unlockStars !== 6) {
+  fail(
+    `Weakened on Vhagar should be 6★ Eclipse Cover, got ${weakened.dragonName} ${weakened.unlockStars}`,
+  );
+}
+
 const burn = findAbilityInsight("Burn", { dragonId: "caraxes" });
 if (!burn || burn.title !== "Burn" || burn.kind !== "buff") {
   fail(`Burn hover opened ${burn?.kind}:${burn?.title}`);
