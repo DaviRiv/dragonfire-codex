@@ -13,8 +13,9 @@ import {
   statusMarkPolarity,
 } from "@/lib/ability-insight";
 import { namedStatusPolarity } from "@/lib/status-polarity";
-import { habitRankTexts, habitText, dragonKit, habitRankOf, normalizeHabitRanks } from "@/lib/habits";
+import { commandLine, habitRankTexts, habitText, dragonKit, habitRankOf, normalizeHabitRanks } from "@/lib/habits";
 import { tokenizeAbilityText } from "@/lib/ability-text";
+import { formatRoundTimingSentences } from "@/lib/ability-copy";
 import { normalizePitState } from "@/lib/dragons";
 
 function fail(message: string): never {
@@ -712,6 +713,40 @@ const migrated = normalizePitState({
 });
 if (!migrated || migrated.owned[0]?.habitRanks.join(",") !== "1,1,1,1,1") {
   fail("migrating a v2 pit without habitRanks should default to rank 1");
+}
+
+const oddShort =
+  "Gain 1 stack of Rising Tide (50% or 100% chance w/ Ally has Advantage) (rounds 1,3,5) | Instinct (+18% or 27% w/ 4+ stacks of Rising Tide) & Tactical Dmg (+12% or 18% w/ 4+ stacks of Rising Tide) to 1 Ally Sentinel for 2 rounds (Odd Rounds)";
+const oddFormatted = formatRoundTimingSentences(oddShort);
+if (/\(Odd Rounds\)/i.test(oddFormatted)) {
+  fail(`Odd Rounds should not stay a trailing aside: ${oddFormatted}`);
+}
+if (!/\. Odd-numbered Rounds: Instinct /i.test(oddFormatted)) {
+  fail(`Odd-numbered Rounds should start a sentence: ${oddFormatted}`);
+}
+if (formatRoundTimingSentences(oddFormatted) !== oddFormatted) {
+  fail("round-timing formatter should be stable");
+}
+const evenPipe = formatRoundTimingSentences(
+  "Each Round: Taunt 3 Enemies (25% chance) (2 rounds) | Even Rounds: Physical Dmg +120% to 1 Enemy adjacency",
+);
+if (!evenPipe.includes(". Even-numbered Rounds: Physical Dmg")) {
+  fail(`Even-numbered Rounds should start a sentence after a pipe: ${evenPipe}`);
+}
+const startOf = "Start of Odd-numbered Rounds: 25% chance to increase your Fire Damage Dealt.";
+if (formatRoundTimingSentences(startOf) !== startOf) {
+  fail(`do not split Start of Odd-numbered Rounds: ${formatRoundTimingSentences(startOf)}`);
+}
+const moonShort = habitText("moondancer", 0, 5, true);
+if (!/\. Odd-numbered Rounds:/i.test(moonShort) || /\(Odd Rounds\)/i.test(moonShort)) {
+  fail(`Moondancer New Moon short should open Odd-numbered as a sentence: ${moonShort}`);
+}
+const moonCommandText = commandLine(moon);
+if (!/\. Even-numbered Rounds: Deal Physical Damage/i.test(moonCommandText)) {
+  fail(`Moondancer Command should keep Even-numbered as its own sentence: ${moonCommandText}`);
+}
+if (/\.\s*Even-numbered Rounds/.test(moonCommandText) === false) {
+  fail("Moondancer Command Even-numbered clause must follow a period");
 }
 
 console.log("ability insight checks passed");

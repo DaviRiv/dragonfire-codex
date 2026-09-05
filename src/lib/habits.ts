@@ -1,4 +1,5 @@
 import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
+import { formatRoundTimingSentences } from "@/lib/ability-copy";
 import { qualifiesForStars } from "@/lib/stars";
 import type { Dragon, GatedAbility, LineupKind } from "@/lib/types";
 
@@ -168,11 +169,10 @@ export function habitText(
 ): string {
   if (compact) {
     const short = habitLevelText(DRAGON_HABIT_SHORTS, dragonId, index, rank);
-    if (short) return short;
+    if (short) return formatRoundTimingSentences(short);
   }
-  return (
-    habitLevelText(DRAGON_HABITS, dragonId, index, rank) || "Not recorded yet."
-  );
+  const body = habitLevelText(DRAGON_HABITS, dragonId, index, rank);
+  return body ? formatRoundTimingSentences(body) : "Not recorded yet.";
 }
 
 export function habitPreview(
@@ -301,9 +301,9 @@ export function vanguardBonus(
 ): string {
   if (compact) {
     const short = dragon.habitShort?.trim();
-    if (short) return short;
+    if (short) return formatRoundTimingSentences(short);
   }
-  return dragon.habit.trim();
+  return formatRoundTimingSentences(dragon.habit.trim());
 }
 
 export function commandLine(
@@ -312,9 +312,9 @@ export function commandLine(
 ): string {
   if (compact) {
     const short = dragon.commandShort?.trim();
-    if (short) return short;
+    if (short) return formatRoundTimingSentences(short);
   }
-  return dragon.command.trim();
+  return formatRoundTimingSentences(dragon.command.trim());
 }
 
 export function star6Ability(
@@ -322,12 +322,8 @@ export function star6Ability(
   compact = false,
   rank = 1,
 ): string | null {
-  if (compact) {
-    const short = habitLevelText(DRAGON_HABIT_SHORTS, dragon.id, 2, rank);
-    if (short) return short;
-  }
-  const text = habitLevelText(DRAGON_HABITS, dragon.id, 2, rank);
-  return text || null;
+  const text = habitText(dragon.id, 2, rank, compact);
+  return !text || text === "Not recorded yet." ? null : text;
 }
 
 function rankList(dragonId: string, index: number): string[] | undefined {
@@ -366,7 +362,7 @@ export function dragonKit(
     const star = HABIT_UNLOCK_STARS[index];
     extras.push({
       title: `Habit ${index + 1} · ${star}★`,
-      body,
+      body: formatRoundTimingSentences(body),
       ranks: rankList(dragon.id, index),
       unlockStars: star,
     });

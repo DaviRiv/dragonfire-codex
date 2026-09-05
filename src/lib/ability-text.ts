@@ -1,3 +1,4 @@
+import { formatRoundTimingSentences } from "@/lib/ability-copy";
 import { namedAbilityPhrases, namePolarity } from "@/lib/ability-insight";
 import type { DragonStats } from "@/lib/types";
 
@@ -194,6 +195,7 @@ function pushRegexHits(
 
 export function tokenizeAbilityText(text: string): AbilityToken[] {
   if (!text) return [];
+  text = formatRoundTimingSentences(text);
 
   const hits: Hit[] = [];
   const lower = text.toLowerCase();
