@@ -13,6 +13,8 @@ export const STATUS_GLOSSARY: Record<string, string> = {
     "Prevents the target from using Active Commands and Habits on their turn.",
   Stun: "Prevents the target from using Commands and Habits, or launching Basic Attacks on their turn.",
   Panic: "Deals Tactical Damage to the target each round.",
+  Burn: "Deals Fire Damage to the target each round.",
+  Slow: "Causes the target to attack after all other combatants each round.",
 };
 
 export function statusGlossaryName(name: string): string | undefined {

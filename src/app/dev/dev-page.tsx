@@ -370,9 +370,9 @@ export function DevPage() {
           <h1 className="font-heading text-xl tracking-wide">Dragon metadata</h1>
           <p className="mt-1 max-w-xl text-[13px] leading-snug text-muted-foreground">
             Hub kit plus in-game habit names from Star Progression screenshots.
-            Moondancer, Venator, Malachite, Rhysarion, Sunfyre, and Kalspire
-            are filled in. Send the same five habit cards for the next dragon
-            and they land here.
+            Moondancer, Venator, Malachite, Rhysarion, Sunfyre, Kalspire, and
+            Caraxes are filled in. Send the same five habit cards for the next
+            dragon and they land here.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={hideTab}>

@@ -290,13 +290,6 @@ function labelForPercent(
     /chance\s*$/i.test(before.slice(-18)) ||
     /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before)
   ) {
-    const afflictStatus = STATUS_NAMES.find((name) =>
-      new RegExp(
-        String.raw`afflict(?:s|ing)?(?:\s+the target)?(?:\s+with)?\s+${name}`,
-        "i",
-      ).test(after),
-    );
-    if (afflictStatus) return `${afflictStatus} Chance`;
     const gainStatus = STATUS_NAMES.find((name) =>
       new RegExp(String.raw`(?:gain|gains)\s+${name}`, "i").test(before),
     );
@@ -304,12 +297,19 @@ function labelForPercent(
     if (stackName) return `${stackName} Chance`;
     const granted = STATUS_NAMES.filter((name) =>
       new RegExp(String.raw`\b${name}\b`).test(chanceClause),
+    ).sort(
+      (a, b) =>
+        chanceClause.toLowerCase().indexOf(a.toLowerCase()) -
+        chanceClause.toLowerCase().indexOf(b.toLowerCase()),
     );
     if (granted.includes("Cleanse")) return "Cleanse Chance";
     const alsoBuffsStat =
       /increase\s+(?:your\s+)?(?:Strength|Instinct|Intelligence|Initiative)\b/i.test(
         chanceClause,
       );
+    if (granted.length > 1 && !alsoBuffsStat) {
+      return `${granted.join(" & ")} Chance`;
+    }
     if (granted.length === 1 && !alsoBuffsStat) return `${granted[0]} Chance`;
     if (habitTitle) return `${habitTitle} Chance`;
     return "Chance";
@@ -332,6 +332,9 @@ function labelForPercent(
   }
   if (/\bStrength and Instinct\s+by\s+$/i.test(before)) {
     return "Strength/Instinct";
+  }
+  if (/\bStrength and Initiative\b/i.test(before) && /by\s+$/i.test(before)) {
+    return "Strength/Initiative";
   }
   const byStat = before.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,

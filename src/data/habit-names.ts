@@ -47,6 +47,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Dragon's Insight",
     "Radiant Conqueror",
   ],
+  caraxes: [
+    "Battle Dread",
+    "Dragon's Flair",
+    "Crippling Inferno",
+    "Mass Enfeeble",
+    "Blood Wyrm",
+  ],
 };
 
 export function habitDisplayName(

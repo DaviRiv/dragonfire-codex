@@ -476,6 +476,87 @@ if (kalCatalog.command.names.includes("Tactical Strike") === false) {
   fail("Dev catalog should list Tactical Strike on Kalspire's Command");
 }
 
+const caraxes = getCatalogDragon("caraxes");
+if (!caraxes) fail("missing Caraxes");
+const caraxesNames: [number, string, string[], string][] = [
+  [1, "Battle Dread", ["Strength/Initiative"], "-6.5%,-7.8%,-9.1%,-11.05%,-13%"],
+  [2, "Dragon's Flair", ["Damage Dealt"], "12.5%,15%,17.5%,21.25%,25%"],
+  [3, "Crippling Inferno", ["Slow & Burn Chance"], "10%,12%,14%,17%,20%"],
+  [4, "Mass Enfeeble", ["Damage Dealt"], "-5.5%,-6.6%,-7.7%,-9.35%,-11%"],
+  [5, "Blood Wyrm", ["Damage Dealt", "Recovery Rate"], "8%,10.4%,12.8%,16%,20%"],
+];
+for (const [habit, title, labels, firstValues] of caraxesNames) {
+  const row = insightForSource("caraxes", { kind: "habit", habit });
+  if (!row) fail(`Caraxes habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Caraxes habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const bloodWyrm = insightForSource("caraxes", { kind: "habit", habit: 5 });
+if (
+  bloodWyrm?.scale.find((row) => row.label === "Recovery Rate")?.values.join(",") !==
+  "40%,52%,64%,80%,100%"
+) {
+  fail("Blood Wyrm Recovery Rate mismatch");
+}
+if (
+  findAbilityInsight("Battle Dread", { dragonId: "caraxes" })?.title !==
+  "Battle Dread"
+) {
+  fail("hovering Battle Dread should open Caraxes habit 1");
+}
+if (
+  findAbilityInsight("Blood Wyrm", { dragonId: "caraxes" })?.title !== "Blood Wyrm"
+) {
+  fail("hovering Blood Wyrm should open Caraxes habit 5");
+}
+const carCatalog = catalogFor(caraxes);
+if (carCatalog.namedCount !== 5 || carCatalog.needsScreenshot) {
+  fail("Caraxes habit names from Star Progression should be complete");
+}
+
+const burn = findAbilityInsight("Burn", { dragonId: "caraxes" });
+if (!burn || burn.title !== "Burn" || burn.kind !== "buff") {
+  fail(`Burn hover opened ${burn?.kind}:${burn?.title}`);
+}
+if (burn.polarity !== "debuff") fail("Burn is a debuff");
+if (!/Fire Damage/i.test(burn.body) || !/each round/i.test(burn.body)) {
+  fail(`Burn glossary missing Star Progression line: ${burn.body}`);
+}
+const slow = findAbilityInsight("Slow", { dragonId: "caraxes" });
+if (!slow || slow.title !== "Slow" || slow.kind !== "buff") {
+  fail(`Slow hover opened ${slow?.kind}:${slow?.title}`);
+}
+if (slow.polarity !== "debuff") fail("Slow is a debuff");
+if (!/attack after all other combatants/i.test(slow.body)) {
+  fail(`Slow glossary missing Star Progression line: ${slow.body}`);
+}
+if (
+  glossNames(insightForSource("caraxes", { kind: "habit", habit: 3 })).includes(
+    "Burn",
+  ) === false ||
+  glossNames(insightForSource("caraxes", { kind: "habit", habit: 3 })).includes(
+    "Slow",
+  ) === false
+) {
+  fail("Crippling Inferno should gloss Slow and Burn");
+}
+
 const stun = findAbilityInsight("Stun", { dragonId: "kalspire" });
 if (!stun || stun.title !== "Stun" || stun.kind !== "buff") {
   fail(`Stun hover opened ${stun?.kind}:${stun?.title}`);
