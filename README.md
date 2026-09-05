@@ -75,11 +75,10 @@ with HBO, Warner Bros., or the game.
   the full in-game card: complete text plus rank 1–5 chances when those
   numbers change. Named buffs such as First-Strike, Double-Strike,
   Advantage, Rising Tide, and Crescent Blade open their own keyword
-  card — not the parent habit — with a green up arrow and green name.
-  Debuffs such as Overwhelm use a red down arrow and red name. Those
-  glossary lines sit under the habit text the same way they do on Star
-  Progression. Habit upgrade Power is not in the Hub dump, so it is
-  not shown.
+  card when you tap or click the word (hover also works on a computer)
+  — not the parent habit — with a green up arrow and green name.
+  Debuffs such as Overwhelm use a red down arrow and red name. Habit
+  upgrade Power is not in the Hub dump, so it is not shown.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 - **Dev** — personal metadata catalog, hidden unless you open

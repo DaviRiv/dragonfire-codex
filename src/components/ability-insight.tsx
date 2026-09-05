@@ -78,23 +78,6 @@ function HoverableColoredText({
   );
 }
 
-function ColoredText({ text }: { text: string }) {
-  const parts = tokenizeAbilityText(text);
-  return (
-    <span>
-      {parts.map((part, i) =>
-        part.tone ? (
-          <span key={i} className={TONE_TEXT_CLASS[part.tone]}>
-            {part.value}
-          </span>
-        ) : (
-          <span key={i}>{part.value}</span>
-        ),
-      )}
-    </span>
-  );
-}
-
 export function AbilityRankTable({
   rows,
   className,
@@ -219,12 +202,11 @@ export function AbilityInsightCard({
         <p className="mt-0.5 text-[11px] text-muted-foreground">{source}</p>
       </div>
       <p className="text-[13px] leading-relaxed text-stone-100">
-        <ColoredText text={insight.body} />
+        <HoverableColoredText
+          text={insight.body}
+          dragonId={insight.dragonId || undefined}
+        />
       </p>
-      <AbilityGlossList
-        glosses={insight.glosses}
-        dragonId={insight.dragonId || undefined}
-      />
       {insight.scale.length > 0 ? (
         <AbilityRankTable rows={insight.scale} />
       ) : null}
@@ -264,7 +246,7 @@ export function AbilityHover({
         render={
           <span
             className={cn(
-              "cursor-help rounded-[2px] underline decoration-dotted decoration-df-status/55 underline-offset-2 outline-none hover:decoration-amber-300 focus-visible:ring-1 focus-visible:ring-amber-300/80",
+              "cursor-pointer rounded-[2px] underline decoration-dotted decoration-df-status/55 underline-offset-2 outline-none hover:decoration-amber-300 focus-visible:ring-1 focus-visible:ring-amber-300/80",
               className,
             )}
           />

@@ -2,7 +2,7 @@
 
 import { Check, Search } from "lucide-react";
 import { useEffect } from "react";
-import { AbilityGlossList, AbilityHover, NamedAbilities } from "@/components/ability-insight";
+import { AbilityHover, NamedAbilities } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { StarStepper } from "@/components/star-rank";
 import {
@@ -20,7 +20,6 @@ import {
 } from "@/lib/habits";
 import { slotLabels } from "@/lib/labels";
 import type { AbilitySourceRef } from "@/lib/ability-insight";
-import { insightForSource } from "@/lib/ability-insight";
 import { habitDisplayName } from "@/data/habit-names";
 import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -89,11 +88,6 @@ function KitBlock({
       <p className="mt-1 text-[13px] leading-relaxed">
         <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
-      <AbilityGlossList
-        glosses={insightForSource(dragonId, source)?.glosses ?? []}
-        dragonId={dragonId}
-        className="mt-1.5"
-      />
     </div>
   );
 }
@@ -158,11 +152,6 @@ function HabitRow({
         <p className="mt-1 text-[13px] leading-relaxed">
           <AbilityText text={row.body} dragonId={dragonId} source={source} />
         </p>
-        <AbilityGlossList
-          glosses={insightForSource(dragonId, source)?.glosses ?? []}
-          dragonId={dragonId}
-          className="mt-1.5"
-        />
       </div>
     </div>
   );
@@ -221,8 +210,8 @@ export function HabitPickerDialog({
           </DialogTitle>
           <DialogDescription>
             The list stays the same. Highlighted rows are live on this dragon.
-            Hover or tap a named ability — Rallying Flame, New Moon, Taunt —
-            for the full card and rank chances. Uncheck a habit if you have not
+            Tap or click a named buff — First-Strike, Rising Tide — for its
+            card. Hover works on a computer. Uncheck a habit if you have not
             bought it.
           </DialogDescription>
         </DialogHeader>

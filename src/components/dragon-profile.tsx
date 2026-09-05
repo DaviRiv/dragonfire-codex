@@ -3,7 +3,6 @@ import {
   AbilityHover,
   AbilityRankTable,
   NamedAbilities,
-  AbilityGlossList,
 } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
@@ -318,8 +317,8 @@ export function DragonProfile({
           table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
           multipliers. Stars auto-select habits in Hatchery. Uncheck one on
-          the search icon if you have not bought it. Hover or tap a named
-          ability for the full card and rank chances. Habit upgrade Power is
+          the search icon if you have not bought it. Tap or click a named
+          buff for its card; hover works on a computer. Habit upgrade Power is
           not in the catalog.
         </p>
       </div>
@@ -381,13 +380,6 @@ export function AbilityBlock({
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
-      {insight && insight.glosses.length > 0 ? (
-        <AbilityGlossList
-          glosses={insight.glosses}
-          dragonId={dragonId}
-          className="mt-1.5"
-        />
-      ) : null}
       {insight && insight.scale.length > 0 ? (
         <AbilityRankTable rows={insight.scale} className="mt-2" />
       ) : null}

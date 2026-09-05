@@ -72,11 +72,6 @@ function SkillBlock({
           interactive
         />
       </p>
-      <AbilityGlossList
-        glosses={skill.glosses}
-        dragonId={dragonId}
-        className="mt-1.5"
-      />
     </section>
   );
 }
@@ -124,11 +119,6 @@ function HabitMetaCard({
           Habit text not in the Hub dump.
         </p>
       )}
-      <AbilityGlossList
-        glosses={row.glosses}
-        dragonId={dragonId}
-        className="mt-1.5"
-      />
       {row.scale.length > 0 ? (
         <AbilityRankTable rows={row.scale} className="mt-2" />
       ) : null}
