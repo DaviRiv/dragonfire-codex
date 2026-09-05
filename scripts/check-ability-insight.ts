@@ -872,6 +872,137 @@ if (vhagarCatalog.namedCount !== 5 || vhagarCatalog.needsScreenshot) {
   fail("Vhagar habit names from Star Progression should be complete");
 }
 
+const seasmoke = getCatalogDragon("seasmoke");
+if (!seasmoke) fail("missing Seasmoke");
+const seasmokeNames: [number, string, string[], string][] = [
+  [1, "Clever Maneuver", ["Intelligence", "Initiative"], "22%,26.4%,30.8%,37.4%,44%"],
+  [2, "Wind's Favor", ["Initiative"], "12.5%,15%,17.5%,21.25%,25%"],
+  [3, "Infectious Wrath", ["Recovery Received", "Damage Rate"], "-15%,-18%,-21%,-25.5%,-30%"],
+  [4, "Cunning Ferocity", ["Intelligence", "Damage Dealt"], "7.5%,9%,10.5%,12.75%,15%"],
+  [5, "Loyal Bond", ["Advantage Chance", "Resistance Chance"], "10%,13%,16%,20%,25%"],
+];
+for (const [habit, title, labels, firstValues] of seasmokeNames) {
+  const row = insightForSource("seasmoke", { kind: "habit", habit });
+  if (!row) fail(`Seasmoke habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Seasmoke habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const clever = insightForSource("seasmoke", { kind: "habit", habit: 1 });
+if (
+  clever?.scale.find((row) => row.label === "Initiative")?.values.join(",") !==
+  "12.5%,15%,17.5%,21.25%,25%"
+) {
+  fail("Clever Maneuver Initiative mismatch");
+}
+if (/Both effects are enhanced by Instinct/i.test(clever?.body ?? "")) {
+  fail("do not rewrite Hub Clever Maneuver text to screenshot wording");
+}
+const infectious = insightForSource("seasmoke", { kind: "habit", habit: 3 });
+if (/Cleansing Wrath gains/i.test(infectious?.body ?? "")) {
+  fail("do not rewrite Hub Infectious Wrath text to screenshot wording");
+}
+if (!/Command gains/i.test(infectious?.body ?? "")) {
+  fail("keep Hub Infectious Wrath Command gains text");
+}
+if (
+  infectious?.scale.find((row) => row.label === "Damage Rate")?.values.join(
+    ",",
+  ) !== "30%,36%,42%,51%,60%"
+) {
+  fail("Infectious Wrath Damage Rate mismatch");
+}
+if (infectious?.scale.some((row) => row.values.join(",") === "60%,72%,84%,102%,120%")) {
+  fail("Infectious Wrath should skip doubled Damage Rate with Panic");
+}
+if (glossNames(infectious).includes("Panic") === false) {
+  fail("Infectious Wrath should gloss Panic");
+}
+const ferocity = insightForSource("seasmoke", { kind: "habit", habit: 4 });
+if (
+  ferocity?.scale.find((row) => row.label === "Damage Dealt")?.values.join(",") !==
+  "5%,6%,7%,8.5%,10%"
+) {
+  fail("Cunning Ferocity Damage Dealt mismatch");
+}
+const loyalBond = insightForSource("seasmoke", { kind: "habit", habit: 5 });
+if (
+  loyalBond?.scale.find((row) => row.label === "Resistance Chance")?.values.join(
+    ",",
+  ) !== "10%,13%,16%,20%,25%"
+) {
+  fail("Loyal Bond Resistance Chance mismatch");
+}
+if (loyalBond?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Loyal Bond should skip constant Advantage/Resistance 20%");
+}
+if (loyalBond?.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Loyal Bond should skip constant 50% troop capacity");
+}
+if (
+  glossNames(loyalBond).includes("Advantage") === false ||
+  glossNames(loyalBond).includes("Resistance") === false
+) {
+  fail("Loyal Bond should gloss Advantage and Resistance");
+}
+if (
+  findAbilityInsight("Clever Maneuver", { dragonId: "seasmoke" })?.title !==
+  "Clever Maneuver"
+) {
+  fail("hovering Clever Maneuver should open Seasmoke habit 1");
+}
+if (
+  findAbilityInsight("Infectious Wrath", { dragonId: "seasmoke" })?.kind !==
+  "habit"
+) {
+  fail("hovering Infectious Wrath should open Seasmoke habit 3");
+}
+if (
+  findAbilityInsight("Loyal Bond", { dragonId: "seasmoke" })?.title !==
+  "Loyal Bond"
+) {
+  fail("hovering Loyal Bond should open Seasmoke habit 5");
+}
+const seaCommand = insightForSource("seasmoke", { kind: "command" });
+if (!seaCommand) fail("Seasmoke command missing");
+if (seaCommand.title !== "Cleansing Wrath") {
+  fail(`Seasmoke command title is ${seaCommand.title}, expected Cleansing Wrath`);
+}
+if (/Cleansing Wrath gains/i.test(seaCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Cleansing Wrath", { dragonId: "seasmoke" })?.kind !==
+  "command"
+) {
+  fail("hovering Cleansing Wrath should open Seasmoke's Command");
+}
+if (!namedChips(seaCommand).includes("Cleansing Wrath")) {
+  fail("Seasmoke command chips should include Cleansing Wrath");
+}
+const seaCatalog = catalogFor(seasmoke);
+if (seaCatalog.namedCount !== 5 || seaCatalog.needsScreenshot) {
+  fail("Seasmoke habit names from Star Progression should be complete");
+}
+if (seaCatalog.command.names.includes("Cleansing Wrath") === false) {
+  fail("Dev catalog should list Cleansing Wrath on Seasmoke's Command");
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
@@ -1106,11 +1237,11 @@ if (crescent.scale.find((row) => row.values[0] === "85%") == null) {
 }
 
 const wrath = findAbilityInsight("Infectious Wrath", { dragonId: "seasmoke" });
-if (wrath?.kind !== "buff") {
-  fail(`Infectious Wrath should extract as a stack: ${wrath?.kind}:${wrath?.title}`);
+if (wrath?.kind !== "habit" || wrath.title !== "Infectious Wrath") {
+  fail(`Infectious Wrath must stay the habit card: ${wrath?.kind}:${wrath?.title}`);
 }
-if (wrath.polarity !== "debuff") {
-  fail(`Infectious Wrath should be a debuff: ${wrath.body}`);
+if (!/Each stack of Infectious Wrath/i.test(wrath.body)) {
+  fail("Infectious Wrath habit should keep the Hub stack definition");
 }
 
 const erosion = findAbilityInsight("Steady Erosion", { dragonId: "solstryker" });

@@ -371,8 +371,8 @@ export function DevPage() {
           <p className="mt-1 max-w-xl text-[13px] leading-snug text-muted-foreground">
             Hub kit plus in-game habit names from Star Progression screenshots.
             Moondancer, Venator, Malachite, Rhysarion, Sunfyre, Kalspire,
-            Caraxes, Syrax, Vhagar, and Vermax are filled in. Send the same
-            five habit cards for the next dragon and they land here.
+            Caraxes, Syrax, Vhagar, Vermax, and Seasmoke are filled in. Send
+            the same five habit cards for the next dragon and they land here.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={hideTab}>

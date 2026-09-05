@@ -74,6 +74,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Blazing Onslaught",
     "Skyward Titan",
   ],
+  seasmoke: [
+    "Clever Maneuver",
+    "Wind's Favor",
+    "Infectious Wrath",
+    "Cunning Ferocity",
+    "Loyal Bond",
+  ],
 };
 
 export function habitDisplayName(
