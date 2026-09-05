@@ -2,6 +2,7 @@ import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
 import { DRAGONS } from "@/data/dragons";
 import { HABIT_NAMES, habitDisplayName } from "@/data/habit-names";
 import {
+  findAbilityInsight,
   insightsForDragon,
   type AbilityGloss,
   type AbilityScaleRow,
@@ -83,7 +84,7 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
     };
   });
   const namedCount = habits.filter((row) => !row.needsScreenshot).length;
-  const buffs = uniqueBuffs(insights);
+  const buffs = uniqueBuffs(insights, dragon);
   return {
     dragon,
     namedCount,
@@ -108,22 +109,31 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
 
 function uniqueBuffs(
   insights: ReturnType<typeof insightsForDragon>,
+  dragon: Dragon,
 ): AbilityGloss[] {
   const byKey = new Map<string, AbilityGloss>();
   const keyOf = (value: string) =>
     value.replace(/[’']/g, "'").trim().toLowerCase();
   for (const insight of insights) {
-    if (insight.kind === "buff") {
-      byKey.set(keyOf(insight.title), {
-        name: insight.title,
-        body: insight.body,
-        polarity: insight.polarity ?? polarityForName(insight.title, insight.body),
-      });
-    }
-    for (const row of insight.glosses) {
-      const key = keyOf(row.name);
-      if (!byKey.has(key)) byKey.set(key, row);
-    }
+    if (insight.kind !== "buff") continue;
+    byKey.set(keyOf(insight.title), {
+      name: insight.title,
+      body: insight.body,
+      polarity: insight.polarity ?? polarityForName(insight.title, insight.body),
+      unlockStars: insight.unlockStars,
+    });
+  }
+  for (const gate of dragon.provides ?? []) {
+    const key = keyOf(gate.ability);
+    if (!key || byKey.has(key)) continue;
+    const named = findAbilityInsight(gate.ability, { dragonId: dragon.id });
+    if (!named || named.kind !== "buff" || keyOf(named.title) !== key) continue;
+    byKey.set(key, {
+      name: named.title,
+      body: named.body,
+      polarity: named.polarity ?? polarityForName(named.title, named.body),
+      unlockStars: gate.unlockStars,
+    });
   }
   return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

@@ -234,6 +234,7 @@ export function HabitPickerDialog({
                     key={effect.ability}
                     tag={effect.ability}
                     dragonId={dragon.id}
+                    stars={effect.unlockStars}
                   />
                 ))}
               </div>

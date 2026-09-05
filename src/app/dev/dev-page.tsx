@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AbilityRankTable, AbilityGlossList } from "@/components/ability-insight";
+import { AbilityHover, AbilityRankTable, AbilityGlossList } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { MiniChip } from "@/components/chip";
@@ -202,7 +202,11 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
               <ul className="space-y-1 text-[13px]">
                 {dragon.provides.map((gate) => (
                   <li key={`${gate.ability}-${gate.unlockStars}`}>
-                    {gate.ability}
+                    <AbilityHover name={gate.ability} dragonId={dragon.id}>
+                      <span className="cursor-pointer underline decoration-dotted decoration-df-status/55 underline-offset-2">
+                        {gate.ability}
+                      </span>
+                    </AbilityHover>
                     {gate.unlockStars != null ? ` · ${gate.unlockStars}★` : " · Command"}
                   </li>
                 ))}
@@ -217,7 +221,11 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
               <ul className="space-y-1 text-[13px]">
                 {dragon.needs.map((gate) => (
                   <li key={`${gate.ability}-${gate.unlockStars}`}>
-                    {gate.ability}
+                    <AbilityHover name={gate.ability} dragonId={dragon.id}>
+                      <span className="cursor-pointer underline decoration-dotted decoration-df-status/55 underline-offset-2">
+                        {gate.ability}
+                      </span>
+                    </AbilityHover>
                     {gate.unlockStars != null ? ` · ${gate.unlockStars}★` : ""}
                   </li>
                 ))}

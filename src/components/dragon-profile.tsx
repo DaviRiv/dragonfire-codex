@@ -15,6 +15,7 @@ import {
 } from "@/lib/ability-insight";
 import { habitDisplayName } from "@/data/habit-names";
 import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
+import { provideUnlockStars } from "@/lib/abilities";
 import { healingAbilities } from "@/lib/healing";
 import {
   breedLabels,
@@ -184,9 +185,14 @@ export function DragonProfile({
       />
       {dragon.tags.length > 0 ? (
         <div className="flex flex-wrap gap-1">
-          {dragon.tags.map((tag) => (
-            <AbilityTag key={tag} tag={tag} dragonId={dragon.id} />
-          ))}
+            {dragon.tags.map((tag) => (
+              <AbilityTag
+                key={tag}
+                tag={tag}
+                dragonId={dragon.id}
+                stars={provideUnlockStars(dragon, tag)}
+              />
+            ))}
         </div>
       ) : null}
       {vanguard ? (

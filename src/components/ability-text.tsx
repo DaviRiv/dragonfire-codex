@@ -61,17 +61,22 @@ export function AbilityText({
 export function AbilityTag({
   tag,
   dragonId,
+  stars,
 }: {
   tag: string;
   dragonId?: string;
+  stars?: number | null;
 }) {
   const tone = toneForPhrase(tag);
+  const gate =
+    stars === undefined ? null : stars === null ? "Command" : `${stars}★`;
   const chip = (
     <Badge
       variant="outline"
       className={cn("rounded-md font-normal", tone && TONE_BADGE_CLASS[tone])}
     >
       {tag}
+      {gate ? <span className="text-muted-foreground"> · {gate}</span> : null}
     </Badge>
   );
   if (!dragonId && !findAbilityInsight(tag)) return chip;

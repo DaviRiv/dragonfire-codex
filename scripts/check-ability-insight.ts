@@ -2,6 +2,7 @@
  * Ability insight extraction. Run: npx tsx --tsconfig tsconfig.json scripts/check-ability-insight.ts
  */
 import { getCatalogDragon } from "@/data/dragons";
+import { catalogFor } from "@/lib/dragon-catalog";
 import {
   findAbilityInsight,
   insightForSource,
@@ -402,6 +403,11 @@ if (!firstStrike || firstStrike.title !== "First-Strike") {
 }
 if (firstStrike.kind !== "buff") fail("First-Strike should be the status card");
 if (firstStrike.polarity !== "buff") fail("First-Strike is a buff");
+if (firstStrike.dragonName !== "Malachite" || firstStrike.unlockStars !== 10) {
+  fail(
+    `First-Strike on Malachite should be 10★ Lightning Strike, got ${firstStrike.dragonName} ${firstStrike.unlockStars}`,
+  );
+}
 if (!/act before all other combatants/i.test(firstStrike.body)) {
   fail("First-Strike body missing the Star Progression glossary line");
 }
@@ -421,6 +427,67 @@ if (advantage?.title !== "Advantage" || advantage.kind !== "buff") {
 if (advantage.polarity !== "buff") fail("Advantage is a buff");
 if (!/Damage Dealt/i.test(advantage.body)) {
   fail("Advantage body missing Damage Dealt");
+}
+if (advantage.dragonName !== "Malachite") {
+  fail(`Advantage on Malachite should be Malachite’s grant, got ${advantage.dragonName}`);
+}
+if (advantage.unlockStars !== 6) {
+  fail(`Malachite Advantage unlocks at 6★, got ${advantage.unlockStars}`);
+}
+
+const moonAdvantage = findAbilityInsight("Advantage", { dragonId: "moondancer" });
+if (!moonAdvantage) fail("Advantage hover from Moondancer missing");
+if (moonAdvantage.dragonName === "Moondancer") {
+  fail("Moondancer does not grant Advantage");
+}
+if (
+  !moonAdvantage.grantedBy?.some(
+    (grant) => grant.dragonId === "malachite" && grant.unlockStars === 6,
+  )
+) {
+  fail(
+    `Advantage from Moondancer should name Malachite 6★, got ${JSON.stringify(moonAdvantage.grantedBy)}`,
+  );
+}
+if (
+  !moonAdvantage.neededBy ||
+  moonAdvantage.neededBy.dragonName !== "Moondancer" ||
+  !moonAdvantage.neededBy.gates.some((gate) => gate.stars === 2 && gate.habitName === "New Moon")
+) {
+  fail(
+    `Moondancer should need Advantage from New Moon 2★, got ${JSON.stringify(moonAdvantage.neededBy)}`,
+  );
+}
+if (!moonAdvantage.neededBy.gates.some((gate) => gate.stars === 6 && gate.habitName === "Full Moon")) {
+  fail("Full Moon 6★ also wants Advantage on an ally");
+}
+
+const moonCatalog = catalogFor(moondancer);
+if (moonCatalog.buffs.some((row) => /advantage/i.test(row.name))) {
+  fail("Moondancer buffs must not list Advantage");
+}
+if (moonCatalog.dragon.tags.includes("Advantage")) {
+  fail("Moondancer tags must not treat Advantage as a grant");
+}
+const moonTide = moonCatalog.buffs.find((row) => row.name === "Rising Tide");
+if (!moonTide || moonTide.unlockStars !== null) {
+  fail(`Rising Tide is a Command buff, got ${moonTide?.unlockStars}`);
+}
+const moonBlade = moonCatalog.buffs.find((row) => row.name === "Crescent Blade");
+if (!moonBlade || moonBlade.unlockStars !== null) {
+  fail(`Crescent Blade is a Command spreading buff, got ${moonBlade?.unlockStars}`);
+}
+
+const malachiteDragon = getCatalogDragon("malachite");
+if (!malachiteDragon) fail("missing Malachite");
+const malCatalog = catalogFor(malachiteDragon);
+const malAdv = malCatalog.buffs.find((row) => row.name === "Advantage");
+if (!malAdv) fail("Malachite buffs should list Advantage");
+if (malAdv.unlockStars !== 6) {
+  fail(`Malachite Advantage should be 6★, got ${malAdv.unlockStars}`);
+}
+if (!malCatalog.dragon.tags.includes("Advantage")) {
+  fail("Malachite should keep the Advantage tag");
 }
 
 const overwhelm = findAbilityInsight("Overwhelm", { dragonId: "venator" });

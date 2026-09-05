@@ -1,6 +1,6 @@
 import { EPITHETS } from "@/data/epithets";
 import { HUB_DRAGONS, type HubDragon } from "@/data/hub-source";
-import { uniqueGates, unlockStarsForHabit } from "@/lib/abilities";
+import { uniqueGates, unlockStarsForHabit, canonAbility } from "@/lib/abilities";
 import type {
   Breed,
   Dragon,
@@ -9,6 +9,28 @@ import type {
   Rarity,
   TroopType,
 } from "@/lib/types";
+
+const STATUS_TAGS = new Set([
+  "Burn",
+  "Bleed",
+  "Panic",
+  "First-Strike",
+  "Double-Strike",
+  "Advantage",
+  "Cleanse",
+  "Resistance",
+  "Taunt",
+  "Stun",
+  "Slow",
+  "Weakened",
+  "Confusion",
+  "Stagger",
+  "Vulnerable",
+  "Overwhelm",
+  "Protect",
+  "Prey",
+  "Evade",
+]);
 
 const TAG_NEEDLES: { tag: string; needles: string[] }[] = [
   { tag: "Physical Damage", needles: ["physical damage"] },
@@ -52,18 +74,30 @@ const MARCH_MAP: Record<string, MarchSpeed> = {
   "very fast": "very-fast",
 };
 
+function kitGrantsStatus(kit: string, tag: string): boolean {
+  const pattern = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/-/g, "[-]");
+  return new RegExp(
+    String.raw`\b(?:grant|apply|applies|inflict(?:s|ing)?|afflict(?:s|ing)?)\b[\s\S]{0,72}?\b${pattern}\b`,
+    "i",
+  ).test(kit);
+}
+
 function tagsFor(raw: HubDragon): string[] {
-  const hay = [
+  const provided = new Set(
+    raw.provides.ability.map((item) => canonAbility(item.ability)),
+  );
+  const kit = [
     raw.commandSkill,
     raw.vanguardSkill,
     ...raw.habitsData.map((habit) => habit.level1),
-    ...raw.provides.ability.map((item) => item.ability),
-  ]
-    .join(" ")
-    .toLowerCase();
-  return TAG_NEEDLES.filter(({ needles }) =>
-    needles.some((needle) => hay.includes(needle)),
-  ).map(({ tag }) => tag);
+  ].join(" ");
+  const hay = kit.toLowerCase();
+  return TAG_NEEDLES.filter(({ tag, needles }) => {
+    if (STATUS_TAGS.has(tag)) {
+      return provided.has(tag) || kitGrantsStatus(kit, tag);
+    }
+    return needles.some((needle) => hay.includes(needle));
+  }).map(({ tag }) => tag);
 }
 
 function gatedFromHub(

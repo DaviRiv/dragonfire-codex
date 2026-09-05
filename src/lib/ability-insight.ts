@@ -1,6 +1,7 @@
 import { DRAGONS } from "@/data/dragons";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
 import { habitDisplayName } from "@/data/habit-names";
+import { HUB_DRAGONS } from "@/data/hub-source";
 import {
   STATUS_GLOSSARY,
   statusGlossaryName,
@@ -8,9 +9,11 @@ import {
 import {
   commandLine,
   HABIT_UNLOCK_STARS,
+  habitNumberForUnlockStars,
   habitRankTexts,
   vanguardBonus,
 } from "@/lib/habits";
+import { joinNames } from "@/lib/abilities";
 import {
   polarityForName,
   type StatusPolarity,
@@ -22,10 +25,25 @@ export type { StatusPolarity };
 
 export type AbilitySourceKind = "command" | "vanguard" | "habit" | "buff";
 
+export type AbilityGrant = {
+  dragonId: string;
+  dragonName: string;
+  unlockStars: number | null;
+  habit?: number;
+  habitName?: string;
+};
+
+export type AbilityNeed = {
+  stars: number;
+  habit: number;
+  habitName?: string;
+};
+
 export type AbilityGloss = {
   name: string;
   body: string;
   polarity: StatusPolarity;
+  unlockStars?: number | null;
 };
 
 export type AbilitySourceRef = {
@@ -44,7 +62,7 @@ export type AbilityInsight = {
   dragonName: string;
   kind: AbilitySourceKind;
   habit?: number;
-  unlockStars?: number;
+  unlockStars?: number | null;
   title: string;
   names: string[];
   defines: string[];
@@ -55,6 +73,8 @@ export type AbilityInsight = {
   polarity?: StatusPolarity;
   /** Hub grant target when this named ability is spread onto an ally. */
   spreadTo?: string;
+  grantedBy?: AbilityGrant[];
+  neededBy?: { dragonName: string; gates: AbilityNeed[] };
 };
 
 const STATUS_NAMES = [
@@ -158,6 +178,8 @@ const PERCENT_RE = /[+\u2212-]?\d+(?:\.\d+)?%/g;
 
 const cache = new Map<string, AbilityInsight[]>();
 const byName = new Map<string, AbilityInsight[]>();
+const grantIndex = new Map<string, AbilityGrant[]>();
+const needIndex = new Map<string, AbilityNeed[]>();
 let catalogWarmed = false;
 let namedPhrases: string[] | null = null;
 
@@ -419,7 +441,12 @@ function maxStacksNear(name: string, blob: string): number | null {
 function makeBuffInsight(
   name: string,
   body: string,
-  extra?: { dragonId?: string; dragonName?: string; spreadTo?: string },
+  extra?: {
+    dragonId?: string;
+    dragonName?: string;
+    spreadTo?: string;
+    unlockStars?: number | null;
+  },
 ): AbilityInsight {
   const polarity = extra?.spreadTo
     ? "spread"
@@ -437,6 +464,7 @@ function makeBuffInsight(
     glosses: [],
     polarity,
     spreadTo: extra?.spreadTo,
+    unlockStars: extra?.unlockStars,
   };
 }
 
@@ -486,6 +514,48 @@ function grantTarget(blob: string, name: string): string | null {
 function keepGrantTarget(raw: string | undefined): string | undefined {
   const value = raw?.replace(/\s+/g, " ").trim();
   return value || undefined;
+}
+
+function mentionsAbility(text: string, name: string): boolean {
+  if (!text.trim()) return false;
+  const key = keyName(name);
+  if (namedStacksIn(text).some((item) => keyName(item) === key)) return true;
+  return new RegExp(String.raw`\b${escapeRe(name)}\b`, "i").test(text);
+}
+
+/** Command = null. First habit that names it otherwise. */
+function unlockForExtractedBuff(
+  dragon: Pick<Dragon, "id" | "command" | "habit">,
+  name: string,
+): number | null | undefined {
+  if (mentionsAbility(commandLine(dragon), name)) return null;
+  const habits = DRAGON_HABITS[dragon.id] ?? [];
+  for (let index = 0; index < habits.length; index++) {
+    if (mentionsAbility(habits[index]?.level1 ?? "", name)) {
+      return HABIT_UNLOCK_STARS[index];
+    }
+  }
+  return undefined;
+}
+
+export function unlockLabel(stars: number | null | undefined): string | null {
+  if (stars === undefined) return null;
+  if (stars === null) return "Command";
+  return `${stars}★`;
+}
+
+export function grantLabel(grant: AbilityGrant): string {
+  return [grant.dragonName, grant.habitName, unlockLabel(grant.unlockStars)]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export function formatNeedGates(gates: AbilityNeed[]): string {
+  const bits = gates.map((gate) => {
+    const name = gate.habitName ?? `Habit ${gate.habit}`;
+    return `${name} (${gate.stars}★)`;
+  });
+  return joinNames(bits);
 }
 
 const SENTENCE = String.raw`(?:[^.]+|\.\d+)+`;
@@ -563,6 +633,7 @@ function extractKitBuffs(
       makeBuffInsight(name, body, {
         dragonId: dragon.id,
         dragonName: dragon.name,
+        unlockStars: unlockForExtractedBuff(dragon, name),
       }),
     );
   }
@@ -585,6 +656,7 @@ function extractKitBuffs(
         dragonId: dragon.id,
         dragonName: dragon.name,
         spreadTo,
+        unlockStars: unlockForExtractedBuff(dragon, name),
       }),
     );
   }
@@ -611,6 +683,7 @@ export function glossesForText(
     name: string;
     body: string;
     polarity: StatusPolarity;
+    unlockStars?: number | null;
     index: number;
   }[] = [];
   const seen = new Set<string>();
@@ -626,12 +699,18 @@ export function glossesForText(
       name: buff.title,
       body: buff.body,
       polarity: buff.polarity ?? polarityForName(buff.title, buff.body),
+      unlockStars: buff.dragonId ? buff.unlockStars : undefined,
       index: idx,
     });
   }
   return rows
     .sort((a, b) => a.index - b.index)
-    .map(({ name, body, polarity }) => ({ name, body, polarity }));
+    .map(({ name, body, polarity, unlockStars }) => ({
+      name,
+      body,
+      polarity,
+      unlockStars,
+    }));
 }
 
 function kitBlob(
@@ -731,6 +810,121 @@ function remember(dragonId: string, insights: AbilityInsight[]) {
   }
 }
 
+function preferredGrant(grants: AbilityGrant[]): AbilityGrant {
+  return [...grants].sort((a, b) => {
+    const left = a.unlockStars ?? 0;
+    const right = b.unlockStars ?? 0;
+    if (left !== right) return left - right;
+    return a.dragonName.localeCompare(b.dragonName);
+  })[0]!;
+}
+
+function indexHubGates() {
+  grantIndex.clear();
+  needIndex.clear();
+  for (const dragon of DRAGONS) {
+    for (const gate of dragon.provides ?? []) {
+      const key = keyName(gate.ability);
+      if (!key || key === "recovery") continue;
+      if (
+        !statusGlossaryName(gate.ability) &&
+        !(STATUS_NAMES as readonly string[]).some(
+          (name) => keyName(name) === key,
+        )
+      ) {
+        continue;
+      }
+      const habit = habitNumberForUnlockStars(gate.unlockStars) ?? undefined;
+      const grant: AbilityGrant = {
+        dragonId: dragon.id,
+        dragonName: dragon.name,
+        unlockStars: gate.unlockStars,
+        habit,
+        habitName: habit ? habitDisplayName(dragon.id, habit) : undefined,
+      };
+      const list = grantIndex.get(key) ?? [];
+      if (!list.some((row) => row.dragonId === grant.dragonId && row.habit === grant.habit)) {
+        list.push(grant);
+      }
+      grantIndex.set(key, list);
+    }
+    for (const gate of dragon.needs ?? []) {
+      const habit = habitNumberForUnlockStars(gate.unlockStars);
+      if (habit == null) continue;
+      const mapKey = `${dragon.id}::${keyName(gate.ability)}`;
+      const list = needIndex.get(mapKey) ?? [];
+      if (!list.some((row) => row.habit === habit)) {
+        list.push({
+          stars: HABIT_UNLOCK_STARS[habit - 1],
+          habit,
+          habitName: habitDisplayName(dragon.id, habit),
+        });
+      }
+      needIndex.set(mapKey, list.sort((a, b) => a.stars - b.stars));
+    }
+  }
+  for (const raw of HUB_DRAGONS) {
+    for (const need of raw.needs) {
+      if (need.habit == null || need.habit < 1) continue;
+      const mapKey = `${raw.id}::${keyName(need.ability)}`;
+      const list = needIndex.get(mapKey) ?? [];
+      if (!list.some((row) => row.habit === need.habit)) {
+        list.push({
+          stars: HABIT_UNLOCK_STARS[need.habit - 1],
+          habit: need.habit,
+          habitName: habitDisplayName(raw.id, need.habit),
+        });
+      }
+      needIndex.set(mapKey, list.sort((a, b) => a.stars - b.stars));
+    }
+  }
+}
+
+export function providersOf(name: string): AbilityGrant[] {
+  warmCatalog();
+  return grantIndex.get(keyName(name)) ?? [];
+}
+
+function needsOf(dragonId: string, name: string): AbilityNeed[] {
+  return needIndex.get(`${dragonId}::${keyName(name)}`) ?? [];
+}
+
+function decorateStatus(
+  status: AbilityInsight,
+  scope?: { dragonId?: string },
+): AbilityInsight {
+  const providers = providersOf(status.title);
+  const self = scope?.dragonId
+    ? providers.filter((grant) => grant.dragonId === scope.dragonId)
+    : [];
+  const scopedDragon = scope?.dragonId
+    ? DRAGONS.find((dragon) => dragon.id === scope.dragonId)
+    : undefined;
+  const gates = scope?.dragonId ? needsOf(scope.dragonId, status.title) : [];
+  const neededBy =
+    scopedDragon && gates.length > 0
+      ? { dragonName: scopedDragon.name, gates }
+      : undefined;
+  if (self.length > 0) {
+    const grant = preferredGrant(self);
+    return {
+      ...status,
+      id: `${grant.dragonId}:buff:${keyName(status.title)}`,
+      dragonId: grant.dragonId,
+      dragonName: grant.dragonName,
+      unlockStars: grant.unlockStars,
+      habit: grant.habit,
+      grantedBy: self,
+      neededBy,
+    };
+  }
+  return {
+    ...status,
+    grantedBy: providers,
+    neededBy,
+  };
+}
+
 function officialHabitInsight(
   dragonId: string,
   nameKey: string,
@@ -747,6 +941,7 @@ function officialHabitInsight(
 function warmCatalog() {
   if (catalogWarmed) return;
   catalogWarmed = true;
+  indexHubGates();
   const statuses = statusBuffInsights();
   remember("status", statuses);
   for (const dragon of DRAGONS) {
@@ -820,7 +1015,7 @@ export function findAbilityInsight(
   const status = matches.find(
     (item) => item.kind === "buff" && !item.dragonId && keyName(item.title) === key,
   );
-  if (status) return status;
+  if (status) return decorateStatus(status, scope);
   const stacks = matches.filter(
     (item) => item.kind === "buff" && item.dragonId && keyName(item.title) === key,
   );

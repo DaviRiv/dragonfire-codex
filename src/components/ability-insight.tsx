@@ -8,9 +8,12 @@ import {
 } from "@/components/ui/popover";
 import { TONE_TEXT_CLASS, tokenizeAbilityText } from "@/lib/ability-text";
 import {
+  formatNeedGates,
+  grantLabel,
   namedChips,
   resolveAbilityInsight,
   sourceLabel,
+  unlockLabel,
   type AbilityGloss,
   type AbilityInsight,
   type AbilityScaleRow,
@@ -154,7 +157,13 @@ export function AbilityGlossList({
         <p key={row.name} className="text-[13px] leading-relaxed text-stone-100">
           <AbilityHover name={row.name} dragonId={dragonId}>
             <StatusName name={row.name} polarity={row.polarity} />
-          </AbilityHover>{" "}
+          </AbilityHover>
+          {unlockLabel(row.unlockStars) ? (
+            <span className="text-muted-foreground">
+              {" "}
+              · {unlockLabel(row.unlockStars)}
+            </span>
+          ) : null}{" "}
           <HoverableColoredText text={row.body} dragonId={dragonId} />
         </p>
       ))}
@@ -175,6 +184,7 @@ export function AbilityInsightCard({
           insight.dragonName || null,
           sourceLabel(insight.kind, insight.habit, insight.polarity),
           insight.spreadTo || null,
+          unlockLabel(insight.unlockStars),
         ]
           .filter(Boolean)
           .join(" · ")
@@ -185,6 +195,14 @@ export function AbilityInsightCard({
         ]
           .filter(Boolean)
           .join(" · ");
+
+  const otherGrants = (insight.grantedBy ?? []).filter(
+    (grant) => grant.dragonId !== insight.dragonId,
+  );
+  const showGrantedBy =
+    otherGrants.length > 0 && !insight.dragonId
+      ? insight.grantedBy ?? []
+      : [];
 
   const titleClass =
     insight.kind === "buff" && insight.polarity === "debuff"
@@ -215,6 +233,17 @@ export function AbilityInsightCard({
         </p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">{source}</p>
       </div>
+      {showGrantedBy.length > 0 ? (
+        <p className="text-[12px] leading-snug text-stone-300">
+          Granted by {showGrantedBy.map(grantLabel).join("; ")}.
+        </p>
+      ) : null}
+      {insight.neededBy ? (
+        <p className="text-[12px] leading-snug text-stone-300">
+          {insight.neededBy.dragonName} wants this on an ally from{" "}
+          {formatNeedGates(insight.neededBy.gates)}.
+        </p>
+      ) : null}
       <p className="text-[13px] leading-relaxed text-stone-100">
         <HoverableColoredText
           text={insight.body}
