@@ -11,6 +11,8 @@ export const STATUS_GLOSSARY: Record<string, string> = {
   Resistance: "Reduces the target's Damage Received.",
   Overwhelm:
     "Prevents the target from using Active Commands and Habits on their turn.",
+  Stun: "Prevents the target from using Commands and Habits, or launching Basic Attacks on their turn.",
+  Panic: "Deals Tactical Damage to the target each round.",
 };
 
 export function statusGlossaryName(name: string): string | undefined {

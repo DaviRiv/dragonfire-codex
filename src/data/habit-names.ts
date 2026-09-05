@@ -40,6 +40,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Unbroken Splendor",
     "Adaptive Glory",
   ],
+  kalspire: [
+    "Robust Insight",
+    "Battle Cunning",
+    "Tactical Assault",
+    "Dragon's Insight",
+    "Radiant Conqueror",
+  ],
 };
 
 export function habitDisplayName(

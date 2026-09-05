@@ -244,10 +244,16 @@ function collapseScaleLabel(label: string): string {
 const STAT_LABEL_RE =
   /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/gi;
 
+function isHighestTargeting(before: string, index: number): boolean {
+  return /\bhighest\s+$/i.test(before.slice(Math.max(0, index - 12), index));
+}
+
 function nearestStatLabel(before: string): string | null {
   let last: string | null = null;
   STAT_LABEL_RE.lastIndex = 0;
   for (const match of before.matchAll(STAT_LABEL_RE)) {
+    const index = match.index ?? 0;
+    if (isHighestTargeting(before, index)) continue;
     last = match[1] ?? null;
   }
   return last ? collapseScaleLabel(last) : null;
@@ -322,10 +328,16 @@ function labelForPercent(
   if (/\bStrength and Intelligence\s+by\s+$/i.test(before)) {
     return "Strength/Intelligence";
   }
+  if (/\bStrength and Instinct\s+by\s+$/i.test(before)) {
+    return "Strength/Instinct";
+  }
   const byStat = before.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
   );
-  if (byStat) return collapseScaleLabel(byStat[1]);
+  // "Enemy with the highest Intelligence by −10%" scales Damage Dealt, not Intelligence.
+  if (byStat && !isHighestTargeting(before, byStat.index ?? 0)) {
+    return collapseScaleLabel(byStat[1]);
+  }
   const nearest = nearestStatLabel(before);
   if (nearest) return nearest;
   const afterStat = after.match(

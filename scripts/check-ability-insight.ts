@@ -397,6 +397,82 @@ if (
   fail("hovering The King's Ire should open Sunfyre habit 3");
 }
 
+const kalspire = getCatalogDragon("kalspire");
+if (!kalspire) fail("missing Kalspire");
+const kalspireNames: [number, string, string[], string][] = [
+  [1, "Robust Insight", ["Strength/Instinct"], "20%,24%,28%,34%,40%"],
+  [2, "Battle Cunning", ["Strength/Intelligence"], "-6.5%,-7.8%,-9.1%,-11.05%,-13%"],
+  [3, "Tactical Assault", ["Damage Rate", "Panic Chance"], "25%,30%,35%,42.5%,50%"],
+  [4, "Dragon's Insight", ["Damage Received", "Instinct"], "-6%,-7.2%,-8.4%,-10.2%,-12%"],
+  [5, "Radiant Conqueror", ["Damage Dealt"], "-10%,-13%,-16%,-20%,-25%"],
+];
+for (const [habit, title, labels, firstValues] of kalspireNames) {
+  const row = insightForSource("kalspire", { kind: "habit", habit });
+  if (!row) fail(`Kalspire habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Kalspire habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const assault = insightForSource("kalspire", { kind: "habit", habit: 3 });
+if (
+  assault?.scale.find((row) => row.label === "Panic Chance")?.values.join(",") !==
+  "15%,18%,21%,25.5%,30%"
+) {
+  fail("Tactical Assault Panic Chance mismatch");
+}
+if (
+  findAbilityInsight("Robust Insight", { dragonId: "kalspire" })?.title !==
+  "Robust Insight"
+) {
+  fail("hovering Robust Insight should open Kalspire habit 1");
+}
+if (
+  findAbilityInsight("Radiant Conqueror", { dragonId: "kalspire" })?.title !==
+  "Radiant Conqueror"
+) {
+  fail("hovering Radiant Conqueror should open Kalspire habit 5");
+}
+const kalCatalog = catalogFor(kalspire);
+if (kalCatalog.namedCount !== 5 || kalCatalog.needsScreenshot) {
+  fail("Kalspire habit names from Star Progression should be complete");
+}
+
+const stun = findAbilityInsight("Stun", { dragonId: "kalspire" });
+if (!stun || stun.title !== "Stun" || stun.kind !== "buff") {
+  fail(`Stun hover opened ${stun?.kind}:${stun?.title}`);
+}
+if (stun.polarity !== "debuff") fail("Stun is a debuff");
+if (!/Basic Attacks/i.test(stun.body) || !/Commands and Habits/i.test(stun.body)) {
+  fail(`Stun glossary missing Star Progression line: ${stun.body}`);
+}
+if (glossNames(insightForSource("kalspire", { kind: "habit", habit: 5 })).includes("Stun") === false) {
+  fail("Radiant Conqueror should gloss Stun");
+}
+
+const panic = findAbilityInsight("Panic", { dragonId: "kalspire" });
+if (!panic || panic.title !== "Panic" || panic.kind !== "buff") {
+  fail(`Panic hover opened ${panic?.kind}:${panic?.title}`);
+}
+if (panic.polarity !== "debuff") fail("Panic is a debuff");
+if (!/Tactical Damage/i.test(panic.body) || !/each round/i.test(panic.body)) {
+  fail(`Panic glossary missing Star Progression line: ${panic.body}`);
+}
+
 function glossNames(insight: { glosses: { name: string }[] } | undefined) {
   return (insight?.glosses ?? []).map((row) => row.name);
 }
@@ -654,6 +730,8 @@ if (overwhelmTone !== "debuff") {
 
 if (namedStatusPolarity("Advantage") !== "buff") fail("Advantage mark is a buff");
 if (namedStatusPolarity("Overwhelm") !== "debuff") fail("Overwhelm mark is a debuff");
+if (namedStatusPolarity("Stun") !== "debuff") fail("Stun mark is a debuff");
+if (namedStatusPolarity("Panic") !== "debuff") fail("Panic mark is a debuff");
 if (namedStatusPolarity("Bleed") !== "debuff") fail("Bleed mark is a debuff");
 if (namedStatusPolarity("Crescent Blade") !== "spread") {
   fail("Crescent Blade mark is a spreading buff");
