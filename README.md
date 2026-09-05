@@ -77,6 +77,9 @@ with HBO, Warner Bros., or the game.
   not shown.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
+- **Dev** — personal metadata catalog, hidden unless you open
+  `/dev?dev=1` once on this browser. Habit names from Star Progression
+  screenshots live here (Moondancer is complete). `?dev=0` hides the tab.
 
 The layout is built for a phone in one hand: four bottom tabs, the team
 then the ranked list, and on a wider screen the list is a full column on

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { Egg, Flame, Sparkles, Swords } from "lucide-react";
+import { Egg, Flame, Sparkles, Swords, Wrench } from "lucide-react";
+import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -24,6 +26,38 @@ function isSaved(pathname: string) {
     pathname.startsWith("/lineups/") ||
     pathname === "/teams" ||
     pathname.startsWith("/teams/")
+  );
+}
+
+function DevLinks({ compact }: { compact?: boolean }) {
+  const on = useDevMode();
+  const pathname = usePathname();
+  if (!on) return null;
+  const active = isActive(pathname, "/dev");
+  if (compact) {
+    return (
+      <Link
+        href="/dev"
+        aria-label="Dev catalog"
+        className={cn(
+          "flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
+          active && "bg-muted text-amber-100",
+        )}
+      >
+        <Wrench className="size-4" />
+      </Link>
+    );
+  }
+  return (
+    <Link
+      href="/dev"
+      className={cn(
+        "rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
+        active && "bg-muted text-foreground",
+      )}
+    >
+      Dev
+    </Link>
   );
 }
 
@@ -64,7 +98,15 @@ export function SiteHeader() {
             >
               Saved
             </Link>
+            <Suspense fallback={null}>
+              <DevLinks />
+            </Suspense>
           </nav>
+          <div className="md:hidden">
+            <Suspense fallback={null}>
+              <DevLinks compact />
+            </Suspense>
+          </div>
         </div>
       </header>
       <nav
