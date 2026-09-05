@@ -1,5 +1,5 @@
 import { emptySlots } from "@/lib/lineup";
-import { defaultHabits } from "@/lib/habits";
+import { defaultHabitRanks, defaultHabits } from "@/lib/habits";
 import type { SuggestRequest } from "@/lib/ai/roster";
 import type { Lineup, PitState } from "@/lib/types";
 
@@ -33,6 +33,7 @@ export function stubState(request: SuggestRequest): PitState {
           reignLevel: card.reign ?? 1,
           notes: "",
           habits: defaultHabits(starRank),
+          habitRanks: defaultHabitRanks(),
         };
       }),
     customDragons: [],

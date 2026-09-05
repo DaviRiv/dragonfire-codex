@@ -275,8 +275,9 @@ function EditDragonForm({
   ) => void;
   onRemove: (id: string) => void;
 }) {
-  const { state } = usePit();
+  const { state, setDragonHabitRank } = usePit();
   const router = useRouter();
+  const live = state.owned.find((row) => row.id === owned.id) ?? owned;
   const dragon = findDragon(owned.dragonId, state.customDragons);
   const [starRank, setStarRank] = useState(owned.starRank);
   const [reignLevel, setReignLevel] = useState(owned.reignLevel);
@@ -307,7 +308,11 @@ function EditDragonForm({
           starRank={starRank}
           reignLevel={reignLevel}
           ownedStars={starRank}
-          ownedHabits={owned.habits}
+          ownedHabits={live.habits}
+          ownedHabitRanks={live.habitRanks}
+          onHabitRankChange={(habit, rank) =>
+            setDragonHabitRank(live.dragonId, habit, rank)
+          }
         />
         <div className="grid gap-1.5">
           <Label>Star rank</Label>

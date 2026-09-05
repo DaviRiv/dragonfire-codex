@@ -1,7 +1,7 @@
 import { compPriority, suggestCompNotes } from "@/lib/comp";
 import { allDragons, findDragon } from "@/lib/dragons";
 import { pairingFit } from "@/lib/pairing";
-import { liveOwnedHabits } from "@/lib/habits";
+import { liveOwnedHabitRanks, liveOwnedHabits } from "@/lib/habits";
 import {
   emptySlots,
   investmentScore,
@@ -142,6 +142,7 @@ function scoreDragon(
       dragon: mate.dragon,
       atStars: mate.starRank,
       habits: liveOwnedHabits(mate.owned, lineup.kind),
+      habitRanks: liveOwnedHabitRanks(mate.owned),
     })),
     slot,
   )) {
@@ -219,9 +220,11 @@ function scoreDragon(
       dragon: mate.dragon,
       atStars: mate.starRank,
       habits: liveOwnedHabits(mate.owned, lineup.kind),
+      habitRanks: liveOwnedHabitRanks(mate.owned),
     })),
     starRank,
     liveOwnedHabits(owned, lineup.kind),
+    liveOwnedHabitRanks(owned),
   )) {
     let text = fit.text;
     let points = fit.points;
@@ -289,6 +292,7 @@ export function suggestDragons({
     dragon: mate.dragon,
     atStars: mate.starRank,
     habits: liveOwnedHabits(mate.owned, lineup.kind),
+    habitRanks: liveOwnedHabitRanks(mate.owned),
   }));
 
   return source

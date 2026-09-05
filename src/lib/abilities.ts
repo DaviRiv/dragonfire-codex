@@ -88,8 +88,9 @@ function kitText(
   dragon: Dragon,
   atStars?: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): string {
-  const kit = dragonKit(dragon);
+  const kit = dragonKit(dragon, habitRanks);
   const extras = kit.extras.filter((line) => {
     if (line.unlockStars == null) return true;
     if (atStars !== undefined && !qualifiesForStars(line.unlockStars, atStars)) {
@@ -131,10 +132,11 @@ export function dragonNeedGates(
   dragon: Dragon,
   atStars?: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): GatedAbility[] {
   return uniqueGates([
     ...(dragon.needs ?? []).filter((need) => needMatchesHabits(need, habits)),
-    ...extraNeedsFromKit(kitText(dragon, atStars, habits)),
+    ...extraNeedsFromKit(kitText(dragon, atStars, habits, habitRanks)),
   ]);
 }
 

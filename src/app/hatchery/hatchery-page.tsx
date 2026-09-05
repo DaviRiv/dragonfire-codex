@@ -12,7 +12,8 @@ import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function HatcheryPage() {
-  const { ready, state, setCatalogOwned, setDragonHabits } = usePit();
+  const { ready, state, setCatalogOwned, setDragonHabits, setDragonHabitRank } =
+    usePit();
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
   const [habitDragon, setHabitDragon] = useState<Dragon | null>(null);
 
@@ -112,6 +113,12 @@ export function HatcheryPage() {
         reignLevel={inspectingOwned?.reignLevel}
         ownedStars={inspectingOwned?.starRank ?? null}
         ownedHabits={inspectingOwned?.habits}
+        ownedHabitRanks={inspectingOwned?.habitRanks}
+        onHabitRankChange={
+          inspecting
+            ? (habit, rank) => setDragonHabitRank(inspecting.id, habit, rank)
+            : undefined
+        }
         extra={
           inspecting ? (
             <div>
@@ -132,8 +139,12 @@ export function HatcheryPage() {
         }}
         starRank={habitOwned?.starRank ?? 0}
         selected={habitOwned?.habits ?? []}
+        ranks={habitOwned?.habitRanks}
         onChange={(habits) => {
           if (habitDragon) setDragonHabits(habitDragon.id, habits);
+        }}
+        onRankChange={(habit, rank) => {
+          if (habitDragon) setDragonHabitRank(habitDragon.id, habit, rank);
         }}
         onStarChange={(next) => {
           if (habitDragon) setStars(habitDragon, next);

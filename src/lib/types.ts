@@ -68,6 +68,12 @@ export interface OwnedDragon {
    * is filled from star rank when the pit is loaded.
    */
   habits: number[];
+  /**
+   * Upgrade rank 1–5 for each habit slot (index 0 = Habit 1). Percents in
+   * kit text follow this rank. Missing on old saves is rank 1 for every slot.
+   * Not Hub Power — the catalog has no habit-upgrade Power numbers.
+   */
+  habitRanks: number[];
 }
 
 export interface LineupPick {

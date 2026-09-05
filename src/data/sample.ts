@@ -1,6 +1,6 @@
 import { DRAGONS } from "@/data/dragons";
 import { newId, nowIso } from "@/lib/dragons";
-import { defaultHabits } from "@/lib/habits";
+import { defaultHabitRanks, defaultHabits } from "@/lib/habits";
 import { makePick } from "@/lib/lineup";
 import type { Lineup, OwnedDragon, PitState, Team } from "@/lib/types";
 
@@ -16,6 +16,7 @@ function own(
     reignLevel,
     notes: "",
     habits: defaultHabits(starRank),
+    habitRanks: defaultHabitRanks(),
   };
 }
 

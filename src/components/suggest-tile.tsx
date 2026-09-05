@@ -6,7 +6,7 @@ import { AbilityBlock, StatGrid } from "@/components/dragon-profile";
 import { StarRequirement } from "@/components/star-requirement";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { commandLine, dragonKit, habitNumberForUnlockStars, star6Ability, vanguardBonus } from "@/lib/habits";
+import { commandLine, dragonKit, habitNumberForUnlockStars, habitRankOf, star6Ability, vanguardBonus } from "@/lib/habits";
 import { habitDisplayName } from "@/data/habit-names";
 import { healingAbilities } from "@/lib/healing";
 import { starGateHint } from "@/lib/stars";
@@ -64,10 +64,10 @@ export function SuggestTile({
   const ownedStars = owned?.starRank ?? null;
   const notesDirty = owned ? notes !== storedNotes : false;
   const synergy = reasons[0];
-  const star6 = star6Ability(dragon, true);
+  const star6 = star6Ability(dragon, true, habitRankOf(owned?.habitRanks, 3));
   const frontBonus = slot === "vanguard" ? vanguardBonus(dragon, true) : null;
-  const kit = dragonKit(dragon);
-  const heals = healingAbilities(dragon);
+  const kit = dragonKit(dragon, owned?.habitRanks);
+  const heals = healingAbilities(dragon, owned?.habitRanks);
   const showHealLines = heals.length > 0;
 
   return (
@@ -269,6 +269,8 @@ export function SuggestTile({
           {kit.extras.map((extra) => {
             const habitNum = habitNumberForUnlockStars(extra.unlockStars);
             const official = habitDisplayName(dragon.id, habitNum);
+            const rank =
+              habitNum != null ? habitRankOf(owned?.habitRanks, habitNum) : 1;
             return (
             <AbilityBlock
               key={extra.title}
@@ -293,6 +295,7 @@ export function SuggestTile({
               }
               body={extra.body}
               ranks={extra.ranks}
+              selectedRank={extra.unlockStars != null ? rank : undefined}
               dragonId={dragon.id}
               source={
                 extra.unlockStars != null

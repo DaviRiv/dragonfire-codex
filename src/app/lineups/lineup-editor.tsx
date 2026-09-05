@@ -63,6 +63,7 @@ export function LineupEditor({
     loadSample,
     updateOwned,
     createLineup,
+    setDragonHabitRank,
   } = usePit();
   const router = useRouter();
   const [selectedSlot, setSelectedSlot] = useState<SlotId>("vanguard");
@@ -574,6 +575,18 @@ export function LineupEditor({
         ownedHabits={
           inspecting && !isTheory
             ? state.owned.find((row) => row.dragonId === inspecting.id)?.habits
+            : undefined
+        }
+        ownedHabitRanks={
+          inspecting
+            ? state.owned.find((row) => row.dragonId === inspecting.id)
+                ?.habitRanks
+            : undefined
+        }
+        onHabitRankChange={
+          inspecting &&
+          state.owned.some((row) => row.dragonId === inspecting.id)
+            ? (habit, rank) => setDragonHabitRank(inspecting.id, habit, rank)
             : undefined
         }
         synergyBuffs={

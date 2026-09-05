@@ -14,7 +14,7 @@ import {
   type AbilitySourceRef,
 } from "@/lib/ability-insight";
 import { habitDisplayName } from "@/data/habit-names";
-import { dragonKit, habitNumberForUnlockStars } from "@/lib/habits";
+import { dragonKit, habitNumberForUnlockStars, habitRankOf } from "@/lib/habits";
 import { provideUnlockStars } from "@/lib/abilities";
 import { healingAbilities } from "@/lib/healing";
 import {
@@ -39,6 +39,7 @@ import { SynergyBuffList } from "@/components/synergy-hover";
 import { coreStatMods, type SynergyBuff } from "@/lib/synergy-buffs";
 import type { Dragon, DragonStats } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { RankPips } from "@/components/rank-pips";
 
 const STAT_BAR_MAX = 400;
 
@@ -139,7 +140,9 @@ export function DragonProfile({
   reignLevel = 1,
   ownedStars,
   ownedHabits,
+  ownedHabitRanks,
   synergyBuffs = [],
+  onHabitRankChange,
 }: {
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
@@ -149,10 +152,13 @@ export function DragonProfile({
   ownedStars?: number | null;
   /** Habits marked bought in Hatchery. Omit to show the full kit. */
   ownedHabits?: number[];
+  /** Upgrade rank 1–5 per habit slot. Omit to show rank 1 percents. */
+  ownedHabitRanks?: number[];
   synergyBuffs?: SynergyBuff[];
+  onHabitRankChange?: (habit: number, rank: number) => void;
 }) {
-  const kit = dragonKit(dragon);
-  const heals = healingAbilities(dragon);
+  const kit = dragonKit(dragon, ownedHabitRanks);
+  const heals = healingAbilities(dragon, ownedHabitRanks);
   const stats = scaledStats(dragon, starRank, reignLevel);
   const liveMods = coreStatMods(synergyBuffs);
   const troops = troopCount(dragon.rarity, starRank, reignLevel);
@@ -275,6 +281,8 @@ export function DragonProfile({
           ownedHabits.includes(habitNum);
         const live =
           bought && qualifiesForStars(extra.unlockStars, qualifyStars);
+        const rank =
+          habitNum != null ? habitRankOf(ownedHabitRanks, habitNum) : 1;
         return (
           <AbilityBlock
             key={extra.title}
@@ -287,6 +295,12 @@ export function DragonProfile({
             )}
             body={extra.body}
             ranks={extra.ranks}
+            selectedRank={rank}
+            onRankChange={
+              habitNum != null && onHabitRankChange
+                ? (next) => onHabitRankChange(habitNum, next)
+                : undefined
+            }
             dragonId={dragon.id}
             source={
               habitNum != null
@@ -322,8 +336,9 @@ export function DragonProfile({
           going to reverse-engineer those. Stats use Dragonfire-Hub’s level
           table
           {level < reignLevel ? ` (capped at ${level})` : ""} plus star
-          multipliers. Stars auto-select habits in Hatchery. Uncheck one on
-          the search icon if you have not bought it. Tap or click a named
+          multipliers.           Stars auto-select habits in Hatchery. Uncheck one on
+          the search icon if you have not bought it. Rank diamonds pick the
+          habit upgrade so kit percents match what you have. Tap or click a named
           buff for its card; hover works on a computer. Habit upgrade Power is
           not in the catalog.
         </p>
@@ -336,6 +351,8 @@ export function AbilityBlock({
   title,
   body,
   ranks,
+  selectedRank,
+  onRankChange,
   muted,
   dragonId,
   source,
@@ -343,6 +360,8 @@ export function AbilityBlock({
   title: ReactNode;
   body: string;
   ranks?: string[];
+  selectedRank?: number;
+  onRankChange?: (rank: number) => void;
   muted?: boolean;
   dragonId?: string;
   source?: AbilitySourceRef;
@@ -369,6 +388,7 @@ export function AbilityBlock({
             source={source}
             insight={insight}
             locked={muted}
+            activeRank={selectedRank}
           >
             {heading}
           </AbilityHover>
@@ -386,8 +406,18 @@ export function AbilityBlock({
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
+      {onRankChange ? (
+        <RankPips
+          value={selectedRank ?? 1}
+          onChange={onRankChange}
+        />
+      ) : null}
       {insight && insight.scale.length > 0 ? (
-        <AbilityRankTable rows={insight.scale} className="mt-2" />
+        <AbilityRankTable
+          rows={insight.scale}
+          className="mt-2"
+          activeRank={selectedRank}
+        />
       ) : null}
       {ranks && ranks.length > 1 ? (
         <details className="mt-2">

@@ -12,7 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { RankPips } from "@/components/rank-pips";
 import {
+  defaultHabitRanks,
   defaultHabits,
   kitProgress,
   sanitizeHabits,
@@ -96,10 +98,12 @@ function HabitRow({
   row,
   dragonId,
   onToggle,
+  onRankChange,
 }: {
   row: KitHabitRow;
   dragonId: string;
   onToggle: (habit: number) => void;
+  onRankChange: (habit: number, rank: number) => void;
 }) {
   const source: AbilitySourceRef = { kind: "habit", habit: row.habit };
   const official = habitDisplayName(dragonId, row.habit);
@@ -131,7 +135,12 @@ function HabitRow({
         {row.live ? <Check className="size-3.5" /> : null}
       </button>
       <div className="min-w-0 flex-1">
-        <AbilityHover dragonId={dragonId} source={source} locked={!row.live}>
+        <AbilityHover
+          dragonId={dragonId}
+          source={source}
+          locked={!row.live}
+          activeRank={row.rank}
+        >
           <span className="flex flex-wrap items-baseline gap-x-1.5 text-[0.6875rem] font-medium tracking-[0.12em] uppercase">
             <span>Habit {row.habit}</span>
             {official ? (
@@ -152,6 +161,11 @@ function HabitRow({
         <p className="mt-1 text-[13px] leading-relaxed">
           <AbilityText text={row.body} dragonId={dragonId} source={source} />
         </p>
+        <RankPips
+          value={row.rank}
+          name={official ?? `Habit ${row.habit}`}
+          onChange={(rank) => onRankChange(row.habit, rank)}
+        />
       </div>
     </div>
   );
@@ -163,7 +177,9 @@ export function HabitPickerDialog({
   onOpenChange,
   starRank,
   selected,
+  ranks,
   onChange,
+  onRankChange,
   onStarChange,
 }: {
   dragon: Dragon | null;
@@ -171,10 +187,14 @@ export function HabitPickerDialog({
   onOpenChange: (open: boolean) => void;
   starRank: number;
   selected: number[];
+  ranks?: number[];
   onChange: (habits: number[]) => void;
+  onRankChange?: (habit: number, rank: number) => void;
   onStarChange?: (starRank: number) => void;
 }) {
-  const kit = dragon ? kitProgress(dragon, starRank, selected) : null;
+  const kit = dragon
+    ? kitProgress(dragon, starRank, selected, ranks ?? defaultHabitRanks())
+    : null;
   const hatched = starRank > 0;
 
   useEffect(() => {
@@ -212,7 +232,9 @@ export function HabitPickerDialog({
             The list stays the same. Highlighted rows are live on this dragon.
             Tap or click a named buff — First-Strike, Rising Tide, or a
             spreading buff like Crescent Blade — for its card. Hover works
-            on a computer. Uncheck a habit if you have not bought it.
+            on a computer. Uncheck a habit if you have not bought it. Rank
+            diamonds are habit upgrades — percents in the paragraph follow
+            the rank you pick.
           </DialogDescription>
         </DialogHeader>
         {dragon && kit ? (
@@ -265,6 +287,7 @@ export function HabitPickerDialog({
                 row={row}
                 dragonId={dragon.id}
                 onToggle={toggle}
+                onRankChange={(habit, rank) => onRankChange?.(habit, rank)}
               />
             ))}
           </div>

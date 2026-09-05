@@ -4,6 +4,7 @@ import type { Dragon, GatedAbility, LineupKind } from "@/lib/types";
 
 export const HABIT_UNLOCK_STARS = [2, 4, 6, 8, 10] as const;
 export const HABIT_SLOT_COUNT = HABIT_UNLOCK_STARS.length;
+export const HABIT_RANK_MAX = 5;
 
 /** Habit 1–5 → 2 / 4 / 6 / 8 / 10★. Invalid numbers return null. */
 export function starsForHabit(habit: number): number | null {
@@ -48,6 +49,55 @@ export function normalizeHabits(raw: unknown, starRank: number): number[] {
   return sanitizeHabits(raw);
 }
 
+export function clampHabitRank(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(n)) return 1;
+  return Math.min(HABIT_RANK_MAX, Math.max(1, n));
+}
+
+export function defaultHabitRanks(): number[] {
+  return Array.from({ length: HABIT_SLOT_COUNT }, () => 1);
+}
+
+/** Old saves with no `habitRanks` stay on rank 1 percents. */
+export function normalizeHabitRanks(raw: unknown): number[] {
+  const ranks = defaultHabitRanks();
+  if (!Array.isArray(raw)) return ranks;
+  for (let i = 0; i < HABIT_SLOT_COUNT; i++) {
+    if (raw[i] !== undefined && raw[i] !== null) {
+      ranks[i] = clampHabitRank(raw[i]);
+    }
+  }
+  return ranks;
+}
+
+/** Habit 1–5 → stored upgrade rank 1–5. */
+export function habitRankOf(
+  ranks: number[] | null | undefined,
+  habit: number,
+): number {
+  if (habit < 1 || habit > HABIT_SLOT_COUNT) return 1;
+  return clampHabitRank(ranks?.[habit - 1]);
+}
+
+export function setHabitRankAt(
+  ranks: number[] | null | undefined,
+  habit: number,
+  rank: number,
+): number[] {
+  const next = normalizeHabitRanks(ranks);
+  if (habit < 1 || habit > HABIT_SLOT_COUNT) return next;
+  next[habit - 1] = clampHabitRank(rank);
+  return next;
+}
+
+/** Upgrade ranks are per slot; Theory still uses them when the dragon is owned. */
+export function liveOwnedHabitRanks(
+  owned: { habitRanks?: number[] } | null | undefined,
+): number[] {
+  return normalizeHabitRanks(owned?.habitRanks);
+}
+
 /** Starring sets habits to whatever those stars unlock. */
 export function habitsAfterStarChange(
   _prevHabits: number[],
@@ -90,7 +140,7 @@ export interface AbilityLine {
   unlockStars?: number;
 }
 
-function habitRank(
+function habitLevelText(
   table: typeof DRAGON_HABITS,
   dragonId: string,
   index: number,
@@ -105,19 +155,38 @@ function habitRank(
     "level4",
     "level5",
   ] as const;
-  const key = keys[Math.min(5, Math.max(1, rank)) - 1];
+  const key = keys[clampHabitRank(rank) - 1];
   return (habit[key] ?? habit.level1).trim();
 }
 
-export function habitPreview(dragonId: string, index: number): string {
-  const short = DRAGON_HABIT_SHORTS[dragonId]?.[index]?.level1?.trim();
-  if (short) return short;
-  return DRAGON_HABITS[dragonId]?.[index]?.level1?.trim() || "Not recorded yet.";
+/** Full Hub text, or the card-sized short when `compact` is true. */
+export function habitText(
+  dragonId: string,
+  index: number,
+  rank = 1,
+  compact = false,
+): string {
+  if (compact) {
+    const short = habitLevelText(DRAGON_HABIT_SHORTS, dragonId, index, rank);
+    if (short) return short;
+  }
+  return (
+    habitLevelText(DRAGON_HABITS, dragonId, index, rank) || "Not recorded yet."
+  );
+}
+
+export function habitPreview(
+  dragonId: string,
+  index: number,
+  rank = 1,
+): string {
+  return habitText(dragonId, index, rank, true);
 }
 
 export type KitHabitRow = {
   habit: number;
   stars: number;
+  rank: number;
   body: string;
   live: boolean;
   selected: boolean;
@@ -152,20 +221,24 @@ export function kitProgress(
   dragon: Dragon,
   starRank: number,
   selectedHabits: number[] | null | undefined,
+  habitRanks?: number[] | null,
 ): KitProgress {
   const owned = starRank > 0;
   const selected =
     selectedHabits === undefined
       ? [1, 2, 3, 4, 5]
       : sanitizeHabits(selectedHabits);
+  const ranks = normalizeHabitRanks(habitRanks);
   const habits: KitHabitRow[] = HABIT_UNLOCK_STARS.map((stars, index) => {
     const habit = index + 1;
     const on = selected.includes(habit);
     const open = owned && starRank >= stars;
+    const rank = habitRankOf(ranks, habit);
     return {
       habit,
       stars,
-      body: habitPreview(dragon.id, index),
+      rank,
+      body: habitPreview(dragon.id, index, rank),
       live: open && on,
       selected: on,
     };
@@ -247,19 +320,22 @@ export function commandLine(
 export function star6Ability(
   dragon: Pick<Dragon, "id">,
   compact = false,
+  rank = 1,
 ): string | null {
   if (compact) {
-    const short = habitRank(DRAGON_HABIT_SHORTS, dragon.id, 2);
+    const short = habitLevelText(DRAGON_HABIT_SHORTS, dragon.id, 2, rank);
     if (short) return short;
   }
-  const text = habitRank(DRAGON_HABITS, dragon.id, 2);
+  const text = habitLevelText(DRAGON_HABITS, dragon.id, 2, rank);
   return text || null;
 }
 
 function rankList(dragonId: string, index: number): string[] | undefined {
   const habit = DRAGON_HABITS[dragonId]?.[index];
   if (!habit) return undefined;
-  const ranks = [1, 2, 3, 4, 5].map((rank) => habitRank(DRAGON_HABITS, dragonId, index, rank));
+  const ranks = [1, 2, 3, 4, 5].map((rank) =>
+    habitLevelText(DRAGON_HABITS, dragonId, index, rank),
+  );
   const unique = new Set(ranks);
   if (unique.size <= 1) return undefined;
   return ranks;
@@ -276,14 +352,16 @@ export function habitRankTexts(
 /** Command plus star-unlocked habits and the vanguard skill. */
 export function dragonKit(
   dragon: Pick<Dragon, "id" | "habit" | "habitShort" | "command">,
+  habitRanks?: number[] | null,
 ): {
   command: string;
   extras: AbilityLine[];
 } {
   const extras: AbilityLine[] = [];
   const habits = DRAGON_HABITS[dragon.id] ?? [];
-  habits.forEach((habit, index) => {
-    const body = habit.level1.trim();
+  habits.forEach((_habit, index) => {
+    const rank = habitRankOf(habitRanks, index + 1);
+    const body = habitLevelText(DRAGON_HABITS, dragon.id, index, rank);
     if (!body) return;
     const star = HABIT_UNLOCK_STARS[index];
     extras.push({

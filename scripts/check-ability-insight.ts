@@ -13,8 +13,9 @@ import {
   statusMarkPolarity,
 } from "@/lib/ability-insight";
 import { namedStatusPolarity } from "@/lib/status-polarity";
-import { habitRankTexts } from "@/lib/habits";
+import { habitRankTexts, habitText, dragonKit, habitRankOf, normalizeHabitRanks } from "@/lib/habits";
 import { tokenizeAbilityText } from "@/lib/ability-text";
+import { normalizePitState } from "@/lib/dragons";
 
 function fail(message: string): never {
   console.error(`FAIL: ${message}`);
@@ -668,6 +669,49 @@ if (statusMarkPolarity("Advantage") !== "buff") {
 }
 if (statusMarkPolarity("Physical Damage") != null) {
   fail("stat names should not get buff arrows");
+}
+
+const moon = getCatalogDragon("moondancer");
+if (!moon) fail("missing Moondancer");
+const newMoon1 = habitText("moondancer", 0, 1);
+const newMoon5 = habitText("moondancer", 0, 5);
+if (!newMoon1.includes("25% chance to gain")) {
+  fail(`Moondancer New Moon rank 1 should be 25%: ${newMoon1.slice(0, 80)}`);
+}
+if (!newMoon5.includes("50% chance to gain")) {
+  fail(`Moondancer New Moon rank 5 should be 50%: ${newMoon5.slice(0, 80)}`);
+}
+if (newMoon1 === newMoon5) fail("habit rank 1 and 5 text must differ");
+const kitRank5 = dragonKit(moon, [5, 1, 1, 1, 1]);
+const newMoonBody = kitRank5.extras[0]?.body ?? "";
+if (!newMoonBody.includes("50% chance to gain")) {
+  fail("dragonKit should use selected habit ranks for percents");
+}
+if (normalizeHabitRanks(undefined).join(",") !== "1,1,1,1,1") {
+  fail("old saves without habitRanks stay on rank 1");
+}
+if (normalizeHabitRanks([5, 0, 9]).join(",") !== "5,1,5,1,1") {
+  fail("habit ranks clamp to 1–5 and pad to five slots");
+}
+if (habitRankOf([3, 2, 1, 1, 1], 1) !== 3) fail("habitRankOf slot 1");
+const migrated = normalizePitState({
+  version: 2,
+  owned: [
+    {
+      id: "own-test",
+      dragonId: "moondancer",
+      starRank: 10,
+      reignLevel: 1,
+      notes: "",
+      habits: [1, 2, 3, 4, 5],
+    },
+  ],
+  customDragons: [],
+  lineups: [],
+  teams: [],
+});
+if (!migrated || migrated.owned[0]?.habitRanks.join(",") !== "1,1,1,1,1") {
+  fail("migrating a v2 pit without habitRanks should default to rank 1");
 }
 
 console.log("ability insight checks passed");

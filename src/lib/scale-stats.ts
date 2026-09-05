@@ -56,7 +56,7 @@ export function troopCount(
   );
 }
 
-/** Star + reign power. Habit upgrade ranks are not stored in the pit. */
+/** Star + reign power. Habit upgrade ranks change display percents only. */
 export function dragonPower(
   rarity: Rarity,
   starRank = 1,

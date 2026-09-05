@@ -22,7 +22,9 @@ import {
 import {
   habitsAfterStarChange,
   maxStarsForHabits,
+  normalizeHabitRanks,
   sanitizeHabits,
+  setHabitRankAt,
 } from "@/lib/habits";
 import {
   clampReign,
@@ -73,10 +75,18 @@ type PitContextValue = {
   updateOwned: (
     id: string,
     patch: Partial<
-      Pick<OwnedDragon, "starRank" | "reignLevel" | "notes" | "habits">
+      Pick<
+        OwnedDragon,
+        "starRank" | "reignLevel" | "notes" | "habits" | "habitRanks"
+      >
     >,
   ) => void;
   setDragonHabits: (dragonId: string, habits: number[]) => OwnedDragon | null;
+  setDragonHabitRank: (
+    dragonId: string,
+    habit: number,
+    rank: number,
+  ) => OwnedDragon | null;
   removeOwned: (id: string) => void;
   createLineup: (name?: string, kind?: LineupKind) => Lineup;
   addLineup: (lineup: Lineup) => void;
@@ -351,7 +361,10 @@ export function PitProvider({ children }: { children: ReactNode }) {
     (
       id: string,
       patch: Partial<
-        Pick<OwnedDragon, "starRank" | "reignLevel" | "notes" | "habits">
+        Pick<
+          OwnedDragon,
+          "starRank" | "reignLevel" | "notes" | "habits" | "habitRanks"
+        >
       >,
     ) => {
       commit((prev) => ({
@@ -376,6 +389,10 @@ export function PitProvider({ children }: { children: ReactNode }) {
                 ? clampReign(patch.reignLevel)
                 : o.reignLevel,
             habits,
+            habitRanks:
+              patch.habitRanks !== undefined
+                ? normalizeHabitRanks(patch.habitRanks)
+                : o.habitRanks,
           };
         }),
       }));
@@ -410,6 +427,41 @@ export function PitProvider({ children }: { children: ReactNode }) {
         ),
       }));
       return { ...existing, habits: nextHabits };
+    },
+    [],
+  );
+
+  const setDragonHabitRank = useCallback(
+    (dragonId: string, habit: number, rank: number): OwnedDragon | null => {
+      if (!Number.isInteger(habit) || habit < 1 || habit > 5) return null;
+      const current = getClientSnapshot();
+      const dragon = findDragon(dragonId, current.customDragons);
+      const existing = current.owned.find((row) => row.dragonId === dragonId);
+      const nextRanks = setHabitRankAt(existing?.habitRanks, habit, rank);
+      const nextHabits = sanitizeHabits([...(existing?.habits ?? []), habit]);
+      if (!existing) {
+        const owned = newOwnedDragon(
+          dragonId,
+          maxStarsForHabits(nextHabits),
+          1,
+          nextHabits,
+          nextRanks,
+        );
+        commit((prev) => ({ ...prev, owned: [...prev.owned, owned] }));
+        toast.success(
+          `${dragon?.name ?? "Dragon"} marked owned · ★${owned.starRank}.`,
+        );
+        return owned;
+      }
+      commit((prev) => ({
+        ...prev,
+        owned: prev.owned.map((row) =>
+          row.id === existing.id
+            ? { ...row, habits: nextHabits, habitRanks: nextRanks }
+            : row,
+        ),
+      }));
+      return { ...existing, habits: nextHabits, habitRanks: nextRanks };
     },
     [],
   );
@@ -674,6 +726,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       addCustomDragon,
       updateOwned,
       setDragonHabits,
+      setDragonHabitRank,
       removeOwned,
       createLineup,
       addLineup,
@@ -700,6 +753,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       addCustomDragon,
       updateOwned,
       setDragonHabits,
+      setDragonHabitRank,
       removeOwned,
       createLineup,
       addLineup,

@@ -1,5 +1,4 @@
-import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
-import { HABIT_UNLOCK_STARS } from "@/lib/habits";
+import { HABIT_UNLOCK_STARS, habitRankOf, habitText } from "@/lib/habits";
 import type { Dragon } from "@/lib/types";
 
 export type HealingAbility = {
@@ -44,6 +43,7 @@ export function recoveryClause(text: string): string {
 
 export function healingAbilities(
   dragon: Pick<Dragon, "id" | "command" | "commandShort">,
+  habitRanks?: number[] | null,
 ): HealingAbility[] {
   const heals: HealingAbility[] = [];
   if (lineHealsAllies(dragon.command)) {
@@ -56,13 +56,12 @@ export function healingAbilities(
       short: recoveryClause(short),
     });
   }
-  const habits = DRAGON_HABITS[dragon.id] ?? [];
-  const shorts = DRAGON_HABIT_SHORTS[dragon.id] ?? [];
-  habits.forEach((habit, index) => {
-    const body = habit.level1.trim();
-    if (!lineHealsAllies(body)) return;
+  for (let index = 0; index < HABIT_UNLOCK_STARS.length; index++) {
+    const rank = habitRankOf(habitRanks, index + 1);
+    const body = habitText(dragon.id, index, rank);
+    if (!lineHealsAllies(body) || body === "Not recorded yet.") continue;
     const star = HABIT_UNLOCK_STARS[index];
-    const short = shorts[index]?.level1.trim() || body;
+    const short = habitText(dragon.id, index, rank, true);
     heals.push({
       id: `habit-${index}`,
       stars: star,
@@ -71,7 +70,7 @@ export function healingAbilities(
       text: body,
       short: recoveryClause(short),
     });
-  });
+  }
   return heals;
 }
 

@@ -1,6 +1,11 @@
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { migrateGates } from "@/lib/abilities";
-import { defaultHabits, normalizeHabits, sanitizeHabits } from "@/lib/habits";
+import {
+  defaultHabits,
+  normalizeHabitRanks,
+  normalizeHabits,
+  sanitizeHabits,
+} from "@/lib/habits";
 import {
   clampReign,
   clampStar,
@@ -85,6 +90,7 @@ export function newOwnedDragon(
   starRank: number,
   reignLevel = 1,
   habits?: number[],
+  habitRanks?: number[],
 ): OwnedDragon {
   const stars = clampStar(starRank);
   return {
@@ -94,12 +100,16 @@ export function newOwnedDragon(
     reignLevel: clampReign(reignLevel),
     notes: "",
     habits: habits ? sanitizeHabits(habits) : defaultHabits(stars),
+    habitRanks: normalizeHabitRanks(habitRanks),
   };
 }
 
 function migrateOwned(raw: unknown): OwnedDragon | null {
   if (!raw || typeof raw !== "object") return null;
-  const v = raw as Partial<OwnedDragon> & { habits?: unknown };
+  const v = raw as Partial<OwnedDragon> & {
+    habits?: unknown;
+    habitRanks?: unknown;
+  };
   if (typeof v.id !== "string" || typeof v.dragonId !== "string") return null;
   const starRank = clampStar(typeof v.starRank === "number" ? v.starRank : 1);
   return {
@@ -109,6 +119,7 @@ function migrateOwned(raw: unknown): OwnedDragon | null {
     reignLevel: clampReign(typeof v.reignLevel === "number" ? v.reignLevel : 1),
     notes: typeof v.notes === "string" ? v.notes : "",
     habits: normalizeHabits(v.habits, starRank),
+    habitRanks: normalizeHabitRanks(v.habitRanks),
   };
 }
 

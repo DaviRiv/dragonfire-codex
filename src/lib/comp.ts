@@ -19,6 +19,7 @@ type Mate = {
   dragon: Dragon;
   atStars?: number | null;
   habits?: number[] | null;
+  habitRanks?: number[] | null;
 };
 
 export type LineProfile = {

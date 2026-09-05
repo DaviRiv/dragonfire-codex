@@ -1,5 +1,9 @@
-import { DRAGON_HABIT_SHORTS, DRAGON_HABITS } from "@/data/dragon-habits";
-import { HABIT_UNLOCK_STARS, habitIsSelected } from "@/lib/habits";
+import {
+  HABIT_UNLOCK_STARS,
+  habitIsSelected,
+  habitRankOf,
+  habitText,
+} from "@/lib/habits";
 import { qualifiesForStars } from "@/lib/stars";
 import type { Dragon, LineupKind } from "@/lib/types";
 
@@ -38,15 +42,20 @@ function unlockedShorts(
   dragon: Dragon,
   stars: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): string {
   const parts = [dragon.commandShort?.trim() || dragon.command];
-  const lines = DRAGON_HABIT_SHORTS[dragon.id] ?? [];
-  lines.forEach((habit, index) => {
-    if (!habitIsSelected(habits, index + 1)) return;
-    if (!qualifiesForStars(HABIT_UNLOCK_STARS[index], stars)) return;
-    const line = habit.level1?.trim();
-    if (line) parts.push(line);
-  });
+  for (let index = 0; index < HABIT_UNLOCK_STARS.length; index++) {
+    if (!habitIsSelected(habits, index + 1)) continue;
+    if (!qualifiesForStars(HABIT_UNLOCK_STARS[index], stars)) continue;
+    const line = habitText(
+      dragon.id,
+      index,
+      habitRankOf(habitRanks, index + 1),
+      true,
+    );
+    if (line && line !== "Not recorded yet.") parts.push(line);
+  }
   return parts.join(" | ");
 }
 
@@ -54,8 +63,9 @@ function kitBlob(
   dragon: Dragon,
   stars: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): string {
-  return `${dragon.command} ${unlockedShorts(dragon, stars, habits)}`;
+  return `${dragon.command} ${unlockedShorts(dragon, stars, habits, habitRanks)}`;
 }
 
 function escapeRe(value: string): string {
@@ -185,27 +195,28 @@ function kitTextsForNeed(
   ability: string,
   stars: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): {
   full: string;
   short: string;
 } {
   const full = [dragon.command];
   const short = [dragon.commandShort?.trim() || dragon.command];
-  const bodies = DRAGON_HABITS[dragon.id] ?? [];
-  const shorts = DRAGON_HABIT_SHORTS[dragon.id] ?? [];
-  bodies.forEach((habit, index) => {
-    if (!habitIsSelected(habits, index + 1)) return;
-    const body = habit.level1?.trim() ?? "";
-    const line = shorts[index]?.level1?.trim() ?? "";
+  for (let index = 0; index < HABIT_UNLOCK_STARS.length; index++) {
+    if (!habitIsSelected(habits, index + 1)) continue;
+    const rank = habitRankOf(habitRanks, index + 1);
+    const body = habitText(dragon.id, index, rank);
+    const line = habitText(dragon.id, index, rank, true);
+    if (body === "Not recorded yet.") continue;
     const blob = `${body} ${line}`;
     const mentions = new RegExp(`\\b${escapeRe(ability)}\\b`, "i").test(blob);
     const unlocked = qualifiesForStars(HABIT_UNLOCK_STARS[index], stars);
-    if (!mentions && !unlocked) return;
+    if (!mentions && !unlocked) continue;
     if (mentions || unlocked) {
       if (body) full.push(body);
-      if (line) short.push(line);
+      if (line && line !== "Not recorded yet.") short.push(line);
     }
-  });
+  }
   return { full: full.join(" "), short: short.join(" | ") };
 }
 
@@ -342,8 +353,15 @@ export function needWhy(
   ability: string,
   stars: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): NeedWhy {
-  const { full, short } = kitTextsForNeed(dragon, ability, stars, habits);
+  const { full, short } = kitTextsForNeed(
+    dragon,
+    ability,
+    stars,
+    habits,
+    habitRanks,
+  );
   const stats = uniqueStats([
     ...orPayoffs(short, ability),
     ...orPayoffs(full, ability),
@@ -375,8 +393,9 @@ export function needWhyShort(
   ability: string,
   stars: number | null,
   habits?: number[] | null,
+  habitRanks?: number[] | null,
 ): string {
-  const { stats, why } = needWhy(dragon, ability, stars, habits);
+  const { stats, why } = needWhy(dragon, ability, stars, habits, habitRanks);
   if (stats[0]) return `${stats[0].stat} ${stats[0].amount}`;
   if (!why) return "";
   const clip = why.replace(/\.$/, "");
@@ -391,9 +410,10 @@ export function grantBuffs(
   giverStars: number | null,
   breedLabel: string,
   giverHabits?: number[] | null,
+  giverHabitRanks?: number[] | null,
 ): SynergyBuff[] {
-  const blob = kitBlob(giver, giverStars, giverHabits);
-  const shorts = unlockedShorts(giver, giverStars, giverHabits);
+  const blob = kitBlob(giver, giverStars, giverHabits, giverHabitRanks);
+  const shorts = unlockedShorts(giver, giverStars, giverHabits, giverHabitRanks);
   const stacks = stackLines(blob, giver.name);
   const stackName = stacks.ability ?? "Rising Tide";
   const receiverStats = uniqueStats([
@@ -439,6 +459,7 @@ export function grantDetail(
   giverStars: number | null,
   breedLabel: string,
   giverHabits?: number[] | null,
+  giverHabitRanks?: number[] | null,
 ): { detail: string; stats: SynergyStatLine[]; buffs: SynergyBuff[] } {
   const buffs = grantBuffs(
     giver,
@@ -447,6 +468,7 @@ export function grantDetail(
     giverStars,
     breedLabel,
     giverHabits,
+    giverHabitRanks,
   );
   const onPartner = buffs.find((buff) => buff.dragonId === partner.id);
   const onGiver = buffs.find((buff) => buff.dragonId === giver.id);
@@ -485,8 +507,15 @@ export function needBuffs(
   provider: Dragon,
   neederStars: number | null,
   neederHabits?: number[] | null,
+  neederHabitRanks?: number[] | null,
 ): SynergyBuff[] {
-  const { why, stats } = needWhy(needer, ability, neederStars, neederHabits);
+  const { why, stats } = needWhy(
+    needer,
+    ability,
+    neederStars,
+    neederHabits,
+    neederHabitRanks,
+  );
   return [
     {
       id: `need:${needer.id}:${ability.toLowerCase()}`,
@@ -506,9 +535,23 @@ export function needDetail(
   provider: Dragon,
   neederStars: number | null,
   neederHabits?: number[] | null,
+  neederHabitRanks?: number[] | null,
 ): { detail: string; stats: SynergyStatLine[]; buffs: SynergyBuff[] } {
-  const { why, stats } = needWhy(needer, ability, neederStars, neederHabits);
-  const buffs = needBuffs(needer, ability, provider, neederStars, neederHabits);
+  const { why, stats } = needWhy(
+    needer,
+    ability,
+    neederStars,
+    neederHabits,
+    neederHabitRanks,
+  );
+  const buffs = needBuffs(
+    needer,
+    ability,
+    provider,
+    neederStars,
+    neederHabits,
+    neederHabitRanks,
+  );
   if (!why && stats.length === 0) {
     return {
       detail: `${providerNames} supplies ${ability}, which ${needer.name}’s kit is written to scale with.`,

@@ -27,8 +27,10 @@ export function DragonSheet({
   actionDisabled,
   ownedStars,
   ownedHabits,
+  ownedHabitRanks,
   synergyBuffs,
   extra,
+  onHabitRankChange,
 }: {
   dragon: Dragon | null;
   open: boolean;
@@ -41,8 +43,10 @@ export function DragonSheet({
   actionDisabled?: boolean;
   ownedStars?: number | null;
   ownedHabits?: number[];
+  ownedHabitRanks?: number[];
   synergyBuffs?: SynergyBuff[];
   extra?: ReactNode;
+  onHabitRankChange?: (habit: number, rank: number) => void;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -75,7 +79,9 @@ export function DragonSheet({
                 reignLevel={reignLevel}
                 ownedStars={ownedStars}
                 ownedHabits={ownedHabits}
+                ownedHabitRanks={ownedHabitRanks}
                 synergyBuffs={synergyBuffs}
+                onHabitRankChange={onHabitRankChange}
               />
             </div>
             {onAction && actionLabel ? (

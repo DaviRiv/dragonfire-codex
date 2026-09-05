@@ -23,6 +23,7 @@ import {
 } from "@/lib/ability-insight";
 import { cn } from "@/lib/utils";
 import { ArrowDown, ArrowUp, Lock, Share2 } from "lucide-react";
+import { RankPip } from "@/components/rank-pips";
 
 const PERSIST_NOTE =
   "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
@@ -98,9 +99,11 @@ function HoverableColoredText({
 export function AbilityRankTable({
   rows,
   className,
+  activeRank,
 }: {
   rows: AbilityScaleRow[];
   className?: string;
+  activeRank?: number;
 }) {
   if (rows.length === 0) return null;
   const ranks = rows[0]?.values.length ?? 0;
@@ -112,13 +115,7 @@ export function AbilityRankTable({
             <th className="pr-2 pb-1 font-medium">Rank</th>
             {Array.from({ length: ranks }, (_, i) => (
               <th key={i} className="px-0.5 pb-1 text-center font-medium">
-                <span className="relative inline-flex size-5 items-center justify-center text-[10px] text-amber-100">
-                  <span
-                    aria-hidden
-                    className="absolute size-3.5 rotate-45 rounded-[2px] bg-zinc-800 ring-1 ring-amber-200/50"
-                  />
-                  <span className="relative tabular-nums">{i + 1}</span>
-                </span>
+                <RankPip rank={i + 1} active={activeRank === i + 1} />
               </th>
             ))}
           </tr>
@@ -132,7 +129,10 @@ export function AbilityRankTable({
               {row.values.map((value, i) => (
                 <td
                   key={`${row.label}-${i}`}
-                  className="px-0.5 py-1 text-center tabular-nums text-df-buff"
+                  className={cn(
+                    "px-0.5 py-1 text-center tabular-nums text-df-buff",
+                    activeRank === i + 1 && "rounded-sm bg-amber-400/15 font-medium",
+                  )}
                 >
                   {value}
                 </td>
@@ -178,9 +178,11 @@ export function AbilityGlossList({
 export function AbilityInsightCard({
   insight,
   locked,
+  activeRank,
 }: {
   insight: AbilityInsight;
   locked?: boolean;
+  activeRank?: number;
 }) {
   const source =
     insight.kind === "buff"
@@ -255,7 +257,7 @@ export function AbilityInsightCard({
         />
       </p>
       {insight.scale.length > 0 ? (
-        <AbilityRankTable rows={insight.scale} />
+        <AbilityRankTable rows={insight.scale} activeRank={activeRank} />
       ) : null}
       {insight.kind === "habit" ? (
         <p className="text-[11px] leading-snug text-sky-200/90">{PERSIST_NOTE}</p>
@@ -270,6 +272,7 @@ export function AbilityHover({
   source,
   insight,
   locked,
+  activeRank,
   children,
   className,
 }: {
@@ -278,6 +281,7 @@ export function AbilityHover({
   source?: AbilitySourceRef;
   insight?: AbilityInsight | null;
   locked?: boolean;
+  activeRank?: number;
   children: ReactNode;
   className?: string;
 }) {
@@ -313,7 +317,11 @@ export function AbilityHover({
         className="z-[80] w-[min(24rem,calc(100vw-1.25rem))] max-h-[min(70dvh,32rem)] overflow-y-auto bg-zinc-950 p-3 text-stone-100 shadow-xl ring-1 ring-amber-200/25"
         positionerClassName="z-[80]"
       >
-        <AbilityInsightCard insight={resolved} locked={locked} />
+        <AbilityInsightCard
+          insight={resolved}
+          locked={locked}
+          activeRank={activeRank}
+        />
       </PopoverContent>
     </Popover>
   );
