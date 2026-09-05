@@ -396,6 +396,27 @@ if (
 ) {
   fail("hovering The King's Ire should open Sunfyre habit 3");
 }
+if (
+  findAbilityInsight("Extinguish", { dragonId: "sunfyre" })?.title !== "Extinguish"
+) {
+  fail("hovering Extinguish should open Sunfyre habit 2");
+}
+if (
+  findAbilityInsight("Unbroken Splendor", { dragonId: "sunfyre" })?.title !==
+  "Unbroken Splendor"
+) {
+  fail("hovering Unbroken Splendor should open Sunfyre habit 4");
+}
+if (
+  findAbilityInsight("Adaptive Glory", { dragonId: "sunfyre" })?.title !==
+  "Adaptive Glory"
+) {
+  fail("hovering Adaptive Glory should open Sunfyre habit 5");
+}
+const sunCatalog = catalogFor(sunfyre);
+if (sunCatalog.namedCount !== 5 || sunCatalog.needsScreenshot) {
+  fail("Sunfyre habit names from Star Progression should be complete");
+}
 
 const kalspire = getCatalogDragon("kalspire");
 if (!kalspire) fail("missing Kalspire");
