@@ -1,4 +1,4 @@
-export type StatusPolarity = "buff" | "debuff";
+export type StatusPolarity = "buff" | "debuff" | "command";
 
 const BUFF_NAMES = new Set(
   [
@@ -30,6 +30,9 @@ const DEBUFF_NAMES = new Set(
   ].map(keyName),
 );
 
+/** Granted commands from habits — yellow + crown in-game, not a stack buff. */
+const COMMAND_NAMES = new Set(["Crescent Blade"].map(keyName));
+
 export function keyName(value: string): string {
   return value.replace(/[’']/g, "'").trim().toLowerCase();
 }
@@ -38,6 +41,9 @@ export function polarityFromBody(body: string): StatusPolarity {
   const text = body.replace(/\s+/g, " ").toLowerCase();
   if (!text.trim()) return "buff";
   if (/prevents the target from using/.test(text)) return "debuff";
+  if (/^grant /.test(text) && / to (?:1 |an |the )?(?:ally|allies|sentinel)/.test(text)) {
+    return "command";
+  }
   if (/damage received/.test(text)) {
     if (/reduces?|decreases?/.test(text)) return "buff";
     if (/increases?/.test(text)) return "debuff";
@@ -68,5 +74,6 @@ export function polarityForName(name: string, body = ""): StatusPolarity {
   const key = keyName(name);
   if (BUFF_NAMES.has(key)) return "buff";
   if (DEBUFF_NAMES.has(key)) return "debuff";
+  if (COMMAND_NAMES.has(key)) return "command";
   return polarityFromBody(body);
 }

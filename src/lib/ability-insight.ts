@@ -369,7 +369,11 @@ export function sourceLabel(
   habit?: number,
   polarity?: StatusPolarity,
 ): string {
-  if (kind === "buff") return polarity === "debuff" ? "Debuff" : "Buff";
+  if (kind === "buff") {
+    if (polarity === "debuff") return "Debuff";
+    if (polarity === "command") return "Command";
+    return "Buff";
+  }
   if (kind === "habit") return habit ? `Habit ${habit}` : "Habit";
   if (kind === "vanguard") return "Vanguard";
   return "Command";
@@ -440,6 +444,57 @@ function skipExtractedBuff(dragonId: string, name: string): boolean {
   return false;
 }
 
+function evenNumberedPhysical(command: string, name: string): string | null {
+  if (!new RegExp(String.raw`Grant ${escapeRe(name)} to`, "i").test(command)) {
+    return null;
+  }
+  const hit = command.match(/Even-numbered Rounds:(?:[^.]+|\.\d+)+\./);
+  return hit?.[0]?.replace(/\s+/g, " ").trim() ?? null;
+}
+
+function firstGainsClause(name: string, blob: string): string | null {
+  const re = new RegExp(
+    String.raw`${escapeRe(name)} gains:${SENTENCE}\.(?:\s+Additionally${SENTENCE}\.)?`,
+  );
+  const hit = blob.match(re)?.[0];
+  return hit ? hit.replace(/\s+/g, " ").trim() : null;
+}
+
+function enrichGrantedCommand(
+  name: string,
+  body: string,
+  dragon: Pick<Dragon, "id" | "name" | "command" | "habit">,
+  blob: string,
+): string {
+  let next = body.replace(/\s+/g, " ").trim();
+  const even = evenNumberedPhysical(commandLine(dragon), name);
+  if (even && !/deal physical damage/i.test(next)) {
+    next = `${next} ${even}`;
+  }
+  const gains = firstGainsClause(name, blob);
+  if (gains && !alreadyExplains(next, name, gains)) {
+    next = `${next} ${gains}`;
+  }
+  return next;
+}
+
+function gainsScale(dragonId: string, name: string): AbilityScaleRow[] {
+  const habits = DRAGON_HABITS[dragonId] ?? [];
+  for (let index = 0; index < habits.length; index++) {
+    const ranks = habitRankTexts(dragonId, index);
+    if (!ranks || ranks.length < 2) continue;
+    const needle = `${name} gains:`.toLowerCase();
+    const slices = ranks.map((text) => {
+      const idx = text.toLowerCase().indexOf(needle);
+      return idx >= 0 ? text.slice(idx) : "";
+    });
+    if (slices.some((slice) => !slice) || new Set(slices).size <= 1) continue;
+    const rows = scaleRowsFromRanks(slices, name);
+    if (rows.length > 0) return rows;
+  }
+  return [];
+}
+
 const SENTENCE = String.raw`(?:[^.]+|\.\d+)+`;
 
 function extractKitBuffs(
@@ -488,6 +543,15 @@ function extractKitBuffs(
       }),
     );
   }
+
+  for (const insight of byKey.values()) {
+    if (insight.polarity !== "command") continue;
+    insight.body = enrichGrantedCommand(insight.title, insight.body, dragon, blob);
+    insight.polarity = polarityForName(insight.title, insight.body);
+    const scale = gainsScale(dragon.id, insight.title);
+    if (scale.length > 0) insight.scale = scale;
+  }
+
   return [...byKey.values()];
 }
 

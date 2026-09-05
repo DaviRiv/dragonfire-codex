@@ -471,7 +471,15 @@ if (crescent?.kind !== "buff" || crescent.title !== "Crescent Blade") {
 if (!/Sentinel/i.test(crescent.body) || !/Rising Tide/i.test(crescent.body)) {
   fail(`Crescent Blade body should be the grant line: ${crescent.body}`);
 }
-if (crescent.polarity !== "buff") fail("Crescent Blade is a buff");
+if (crescent.polarity !== "command") {
+  fail(`Crescent Blade is a granted command, got ${crescent.polarity}`);
+}
+if (!/Physical Damage/i.test(crescent.body)) {
+  fail(`Crescent Blade should include Physical Damage: ${crescent.body}`);
+}
+if (crescent.scale.find((row) => row.values[0] === "85%") == null) {
+  fail(`Crescent Blade should scale Physical Damage from habit ranks: ${JSON.stringify(crescent.scale)}`);
+}
 
 const wrath = findAbilityInsight("Infectious Wrath", { dragonId: "seasmoke" });
 if (wrath?.kind !== "buff") {
@@ -530,11 +538,11 @@ if (lightning?.scale.some((row) => /power/i.test(row.label))) {
   fail("Lightning Strike must not invent Power");
 }
 
-const firstStrikeTone = tokenizeAbilityText("grant First-Strike").find(
-  (part) => part.value === "First-Strike",
+const crescentTone = tokenizeAbilityText("Grant Crescent Blade").find(
+  (part) => part.value === "Crescent Blade",
 )?.tone;
-if (firstStrikeTone !== "buff") {
-  fail(`First-Strike text tone is ${firstStrikeTone}, expected buff`);
+if (crescentTone !== "command") {
+  fail(`Crescent Blade text tone is ${crescentTone}, expected command`);
 }
 const overwhelmTone = tokenizeAbilityText("afflict Overwhelm").find(
   (part) => part.value === "Overwhelm",

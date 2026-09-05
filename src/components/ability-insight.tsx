@@ -18,7 +18,7 @@ import {
   type StatusPolarity,
 } from "@/lib/ability-insight";
 import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, Lock } from "lucide-react";
+import { ArrowDown, ArrowUp, Crown, Lock } from "lucide-react";
 
 const PERSIST_NOTE =
   "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
@@ -32,18 +32,26 @@ function StatusName({
   polarity: StatusPolarity;
   className?: string;
 }) {
-  const Arrow = polarity === "debuff" ? ArrowDown : ArrowUp;
-  const color = polarity === "debuff" ? "text-df-debuff" : "text-df-buff";
+  const Icon =
+    polarity === "debuff" ? ArrowDown : polarity === "command" ? Crown : ArrowUp;
+  const color =
+    polarity === "debuff"
+      ? "text-df-debuff"
+      : polarity === "command"
+        ? "text-df-command"
+        : "text-df-buff";
+  const label =
+    polarity === "debuff" ? "Debuff" : polarity === "command" ? "Command" : "Buff";
   return (
     <span
       className={cn("inline-flex items-baseline gap-0.5 font-medium", color, className)}
     >
-      <Arrow
+      <Icon
         className="size-3.5 shrink-0 translate-y-px"
         strokeWidth={2.75}
         aria-hidden
       />
-      <span className="sr-only">{polarity === "debuff" ? "Debuff" : "Buff"}: </span>
+      <span className="sr-only">{label}: </span>
       <span>{name}</span>
     </span>
   );
@@ -175,9 +183,11 @@ export function AbilityInsightCard({
   const titleClass =
     insight.kind === "buff" && insight.polarity === "debuff"
       ? "text-df-debuff"
-      : insight.kind === "buff"
-        ? "text-df-buff"
-        : "text-amber-200";
+      : insight.kind === "buff" && insight.polarity === "command"
+        ? "text-df-command"
+        : insight.kind === "buff"
+          ? "text-df-buff"
+          : "text-amber-200";
 
   return (
     <div className="flex flex-col gap-2.5">
