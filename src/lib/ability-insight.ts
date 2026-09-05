@@ -274,6 +274,12 @@ function isHighestTargeting(before: string, index: number): boolean {
   return /\bhighest\s+$/i.test(before.slice(Math.max(0, index - 12), index));
 }
 
+function chanceToNamedStatus(before: string): string | undefined {
+  return STATUS_NAMES.find((name) =>
+    new RegExp(String.raw`\bchance to ${name}\b`, "i").test(before),
+  );
+}
+
 function nearestStatLabel(before: string): string | null {
   let last: string | null = null;
   STAT_LABEL_RE.lastIndex = 0;
@@ -290,6 +296,7 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/double this chance/i.test(before)) return true;
   if (/double this damage/i.test(before)) return true;
   if (/this damage is doubled/i.test(before)) return true;
+  if (/this chance is doubled/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
   return false;
 }
@@ -316,19 +323,28 @@ function labelForPercent(
     /^[^.]{0,24}chance/i.test(after) ||
     /chance\s*$/i.test(before.slice(-18)) ||
     /chance to (?:gain|apply|grant|afflict|inflict)/i.test(before) ||
+    Boolean(chanceToNamedStatus(before)) ||
     /^[^.]{0,24}to grant\b/i.test(after)
   ) {
     const gainStatus = STATUS_NAMES.find((name) =>
       new RegExp(String.raw`(?:gain|gains)\s+${name}`, "i").test(before),
     );
     if (gainStatus) return `${gainStatus} Chance`;
+    const toStatus = chanceToNamedStatus(before);
+    if (toStatus) return `${toStatus} Chance`;
     if (stackName) return `${stackName} Chance`;
+    const chanceFocus = chanceClause
+      .replace(
+        /\b(?:prioritizes? targets? )?NOT afflicted with [A-Z][A-Za-z-]+/gi,
+        "",
+      )
+      .replace(/\bafflicted with [A-Z][A-Za-z-]+/gi, "");
     const granted = STATUS_NAMES.filter((name) =>
-      new RegExp(String.raw`\b${name}\b`).test(chanceClause),
+      new RegExp(String.raw`\b${name}\b`).test(chanceFocus),
     ).sort(
       (a, b) =>
-        chanceClause.toLowerCase().indexOf(a.toLowerCase()) -
-        chanceClause.toLowerCase().indexOf(b.toLowerCase()),
+        chanceFocus.toLowerCase().indexOf(a.toLowerCase()) -
+        chanceFocus.toLowerCase().indexOf(b.toLowerCase()),
     );
     if (granted.includes("Cleanse")) return "Cleanse Chance";
     const alsoBuffsStat =
@@ -366,6 +382,16 @@ function labelForPercent(
   }
   if (/\bIntelligence and Instinct\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Intelligence/Instinct";
+  }
+  if (/\bInstinct and Initiative\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
+    return "Instinct/Initiative";
+  }
+  if (
+    /Physical Damage Received/i.test(statBefore) &&
+    /Fire Damage Received/i.test(statBefore) &&
+    /by\s+$/i.test(statBefore)
+  ) {
+    return "Damage Received";
   }
   const byStat = statBefore.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,

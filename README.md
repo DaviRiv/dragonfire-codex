@@ -89,7 +89,7 @@ with HBO, Warner Bros., or the game.
 - **Dev** — personal metadata catalog, hidden unless you open
   `/dev?dev=1` once on this browser. Habit names from Star Progression
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
-  Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, and Seasmoke are complete). `?dev=0` hides the tab.
+  Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, and Crimson are complete). `?dev=0` hides the tab.
 
 The layout is built for a phone in one hand: four bottom tabs, the team
 then the ranked list, and on a wider screen the list is a full column on

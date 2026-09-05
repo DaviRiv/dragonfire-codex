@@ -108,6 +108,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Tactical Strike", tone: "command" },
   { phrase: "Blazing Fury", tone: "command" },
   { phrase: "Cleansing Wrath", tone: "command" },
+  { phrase: "Bloodscale Terror", tone: "command" },
   { phrase: "Rising Tide", tone: "buff" },
   { phrase: "Solar Flare", tone: "status" },
   { phrase: "Right Flank", tone: "status" },

@@ -1003,6 +1003,167 @@ if (seaCatalog.command.names.includes("Cleansing Wrath") === false) {
   fail("Dev catalog should list Cleansing Wrath on Seasmoke's Command");
 }
 
+const crimson = getCatalogDragon("crimson");
+if (!crimson) fail("missing Crimson");
+const crimsonNames: [number, string, string[], string][] = [
+  [1, "Enervate", ["Damage Dealt"], "-13.5%,-16.2%,-18.9%,-22.95%,-27%"],
+  [2, "Dragon's Intellect", ["Damage Received", "Intelligence"], "-6%,-7.2%,-8.4%,-10.2%,-12%"],
+  [3, "Bloodscale Fury", ["Weakened Chance"], "17.5%,21%,24.5%,29.75%,35%"],
+  [4, "Unlikely Hero", ["Damage Received", "Recovery Received"], "10%,12%,14%,17%,20%"],
+  [5, "Vermin's Bane", ["Instinct/Initiative", "Stun Chance"], "-12%,-15.6%,-19.2%,-24%,-30%"],
+];
+for (const [habit, title, labels, firstValues] of crimsonNames) {
+  const row = insightForSource("crimson", { kind: "habit", habit });
+  if (!row) fail(`Crimson habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Crimson habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const enervate = insightForSource("crimson", { kind: "habit", habit: 1 });
+if (!/-13\.5%/.test(enervate?.body ?? "")) {
+  fail("keep Hub Enervate -13.5%");
+}
+if (/excluding Basic Attacks/i.test(enervate?.body ?? "")) {
+  fail("do not rewrite Hub Enervate text to screenshot wording");
+}
+const intellect = insightForSource("crimson", { kind: "habit", habit: 2 });
+if (
+  intellect?.scale.find((row) => row.label === "Intelligence")?.values.join(
+    ",",
+  ) !== "12%,14.4%,16.8%,20.4%,24%"
+) {
+  fail("Dragon's Intellect Intelligence mismatch");
+}
+const bloodscaleFury = insightForSource("crimson", { kind: "habit", habit: 3 });
+if (!/17\.5% chance/i.test(bloodscaleFury?.body ?? "")) {
+  fail("keep Hub Bloodscale Fury 17.5%");
+}
+if (/18% chance/i.test(bloodscaleFury?.body ?? "")) {
+  fail("do not rewrite Hub Bloodscale Fury 17.5% to screenshot 18%");
+}
+if (/reduces the target's Damage Dealt/i.test(bloodscaleFury?.body ?? "")) {
+  fail("do not copy Weakened glossary into Hub Bloodscale Fury text");
+}
+if (bloodscaleFury?.scale.some((row) => row.values.join(",") === "-20%,-20%,-20%,-20%,-20%")) {
+  fail("Bloodscale Fury should skip constant Weakened -20%");
+}
+if (bloodscaleFury?.scale.some((row) => row.values.join(",") === "35%,42%,49%,59.5%,70%")) {
+  fail("Bloodscale Fury should skip doubled Weakened chance");
+}
+if (glossNames(bloodscaleFury).includes("Weakened") === false) {
+  fail("Bloodscale Fury should gloss Weakened");
+}
+const unlikelyHero = insightForSource("crimson", { kind: "habit", habit: 4 });
+if (/Start of Each Round/i.test(unlikelyHero?.body ?? "")) {
+  fail("do not rewrite Hub Unlikely Hero Each Round to screenshot wording");
+}
+if (/excluding Basic Attacks/i.test(unlikelyHero?.body ?? "")) {
+  fail("do not rewrite Hub Unlikely Hero Command & Habits to screenshot wording");
+}
+if (!/Command & Habits/i.test(unlikelyHero?.body ?? "")) {
+  fail("keep Hub Unlikely Hero Command & Habits text");
+}
+if (
+  unlikelyHero?.scale.find((row) => row.label === "Recovery Received")?.values.join(
+    ",",
+  ) !== "-20%,-24%,-28%,-34%,-40%"
+) {
+  fail("Unlikely Hero Recovery Received mismatch");
+}
+if (unlikelyHero?.scale.some((row) => row.values.join(",") === "75%,75%,75%,75%,75%")) {
+  fail("Unlikely Hero should skip constant 75% troop capacity");
+}
+if (unlikelyHero?.scale.some((row) => row.values.join(",") === "25%,25%,25%,25%,25%")) {
+  fail("Unlikely Hero should skip constant 25% troop capacity");
+}
+const verminsBane = insightForSource("crimson", { kind: "habit", habit: 5 });
+if (/Bloodscale Terror gains/i.test(verminsBane?.body ?? "")) {
+  fail("do not rewrite Hub Vermin's Bane text to screenshot wording");
+}
+if (!/Command gains/i.test(verminsBane?.body ?? "")) {
+  fail("keep Hub Vermin's Bane Command gains text");
+}
+if (
+  verminsBane?.scale.find((row) => row.label === "Stun Chance")?.values.join(
+    ",",
+  ) !== "40%,52%,64%,80%,100%"
+) {
+  fail("Vermin's Bane Stun Chance mismatch");
+}
+if (verminsBane?.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Vermin's Bane should skip constant 50% even-round chance");
+}
+if (glossNames(verminsBane).includes("Stun") === false) {
+  fail("Vermin's Bane should gloss Stun");
+}
+if (
+  findAbilityInsight("Enervate", { dragonId: "crimson" })?.title !== "Enervate"
+) {
+  fail("hovering Enervate should open Crimson habit 1");
+}
+if (
+  findAbilityInsight("Bloodscale Fury", { dragonId: "crimson" })?.kind !==
+  "habit"
+) {
+  fail("hovering Bloodscale Fury should open Crimson habit 3");
+}
+if (
+  findAbilityInsight("Vermin's Bane", { dragonId: "crimson" })?.title !==
+  "Vermin's Bane"
+) {
+  fail("hovering Vermin's Bane should open Crimson habit 5");
+}
+const crimsonCommand = insightForSource("crimson", { kind: "command" });
+if (!crimsonCommand) fail("Crimson command missing");
+if (crimsonCommand.title !== "Bloodscale Terror") {
+  fail(
+    `Crimson command title is ${crimsonCommand.title}, expected Bloodscale Terror`,
+  );
+}
+if (/Bloodscale Terror gains/i.test(crimsonCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Bloodscale Terror", { dragonId: "crimson" })?.kind !==
+  "command"
+) {
+  fail("hovering Bloodscale Terror should open Crimson's Command");
+}
+if (!namedChips(crimsonCommand).includes("Bloodscale Terror")) {
+  fail("Crimson command chips should include Bloodscale Terror");
+}
+const crimsonCatalog = catalogFor(crimson);
+if (crimsonCatalog.namedCount !== 5 || crimsonCatalog.needsScreenshot) {
+  fail("Crimson habit names from Star Progression should be complete");
+}
+if (crimsonCatalog.command.names.includes("Bloodscale Terror") === false) {
+  fail("Dev catalog should list Bloodscale Terror on Crimson's Command");
+}
+const crimsonWeakened = findAbilityInsight("Weakened", { dragonId: "crimson" });
+if (
+  crimsonWeakened?.dragonName !== "Crimson" ||
+  crimsonWeakened.unlockStars !== 6
+) {
+  fail(
+    `Weakened on Crimson should be 6★ Bloodscale Fury, got ${crimsonWeakened?.dragonName} ${crimsonWeakened?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

@@ -60,6 +60,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Mass Enfeeble",
     "Blood Wyrm",
   ],
+  crimson: [
+    "Enervate",
+    "Dragon's Intellect",
+    "Bloodscale Fury",
+    "Unlikely Hero",
+    "Vermin's Bane",
+  ],
   syrax: [
     "Mindful Synergy",
     "Flight Mastery",
