@@ -304,4 +304,90 @@ if (
   fail("hovering Inspiring Melody should open Rhysarion habit 5");
 }
 
+const sunfyre = getCatalogDragon("sunfyre");
+if (!sunfyre) fail("missing Sunfyre");
+const sunfyreNames: [number, string, string[], string][] = [
+  [1, "Radiant Majesty", ["Damage Dealt"], "5%,6%,7%,8.5%,10%"],
+  [2, "Extinguish", ["Damage Dealt"], "-13.5%,-16.2%,-18.9%,-22.95%,-27%"],
+  [3, "The King's Ire", ["Damage Rate", "Intelligence"], "50%,60%,70%,85%,100%"],
+  [4, "Unbroken Splendor", ["Fire Damage Received", "Damage Received", "Cleanse Chance"], "-7.5%,-9%,-10.5%,-12.75%,-15%"],
+  [5, "Adaptive Glory", ["Recovery Rate", "Damage Dealt", "Instinct", "Initiative"], "30%,39%,48%,60%,75%"],
+];
+for (const [habit, title, labels, firstValues] of sunfyreNames) {
+  const row = insightForSource("sunfyre", { kind: "habit", habit });
+  if (!row) fail(`Sunfyre habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Sunfyre habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const ire = insightForSource("sunfyre", { kind: "habit", habit: 3 });
+if (
+  ire?.scale.find((row) => row.label === "Intelligence")?.values.join(",") !==
+  "-15%,-18%,-21%,-25.5%,-30%"
+) {
+  fail("The King's Ire Intelligence mismatch");
+}
+const splendor = insightForSource("sunfyre", { kind: "habit", habit: 4 });
+if (
+  splendor?.scale.find((row) => row.label === "Cleanse Chance")?.values.join(
+    ",",
+  ) !== "25%,30%,35%,42.5%,50%"
+) {
+  fail("Unbroken Splendor Cleanse Chance mismatch");
+}
+if (splendor?.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Unbroken Splendor should skip constant 50% troop capacity");
+}
+const glory = insightForSource("sunfyre", { kind: "habit", habit: 5 });
+if (
+  glory?.scale.find((row) => row.label === "Damage Dealt")?.values.join(",") !==
+  "12%,15.6%,19.2%,24%,30%"
+) {
+  fail("Adaptive Glory Damage Dealt buff mismatch");
+}
+if (
+  glory?.scale.find((row) => row.label === "Damage Dealt (2)")?.values.join(
+    ",",
+  ) !== "-12%,-15.6%,-19.2%,-24%,-30%"
+) {
+  fail("Adaptive Glory Damage Dealt debuff mismatch");
+}
+if (
+  glory?.scale.find((row) => row.label === "Initiative")?.values.join(",") !==
+  "6%,7.8%,9.6%,12%,15%"
+) {
+  fail("Adaptive Glory Initiative mismatch");
+}
+const majesty = insightForSource("sunfyre", { kind: "habit", habit: 1 });
+if (majesty?.scale.some((row) => row.values.includes("75%") || row.label === "Troop Capacity")) {
+  fail("Radiant Majesty should skip constant troop-capacity percents");
+}
+if (
+  findAbilityInsight("Radiant Majesty", { dragonId: "sunfyre" })?.title !==
+  "Radiant Majesty"
+) {
+  fail("hovering Radiant Majesty should open Sunfyre habit 1");
+}
+if (
+  findAbilityInsight("The King's Ire", { dragonId: "sunfyre" })?.title !==
+  "The King's Ire"
+) {
+  fail("hovering The King's Ire should open Sunfyre habit 3");
+}
+
 console.log("ability insight checks passed");

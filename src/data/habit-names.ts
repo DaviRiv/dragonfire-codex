@@ -33,6 +33,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Unbroken Devotion",
     "Inspiring Melody",
   ],
+  sunfyre: [
+    "Radiant Majesty",
+    "Extinguish",
+    "The King's Ire",
+    "Unbroken Splendor",
+    "Adaptive Glory",
+  ],
 };
 
 export function habitDisplayName(

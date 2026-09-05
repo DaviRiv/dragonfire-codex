@@ -190,11 +190,24 @@ export function definedStacksIn(text: string): string[] {
 }
 
 function collapseScaleLabel(label: string): string {
+  if (/^Fire Damage Received$/i.test(label)) return "Fire Damage Received";
   if (/Damage Received$/i.test(label)) return "Damage Received";
   if (/Damage Dealt$/i.test(label) && !/Received/i.test(label)) {
     return "Damage Dealt";
   }
   return label;
+}
+
+const STAT_LABEL_RE =
+  /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/gi;
+
+function nearestStatLabel(before: string): string | null {
+  let last: string | null = null;
+  STAT_LABEL_RE.lastIndex = 0;
+  for (const match of before.matchAll(STAT_LABEL_RE)) {
+    last = match[1] ?? null;
+  }
+  return last ? collapseScaleLabel(last) : null;
 }
 
 function isDerivedPercent(text: string, index: number): boolean {
@@ -241,6 +254,7 @@ function labelForPercent(
     const granted = STATUS_NAMES.filter((name) =>
       new RegExp(String.raw`\b${name}\b`).test(chanceClause),
     );
+    if (granted.includes("Cleanse")) return "Cleanse Chance";
     const alsoBuffsStat =
       /increase\s+(?:your\s+)?(?:Strength|Instinct|Intelligence|Initiative)\b/i.test(
         chanceClause,
@@ -269,10 +283,12 @@ function labelForPercent(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)\s+(?:\(enhanced by [^)]+\)\s+)?by\s+$/i,
   );
   if (byStat) return collapseScaleLabel(byStat[1]);
-  const stat = `${before} ${after}`.match(
+  const nearest = nearestStatLabel(before);
+  if (nearest) return nearest;
+  const afterStat = after.match(
     /((?:Physical|Tactical|Fire) Damage(?: Received| Dealt)?|Damage Received|Damage Dealt|Recovery(?: Received| Dealt)?|Strength|Instinct|Intelligence|Initiative)/i,
   );
-  if (stat) return collapseScaleLabel(stat[1]);
+  if (afterStat) return collapseScaleLabel(afterStat[1]);
   if (stackName) return stackName;
   return "Value";
 }
