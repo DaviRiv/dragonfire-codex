@@ -297,6 +297,7 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/double this damage/i.test(before)) return true;
   if (/this damage is doubled/i.test(before)) return true;
   if (/this chance is doubled/i.test(before)) return true;
+  if (/triple the (?:damage|recovery)/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
   return false;
 }
@@ -334,6 +335,7 @@ function labelForPercent(
     if (toStatus) return `${toStatus} Chance`;
     if (stackName) return `${stackName} Chance`;
     const chanceFocus = chanceClause
+      .replace(/\b(?:your|a|the)\s+Prey\b/gi, "")
       .replace(
         /\b(?:prioritizes? targets? )?NOT afflicted with [A-Z][A-Za-z-]+/gi,
         "",
@@ -385,6 +387,23 @@ function labelForPercent(
   }
   if (/\bInstinct and Initiative\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Instinct/Initiative";
+  }
+  if (/\bEvade\s*\($/i.test(before)) {
+    return "Evade Rate";
+  }
+  if (
+    /Fire Damage Dealt/i.test(statBefore) &&
+    /each stacks? of /i.test(statBefore) &&
+    /by\s+$/i.test(statBefore)
+  ) {
+    return "Fire Damage Dealt (per Stack)";
+  }
+  if (
+    /Fire Damage Dealt/i.test(statBefore) &&
+    /by\s+$/i.test(statBefore) &&
+    /non-player|Food Tiles|Encounters against Beasts/i.test(after)
+  ) {
+    return "Fire Damage Dealt (Non-player)";
   }
   if (
     /Physical Damage Received/i.test(statBefore) &&
@@ -515,7 +534,7 @@ function alreadyExplains(
   if (snippet.length >= 12 && hay.includes(snippet)) return true;
   if (!name.trim()) return false;
   return new RegExp(
-    String.raw`${escapeRe(name)}\s+(?:causes|grants|increases|reduces|prevents)\b`,
+    String.raw`${escapeRe(name)}\s+(?:causes?|grants|increases|reduces|prevents)\b`,
     "i",
   ).test(text);
 }

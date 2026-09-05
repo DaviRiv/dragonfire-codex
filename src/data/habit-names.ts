@@ -88,6 +88,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Cunning Ferocity",
     "Loyal Bond",
   ],
+  sheepstealer: [
+    "Stolen Flock",
+    "Dragon's Cunning",
+    "Baited Kill",
+    "Wary Beast",
+    "Savage Claim",
+  ],
 };
 
 export function habitDisplayName(

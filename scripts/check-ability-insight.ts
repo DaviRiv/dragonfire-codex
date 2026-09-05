@@ -1164,6 +1164,253 @@ if (
   );
 }
 
+const sheepstealer = getCatalogDragon("sheepstealer");
+if (!sheepstealer) fail("missing Sheepstealer");
+const sheepNames: [number, string, string[], string][] = [
+  [
+    1,
+    "Stolen Flock",
+    ["Fire Damage Dealt (Non-player)", "Fire Damage Dealt (per Stack)"],
+    "10%,12%,14%,17%,20%",
+  ],
+  [2, "Dragon's Cunning", ["Intelligence", "Instinct"], "16%,19.2%,22.4%,27.2%,32%"],
+  [3, "Baited Kill", ["Vulnerable Chance", "Cleanse Chance"], "25%,30%,35%,42.5%,50%"],
+  [4, "Wary Beast", ["Evade Rate", "Recovery Received"], "10%,12%,14%,17%,20%"],
+  [5, "Savage Claim", ["Damage Rate", "Recovery Rate"], "24%,31.2%,38.4%,48%,60%"],
+];
+for (const [habit, title, labels, firstValues] of sheepNames) {
+  const row = insightForSource("sheepstealer", { kind: "habit", habit });
+  if (!row) fail(`Sheepstealer habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Sheepstealer habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const stolenFlock = insightForSource("sheepstealer", { kind: "habit", habit: 1 });
+if (
+  stolenFlock?.scale.find((row) => row.label === "Fire Damage Dealt (per Stack)")
+    ?.values.join(",") !== "3%,3.6%,4.2%,5.1%,6%"
+) {
+  fail("Stolen Flock per-stack Fire Damage Dealt mismatch");
+}
+if (stolenFlock?.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Stolen Flock should skip constant 50% stack chance");
+}
+const cunning = insightForSource("sheepstealer", { kind: "habit", habit: 2 });
+if (
+  cunning?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+  "-12%,-14.4%,-16.8%,-20.4%,-24%"
+) {
+  fail("Dragon's Cunning Instinct mismatch");
+}
+const baitedKill = insightForSource("sheepstealer", { kind: "habit", habit: 3 });
+if (
+  baitedKill?.scale.find((row) => row.label === "Cleanse Chance")?.values.join(
+    ",",
+  ) !== "50%,60%,70%,85%,100%"
+) {
+  fail("Baited Kill Cleanse Chance mismatch");
+}
+if (baitedKill?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Baited Kill should skip constant Vulnerable +20%");
+}
+if (
+  baitedKill?.scale.filter(
+    (row) => row.values.join(",") === "50%,60%,70%,85%,100%",
+  ).length > 1
+) {
+  fail("Baited Kill should skip doubled Vulnerable chance");
+}
+if (baitedKill?.scale.some((row) => /prey/i.test(row.label))) {
+  fail("Baited Kill should not label Vulnerable Chance as Prey");
+}
+if (!/Vulnerable \(\+20%\)/.test(baitedKill?.body ?? "")) {
+  fail("keep Hub Baited Kill Vulnerable (+20%)");
+}
+if (/Vulnerable increases the target's Damage Received/i.test(baitedKill?.body ?? "")) {
+  fail("do not copy Vulnerable glossary into Hub Baited Kill text");
+}
+if (glossNames(baitedKill).includes("Vulnerable") === false) {
+  fail("Baited Kill should gloss Vulnerable");
+}
+if (glossNames(baitedKill).includes("Prey") === false) {
+  fail("Baited Kill should gloss Prey");
+}
+const waryBeast = insightForSource("sheepstealer", { kind: "habit", habit: 4 });
+if (
+  waryBeast?.scale.find((row) => row.label === "Recovery Received")?.values.join(
+    ",",
+  ) !== "-10%,-12%,-14%,-17%,-20%"
+) {
+  fail("Wary Beast Recovery Received mismatch");
+}
+if (waryBeast?.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Wary Beast should skip constant 50% troop capacity");
+}
+if (/Evade causes/i.test(waryBeast?.body ?? "")) {
+  fail("do not rewrite Hub Wary Beast Evade cause to screenshot wording");
+}
+if (!/Evade cause each instance/i.test(waryBeast?.body ?? "")) {
+  fail("keep Hub Wary Beast Evade definition");
+}
+if (glossNames(waryBeast).includes("Evade")) {
+  fail("Wary Beast Hub already defines Evade; do not duplicate the glossary");
+}
+const savageClaim = insightForSource("sheepstealer", { kind: "habit", habit: 5 });
+if (/Wild Hunt gains/i.test(savageClaim?.body ?? "")) {
+  fail("do not rewrite Hub Savage Claim text to screenshot wording");
+}
+if (
+  savageClaim?.scale.find((row) => row.label === "Recovery Rate")?.values.join(
+    ",",
+  ) !== "10%,13%,16%,20%,25%"
+) {
+  fail("Savage Claim Recovery Rate mismatch");
+}
+if (savageClaim?.scale.some((row) => row.values.join(",") === "72%,93.6%,115.2%,144%,180%")) {
+  fail("Savage Claim should skip tripled Damage Rate");
+}
+if (savageClaim?.scale.some((row) => row.values.join(",") === "30%,39%,48%,60%,75%")) {
+  fail("Savage Claim should skip tripled Recovery");
+}
+if (glossNames(savageClaim).includes("Prey") === false) {
+  fail("Savage Claim should gloss Prey");
+}
+if (
+  findAbilityInsight("Stolen Flock", { dragonId: "sheepstealer" })?.title !==
+  "Stolen Flock"
+) {
+  fail("hovering Stolen Flock should open Sheepstealer habit 1");
+}
+if (
+  findAbilityInsight("Baited Kill", { dragonId: "sheepstealer" })?.kind !== "habit"
+) {
+  fail("hovering Baited Kill should open Sheepstealer habit 3");
+}
+if (
+  findAbilityInsight("Savage Claim", { dragonId: "sheepstealer" })?.title !==
+  "Savage Claim"
+) {
+  fail("hovering Savage Claim should open Sheepstealer habit 5");
+}
+const sheepCommand = insightForSource("sheepstealer", { kind: "command" });
+if (!sheepCommand) fail("Sheepstealer command missing");
+if (sheepCommand.title !== "Wild Hunt") {
+  fail(`Sheepstealer command title is ${sheepCommand.title}, expected Wild Hunt`);
+}
+if (/Wild Hunt gains/i.test(sheepCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (!/Prey reduces the target's Recovery Received/i.test(sheepCommand.body)) {
+  fail("keep Hub Wild Hunt Prey definition");
+}
+if (/-30\$/.test(sheepCommand.body) === false) {
+  fail("do not rewrite Hub Prey -30$ typo");
+}
+if (
+  findAbilityInsight("Wild Hunt", { dragonId: "sheepstealer" })?.kind !== "command"
+) {
+  fail("hovering Wild Hunt should open Sheepstealer's Command");
+}
+if (!namedChips(sheepCommand).includes("Wild Hunt")) {
+  fail("Sheepstealer command chips should include Wild Hunt");
+}
+if (!namedChips(sheepCommand).includes("Prey")) {
+  fail("Sheepstealer command chips should include Prey");
+}
+const sheepCatalog = catalogFor(sheepstealer);
+if (sheepCatalog.namedCount !== 5 || sheepCatalog.needsScreenshot) {
+  fail("Sheepstealer habit names from Star Progression should be complete");
+}
+if (sheepCatalog.command.names.includes("Wild Hunt") === false) {
+  fail("Dev catalog should list Wild Hunt on Sheepstealer's Command");
+}
+const sheepVulnerable = findAbilityInsight("Vulnerable", {
+  dragonId: "sheepstealer",
+});
+if (!sheepVulnerable || sheepVulnerable.kind !== "buff") {
+  fail(`Vulnerable hover opened ${sheepVulnerable?.kind}:${sheepVulnerable?.title}`);
+}
+if (sheepVulnerable.polarity !== "debuff") fail("Vulnerable is a debuff");
+if (!/Damage Received/i.test(sheepVulnerable.body) || !/increases/i.test(sheepVulnerable.body)) {
+  fail(`Vulnerable glossary missing Star Progression line: ${sheepVulnerable.body}`);
+}
+if (sheepVulnerable.dragonName !== "Sheepstealer" || sheepVulnerable.unlockStars !== 6) {
+  fail(
+    `Vulnerable on Sheepstealer should be 6★ Baited Kill, got ${sheepVulnerable.dragonName} ${sheepVulnerable.unlockStars}`,
+  );
+}
+const sheepPrey = findAbilityInsight("Prey", { dragonId: "sheepstealer" });
+if (!sheepPrey || sheepPrey.kind !== "buff") {
+  fail(`Prey hover opened ${sheepPrey?.kind}:${sheepPrey?.title}`);
+}
+if (sheepPrey.polarity !== "debuff") fail("Prey is a debuff");
+if (!/Recovery Received/i.test(sheepPrey.body) || !/reduces/i.test(sheepPrey.body)) {
+  fail(`Prey glossary missing Recovery Received: ${sheepPrey.body}`);
+}
+if (sheepPrey.title === "Wild Hunt") {
+  fail("hovering Prey should open the Prey debuff, not Wild Hunt");
+}
+const sheepEvade = findAbilityInsight("Evade", { dragonId: "sheepstealer" });
+if (!sheepEvade || sheepEvade.kind !== "buff") {
+  fail(`Evade hover opened ${sheepEvade?.kind}:${sheepEvade?.title}`);
+}
+if (sheepEvade.polarity !== "buff") fail("Evade is a buff");
+if (!/chance to be ignored/i.test(sheepEvade.body)) {
+  fail(`Evade glossary missing Star Progression line: ${sheepEvade.body}`);
+}
+if (statusMarkPolarity("Prey") !== "debuff") fail("Prey mark is a debuff");
+if (statusMarkPolarity("Evade") !== "buff") fail("Evade mark is a buff");
+if (statusMarkPolarity("Vulnerable") !== "debuff") fail("Vulnerable mark is a debuff");
+if (statusMarkPolarity("Cleanse") !== "buff") fail("Cleanse mark is a buff");
+if (statusMarkPolarity("Stolen Flock") !== "buff") {
+  fail("Stolen Flock in habit text should get a buff arrow");
+}
+if (statusMarkPolarity("Wild Hunt") != null) {
+  fail("Wild Hunt is the Command name, not a buff/debuff mark");
+}
+if (statusMarkPolarity("Recovery") != null) {
+  fail("Recovery is a keyword, not a named buff/debuff");
+}
+const preyTone = tokenizeAbilityText("mark 1 Enemy as your Prey").find(
+  (part) => part.value === "Prey",
+)?.tone;
+if (preyTone !== "debuff") {
+  fail(`Prey text tone is ${preyTone}, expected debuff`);
+}
+const evadeTone = tokenizeAbilityText("gain Evade").find(
+  (part) => part.value === "Evade",
+)?.tone;
+if (evadeTone !== "buff") {
+  fail(`Evade text tone is ${evadeTone}, expected buff`);
+}
+const flockTone = tokenizeAbilityText("1 stack of Stolen Flock").find(
+  (part) => part.value === "Stolen Flock",
+)?.tone;
+if (flockTone !== "buff") {
+  fail(`Stolen Flock text tone is ${flockTone}, expected buff`);
+}
+const huntTone = tokenizeAbilityText("Wild Hunt").find(
+  (part) => part.value === "Wild Hunt",
+)?.tone;
+if (huntTone !== "command") {
+  fail(`Wild Hunt text tone is ${huntTone}, expected command`);
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

@@ -17,6 +17,10 @@ export const STATUS_GLOSSARY: Record<string, string> = {
   Burn: "Deals Fire Damage to the target each round.",
   Slow: "Causes the target to attack after all other combatants each round.",
   Control: "Includes Stun, Stagger, Overwhelm, and Confusion.",
+  Evade:
+    "Causes each instance of damage against the target to have a chance to be ignored.",
+  Vulnerable: "Increases the target's Damage Received.",
+  Prey: "Reduces the target's Recovery Received.",
 };
 
 export function statusGlossaryName(name: string): string | undefined {

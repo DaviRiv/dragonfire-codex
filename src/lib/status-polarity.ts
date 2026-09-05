@@ -11,6 +11,7 @@ const BUFF_NAMES = new Set(
     "Cleanse",
     "Bulwark",
     "Taunt",
+    "Stolen Flock",
   ].map(keyName),
 );
 
