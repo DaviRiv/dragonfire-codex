@@ -6,6 +6,7 @@ import {
   findAbilityInsight,
   insightForSource,
   insightsForDragon,
+  namedChips,
   namedStacksIn,
   scaleRowsFromRanks,
 } from "@/lib/ability-insight";
@@ -468,14 +469,29 @@ const crescent = findAbilityInsight("Crescent Blade", { dragonId: "moondancer" }
 if (crescent?.kind !== "buff" || crescent.title !== "Crescent Blade") {
   fail(`Crescent Blade hover opened ${crescent?.kind}:${crescent?.title}`);
 }
-if (!/Sentinel/i.test(crescent.body) || !/Rising Tide/i.test(crescent.body)) {
-  fail(`Crescent Blade body should be the grant line: ${crescent.body}`);
+if (crescent.polarity !== "spread") {
+  fail(`Crescent Blade is a spreading buff, got ${crescent.polarity}`);
 }
-if (crescent.polarity !== "command") {
-  fail(`Crescent Blade is a granted command, got ${crescent.polarity}`);
+if (crescent.spreadTo !== "1 Ally Sentinel") {
+  fail(`Crescent Blade should name the ally it spreads to, got ${crescent.spreadTo}`);
 }
-if (!/Physical Damage/i.test(crescent.body)) {
+if (/^Grant Crescent Blade/i.test(crescent.body)) {
+  fail(`Crescent Blade card should not be the Command grant line: ${crescent.body}`);
+}
+if (!/^When this target deals Tactical Damage/i.test(crescent.body)) {
+  fail(`Crescent Blade body should be the ally ability: ${crescent.body}`);
+}
+if (!/Rising Tide/i.test(crescent.body) || !/Max 8 stacks/i.test(crescent.body)) {
+  fail(`Crescent Blade should feed Rising Tide: ${crescent.body}`);
+}
+if (!/Physical Damage/i.test(crescent.body) || !/Even-numbered Rounds/i.test(crescent.body)) {
   fail(`Crescent Blade should include Physical Damage: ${crescent.body}`);
+}
+if (!/Crescent Blade gains:/i.test(crescent.body) || !/\+85%/.test(crescent.body)) {
+  fail(`Crescent Blade should include the gains line: ${crescent.body}`);
+}
+if (/Each stack of Rising Tide/i.test(crescent.body)) {
+  fail(`Rising Tide's self-stack line belongs on Rising Tide, not Crescent Blade: ${crescent.body}`);
 }
 if (crescent.scale.find((row) => row.values[0] === "85%") == null) {
   fail(`Crescent Blade should scale Physical Damage from habit ranks: ${JSON.stringify(crescent.scale)}`);
@@ -498,6 +514,20 @@ if (erosion.polarity !== "debuff") {
 }
 
 const moonCommand = insightForSource("moondancer", { kind: "command" });
+if (!moonCommand) fail("Moondancer command missing");
+if (moonCommand.title !== "Command") {
+  fail(`Moondancer command card title should be Command, got ${moonCommand.title}`);
+}
+if (!/^Round 1: Grant Crescent Blade/i.test(moonCommand.body)) {
+  fail(`Moondancer command should keep the Hub grant line: ${moonCommand.body}`);
+}
+const moonCommandChips = namedChips(moonCommand);
+if (!moonCommandChips.includes("Crescent Blade")) {
+  fail(`Command chips missing Crescent Blade: ${moonCommandChips.join(", ")}`);
+}
+if (!moonCommandChips.includes("Rising Tide")) {
+  fail(`Command chips missing Rising Tide: ${moonCommandChips.join(", ")}`);
+}
 if (glossNames(moonCommand).includes("Rising Tide")) {
   fail("Moondancer command already defines Rising Tide; do not duplicate the gloss");
 }
@@ -541,8 +571,8 @@ if (lightning?.scale.some((row) => /power/i.test(row.label))) {
 const crescentTone = tokenizeAbilityText("Grant Crescent Blade").find(
   (part) => part.value === "Crescent Blade",
 )?.tone;
-if (crescentTone !== "command") {
-  fail(`Crescent Blade text tone is ${crescentTone}, expected command`);
+if (crescentTone !== "spread") {
+  fail(`Crescent Blade text tone is ${crescentTone}, expected spread`);
 }
 const overwhelmTone = tokenizeAbilityText("afflict Overwhelm").find(
   (part) => part.value === "Overwhelm",

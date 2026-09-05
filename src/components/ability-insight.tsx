@@ -18,7 +18,7 @@ import {
   type StatusPolarity,
 } from "@/lib/ability-insight";
 import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, Crown, Lock } from "lucide-react";
+import { ArrowDown, ArrowUp, Lock, Share2 } from "lucide-react";
 
 const PERSIST_NOTE =
   "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
@@ -33,15 +33,17 @@ function StatusName({
   className?: string;
 }) {
   const Icon =
-    polarity === "debuff" ? ArrowDown : polarity === "command" ? Crown : ArrowUp;
+    polarity === "debuff" ? ArrowDown : polarity === "spread" ? Share2 : ArrowUp;
   const color =
     polarity === "debuff"
       ? "text-df-debuff"
-      : polarity === "command"
-        ? "text-df-command"
-        : "text-df-buff";
+      : "text-df-buff";
   const label =
-    polarity === "debuff" ? "Debuff" : polarity === "command" ? "Command" : "Buff";
+    polarity === "debuff"
+      ? "Debuff"
+      : polarity === "spread"
+        ? "Spreading buff"
+        : "Buff";
   return (
     <span
       className={cn("inline-flex items-baseline gap-0.5 font-medium", color, className)}
@@ -169,7 +171,11 @@ export function AbilityInsightCard({
 }) {
   const source =
     insight.kind === "buff"
-      ? [insight.dragonName || null, sourceLabel(insight.kind, insight.habit, insight.polarity)]
+      ? [
+          insight.dragonName || null,
+          sourceLabel(insight.kind, insight.habit, insight.polarity),
+          insight.spreadTo || null,
+        ]
           .filter(Boolean)
           .join(" · ")
       : [
@@ -183,11 +189,9 @@ export function AbilityInsightCard({
   const titleClass =
     insight.kind === "buff" && insight.polarity === "debuff"
       ? "text-df-debuff"
-      : insight.kind === "buff" && insight.polarity === "command"
-        ? "text-df-command"
-        : insight.kind === "buff"
-          ? "text-df-buff"
-          : "text-amber-200";
+      : insight.kind === "buff"
+        ? "text-df-buff"
+        : "text-amber-200";
 
   return (
     <div className="flex flex-col gap-2.5">

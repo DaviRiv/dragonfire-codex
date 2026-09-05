@@ -53,6 +53,8 @@ export type AbilityInsight = {
   scale: AbilityScaleRow[];
   glosses: AbilityGloss[];
   polarity?: StatusPolarity;
+  /** Hub grant target when this named ability is spread onto an ally. */
+  spreadTo?: string;
 };
 
 const STATUS_NAMES = [
@@ -133,6 +135,7 @@ const SKIP_NAMES = new Set(
 
 const TITLE_NAME = String.raw`[A-Z][A-Za-z][A-Za-z'’]*(?:[ -][A-Z][A-Za-z'’]*)*`;
 const TITLE_NAME_MULTI = String.raw`[A-Z][A-Za-z][A-Za-z'’]*(?:[ -][A-Z][A-Za-z'’]*)+`;
+const GRANT_TARGET = String.raw`(?:1 |an |the )?(?:Ally )?(?:Sentinel|Hunter|Warrior|Champion)s?`;
 const STACK_RE = new RegExp(
   String.raw`(?:[Ss]tack|[Ss]tacks) of (${TITLE_NAME})`,
   "g",
@@ -349,18 +352,23 @@ function sourceTitle(
     const official = habitDisplayName(dragonId, habit);
     if (official) return official;
   }
+  if (kind === "command") return "Command";
+  if (kind === "vanguard") return "Vanguard";
   return defines[0] ?? names[0] ?? sourceLabel(kind, habit);
 }
 
 export function namedChips(insight: AbilityInsight): string[] {
   const chips: string[] = [];
   const add = (value: string | undefined) => {
-    if (!value || /^habit \d+$/i.test(value)) return;
+    if (!value || /^(habit \d+|command|vanguard)$/i.test(value)) return;
     if (chips.some((chip) => keyName(chip) === keyName(value))) return;
     chips.push(value);
   };
   add(insight.title);
   for (const name of insight.defines) add(name);
+  if (insight.kind === "command") {
+    for (const name of insight.names) add(name);
+  }
   return chips;
 }
 
@@ -371,7 +379,7 @@ export function sourceLabel(
 ): string {
   if (kind === "buff") {
     if (polarity === "debuff") return "Debuff";
-    if (polarity === "command") return "Command";
+    if (polarity === "spread") return "Spreading buff";
     return "Buff";
   }
   if (kind === "habit") return habit ? `Habit ${habit}` : "Habit";
@@ -411,8 +419,11 @@ function maxStacksNear(name: string, blob: string): number | null {
 function makeBuffInsight(
   name: string,
   body: string,
-  extra?: { dragonId?: string; dragonName?: string },
+  extra?: { dragonId?: string; dragonName?: string; spreadTo?: string },
 ): AbilityInsight {
+  const polarity = extra?.spreadTo
+    ? "spread"
+    : polarityForName(name, body);
   return {
     id: extra?.dragonId ? `${extra.dragonId}:buff:${keyName(name)}` : `buff:${keyName(name)}`,
     dragonId: extra?.dragonId ?? "",
@@ -424,7 +435,8 @@ function makeBuffInsight(
     body,
     scale: [],
     glosses: [],
-    polarity: polarityForName(name, body),
+    polarity,
+    spreadTo: extra?.spreadTo,
   };
 }
 
@@ -452,6 +464,32 @@ function evenNumberedPhysical(command: string, name: string): string | null {
   return hit?.[0]?.replace(/\s+/g, " ").trim() ?? null;
 }
 
+function whenThisTarget(blob: string): string | null {
+  const hit = blob.match(/When this target(?:[^.]+|\.\d+)+\./);
+  return hit?.[0]?.replace(/\s+/g, " ").trim() ?? null;
+}
+
+function oncePerRound(blob: string): string | null {
+  const hit = blob.match(/This effect cannot trigger more than once per round\./);
+  return hit?.[0]?.replace(/\s+/g, " ").trim() ?? null;
+}
+
+function grantTarget(blob: string, name: string): string | null {
+  const re = new RegExp(
+    String.raw`Grant ${escapeRe(name)} to (${GRANT_TARGET})`,
+    "i",
+  );
+  const hit = blob.match(re)?.[1];
+  return hit ? hit.replace(/\s+/g, " ").trim() : null;
+}
+
+function keepGrantTarget(raw: string | undefined): string | undefined {
+  const value = raw?.replace(/\s+/g, " ").trim();
+  return value || undefined;
+}
+
+const SENTENCE = String.raw`(?:[^.]+|\.\d+)+`;
+
 function firstGainsClause(name: string, blob: string): string | null {
   const re = new RegExp(
     String.raw`${escapeRe(name)} gains:${SENTENCE}\.(?:\s+Additionally${SENTENCE}\.)?`,
@@ -460,22 +498,28 @@ function firstGainsClause(name: string, blob: string): string | null {
   return hit ? hit.replace(/\s+/g, " ").trim() : null;
 }
 
-function enrichGrantedCommand(
+function enrichSpreadBuff(
   name: string,
   body: string,
   dragon: Pick<Dragon, "id" | "name" | "command" | "habit">,
   blob: string,
 ): string {
-  let next = body.replace(/\s+/g, " ").trim();
+  const hay = `${body} ${blob}`;
+  const parts: string[] = [];
+  const when = whenThisTarget(body) ?? whenThisTarget(hay);
+  if (when) parts.push(when);
+  const once = when ? oncePerRound(body) ?? oncePerRound(hay) : null;
+  if (once) parts.push(once);
   const even = evenNumberedPhysical(commandLine(dragon), name);
-  if (even && !/deal physical damage/i.test(next)) {
-    next = `${next} ${even}`;
+  if (even && !parts.some((part) => /deal physical damage/i.test(part))) {
+    parts.push(even);
   }
   const gains = firstGainsClause(name, blob);
-  if (gains && !alreadyExplains(next, name, gains)) {
-    next = `${next} ${gains}`;
+  if (gains && !alreadyExplains(parts.join(" "), name, gains)) {
+    parts.push(gains);
   }
-  return next;
+  if (parts.length > 0) return parts.join(" ");
+  return body.replace(/\s+/g, " ").trim();
 }
 
 function gainsScale(dragonId: string, name: string): AbilityScaleRow[] {
@@ -494,8 +538,6 @@ function gainsScale(dragonId: string, name: string): AbilityScaleRow[] {
   }
   return [];
 }
-
-const SENTENCE = String.raw`(?:[^.]+|\.\d+)+`;
 
 function extractKitBuffs(
   dragon: Pick<Dragon, "id" | "name" | "command" | "habit">,
@@ -526,7 +568,7 @@ function extractKitBuffs(
   }
 
   const grantRe = new RegExp(
-    String.raw`\bGrant (${TITLE_NAME}) to ${SENTENCE}\.(?:\s+When this target${SENTENCE}\.)?`,
+    String.raw`\bGrant (${TITLE_NAME}) to (${GRANT_TARGET})${SENTENCE}\.(?:\s+When this target${SENTENCE}\.(?:\s+This effect cannot trigger${SENTENCE}\.)?)?`,
     "g",
   );
   for (const match of blob.matchAll(grantRe)) {
@@ -534,20 +576,25 @@ function extractKitBuffs(
     if (!name || skipExtractedBuff(dragon.id, name) || byKey.has(keyName(name))) {
       continue;
     }
+    const spreadTo =
+      keepGrantTarget(match[2]) ?? grantTarget(blob, name) ?? undefined;
     const body = match[0].replace(/\s+/g, " ").trim();
     byKey.set(
       keyName(name),
       makeBuffInsight(name, body, {
         dragonId: dragon.id,
         dragonName: dragon.name,
+        spreadTo,
       }),
     );
   }
 
   for (const insight of byKey.values()) {
-    if (insight.polarity !== "command") continue;
-    insight.body = enrichGrantedCommand(insight.title, insight.body, dragon, blob);
-    insight.polarity = polarityForName(insight.title, insight.body);
+    if (insight.polarity !== "spread") continue;
+    insight.body = enrichSpreadBuff(insight.title, insight.body, dragon, blob);
+    insight.spreadTo =
+      insight.spreadTo ?? grantTarget(blob, insight.title) ?? undefined;
+    insight.polarity = "spread";
     const scale = gainsScale(dragon.id, insight.title);
     if (scale.length > 0) insight.scale = scale;
   }

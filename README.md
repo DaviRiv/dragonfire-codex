@@ -76,8 +76,10 @@ with HBO, Warner Bros., or the game.
   numbers change. Named buffs such as First-Strike, Double-Strike,
   Advantage, Rising Tide, and Crescent Blade open their own keyword
   card when you tap or click the word (hover also works on a computer)
-  — not the parent habit. Buffs use a green up arrow. Granted commands
-  such as Crescent Blade use a yellow crown. Debuffs such as Overwhelm
+  — not the parent habit. Buffs use a green up arrow. Spreading buffs
+  such as Crescent Blade (granted onto an ally Sentinel) use a green
+  share mark so they are not confused with Moondancer’s Command.
+  Debuffs such as Overwhelm
   use a red down arrow. Habit upgrade Power is not in the Hub dump, so
   it is not shown.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional

@@ -29,7 +29,7 @@ import {
   slotLabels,
 } from "@/lib/labels";
 import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp, Crown, Search, Wrench } from "lucide-react";
+import { ArrowDown, ArrowUp, Search, Share2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 type CoverageFilter = "all" | "needs" | "named";
@@ -242,14 +242,14 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
           />
         </section>
       ) : null}
-      {entry.buffs.some((row) => row.polarity === "command") ? (
+      {entry.buffs.some((row) => row.polarity === "spread") ? (
         <section className="rounded-xl bg-muted/40 p-3 ring-1 ring-foreground/10">
-          <p className="flex items-center gap-1 text-[0.6875rem] font-medium tracking-[0.12em] text-df-command uppercase">
-            <Crown className="size-3.5" aria-hidden />
-            Commands
+          <p className="flex items-center gap-1 text-[0.6875rem] font-medium tracking-[0.12em] text-df-buff uppercase">
+            <Share2 className="size-3.5" aria-hidden />
+            Spreading buffs
           </p>
           <AbilityGlossList
-            glosses={entry.buffs.filter((row) => row.polarity === "command")}
+            glosses={entry.buffs.filter((row) => row.polarity === "spread")}
             dragonId={dragon.id}
             className="mt-2"
           />

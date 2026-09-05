@@ -18,6 +18,7 @@ export type GameTone =
   | "initiative"
   | "buff"
   | "debuff"
+  | "spread"
   | "command"
   | "dealt"
   | "received"
@@ -39,6 +40,7 @@ export const TONE_TEXT_CLASS: Record<GameTone, string> = {
   initiative: "font-medium text-df-initiative",
   buff: "font-medium text-df-buff",
   debuff: "font-medium text-df-debuff",
+  spread: "font-medium text-df-buff",
   command: "font-medium text-df-command",
   dealt: "font-medium text-df-dealt",
   received: "font-medium text-df-received",
@@ -57,6 +59,7 @@ export const TONE_BADGE_CLASS: Record<GameTone, string> = {
   initiative: "border-df-initiative/40 bg-df-initiative/15 text-df-initiative",
   buff: "border-df-buff/40 bg-df-buff/15 text-df-buff",
   debuff: "border-df-debuff/40 bg-df-debuff/15 text-df-debuff",
+  spread: "border-df-buff/40 bg-df-buff/15 text-df-buff",
   command: "border-df-command/40 bg-df-command/15 text-df-command",
   dealt: "border-df-dealt/40 bg-df-dealt/15 text-df-dealt",
   received: "border-df-received/40 bg-df-received/15 text-df-received",
@@ -99,7 +102,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Command & Habits", tone: "status" },
   { phrase: "First-Strike", tone: "buff" },
   { phrase: "Double-Strike", tone: "buff" },
-  { phrase: "Crescent Blade", tone: "command" },
+  { phrase: "Crescent Blade", tone: "spread" },
   { phrase: "Rising Tide", tone: "buff" },
   { phrase: "Solar Flare", tone: "status" },
   { phrase: "Right Flank", tone: "status" },

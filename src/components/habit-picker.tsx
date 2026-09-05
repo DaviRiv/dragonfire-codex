@@ -210,9 +210,9 @@ export function HabitPickerDialog({
           </DialogTitle>
           <DialogDescription>
             The list stays the same. Highlighted rows are live on this dragon.
-            Tap or click a named buff — First-Strike, Rising Tide — for its
-            card. Hover works on a computer. Uncheck a habit if you have not
-            bought it.
+            Tap or click a named buff — First-Strike, Rising Tide, or a
+            spreading buff like Crescent Blade — for its card. Hover works
+            on a computer. Uncheck a habit if you have not bought it.
           </DialogDescription>
         </DialogHeader>
         {dragon && kit ? (
