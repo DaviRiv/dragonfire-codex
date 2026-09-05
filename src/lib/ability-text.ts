@@ -96,6 +96,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Command & Habits", tone: "status" },
   { phrase: "First-Strike", tone: "status" },
   { phrase: "Double-Strike", tone: "status" },
+  { phrase: "Crescent Blade", tone: "status" },
   { phrase: "Rising Tide", tone: "status" },
   { phrase: "Solar Flare", tone: "status" },
   { phrase: "Right Flank", tone: "status" },

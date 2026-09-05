@@ -390,4 +390,114 @@ if (
   fail("hovering The King's Ire should open Sunfyre habit 3");
 }
 
+function glossNames(insight: { glosses: { name: string }[] } | undefined) {
+  return (insight?.glosses ?? []).map((row) => row.name);
+}
+
+const firstStrike = findAbilityInsight("First-Strike", { dragonId: "malachite" });
+if (!firstStrike || firstStrike.title !== "First-Strike") {
+  fail(`First-Strike hover opened ${firstStrike?.title ?? "nothing"}`);
+}
+if (firstStrike.kind !== "buff") fail("First-Strike should be the status card");
+if (!/act before all other combatants/i.test(firstStrike.body)) {
+  fail("First-Strike body missing the Star Progression glossary line");
+}
+
+const doubleStrike = findAbilityInsight("Double-Strike");
+if (doubleStrike?.title !== "Double-Strike" || doubleStrike.kind !== "buff") {
+  fail(`Double-Strike hover opened ${doubleStrike?.title ?? "nothing"}`);
+}
+if (!/2nd Basic Attack/i.test(doubleStrike.body)) {
+  fail("Double-Strike body missing the glossary line");
+}
+
+const advantage = findAbilityInsight("Advantage", { dragonId: "malachite" });
+if (advantage?.title !== "Advantage" || advantage.kind !== "buff") {
+  fail(`Advantage hover opened ${advantage?.title ?? "nothing"}`);
+}
+if (!/Damage Dealt/i.test(advantage.body)) {
+  fail("Advantage body missing Damage Dealt");
+}
+
+const lightning = insightForSource("malachite", { kind: "habit", habit: 5 });
+if (!glossNames(lightning).includes("First-Strike")) {
+  fail(`Lightning Strike glosses missing First-Strike: ${glossNames(lightning)}`);
+}
+if (!glossNames(lightning).includes("Double-Strike")) {
+  fail(`Lightning Strike glosses missing Double-Strike: ${glossNames(lightning)}`);
+}
+
+const roarGloss = insightForSource("malachite", { kind: "habit", habit: 3 });
+if (!glossNames(roarGloss).includes("Advantage")) {
+  fail(`Thunderous Roar glosses missing Advantage: ${glossNames(roarGloss)}`);
+}
+
+const feralGloss = insightForSource("venator", { kind: "habit", habit: 3 });
+if (glossNames(feralGloss).includes("Double-Strike")) {
+  fail("Feral Precision already explains Double-Strike; do not duplicate the gloss");
+}
+
+const risingTide = findAbilityInsight("Rising Tide", { dragonId: "moondancer" });
+if (risingTide?.kind !== "buff" || risingTide.title !== "Rising Tide") {
+  fail(`Rising Tide hover opened ${risingTide?.kind}:${risingTide?.title}`);
+}
+if (!/Damage Received/i.test(risingTide.body) || !/-2\.5%/.test(risingTide.body)) {
+  fail(`Rising Tide body should be the Hub stack line: ${risingTide.body}`);
+}
+if (!/Max 8 stacks/i.test(risingTide.body)) {
+  fail(`Rising Tide should keep Max 8 stacks: ${risingTide.body}`);
+}
+if (!/^Each stack of Rising Tide /i.test(risingTide.body)) {
+  fail(`Rising Tide name was swallowed by the extractor: ${risingTide.body}`);
+}
+
+const crescent = findAbilityInsight("Crescent Blade", { dragonId: "moondancer" });
+if (crescent?.kind !== "buff" || crescent.title !== "Crescent Blade") {
+  fail(`Crescent Blade hover opened ${crescent?.kind}:${crescent?.title}`);
+}
+if (!/Sentinel/i.test(crescent.body) || !/Rising Tide/i.test(crescent.body)) {
+  fail(`Crescent Blade body should be the grant line: ${crescent.body}`);
+}
+
+const moonCommand = insightForSource("moondancer", { kind: "command" });
+if (glossNames(moonCommand).includes("Rising Tide")) {
+  fail("Moondancer command already defines Rising Tide; do not duplicate the gloss");
+}
+if (glossNames(moonCommand).includes("Crescent Blade")) {
+  fail("Moondancer command already defines Crescent Blade; do not duplicate the gloss");
+}
+
+const newMoonGloss = insightForSource("moondancer", { kind: "habit", habit: 1 });
+if (!glossNames(newMoonGloss).includes("Rising Tide")) {
+  fail(`New Moon glosses missing Rising Tide: ${glossNames(newMoonGloss)}`);
+}
+if (!glossNames(newMoonGloss).includes("Advantage")) {
+  fail(`New Moon glosses missing Advantage: ${glossNames(newMoonGloss)}`);
+}
+if (glossNames(newMoonGloss).includes("Crescent Blade")) {
+  fail("New Moon does not mention Crescent Blade");
+}
+
+const fullMoonGloss = insightForSource("moondancer", { kind: "habit", habit: 3 });
+if (!glossNames(fullMoonGloss).includes("Crescent Blade")) {
+  fail(`Full Moon glosses missing Crescent Blade: ${glossNames(fullMoonGloss)}`);
+}
+if (!glossNames(fullMoonGloss).includes("Rising Tide")) {
+  fail(`Full Moon glosses missing Rising Tide: ${glossNames(fullMoonGloss)}`);
+}
+
+if (findAbilityInsight("New Moon", { dragonId: "moondancer" })?.kind !== "habit") {
+  fail("New Moon must stay the habit card");
+}
+if (findAbilityInsight("Rallying Flame", { dragonId: "vermax" })?.kind !== "habit") {
+  fail("Rallying Flame must stay the habit card");
+}
+if (findAbilityInsight("Lightning Strike", { dragonId: "malachite" })?.kind !== "habit") {
+  fail("Lightning Strike must stay the habit card");
+}
+
+if (lightning?.scale.some((row) => /power/i.test(row.label))) {
+  fail("Lightning Strike must not invent Power");
+}
+
 console.log("ability insight checks passed");

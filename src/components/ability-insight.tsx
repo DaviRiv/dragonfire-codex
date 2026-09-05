@@ -11,6 +11,7 @@ import {
   namedChips,
   resolveAbilityInsight,
   sourceLabel,
+  type AbilityGloss,
   type AbilityInsight,
   type AbilityScaleRow,
   type AbilitySourceRef,
@@ -88,6 +89,30 @@ export function AbilityRankTable({
   );
 }
 
+export function AbilityGlossList({
+  glosses,
+  className,
+  dragonId,
+}: {
+  glosses: AbilityGloss[];
+  className?: string;
+  dragonId?: string;
+}) {
+  if (glosses.length === 0) return null;
+  return (
+    <div className={cn("space-y-1.5", className)}>
+      {glosses.map((row) => (
+        <p key={row.name} className="text-[13px] leading-relaxed text-stone-100">
+          <AbilityHover name={row.name} dragonId={dragonId}>
+            <ColoredText text={row.name} />
+          </AbilityHover>{" "}
+          <ColoredText text={row.body} />
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function AbilityInsightCard({
   insight,
   locked,
@@ -95,13 +120,16 @@ export function AbilityInsightCard({
   insight: AbilityInsight;
   locked?: boolean;
 }) {
-  const source = [
-    insight.dragonName,
-    sourceLabel(insight.kind, insight.habit),
-    insight.unlockStars != null ? `${insight.unlockStars}★` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const source =
+    insight.kind === "buff"
+      ? insight.dragonName || "Status"
+      : [
+          insight.dragonName,
+          sourceLabel(insight.kind, insight.habit),
+          insight.unlockStars != null ? `${insight.unlockStars}★` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -115,6 +143,10 @@ export function AbilityInsightCard({
       <p className="text-[13px] leading-relaxed text-stone-100">
         <ColoredText text={insight.body} />
       </p>
+      <AbilityGlossList
+        glosses={insight.glosses}
+        dragonId={insight.dragonId || undefined}
+      />
       {insight.scale.length > 0 ? (
         <AbilityRankTable rows={insight.scale} />
       ) : null}

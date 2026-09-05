@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AbilityRankTable } from "@/components/ability-insight";
+import { AbilityRankTable, AbilityGlossList } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
 import { MiniChip } from "@/components/chip";
@@ -48,9 +48,11 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 function SkillBlock({
   title,
   skill,
+  dragonId,
 }: {
   title: string;
   skill: CatalogSkill;
+  dragonId: string;
 }) {
   return (
     <section className="rounded-xl bg-muted/40 p-3 ring-1 ring-foreground/10">
@@ -64,13 +66,28 @@ function SkillBlock({
         <p className="mt-1 text-[12px] text-muted-foreground">{skill.short}</p>
       ) : null}
       <p className="mt-2 text-[13px] leading-relaxed">
-        <AbilityText text={skill.body} interactive={false} />
+        <AbilityText
+          text={skill.body}
+          dragonId={dragonId}
+          interactive
+        />
       </p>
+      <AbilityGlossList
+        glosses={skill.glosses}
+        dragonId={dragonId}
+        className="mt-1.5"
+      />
     </section>
   );
 }
 
-function HabitMetaCard({ row }: { row: CatalogHabit }) {
+function HabitMetaCard({
+  row,
+  dragonId,
+}: {
+  row: CatalogHabit;
+  dragonId: string;
+}) {
   return (
     <section
       className={cn(
@@ -100,13 +117,18 @@ function HabitMetaCard({ row }: { row: CatalogHabit }) {
       ) : null}
       {row.body ? (
         <p className="mt-2 text-[13px] leading-relaxed">
-          <AbilityText text={row.body} interactive={false} />
+          <AbilityText text={row.body} dragonId={dragonId} interactive />
         </p>
       ) : (
         <p className="mt-2 text-[13px] text-muted-foreground">
           Habit text not in the Hub dump.
         </p>
       )}
+      <AbilityGlossList
+        glosses={row.glosses}
+        dragonId={dragonId}
+        className="mt-1.5"
+      />
       {row.scale.length > 0 ? (
         <AbilityRankTable rows={row.scale} className="mt-2" />
       ) : null}
@@ -217,10 +239,33 @@ function DragonDetail({ entry }: { entry: DragonCatalog }) {
         </div>
       ) : null}
 
-      <SkillBlock title="Vanguard" skill={entry.vanguard} />
-      <SkillBlock title="Command" skill={entry.command} />
+      {entry.buffs.length > 0 ? (
+        <section className="rounded-xl bg-muted/40 p-3 ring-1 ring-foreground/10">
+          <p className="text-label">Buffs</p>
+          <AbilityGlossList
+            glosses={entry.buffs}
+            dragonId={dragon.id}
+            className="mt-2"
+          />
+        </section>
+      ) : null}
+
+      <SkillBlock
+        title="Vanguard"
+        skill={entry.vanguard}
+        dragonId={dragon.id}
+      />
+      <SkillBlock
+        title="Command"
+        skill={entry.command}
+        dragonId={dragon.id}
+      />
       {entry.habits.map((habit) => (
-        <HabitMetaCard key={habit.habit} row={habit} />
+        <HabitMetaCard
+          key={habit.habit}
+          row={habit}
+          dragonId={dragon.id}
+        />
       ))}
     </div>
   );

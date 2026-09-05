@@ -73,8 +73,11 @@ with HBO, Warner Bros., or the game.
   it — it stays out of the live kit. Hover or tap a named ability
   (Rallying Flame, New Moon, Full Moon, Taunt, …) or the habit title for
   the full in-game card: complete text plus rank 1–5 chances when those
-  numbers change. Habit upgrade Power is not in the Hub dump, so it is
-  not shown.
+  numbers change. Named buffs such as First-Strike, Double-Strike,
+  Advantage, Rising Tide, and Crescent Blade open their own keyword
+  card — not the parent habit — and those glossary lines sit under the
+  habit text the same way they do on Star Progression. Habit upgrade
+  Power is not in the Hub dump, so it is not shown.
 - **Saved** (desktop nav, or Team → Saved) — named formations and optional
   teams that bundle several lines (PvP, rally, defense).
 - **Dev** — personal metadata catalog, hidden unless you open

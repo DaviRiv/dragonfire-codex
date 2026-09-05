@@ -3,6 +3,7 @@ import { DRAGONS } from "@/data/dragons";
 import { HABIT_NAMES, habitDisplayName } from "@/data/habit-names";
 import {
   insightsForDragon,
+  type AbilityGloss,
   type AbilityScaleRow,
 } from "@/lib/ability-insight";
 import {
@@ -17,6 +18,7 @@ export type CatalogSkill = {
   body: string;
   short: string;
   names: string[];
+  glosses: AbilityGloss[];
 };
 
 export type CatalogHabit = {
@@ -28,6 +30,7 @@ export type CatalogHabit = {
   short: string;
   names: string[];
   defines: string[];
+  glosses: AbilityGloss[];
   scale: AbilityScaleRow[];
   needsScreenshot: boolean;
 };
@@ -40,6 +43,7 @@ export type DragonCatalog = {
   command: CatalogSkill;
   vanguard: CatalogSkill;
   habits: CatalogHabit[];
+  buffs: AbilityGloss[];
 };
 
 export function namedHabitCount(dragonId: string): number {
@@ -72,11 +76,13 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
       short,
       names: insight?.names ?? [],
       defines: insight?.defines ?? [],
+      glosses: insight?.glosses ?? [],
       scale: insight?.scale ?? [],
       needsScreenshot: !official,
     };
   });
   const namedCount = habits.filter((row) => !row.needsScreenshot).length;
+  const buffs = uniqueBuffs(insights);
   return {
     dragon,
     namedCount,
@@ -86,14 +92,38 @@ export function catalogFor(dragon: Dragon): DragonCatalog {
       body: commandLine(dragon),
       short: dragon.commandShort?.trim() || "",
       names: commandInsight?.names ?? [],
+      glosses: commandInsight?.glosses ?? [],
     },
     vanguard: {
       body: vanguardBonus(dragon),
       short: dragon.habitShort?.trim() || "",
       names: vanguardInsight?.names ?? [],
+      glosses: vanguardInsight?.glosses ?? [],
     },
     habits,
+    buffs,
   };
+}
+
+function uniqueBuffs(
+  insights: ReturnType<typeof insightsForDragon>,
+): AbilityGloss[] {
+  const byKey = new Map<string, AbilityGloss>();
+  const keyOf = (value: string) =>
+    value.replace(/[’']/g, "'").trim().toLowerCase();
+  for (const insight of insights) {
+    if (insight.kind === "buff") {
+      byKey.set(keyOf(insight.title), {
+        name: insight.title,
+        body: insight.body,
+      });
+    }
+    for (const row of insight.glosses) {
+      const key = keyOf(row.name);
+      if (!byKey.has(key)) byKey.set(key, row);
+    }
+  }
+  return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function allCatalogs(): DragonCatalog[] {
@@ -130,6 +160,7 @@ export function catalogSnapshot(entry: DragonCatalog) {
     needs: entry.dragon.needs ?? [],
     vanguard: entry.vanguard,
     command: entry.command,
+    buffs: entry.buffs,
     habits: entry.habits.map((habit) => ({
       habit: habit.habit,
       stars: habit.stars,
@@ -139,6 +170,7 @@ export function catalogSnapshot(entry: DragonCatalog) {
       short: habit.short,
       names: habit.names,
       defines: habit.defines,
+      glosses: habit.glosses,
       scale: habit.scale,
       needsScreenshot: habit.needsScreenshot,
     })),

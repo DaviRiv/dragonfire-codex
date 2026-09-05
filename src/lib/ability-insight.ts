@@ -2,6 +2,10 @@ import { DRAGONS } from "@/data/dragons";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
 import { habitDisplayName } from "@/data/habit-names";
 import {
+  STATUS_GLOSSARY,
+  statusGlossaryName,
+} from "@/data/status-glossary";
+import {
   commandLine,
   HABIT_UNLOCK_STARS,
   habitRankTexts,
@@ -11,7 +15,12 @@ import type { Dragon } from "@/lib/types";
 
 export { habitDisplayName };
 
-export type AbilitySourceKind = "command" | "vanguard" | "habit";
+export type AbilitySourceKind = "command" | "vanguard" | "habit" | "buff";
+
+export type AbilityGloss = {
+  name: string;
+  body: string;
+};
 
 export type AbilitySourceRef = {
   kind: AbilitySourceKind;
@@ -36,6 +45,7 @@ export type AbilityInsight = {
   body: string;
   ranks?: string[];
   scale: AbilityScaleRow[];
+  glosses: AbilityGloss[];
 };
 
 const STATUS_NAMES = [
@@ -348,9 +358,171 @@ export function namedChips(insight: AbilityInsight): string[] {
 }
 
 export function sourceLabel(kind: AbilitySourceKind, habit?: number): string {
+  if (kind === "buff") return "Status";
   if (kind === "habit") return habit ? `Habit ${habit}` : "Habit";
   if (kind === "vanguard") return "Vanguard";
   return "Command";
+}
+
+function escapeRe(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function alreadyExplains(
+  text: string,
+  name: string,
+  definition: string,
+): boolean {
+  const hay = text.replace(/\s+/g, " ").toLowerCase();
+  const snippet = definition.replace(/\s+/g, " ").trim().slice(0, 36).toLowerCase();
+  if (snippet.length >= 12 && hay.includes(snippet)) return true;
+  if (!name.trim()) return false;
+  return new RegExp(
+    String.raw`${escapeRe(name)}\s+(?:causes|grants|increases|reduces|prevents)\b`,
+    "i",
+  ).test(text);
+}
+
+function maxStacksNear(name: string, blob: string): number | null {
+  const re = new RegExp(
+    String.raw`${escapeRe(name)}[\s\S]{0,120}?Max\s+(\d+)\s+Stacks?`,
+    "i",
+  );
+  const hit = blob.match(re)?.[1];
+  if (hit) return Number(hit);
+  return null;
+}
+
+function makeBuffInsight(
+  name: string,
+  body: string,
+  extra?: { dragonId?: string; dragonName?: string },
+): AbilityInsight {
+  return {
+    id: extra?.dragonId ? `${extra.dragonId}:buff:${keyName(name)}` : `buff:${keyName(name)}`,
+    dragonId: extra?.dragonId ?? "",
+    dragonName: extra?.dragonName ?? "",
+    kind: "buff",
+    title: name,
+    names: [name],
+    defines: [name],
+    body,
+    scale: [],
+    glosses: [],
+  };
+}
+
+function statusBuffInsights(): AbilityInsight[] {
+  return Object.entries(STATUS_GLOSSARY).map(([name, body]) =>
+    makeBuffInsight(name, body),
+  );
+}
+
+function skipExtractedBuff(dragonId: string, name: string): boolean {
+  if (statusGlossaryName(name)) return true;
+  if ((STATUS_NAMES as readonly string[]).includes(name)) return true;
+  for (let habit = 1; habit <= 5; habit++) {
+    const official = habitDisplayName(dragonId, habit);
+    if (official && keyName(official) === keyName(name)) return true;
+  }
+  return false;
+}
+
+const SENTENCE = String.raw`(?:[^.]+|\.\d+)+`;
+
+function extractKitBuffs(
+  dragon: Pick<Dragon, "id" | "name" | "command" | "habit">,
+  blob: string,
+): AbilityInsight[] {
+  const byKey = new Map<string, AbilityInsight>();
+  // Do not use the `i` flag: TITLE_NAME relies on [A-Z] so "Rising Tide reduces"
+  // is not swallowed as the stack name. SENTENCE allows 2.5% without ending early.
+  const eachRe = new RegExp(
+    String.raw`[Ee]ach stacks? of (${TITLE_NAME})${SENTENCE}\.`,
+    "g",
+  );
+  for (const match of blob.matchAll(eachRe)) {
+    const name = keepName(match[1]);
+    if (!name || skipExtractedBuff(dragon.id, name)) continue;
+    let body = match[0].replace(/\s+/g, " ").trim();
+    const max = maxStacksNear(name, blob);
+    if (max != null && !/max\s+\d+/i.test(body)) {
+      body = `${body.replace(/\.$/, "")}. Max ${max} stacks.`;
+    }
+    byKey.set(
+      keyName(name),
+      makeBuffInsight(name, body, {
+        dragonId: dragon.id,
+        dragonName: dragon.name,
+      }),
+    );
+  }
+
+  const grantRe = new RegExp(
+    String.raw`\bGrant (${TITLE_NAME}) to ${SENTENCE}\.(?:\s+When this target${SENTENCE}\.)?`,
+    "g",
+  );
+  for (const match of blob.matchAll(grantRe)) {
+    const name = keepName(match[1]);
+    if (!name || skipExtractedBuff(dragon.id, name) || byKey.has(keyName(name))) {
+      continue;
+    }
+    const body = match[0].replace(/\s+/g, " ").trim();
+    byKey.set(
+      keyName(name),
+      makeBuffInsight(name, body, {
+        dragonId: dragon.id,
+        dragonName: dragon.name,
+      }),
+    );
+  }
+  return [...byKey.values()];
+}
+
+export function glossesForText(
+  text: string,
+  buffs: AbilityInsight[],
+  skipTitle?: string,
+): AbilityGloss[] {
+  const rows: { name: string; body: string; index: number }[] = [];
+  const seen = new Set<string>();
+  const skip = skipTitle ? keyName(skipTitle) : "";
+  for (const buff of buffs) {
+    const key = keyName(buff.title);
+    if (!key || key === skip || seen.has(key)) continue;
+    const idx = text.toLowerCase().indexOf(buff.title.toLowerCase());
+    if (idx < 0) continue;
+    if (alreadyExplains(text, buff.title, buff.body)) continue;
+    seen.add(key);
+    rows.push({ name: buff.title, body: buff.body, index: idx });
+  }
+  return rows.sort((a, b) => a.index - b.index).map(({ name, body }) => ({ name, body }));
+}
+
+function kitBlob(
+  dragon: Pick<Dragon, "id" | "name" | "command" | "habit">,
+): string {
+  const habits = DRAGON_HABITS[dragon.id] ?? [];
+  return [
+    commandLine(dragon),
+    vanguardBonus(dragon),
+    ...habits.map((habit) => habit.level1),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function attachGlosses(
+  insights: AbilityInsight[],
+  buffs: AbilityInsight[],
+): AbilityInsight[] {
+  return insights.map((insight) => {
+    if (insight.kind === "buff") return insight;
+    return {
+      ...insight,
+      glosses: glossesForText(insight.body, buffs, insight.title),
+    };
+  });
 }
 
 function makeInsight(
@@ -386,6 +558,7 @@ function makeInsight(
     body: trimmed,
     ranks,
     scale: ranks ? scaleRowsFromRanks(ranks, title) : [],
+    glosses: [],
   };
 }
 
@@ -423,11 +596,31 @@ function remember(dragonId: string, insights: AbilityInsight[]) {
   }
 }
 
+function officialHabitInsight(
+  dragonId: string,
+  nameKey: string,
+): AbilityInsight | undefined {
+  for (let habit = 1; habit <= 5; habit++) {
+    const official = habitDisplayName(dragonId, habit);
+    if (official && keyName(official) === nameKey) {
+      return insightForSource(dragonId, { kind: "habit", habit });
+    }
+  }
+  return undefined;
+}
+
 function warmCatalog() {
   if (catalogWarmed) return;
   catalogWarmed = true;
+  const statuses = statusBuffInsights();
+  remember("status", statuses);
   for (const dragon of DRAGONS) {
-    remember(dragon.id, buildForDragon(dragon));
+    const kit = buildForDragon(dragon);
+    const stacks = extractKitBuffs(dragon, kitBlob(dragon));
+    remember(dragon.id, [
+      ...attachGlosses(kit, [...statuses, ...stacks]),
+      ...stacks,
+    ]);
   }
 }
 
@@ -484,8 +677,25 @@ export function findAbilityInsight(
   const key = keyName(name);
   if (!key) return undefined;
   warmCatalog();
-  const matches = byName.get(key);
-  if (!matches || matches.length === 0) return undefined;
+  if (scope?.dragonId) {
+    const official = officialHabitInsight(scope.dragonId, key);
+    if (official) return official;
+  }
+  const matches = byName.get(key) ?? [];
+  const status = matches.find(
+    (item) => item.kind === "buff" && !item.dragonId && keyName(item.title) === key,
+  );
+  if (status) return status;
+  const stacks = matches.filter(
+    (item) => item.kind === "buff" && item.dragonId && keyName(item.title) === key,
+  );
+  if (stacks.length > 0) {
+    const scoped = scope?.dragonId
+      ? stacks.find((item) => item.dragonId === scope.dragonId)
+      : undefined;
+    return scoped ?? stacks[0];
+  }
+  if (matches.length === 0) return undefined;
   return [...matches].sort(
     (a, b) => scoreInsight(b, key, scope) - scoreInsight(a, key, scope),
   )[0];
@@ -513,15 +723,16 @@ export function resolveAbilityInsight(
     insight?: AbilityInsight | null;
   },
 ): AbilityInsight | undefined {
-  if (options.insight) return options.insight;
-  if (options.dragonId && options.source && !options.name) {
-    return insightForSource(options.dragonId, options.source);
-  }
   if (options.name) {
-    return findAbilityInsight(options.name, {
+    const named = findAbilityInsight(options.name, {
       dragonId: options.dragonId,
       source: options.source,
     });
+    if (named) return named;
+  }
+  if (options.insight) return options.insight;
+  if (options.dragonId && options.source) {
+    return insightForSource(options.dragonId, options.source);
   }
   return undefined;
 }

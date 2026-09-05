@@ -3,6 +3,7 @@ import {
   AbilityHover,
   AbilityRankTable,
   NamedAbilities,
+  AbilityGlossList,
 } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { AffinityBadges } from "@/components/affinity-badges";
@@ -380,6 +381,13 @@ export function AbilityBlock({
       <p className="mt-1 leading-relaxed">
         <AbilityText text={body} dragonId={dragonId} source={source} />
       </p>
+      {insight && insight.glosses.length > 0 ? (
+        <AbilityGlossList
+          glosses={insight.glosses}
+          dragonId={dragonId}
+          className="mt-1.5"
+        />
+      ) : null}
       {insight && insight.scale.length > 0 ? (
         <AbilityRankTable rows={insight.scale} className="mt-2" />
       ) : null}
