@@ -49,6 +49,35 @@ function StatusName({
   );
 }
 
+function HoverableColoredText({
+  text,
+  dragonId,
+}: {
+  text: string;
+  dragonId?: string;
+}) {
+  const parts = tokenizeAbilityText(text);
+  return (
+    <span>
+      {parts.map((part, i) => {
+        const colored = part.tone ? (
+          <span className={TONE_TEXT_CLASS[part.tone]}>{part.value}</span>
+        ) : (
+          <span>{part.value}</span>
+        );
+        if (!part.tone) return <span key={i}>{colored}</span>;
+        const resolved = resolveAbilityInsight({ name: part.value, dragonId });
+        if (!resolved) return <span key={i}>{colored}</span>;
+        return (
+          <AbilityHover key={i} name={part.value} dragonId={dragonId}>
+            {colored}
+          </AbilityHover>
+        );
+      })}
+    </span>
+  );
+}
+
 function ColoredText({ text }: { text: string }) {
   const parts = tokenizeAbilityText(text);
   return (
@@ -133,7 +162,7 @@ export function AbilityGlossList({
           <AbilityHover name={row.name} dragonId={dragonId}>
             <StatusName name={row.name} polarity={row.polarity} />
           </AbilityHover>{" "}
-          <ColoredText text={row.body} />
+          <HoverableColoredText text={row.body} dragonId={dragonId} />
         </p>
       ))}
     </div>
