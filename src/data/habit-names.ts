@@ -116,6 +116,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Clever Maneuver",
     "The Blue Queen",
   ],
+  tairax: [
+    "Whisper of Ash",
+    "Sunder",
+    "Gleamstrike",
+    "Gift of Fire",
+    "Moonlit Hunt",
+  ],
 };
 
 export function habitDisplayName(

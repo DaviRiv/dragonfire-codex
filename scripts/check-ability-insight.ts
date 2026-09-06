@@ -1888,6 +1888,193 @@ if (tessCatalog.namedCount !== 5 || tessCatalog.needsScreenshot) {
   fail("Tessarion habit names from Star Progression should be complete");
 }
 
+const tairax = getCatalogDragon("tairax");
+if (!tairax) fail("missing Tairax");
+const tairaxNames: [number, string, string[], string][] = [
+  [1, "Whisper of Ash", ["Strength/Initiative", "Intelligence/Initiative"], "-16%,-19.2%,-22.4%,-27.2%,-32%"],
+  [2, "Sunder", ["Damage Received"], "7.5%,9%,10.5%,12.75%,15%"],
+  [3, "Gleamstrike", ["Stagger Chance", "Damage Rate"], "37.5%,40%,42.5%,46.25%,50%"],
+  [4, "Gift of Fire", ["Resistance Chance"], "17.5%,21%,24.5%,29.75%,35%"],
+  [5, "Moonlit Hunt", ["Damage Dealt"], "12%,15.6%,19.2%,24%,30%"],
+];
+for (const [habit, title, labels, firstValues] of tairaxNames) {
+  const row = insightForSource("tairax", { kind: "habit", habit });
+  if (!row) fail(`Tairax habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Tairax habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const whisperOfAsh = insightForSource("tairax", { kind: "habit", habit: 1 });
+if (
+  whisperOfAsh?.scale.find((row) => row.label === "Intelligence/Initiative")?.values.join(
+    ",",
+  ) !== "16%,19.2%,22.4%,27.2%,32%"
+) {
+  fail("Whisper of Ash Intelligence/Initiative mismatch");
+}
+if (!/Strength and Initiative/i.test(whisperOfAsh?.body ?? "")) {
+  fail("keep Hub Whisper of Ash Strength and Initiative");
+}
+if (!/Intelligence and Initiative/i.test(whisperOfAsh?.body ?? "")) {
+  fail("keep Hub Whisper of Ash Intelligence and Initiative");
+}
+if (!/5 round\(s\)/i.test(whisperOfAsh?.body ?? "")) {
+  fail("keep Hub Whisper of Ash 5 round(s)");
+}
+const sunder = insightForSource("tairax", { kind: "habit", habit: 2 });
+if (!/Control effects include Stun, Stagger, Overwhelm, and Confusion/i.test(sunder?.body ?? "")) {
+  fail("keep Hub Sunder Control definition");
+}
+if (glossNames(sunder).includes("Control")) {
+  fail("Sunder Hub already defines Control; do not duplicate the glossary");
+}
+const gleamstrike = insightForSource("tairax", { kind: "habit", habit: 3 });
+if (/Burning Ward gains/i.test(gleamstrike?.body ?? "")) {
+  fail("do not rewrite Hub Gleamstrike Command increase to Burning Ward gains");
+}
+if (!/Command increase chance to afflict Stagger to 37\.5%/i.test(gleamstrike?.body ?? "")) {
+  fail("keep Hub Gleamstrike 37.5% Command chance");
+}
+if (/to 38%/.test(gleamstrike?.body ?? "")) {
+  fail("do not rewrite Hub Gleamstrike 37.5% to screenshot 38%");
+}
+if (
+  gleamstrike?.scale.find((row) => row.label === "Damage Rate")?.values.join(
+    ",",
+  ) !== "20%,24%,28%,34%,40%"
+) {
+  fail("Gleamstrike Damage Rate mismatch");
+}
+if (glossNames(gleamstrike).includes("Stagger")) {
+  fail("Gleamstrike Hub already defines Stagger; do not duplicate the glossary");
+}
+if (glossNames(gleamstrike).includes("Control")) {
+  fail("Gleamstrike Hub already defines Control; do not duplicate the glossary");
+}
+const giftOfFire = insightForSource("tairax", { kind: "habit", habit: 4 });
+if (!/17\.5% chance/i.test(giftOfFire?.body ?? "")) {
+  fail("keep Hub Gift of Fire 17.5%");
+}
+if (/18% chance/i.test(giftOfFire?.body ?? "")) {
+  fail("do not rewrite Hub Gift of Fire 17.5% to screenshot 18%");
+}
+if (!/Resistance \(\+15%\)/i.test(giftOfFire?.body ?? "")) {
+  fail("keep Hub Gift of Fire Resistance (+15%)");
+}
+if (/Resistance \(-15%\)/i.test(giftOfFire?.body ?? "")) {
+  fail("do not rewrite Hub Gift of Fire Resistance (+15%) to screenshot (-15%)");
+}
+if (giftOfFire?.scale.some((row) => row.values.join(",") === "15%,15%,15%,15%,15%")) {
+  fail("Gift of Fire should skip constant Resistance +15%");
+}
+if (glossNames(giftOfFire).includes("Resistance")) {
+  fail("Gift of Fire Hub already defines Resistance; do not duplicate the glossary");
+}
+if (glossNames(giftOfFire).includes("Burn") === false) {
+  fail("Gift of Fire should gloss Burn");
+}
+const moonlitHunt = insightForSource("tairax", { kind: "habit", habit: 5 });
+if (moonlitHunt?.scale.some((row) => /evade/i.test(row.label))) {
+  fail("Moonlit Hunt must not invent Evade Rate; Hub has no Evade percent");
+}
+if (moonlitHunt?.scale.some((row) => row.values.join(",") === "5%,6.5%,8%,10%,12.5%")) {
+  fail("Moonlit Hunt must not invent Evade Rate 5–12.5%");
+}
+if (!/Evade causes each instance/i.test(moonlitHunt?.body ?? "")) {
+  fail("keep Hub Moonlit Hunt Evade definition");
+}
+if (glossNames(moonlitHunt).includes("Evade")) {
+  fail("Moonlit Hunt Hub already defines Evade; do not duplicate the glossary");
+}
+if (
+  findAbilityInsight("Whisper of Ash", { dragonId: "tairax" })?.title !==
+  "Whisper of Ash"
+) {
+  fail("hovering Whisper of Ash should open Tairax habit 1");
+}
+if (
+  findAbilityInsight("Moonlit Hunt", { dragonId: "tairax" })?.title !==
+  "Moonlit Hunt"
+) {
+  fail("hovering Moonlit Hunt should open Tairax habit 5");
+}
+if (
+  findAbilityInsight("Gleamstrike", { dragonId: "tairax" })?.title !==
+  "Gleamstrike"
+) {
+  fail("hovering Gleamstrike should open Tairax habit 3");
+}
+const tairaxCommand = insightForSource("tairax", { kind: "command" });
+if (!tairaxCommand) fail("Tairax command missing");
+if (tairaxCommand.title !== "Burning Ward") {
+  fail(`Tairax command title is ${tairaxCommand.title}, expected Burning Ward`);
+}
+if (/Burning Ward gains/i.test(tairaxCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Burning Ward", { dragonId: "tairax" })?.kind !== "command"
+) {
+  fail("hovering Burning Ward should open Tairax's Command");
+}
+if (!namedChips(tairaxCommand).includes("Burning Ward")) {
+  fail("Tairax command chips should include Burning Ward");
+}
+if (glossNames(tairaxCommand).includes("Stagger") === false) {
+  fail("Burning Ward should gloss Stagger");
+}
+if (glossNames(tairaxCommand).includes("Burn") === false) {
+  fail("Burning Ward should gloss Burn");
+}
+const wardTone = tokenizeAbilityText("Burning Ward").find(
+  (part) => part.value === "Burning Ward",
+)?.tone;
+if (wardTone !== "command") {
+  fail(`Burning Ward text tone is ${wardTone}, expected command`);
+}
+const tairaxCatalog = catalogFor(tairax);
+if (tairaxCatalog.namedCount !== 5 || tairaxCatalog.needsScreenshot) {
+  fail("Tairax habit names from Star Progression should be complete");
+}
+if (tairaxCatalog.command.names.includes("Burning Ward") === false) {
+  fail("Dev catalog should list Burning Ward on Tairax's Command");
+}
+const tairaxStagger = findAbilityInsight("Stagger", { dragonId: "tairax" });
+if (!tairaxStagger || tairaxStagger.kind !== "buff") {
+  fail(`Stagger hover opened ${tairaxStagger?.kind}:${tairaxStagger?.title}`);
+}
+if (tairaxStagger.polarity !== "debuff") fail("Stagger is a debuff");
+if (!/Attack Modifier Commands/i.test(tairaxStagger.body) || !/Basic Attacks/i.test(tairaxStagger.body)) {
+  fail(`Stagger glossary missing Star Progression line: ${tairaxStagger.body}`);
+}
+if (tairaxStagger.dragonName !== "Tairax") {
+  fail(`Stagger on Tairax should be Tairax's Command, got ${tairaxStagger.dragonName}`);
+}
+const tairaxResistance = findAbilityInsight("Resistance", { dragonId: "tairax" });
+if (
+  tairaxResistance?.dragonName !== "Tairax" ||
+  tairaxResistance.unlockStars !== 8
+) {
+  fail(
+    `Resistance on Tairax should be 8★ Gift of Fire, got ${tairaxResistance?.dragonName} ${tairaxResistance?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

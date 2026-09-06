@@ -293,7 +293,10 @@ function isHighestTargeting(before: string, index: number): boolean {
 
 function chanceToNamedStatus(before: string): string | undefined {
   return STATUS_NAMES.find((name) =>
-    new RegExp(String.raw`\bchance to ${name}\b`, "i").test(before),
+    new RegExp(
+      String.raw`\bchance to (?:afflict |apply |inflict |grant |gain )?${name}\b`,
+      "i",
+    ).test(before),
   );
 }
 
@@ -403,6 +406,9 @@ function labelForPercent(
   }
   if (/\bIntelligence and Instinct\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Intelligence/Instinct";
+  }
+  if (/\bIntelligence and Initiative\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
+    return "Intelligence/Initiative";
   }
   if (/\bInstinct and Initiative\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Instinct/Initiative";
@@ -558,7 +564,7 @@ function alreadyExplains(
   if (snippet.length >= 12 && hay.includes(snippet)) return true;
   if (!name.trim()) return false;
   return new RegExp(
-    String.raw`${escapeRe(name)}\s+(?:causes?|grants|increases|reduces|prevents)\b`,
+    String.raw`${escapeRe(name)}(?:\s+effects)?\s+(?:causes?|grants|increases|reduces|prevents|include)\b`,
     "i",
   ).test(text);
 }

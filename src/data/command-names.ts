@@ -10,6 +10,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   crimson: "Bloodscale Terror",
   sheepstealer: "Wild Hunt",
   shadowsong: "Breath of Fire",
+  tairax: "Burning Ward",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {
