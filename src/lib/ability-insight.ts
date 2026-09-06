@@ -312,6 +312,8 @@ function isDerivedPercent(text: string, index: number): boolean {
   const before = text.slice(Math.max(0, index - 64), index);
   if (/double this chance/i.test(before)) return true;
   if (/double this damage/i.test(before)) return true;
+  if (/double this effect/i.test(before)) return true;
+  if (/double these effects/i.test(before)) return true;
   if (/this damage is doubled/i.test(before)) return true;
   if (/this chance is doubled/i.test(before)) return true;
   if (/triple the (?:damage|recovery)/i.test(before)) return true;

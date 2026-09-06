@@ -1749,6 +1749,145 @@ if (songBurn?.dragonName !== "Shadowsong" || songBurn.unlockStars !== 10) {
   );
 }
 
+const tessarion = getCatalogDragon("tessarion");
+if (!tessarion) fail("missing Tessarion");
+const tessNames: [number, string, string[], string][] = [
+  [1, "Sharpened Beauty", ["Damage Dealt"], "7%,8.4%,9.8%,11.9%,14%"],
+  [2, "Blazing Leader", ["Damage Dealt"], "10%,12%,14%,17%,20%"],
+  [3, "Molten Armor", ["Molten Armor Chance"], "25%,30%,35%,42.5%,50%"],
+  [4, "Clever Maneuver", ["Intelligence", "Initiative"], "18%,21.6%,25.2%,30.6%,36%"],
+  [5, "The Blue Queen", ["The Blue Queen Chance"], "40%,52%,64%,80%,100%"],
+];
+for (const [habit, title, labels, firstValues] of tessNames) {
+  const row = insightForSource("tessarion", { kind: "habit", habit });
+  if (!row) fail(`Tessarion habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Tessarion habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const sharpenedBeauty = insightForSource("tessarion", { kind: "habit", habit: 1 });
+if (!/Physical and Fire Damage Dealt/i.test(sharpenedBeauty?.body ?? "")) {
+  fail("keep Hub Sharpened Beauty Physical and Fire Damage Dealt");
+}
+if (!/Double these effects \(\+14%\)/i.test(sharpenedBeauty?.body ?? "")) {
+  fail("keep Hub Sharpened Beauty Double these effects (+14%)");
+}
+if (sharpenedBeauty?.scale.some((row) => row.values.join(",") === "14%,16.8%,19.6%,23.8%,28%")) {
+  fail("Sharpened Beauty should skip doubled Damage Dealt");
+}
+if (sharpenedBeauty?.scale.length !== 1) {
+  fail(
+    `Sharpened Beauty should be one Damage Dealt row, got ${sharpenedBeauty?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(sharpenedBeauty).includes("Advantage") === false) {
+  fail("Sharpened Beauty should gloss Advantage");
+}
+const blazingLeader = insightForSource("tessarion", { kind: "habit", habit: 2 });
+if (!/Left Flank/i.test(blazingLeader?.body ?? "")) {
+  fail("keep Hub Blazing Leader Left Flank targeting");
+}
+if (!/Fire Damage Dealt/i.test(blazingLeader?.body ?? "")) {
+  fail("keep Hub Blazing Leader Fire Damage Dealt");
+}
+const moltenArmor = insightForSource("tessarion", { kind: "habit", habit: 3 });
+if (moltenArmor?.scale.some((row) => row.values.join(",") === "12%,12%,12%,12%,12%")) {
+  fail("Molten Armor should skip constant Fire Damage Dealt +12% and Physical Damage Received -12%");
+}
+if (!/afflicted with Panic/i.test(moltenArmor?.body ?? "")) {
+  fail("keep Hub Molten Armor Panic self-apply");
+}
+if (/2 round\(s\)/i.test(moltenArmor?.body ?? "")) {
+  fail("do not rewrite Hub Molten Armor 2 rounds to screenshot round(s)");
+}
+if (glossNames(moltenArmor).includes("Panic") === false) {
+  fail("Molten Armor should gloss Panic");
+}
+const tessManeuver = insightForSource("tessarion", { kind: "habit", habit: 4 });
+if (/Start of Combat:/i.test(tessManeuver?.body ?? "")) {
+  fail("do not rewrite Hub Tessarion Clever Maneuver to add Start of Combat");
+}
+if (/Both effects are enhanced by Instinct/i.test(tessManeuver?.body ?? "")) {
+  fail("do not rewrite Hub Tessarion Clever Maneuver to screenshot Instinct wording");
+}
+if (
+  tessManeuver?.scale.find((row) => row.label === "Initiative")?.values.join(
+    ",",
+  ) !== "9%,10.8%,12.6%,15.3%,18%"
+) {
+  fail("Tessarion Clever Maneuver Initiative mismatch");
+}
+if (
+  findAbilityInsight("Clever Maneuver", { dragonId: "tessarion" })?.id !==
+  tessManeuver?.id
+) {
+  fail("hovering Clever Maneuver on Tessarion should open habit 4, not Seasmoke");
+}
+if (
+  findAbilityInsight("Clever Maneuver", { dragonId: "seasmoke" })?.id ===
+  tessManeuver?.id
+) {
+  fail("Seasmoke Clever Maneuver must stay distinct from Tessarion");
+}
+const blueQueen = insightForSource("tessarion", { kind: "habit", habit: 5 });
+if (blueQueen?.scale.some((row) => row.values.join(",") === "-10%,-10%,-10%,-10%,-10%")) {
+  fail("The Blue Queen should skip constant Damage Received -10%");
+}
+if (blueQueen?.scale.some((row) => row.values.join(",") === "15%,15%,15%,15%,15%")) {
+  fail("The Blue Queen should skip constant Intelligence +15%");
+}
+if (blueQueen?.scale.some((row) => row.values.join(",") === "-20%,-20%,-20%,-20%,-20%")) {
+  fail("The Blue Queen should skip doubled Damage Received -20%");
+}
+if (blueQueen?.scale.some((row) => row.values.join(",") === "30%,30%,30%,30%,30%")) {
+  fail("The Blue Queen should skip doubled Intelligence +30%");
+}
+if (!/enhanced by Intelligence/i.test(blueQueen?.body ?? "")) {
+  fail("keep Hub The Blue Queen enhanced by Intelligence");
+}
+if (/2 round\(s\)/i.test(blueQueen?.body ?? "")) {
+  fail("do not rewrite Hub The Blue Queen 2 rounds to screenshot round(s)");
+}
+if (
+  findAbilityInsight("Sharpened Beauty", { dragonId: "tessarion" })?.title !==
+  "Sharpened Beauty"
+) {
+  fail("hovering Sharpened Beauty should open Tessarion habit 1");
+}
+if (
+  findAbilityInsight("The Blue Queen", { dragonId: "tessarion" })?.title !==
+  "The Blue Queen"
+) {
+  fail("hovering The Blue Queen should open Tessarion habit 5");
+}
+const tessCommand = insightForSource("tessarion", { kind: "command" });
+if (!tessCommand) fail("Tessarion command missing");
+if (tessCommand.title !== "Command") {
+  fail(`Tessarion command title is ${tessCommand.title}, expected Command`);
+}
+if (!/Double this effect \(-20%\)/i.test(tessCommand.body)) {
+  fail("keep Hub Tessarion command Double this effect (-20%)");
+}
+const tessCatalog = catalogFor(tessarion);
+if (tessCatalog.namedCount !== 5 || tessCatalog.needsScreenshot) {
+  fail("Tessarion habit names from Star Progression should be complete");
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

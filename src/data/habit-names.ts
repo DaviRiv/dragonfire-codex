@@ -109,6 +109,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Dragon's Intellect",
     "Blazing Conductor",
   ],
+  tessarion: [
+    "Sharpened Beauty",
+    "Blazing Leader",
+    "Molten Armor",
+    "Clever Maneuver",
+    "The Blue Queen",
+  ],
 };
 
 export function habitDisplayName(
