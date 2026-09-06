@@ -2075,6 +2075,153 @@ if (
   );
 }
 
+const velar = getCatalogDragon("velar");
+if (!velar) fail("missing Velar");
+const velarNames: [number, string, string[], string][] = [
+  [1, "Strategic Leader", ["Damage Dealt"], "10%,12%,14%,17%,20%"],
+  [2, "Quick Reflexes", ["Instinct/Initiative"], "16%,19.2%,22.4%,27.2%,32%"],
+  [3, "Gales of Power", ["First-Strike & Slow Chance"], "12%,14.4%,16.8%,20.4%,24%"],
+  [4, "Fierce Unity", ["Strength/Instinct"], "5%,6%,7%,8.5%,10%"],
+  [5, "Breath of Renewal", ["Cleanse Chance", "Recovery Rate"], "12%,16%,19%,24%,30%"],
+];
+for (const [habit, title, labels, firstValues] of velarNames) {
+  const row = insightForSource("velar", { kind: "habit", habit });
+  if (!row) fail(`Velar habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Velar habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const strategicLeader = insightForSource("velar", { kind: "habit", habit: 1 });
+if (!/prioritizes the Vanguard/i.test(strategicLeader?.body ?? "")) {
+  fail("keep Hub Strategic Leader Vanguard targeting");
+}
+if (!/Tactical Damage Dealt/i.test(strategicLeader?.body ?? "")) {
+  fail("keep Hub Strategic Leader Tactical Damage Dealt");
+}
+const quickReflexes = insightForSource("velar", { kind: "habit", habit: 2 });
+if (!/Instinct and Initiative/i.test(quickReflexes?.body ?? "")) {
+  fail("keep Hub Quick Reflexes Instinct and Initiative");
+}
+const galesOfPower = insightForSource("velar", { kind: "habit", habit: 3 });
+if (/causes the target to act/i.test(galesOfPower?.body ?? "") || /causes the target to attack/i.test(galesOfPower?.body ?? "")) {
+  fail("do not copy First-Strike or Slow glossary into Hub Gales of Power text");
+}
+if (galesOfPower?.scale.length !== 1) {
+  fail(
+    `Gales of Power should be one shared chance row, got ${galesOfPower?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(galesOfPower).includes("First-Strike") === false) {
+  fail("Gales of Power should gloss First-Strike");
+}
+if (glossNames(galesOfPower).includes("Slow") === false) {
+  fail("Gales of Power should gloss Slow");
+}
+const fierceUnity = insightForSource("velar", { kind: "habit", habit: 4 });
+if (!/Strength and Instinct by \+5%/i.test(fierceUnity?.body ?? "")) {
+  fail("keep Hub Fierce Unity Strength and Instinct +5%");
+}
+if (!/enhanced by Initiative/i.test(fierceUnity?.body ?? "")) {
+  fail("keep Hub Fierce Unity enhanced by Initiative");
+}
+const breathOfRenewal = insightForSource("velar", { kind: "habit", habit: 5 });
+if (/Whirlwind gains/i.test(breathOfRenewal?.body ?? "")) {
+  fail("do not rewrite Hub Breath of Renewal Command gains to Whirlwind gains");
+}
+if (!/Command gains 12% chance to Cleanse/i.test(breathOfRenewal?.body ?? "")) {
+  fail("keep Hub Breath of Renewal Command gains 12%");
+}
+if (
+  breathOfRenewal?.scale.find((row) => row.label === "Recovery Rate")?.values.join(
+    ",",
+  ) !== "18%,23.4%,28.8%,36%,45%"
+) {
+  fail("Breath of Renewal Recovery Rate mismatch");
+}
+if (glossNames(breathOfRenewal).includes("Panic") === false) {
+  fail("Breath of Renewal should gloss Panic");
+}
+if (glossNames(breathOfRenewal).includes("Burn") === false) {
+  fail("Breath of Renewal should gloss Burn");
+}
+if (
+  findAbilityInsight("Strategic Leader", { dragonId: "velar" })?.title !==
+  "Strategic Leader"
+) {
+  fail("hovering Strategic Leader should open Velar habit 1");
+}
+if (
+  findAbilityInsight("Breath of Renewal", { dragonId: "velar" })?.title !==
+  "Breath of Renewal"
+) {
+  fail("hovering Breath of Renewal should open Velar habit 5");
+}
+const velarCommand = insightForSource("velar", { kind: "command" });
+if (!velarCommand) fail("Velar command missing");
+if (velarCommand.title !== "Whirlwind") {
+  fail(`Velar command title is ${velarCommand.title}, expected Whirlwind`);
+}
+if (/Whirlwind gains/i.test(velarCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Whirlwind", { dragonId: "velar" })?.kind !== "command"
+) {
+  fail("hovering Whirlwind should open Velar's Command");
+}
+if (!namedChips(velarCommand).includes("Whirlwind")) {
+  fail("Velar command chips should include Whirlwind");
+}
+if (glossNames(velarCommand).includes("Advantage") === false) {
+  fail("Whirlwind should gloss Advantage");
+}
+const whirlTone = tokenizeAbilityText("Whirlwind").find(
+  (part) => part.value === "Whirlwind",
+)?.tone;
+if (whirlTone !== "command") {
+  fail(`Whirlwind text tone is ${whirlTone}, expected command`);
+}
+const velarCatalog = catalogFor(velar);
+if (velarCatalog.namedCount !== 5 || velarCatalog.needsScreenshot) {
+  fail("Velar habit names from Star Progression should be complete");
+}
+if (velarCatalog.command.names.includes("Whirlwind") === false) {
+  fail("Dev catalog should list Whirlwind on Velar's Command");
+}
+const velarFirstStrike = findAbilityInsight("First-Strike", { dragonId: "velar" });
+if (
+  velarFirstStrike?.dragonName !== "Velar" ||
+  velarFirstStrike.unlockStars !== 6
+) {
+  fail(
+    `First-Strike on Velar should be 6★ Gales of Power, got ${velarFirstStrike?.dragonName} ${velarFirstStrike?.unlockStars}`,
+  );
+}
+if (/attack before all other combatants/i.test(velarFirstStrike?.body ?? "")) {
+  fail("do not rewrite First-Strike glossary act to screenshot attack");
+}
+const velarSlow = findAbilityInsight("Slow", { dragonId: "velar" });
+if (velarSlow?.dragonName !== "Velar" || velarSlow.unlockStars !== 6) {
+  fail(
+    `Slow on Velar should be 6★ Gales of Power, got ${velarSlow?.dragonName} ${velarSlow?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

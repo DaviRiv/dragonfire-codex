@@ -123,6 +123,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Gift of Fire",
     "Moonlit Hunt",
   ],
+  velar: [
+    "Strategic Leader",
+    "Quick Reflexes",
+    "Gales of Power",
+    "Fierce Unity",
+    "Breath of Renewal",
+  ],
 };
 
 export function habitDisplayName(
