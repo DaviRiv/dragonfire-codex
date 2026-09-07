@@ -18,6 +18,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   jagadrix: "Cunning Whispers",
   bevlorin: "Nature's Reckoning",
   shimmer: "Unbreakable Loyalty",
+  shadowrend: "Eclipse Fervor",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

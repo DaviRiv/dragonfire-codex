@@ -214,6 +214,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Unbroken Devotion",
     "Sneak Attack",
   ],
+  shadowrend: [
+    "Midnight Aura",
+    "Nimble Resilience",
+    "Fueled by Darkness",
+    "Midnight Mastery",
+    "Event Horizon",
+  ],
 };
 
 export function habitDisplayName(

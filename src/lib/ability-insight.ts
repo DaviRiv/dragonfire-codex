@@ -414,7 +414,7 @@ function labelForPercent(
   if (/\bStrength and Intelligence\s+by\s+$/i.test(before)) {
     return "Strength/Intelligence";
   }
-  if (/\bStrength and Instinct\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
+  if (/\bStrength,? and Instinct\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Strength/Instinct";
   }
   if (/\bStrength and Initiative\b/i.test(before) && /by\s+$/i.test(before)) {

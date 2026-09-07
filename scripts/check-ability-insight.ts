@@ -4526,6 +4526,196 @@ if (
   );
 }
 
+function checkShadowrend(): void {
+const shadowrend = getCatalogDragon("shadowrend");
+if (!shadowrend) fail("missing Shadowrend");
+const shadowrendNames: [number, string, string[], string][] = [
+  [1, "Midnight Aura", ["Strength/Instinct"], "40%,48%,56%,68%,80%"],
+  [2, "Nimble Resilience", ["Damage Received", "Initiative"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+  [3, "Fueled by Darkness", ["Advantage Chance"], "10%,12%,14%,17%,20%"],
+  [4, "Midnight Mastery", ["Damage Dealt"], "7%,8.4%,9.8%,11.9%,14%"],
+  [5, "Event Horizon", ["Damage Rate"], "100%,130%,160%,200%,250%"],
+];
+for (const [habit, title, labels, firstValues] of shadowrendNames) {
+  const row = insightForSource("shadowrend", { kind: "habit", habit });
+  if (!row) fail(`Shadowrend habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Shadowrend habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const midnightAura = insightForSource("shadowrend", { kind: "habit", habit: 1 });
+if (!/Increase Strength, and Instinct by \+40%/i.test(midnightAura?.body ?? "")) {
+  fail("keep Hub Midnight Aura Strength, and Instinct +40%");
+}
+if (/Increase Strength, and Instinct by \+48%/i.test(midnightAura?.body ?? "")) {
+  fail("do not rewrite Hub Midnight Aura +40% to screenshot rank-2 flavor +48%");
+}
+if (midnightAura?.scale.some((row) => row.label === "Instinct")) {
+  fail("Midnight Aura should be Strength/Instinct, not Instinct alone");
+}
+const nimbleResilience = insightForSource("shadowrend", { kind: "habit", habit: 2 });
+if (!/Reduce your Damage Received by -4% and increase your Initiative by \+5%/i.test(nimbleResilience?.body ?? "")) {
+  fail("keep Hub Nimble Resilience -4% and +5%");
+}
+if (/Damage Received by -4\.8%/i.test(nimbleResilience?.body ?? "")) {
+  fail("do not rewrite Hub Nimble Resilience -4% to screenshot rank-2 -4.8%");
+}
+if (/Initiative by \+6%/i.test(nimbleResilience?.body ?? "")) {
+  fail("do not rewrite Hub Nimble Resilience +5% to screenshot rank-2 +6%");
+}
+if (
+  nimbleResilience?.scale.find((row) => row.label === "Initiative")?.values.join(",") !==
+  "5%,6%,7%,8.5%,10%"
+) {
+  fail("Nimble Resilience Initiative mismatch");
+}
+const fueledByDarkness = insightForSource("shadowrend", { kind: "habit", habit: 3 });
+if (!/10% chance to grant Advantage \(\+10%\)/i.test(fueledByDarkness?.body ?? "")) {
+  fail("keep Hub Fueled by Darkness 10% chance Advantage +10%");
+}
+if (/12% chance to grant Advantage/i.test(fueledByDarkness?.body ?? "")) {
+  fail("do not rewrite Hub Fueled by Darkness 10% to screenshot rank-2 flavor 12%");
+}
+if (!/when Habit 1 is active/i.test(fueledByDarkness?.body ?? "")) {
+  fail("keep Hub Fueled by Darkness Habit 1");
+}
+if (/when Midnight Aura is active/i.test(fueledByDarkness?.body ?? "")) {
+  fail("do not rewrite Hub Fueled by Darkness Habit 1 to screenshot Midnight Aura");
+}
+if (!/for 2 rounds/i.test(fueledByDarkness?.body ?? "")) {
+  fail("keep Hub Fueled by Darkness 2 rounds");
+}
+if (/2 round\(s\)/i.test(fueledByDarkness?.body ?? "")) {
+  fail("do not rewrite Hub Fueled by Darkness 2 rounds to screenshot round(s)");
+}
+if (fueledByDarkness?.scale.some((row) => row.values.join(",") === "20%,24%,28%,34%,40%")) {
+  fail("Fueled by Darkness should skip doubled Midnight Aura chance");
+}
+if (fueledByDarkness?.scale.some((row) => row.values.join(",") === "10%,10%,10%,10%,10%")) {
+  fail("Fueled by Darkness should skip constant Advantage +10%");
+}
+if (fueledByDarkness?.scale.length !== 1) {
+  fail(
+    `Fueled by Darkness should be one Advantage Chance row, got ${fueledByDarkness?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(fueledByDarkness).includes("Advantage") === false) {
+  fail("Fueled by Darkness should gloss Advantage");
+}
+if (/increases the target's Damage Dealt/i.test(fueledByDarkness?.body ?? "")) {
+  fail("do not copy Advantage glossary into Hub Fueled by Darkness text");
+}
+const midnightMastery = insightForSource("shadowrend", { kind: "habit", habit: 4 });
+if (!/Start of Round 7-10: Increase the Physical and Tactical Damage Dealt by \+7%/i.test(midnightMastery?.body ?? "")) {
+  fail("keep Hub Midnight Mastery Start of Round 7-10 +7%");
+}
+if (/Start of Rounds 7-10/i.test(midnightMastery?.body ?? "")) {
+  fail("do not rewrite Hub Midnight Mastery Round to screenshot Rounds");
+}
+if (/until the end of the round/i.test(midnightMastery?.body ?? "")) {
+  fail("do not rewrite Hub Midnight Mastery end of round to screenshot the round");
+}
+if (/by \+8\.4%/i.test(midnightMastery?.body ?? "")) {
+  fail("do not rewrite Hub Midnight Mastery +7% to screenshot rank-2 flavor +8.4%");
+}
+const eventHorizon = insightForSource("shadowrend", { kind: "habit", habit: 5 });
+if (!/Round 9: Command deals Physical and Tactical Damage/i.test(eventHorizon?.body ?? "")) {
+  fail("keep Hub Event Horizon Command deals");
+}
+if (/Eclipse Fervor gains/i.test(eventHorizon?.body ?? "")) {
+  fail("do not rewrite Hub Event Horizon Command deals to Eclipse Fervor gains");
+}
+if (/On Round 9/i.test(eventHorizon?.body ?? "")) {
+  fail("do not rewrite Hub Event Horizon Round 9 to screenshot On Round 9");
+}
+if (!/Damage Rate: \+100% per type/i.test(eventHorizon?.body ?? "")) {
+  fail("keep Hub Event Horizon Damage Rate +100% per type");
+}
+if (eventHorizon?.scale.length !== 1) {
+  fail(
+    `Event Horizon should be one Damage Rate row, got ${eventHorizon?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (findAbilityInsight("Midnight Aura", { dragonId: "shadowrend" })?.habit !== 1) {
+  fail("hovering Midnight Aura should open Shadowrend habit 1");
+}
+if (findAbilityInsight("Nimble Resilience", { dragonId: "shadowrend" })?.habit !== 2) {
+  fail("hovering Nimble Resilience should open Shadowrend habit 2");
+}
+if (findAbilityInsight("Fueled by Darkness", { dragonId: "shadowrend" })?.habit !== 3) {
+  fail("hovering Fueled by Darkness should open Shadowrend habit 3");
+}
+if (findAbilityInsight("Midnight Mastery", { dragonId: "shadowrend" })?.habit !== 4) {
+  fail("hovering Midnight Mastery should open Shadowrend habit 4");
+}
+if (findAbilityInsight("Event Horizon", { dragonId: "shadowrend" })?.title !== "Event Horizon") {
+  fail("hovering Event Horizon should open Shadowrend habit 5");
+}
+const shadowrendCommand = insightForSource("shadowrend", { kind: "command" });
+if (!shadowrendCommand) fail("Shadowrend command missing");
+if (shadowrendCommand.title !== "Eclipse Fervor") {
+  fail(`Shadowrend command title is ${shadowrendCommand.title}, expected Eclipse Fervor`);
+}
+if (commandHeading("shadowrend") !== "Command · Eclipse Fervor") {
+  fail("Shadowrend command heading should be Command · Eclipse Fervor");
+}
+if (/Eclipse Fervor gains/i.test(shadowrendCommand.body)) {
+  fail("do not rewrite Hub Shadowrend command to Eclipse Fervor gains");
+}
+if (
+  findAbilityInsight("Eclipse Fervor", { dragonId: "shadowrend" })?.kind !== "command"
+) {
+  fail("hovering Eclipse Fervor should open Shadowrend's Command");
+}
+if (!namedChips(shadowrendCommand).includes("Eclipse Fervor")) {
+  fail("Shadowrend command chips should include Eclipse Fervor");
+}
+const fervorTone = tokenizeAbilityText("Eclipse Fervor").find(
+  (part) => part.value === "Eclipse Fervor",
+)?.tone;
+if (fervorTone !== "command") {
+  fail(`Eclipse Fervor text tone is ${fervorTone}, expected command`);
+}
+if (statusMarkPolarity("Eclipse Fervor") != null) {
+  fail("Eclipse Fervor is the Command name, not a buff/debuff mark");
+}
+if (glossNames(shadowrendCommand).includes("Panic") === false) {
+  fail("Shadowrend command should gloss Panic");
+}
+const shadowrendCatalog = catalogFor(shadowrend);
+if (shadowrendCatalog.namedCount !== 5 || shadowrendCatalog.needsScreenshot) {
+  fail("Shadowrend habit names from Star Progression should be complete");
+}
+if (shadowrendCatalog.command.names.includes("Eclipse Fervor") === false) {
+  fail("Dev catalog should list Eclipse Fervor on Shadowrend's Command");
+}
+const shadowrendAdvantage = findAbilityInsight("Advantage", { dragonId: "shadowrend" });
+if (
+  shadowrendAdvantage?.dragonName !== "Shadowrend" ||
+  shadowrendAdvantage.unlockStars !== 6
+) {
+  fail(
+    `Advantage on Shadowrend should be 6★ Fueled by Darkness, got ${shadowrendAdvantage?.dragonName} ${shadowrendAdvantage?.unlockStars}`,
+  );
+}
+}
+checkShadowrend();
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
