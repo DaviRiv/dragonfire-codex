@@ -221,6 +221,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Midnight Mastery",
     "Event Horizon",
   ],
+  solstryker: [
+    "Steady Erosion",
+    "Energy Drain",
+    "Oppressive Onslaught",
+    "Robust Insight",
+    "Amplified Drain",
+  ],
 };
 
 export function habitDisplayName(

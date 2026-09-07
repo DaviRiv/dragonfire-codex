@@ -19,6 +19,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   bevlorin: "Nature's Reckoning",
   shimmer: "Unbreakable Loyalty",
   shadowrend: "Eclipse Fervor",
+  solstryker: "Tactical Onslaught",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

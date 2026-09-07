@@ -560,11 +560,8 @@ if (
 ) {
   fail("Tactical Assault Panic Chance mismatch");
 }
-if (
-  findAbilityInsight("Robust Insight", { dragonId: "kalspire" })?.title !==
-  "Robust Insight"
-) {
-  fail("hovering Robust Insight should open Kalspire habit 1");
+if (findAbilityInsight("Robust Insight", { dragonId: "kalspire" })?.habit !== 1) {
+  fail("hovering Robust Insight on Kalspire should open habit 1");
 }
 if (
   findAbilityInsight("Radiant Conqueror", { dragonId: "kalspire" })?.title !==
@@ -4716,6 +4713,212 @@ if (
 }
 checkShadowrend();
 
+function checkSolstryker(): void {
+  const solstryker = getCatalogDragon("solstryker");
+  if (!solstryker) fail("missing Solstryker");
+  const solstrykerNames: [number, string, string[], string][] = [
+    [1, "Steady Erosion", ["Strength (per Stack)"], "-2%,-2.4%,-2.8%,-3.4%,-4%"],
+    [2, "Energy Drain", ["Strength/Initiative"], "-15%,-18%,-21%,-25.5%,-30%"],
+    [3, "Oppressive Onslaught", ["Overwhelm Chance"], "10%,12%,14%,17%,20%"],
+    [4, "Robust Insight", ["Strength/Instinct"], "12.5%,15%,17.5%,21.25%,25%"],
+    [5, "Amplified Drain", ["Strength/Initiative"], "-15%,-19.5%,-24%,-30%,-37.5%"],
+  ];
+  for (const [habit, title, labels, firstValues] of solstrykerNames) {
+    const row = insightForSource("solstryker", { kind: "habit", habit });
+    if (!row) fail(`Solstryker habit ${habit} missing`);
+    if (row.title !== title) {
+      fail(`Solstryker habit ${habit} title is ${row.title}, expected ${title}`);
+    }
+    if (row.scale.some((line) => /power/i.test(line.label))) {
+      fail(`${title} must not invent Power`);
+    }
+    for (const label of labels) {
+      const line = row.scale.find((item) => item.label === label);
+      if (!line) {
+        fail(
+          `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+        );
+      }
+    }
+    const first = row.scale.find((item) => item.label === labels[0]);
+    if (first?.values.join(",") !== firstValues) {
+      fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+    }
+  }
+  const steadyErosion = insightForSource("solstryker", { kind: "habit", habit: 1 });
+  if (!/Each Round: Add 1 Stack of Steady Erosion/i.test(steadyErosion?.body ?? "")) {
+    fail("keep Hub Steady Erosion Each Round");
+  }
+  if (/At the start of each round/i.test(steadyErosion?.body ?? "")) {
+    fail("do not rewrite Hub Steady Erosion Each Round to screenshot At the start of each round");
+  }
+  if (!/Each stack of Steady Erosion reduces the targets Strength by -2%/i.test(steadyErosion?.body ?? "")) {
+    fail("keep Hub Steady Erosion Each stack -2%");
+  }
+  if (/reduces the target's Strength by -2%/i.test(steadyErosion?.body ?? "")) {
+    fail("do not rewrite Hub Steady Erosion the targets Strength to screenshot target's");
+  }
+  if (/enhanced by Strength/i.test(steadyErosion?.body ?? "")) {
+    fail("do not copy screenshot enhanced by Strength into Hub Steady Erosion");
+  }
+  if (/by -2\.4%/i.test(steadyErosion?.body ?? "")) {
+    fail("do not rewrite Hub Steady Erosion -2% to screenshot rank-2 -2.4%");
+  }
+  if (steadyErosion?.scale.some((row) => row.label === "Strength")) {
+    fail("Steady Erosion should be Strength (per Stack), not Strength alone");
+  }
+  if (glossNames(steadyErosion).includes("Steady Erosion")) {
+    fail("Steady Erosion Hub already defines the stack; do not duplicate the glossary");
+  }
+  if (statusMarkPolarity("Steady Erosion") !== "debuff") {
+    fail("Steady Erosion in habit text should get a debuff arrow");
+  }
+  const erosionTone = tokenizeAbilityText("1 stack of Steady Erosion").find(
+    (part) => part.value === "Steady Erosion",
+  )?.tone;
+  if (erosionTone !== "debuff") {
+    fail(`Steady Erosion text tone is ${erosionTone}, expected debuff`);
+  }
+  const energyDrain = insightForSource("solstryker", { kind: "habit", habit: 2 });
+  if (!/Round 1: Reduce Strength and Initiative by -15%/i.test(energyDrain?.body ?? "")) {
+    fail("keep Hub Energy Drain Strength and Initiative -15%");
+  }
+  if (/Reduce Strength and Initiative by -18%/i.test(energyDrain?.body ?? "")) {
+    fail("do not rewrite Hub Energy Drain -15% to screenshot rank-2 -18%");
+  }
+  if (!/for 3 rounds/i.test(energyDrain?.body ?? "")) {
+    fail("keep Hub Energy Drain 3 rounds");
+  }
+  if (/3 round\(s\)/i.test(energyDrain?.body ?? "")) {
+    fail("do not rewrite Hub Energy Drain 3 rounds to screenshot round(s)");
+  }
+  if (!/enhanced by Instinct/i.test(energyDrain?.body ?? "")) {
+    fail("keep Hub Energy Drain enhanced by Instinct");
+  }
+  const oppressiveOnslaught = insightForSource("solstryker", { kind: "habit", habit: 3 });
+  if (!/Each Round: 10% chance to afflict Overwhelm/i.test(oppressiveOnslaught?.body ?? "")) {
+    fail("keep Hub Oppressive Onslaught 10% Overwhelm");
+  }
+  if (/12% chance to afflict Overwhelm/i.test(oppressiveOnslaught?.body ?? "")) {
+    fail("do not rewrite Hub Oppressive Onslaught 10% to screenshot rank-2 12%");
+  }
+  if (!/for 2 rounds/i.test(oppressiveOnslaught?.body ?? "")) {
+    fail("keep Hub Oppressive Onslaught 2 rounds");
+  }
+  if (/2 round\(s\)/i.test(oppressiveOnslaught?.body ?? "")) {
+    fail("do not rewrite Hub Oppressive Onslaught 2 rounds to screenshot round(s)");
+  }
+  if (/prevents the target from using Active Commands/i.test(oppressiveOnslaught?.body ?? "")) {
+    fail("do not copy Overwhelm glossary into Hub Oppressive Onslaught text");
+  }
+  if (oppressiveOnslaught?.scale.length !== 1) {
+    fail(
+      `Oppressive Onslaught should be one Overwhelm Chance row, got ${oppressiveOnslaught?.scale.map((row) => row.label).join(", ")}`,
+    );
+  }
+  if (glossNames(oppressiveOnslaught).includes("Overwhelm") === false) {
+    fail("Oppressive Onslaught should gloss Overwhelm");
+  }
+  const robustInsight = insightForSource("solstryker", { kind: "habit", habit: 4 });
+  if (!/Increase your Strength and Instinct by \+12\.5%/i.test(robustInsight?.body ?? "")) {
+    fail("keep Hub Solstryker Robust Insight +12.5%");
+  }
+  if (/Increase your Strength and Instinct by \+15%/i.test(robustInsight?.body ?? "")) {
+    fail("do not rewrite Hub Solstryker Robust Insight +12.5% to screenshot rank-2 +15%");
+  }
+  if (/by \+20%/i.test(robustInsight?.body ?? "")) {
+    fail("Solstryker Robust Insight should not show Kalspire +20% flavor");
+  }
+  if (
+    robustInsight?.scale.find((row) => row.label === "Strength/Instinct")?.values.join(",") ===
+    "20%,24%,28%,34%,40%"
+  ) {
+    fail("Solstryker Robust Insight showed Kalspire 20% scale");
+  }
+  const amplifiedDrain = insightForSource("solstryker", { kind: "habit", habit: 5 });
+  if (!/Round 4: Reduce Strength and Initiative by -15%/i.test(amplifiedDrain?.body ?? "")) {
+    fail("keep Hub Amplified Drain Round 4 -15%");
+  }
+  if (/Reduce Strength and Initiative by -19\.5%/i.test(amplifiedDrain?.body ?? "")) {
+    fail("do not rewrite Hub Amplified Drain -15% to screenshot rank-2 -19.5%");
+  }
+  if (!/for 5 rounds/i.test(amplifiedDrain?.body ?? "")) {
+    fail("keep Hub Amplified Drain 5 rounds");
+  }
+  if (/5 round\(s\)/i.test(amplifiedDrain?.body ?? "")) {
+    fail("do not rewrite Hub Amplified Drain 5 rounds to screenshot round(s)");
+  }
+  if (findAbilityInsight("Steady Erosion", { dragonId: "solstryker" })?.habit !== 1) {
+    fail("hovering Steady Erosion should open Solstryker habit 1");
+  }
+  if (findAbilityInsight("Energy Drain", { dragonId: "solstryker" })?.habit !== 2) {
+    fail("hovering Energy Drain should open Solstryker habit 2");
+  }
+  if (findAbilityInsight("Oppressive Onslaught", { dragonId: "solstryker" })?.habit !== 3) {
+    fail("hovering Oppressive Onslaught should open Solstryker habit 3");
+  }
+  if (findAbilityInsight("Robust Insight", { dragonId: "solstryker" })?.habit !== 4) {
+    fail("hovering Robust Insight on Solstryker should open habit 4");
+  }
+  if (findAbilityInsight("Robust Insight", { dragonId: "kalspire" })?.habit !== 1) {
+    fail("hovering Robust Insight on Kalspire should still open habit 1");
+  }
+  if (findAbilityInsight("Amplified Drain", { dragonId: "solstryker" })?.title !== "Amplified Drain") {
+    fail("hovering Amplified Drain should open Solstryker habit 5");
+  }
+  const solstrykerCommand = insightForSource("solstryker", { kind: "command" });
+  if (!solstrykerCommand) fail("Solstryker command missing");
+  if (solstrykerCommand.title !== "Tactical Onslaught") {
+    fail(`Solstryker command title is ${solstrykerCommand.title}, expected Tactical Onslaught`);
+  }
+  if (commandHeading("solstryker") !== "Command · Tactical Onslaught") {
+    fail("Solstryker command heading should be Command · Tactical Onslaught");
+  }
+  if (/Tactical Onslaught gains/i.test(solstrykerCommand.body)) {
+    fail("do not rewrite Hub Solstryker command to Tactical Onslaught gains");
+  }
+  if (!/Odd-numbered Rounds: After each Basic Attack/i.test(solstrykerCommand.body)) {
+    fail("keep Hub Solstryker command Odd-numbered Rounds");
+  }
+  if (
+    findAbilityInsight("Tactical Onslaught", { dragonId: "solstryker" })?.kind !== "command"
+  ) {
+    fail("hovering Tactical Onslaught should open Solstryker's Command");
+  }
+  if (!namedChips(solstrykerCommand).includes("Tactical Onslaught")) {
+    fail("Solstryker command chips should include Tactical Onslaught");
+  }
+  const onslaughtTone = tokenizeAbilityText("Tactical Onslaught").find(
+    (part) => part.value === "Tactical Onslaught",
+  )?.tone;
+  if (onslaughtTone !== "command") {
+    fail(`Tactical Onslaught text tone is ${onslaughtTone}, expected command`);
+  }
+  if (statusMarkPolarity("Tactical Onslaught") != null) {
+    fail("Tactical Onslaught is the Command name, not a buff/debuff mark");
+  }
+  const solstrykerCatalog = catalogFor(solstryker);
+  if (solstrykerCatalog.namedCount !== 5 || solstrykerCatalog.needsScreenshot) {
+    fail("Solstryker habit names from Star Progression should be complete");
+  }
+  if (solstrykerCatalog.command.names.includes("Tactical Onslaught") === false) {
+    fail("Dev catalog should list Tactical Onslaught on Solstryker's Command");
+  }
+  const solstrykerOverwhelm = findAbilityInsight("Overwhelm", { dragonId: "solstryker" });
+  if (
+    solstrykerOverwhelm?.dragonName !== "Solstryker" ||
+    solstrykerOverwhelm.unlockStars !== 6
+  ) {
+    fail(
+      `Overwhelm on Solstryker should be 6★ Oppressive Onslaught, got ${solstrykerOverwhelm?.dragonName} ${solstrykerOverwhelm?.unlockStars}`,
+    );
+  }
+  if (!/Active Commands and Habits on their turn/i.test(solstrykerOverwhelm?.body ?? "")) {
+    fail(`Overwhelm glossary missing Star Progression line: ${solstrykerOverwhelm?.body}`);
+  }
+}
+checkSolstryker();
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
@@ -4955,14 +5158,6 @@ if (wrath?.kind !== "habit" || wrath.title !== "Infectious Wrath") {
 }
 if (!/Each stack of Infectious Wrath/i.test(wrath.body)) {
   fail("Infectious Wrath habit should keep the Hub stack definition");
-}
-
-const erosion = findAbilityInsight("Steady Erosion", { dragonId: "solstryker" });
-if (erosion?.kind !== "buff") {
-  fail(`Steady Erosion should extract as a stack: ${erosion?.kind}:${erosion?.title}`);
-}
-if (erosion.polarity !== "debuff") {
-  fail(`Steady Erosion should be a debuff: ${erosion.body}`);
 }
 
 const moonCommand = insightForSource("moondancer", { kind: "command" });

@@ -34,6 +34,7 @@ const DEBUFF_NAMES = new Set(
     "Prey",
     "Control",
     "Nullify Recovery",
+    "Steady Erosion",
   ].map(keyName),
 );
 
