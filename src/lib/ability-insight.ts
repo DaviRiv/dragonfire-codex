@@ -323,6 +323,7 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/this chance is doubled/i.test(before)) return true;
   if (/and is doubled \(/i.test(before)) return true;
   if (/is doubled if/i.test(before)) return true;
+  if (/duration is doubled/i.test(before)) return true;
   if (/recovery is doubled/i.test(before)) return true;
   if (/triple the (?:damage|recovery)/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
@@ -467,6 +468,13 @@ function labelForPercent(
     /non-player|Food Tiles|Encounters against Beasts/i.test(after)
   ) {
     return "Fire Damage Dealt (Non-player)";
+  }
+  if (
+    /(?:Physical|Tactical|Fire) Damage(?:\s*\([^)]+\))?\s*Dealt\s+by\s+$/i.test(
+      statBefore,
+    )
+  ) {
+    return "Damage Dealt";
   }
   if (
     /Physical,\s*Tactical\s+OR\s+Fire Damage Received/i.test(statBefore) &&

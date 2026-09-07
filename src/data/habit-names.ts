@@ -228,6 +228,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Robust Insight",
     "Amplified Drain",
   ],
+  thunderstrike: [
+    "Battle Rush",
+    "Dragon's Might",
+    "Barbed Lash",
+    "Armor Break",
+    "Staggering Assault",
+  ],
 };
 
 export function habitDisplayName(

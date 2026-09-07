@@ -4919,6 +4919,245 @@ function checkSolstryker(): void {
 }
 checkSolstryker();
 
+function checkThunderstrike(): void {
+  const thunderstrike = getCatalogDragon("thunderstrike");
+  if (!thunderstrike) fail("missing Thunderstrike");
+  const thunderstrikeNames: [number, string, string[], string][] = [
+    [1, "Battle Rush", ["Initiative", "Instinct"], "25%,30%,35%,42.5%,50%"],
+    [2, "Dragon's Might", ["Damage Dealt"], "8%,9.6%,11.2%,13.6%,16%"],
+    [3, "Barbed Lash", ["Damage Rate", "Bleed Chance"], "50%,60%,70%,85%,100%"],
+    [4, "Armor Break", ["Damage Received"], "4.8%,5.67%,6.72%,8.16%,9.6%"],
+    [5, "Staggering Assault", ["Stagger Chance"], "10%,13%,16%,20%,25%"],
+  ];
+  for (const [habit, title, labels, firstValues] of thunderstrikeNames) {
+    const row = insightForSource("thunderstrike", { kind: "habit", habit });
+    if (!row) fail(`Thunderstrike habit ${habit} missing`);
+    if (row.title !== title) {
+      fail(`Thunderstrike habit ${habit} title is ${row.title}, expected ${title}`);
+    }
+    if (row.scale.some((line) => /power/i.test(line.label))) {
+      fail(`${title} must not invent Power`);
+    }
+    for (const label of labels) {
+      const line = row.scale.find((item) => item.label === label);
+      if (!line) {
+        fail(
+          `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+        );
+      }
+    }
+    const first = row.scale.find((item) => item.label === labels[0]);
+    if (first?.values.join(",") !== firstValues) {
+      fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+    }
+  }
+  const battleRush = insightForSource("thunderstrike", { kind: "habit", habit: 1 });
+  if (!/Start of Round 1: Increase your Initiative by \+25%/i.test(battleRush?.body ?? "")) {
+    fail("keep Hub Battle Rush Start of Round 1 +25%");
+  }
+  if (/At the start of round 1/i.test(battleRush?.body ?? "")) {
+    fail("do not rewrite Hub Battle Rush Start of Round 1 to screenshot At the start of round 1");
+  }
+  if (!/reduce Instinct by -15%/i.test(battleRush?.body ?? "")) {
+    fail("keep Hub Battle Rush Instinct -15%");
+  }
+  if (/Initiative by \+35%/i.test(battleRush?.body ?? "")) {
+    fail("do not rewrite Hub Battle Rush +25% to screenshot rank-3 +35%");
+  }
+  if (/Instinct by -21%/i.test(battleRush?.body ?? "")) {
+    fail("do not rewrite Hub Battle Rush -15% to screenshot rank-3 -21%");
+  }
+  if (!/enhanced by Strength/i.test(battleRush?.body ?? "")) {
+    fail("keep Hub Battle Rush enhanced by Strength");
+  }
+  if (
+    battleRush?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+    "-15%,-18%,-21%,-25.5%,-30%"
+  ) {
+    fail("Battle Rush Instinct mismatch");
+  }
+  const dragonsMight = insightForSource("thunderstrike", { kind: "habit", habit: 2 });
+  if (!/Physical Damage \(Command & Habits\) Dealt by \+8%/i.test(dragonsMight?.body ?? "")) {
+    fail("keep Hub Thunderstrike Dragon's Might Command & Habits +8%");
+  }
+  if (/Dealt by \+9\.6%/i.test(dragonsMight?.body ?? "")) {
+    fail("do not rewrite Hub Thunderstrike Dragon's Might +8% to screenshot rank-2 +9.6%");
+  }
+  if (/Dealt by \+12\.5%/i.test(dragonsMight?.body ?? "")) {
+    fail("Thunderstrike Dragon's Might should not show Venator +12.5% flavor");
+  }
+  if (
+    dragonsMight?.scale.find((row) => row.label === "Damage Dealt")?.values.join(",") ===
+    "12.5%,15%,17.5%,21.25%,25%"
+  ) {
+    fail("Thunderstrike Dragon's Might showed Venator 12.5% scale");
+  }
+  const barbedLash = insightForSource("thunderstrike", { kind: "habit", habit: 3 });
+  if (!/Even-numbered Rounds: Command deal Physical Damage/i.test(barbedLash?.body ?? "")) {
+    fail("keep Hub Barbed Lash Command deal");
+  }
+  if (/Tail Whip gains/i.test(barbedLash?.body ?? "")) {
+    fail("do not rewrite Hub Barbed Lash Command deal to Tail Whip gains");
+  }
+  if (!/Damage Rate: \+50%/i.test(barbedLash?.body ?? "")) {
+    fail("keep Hub Barbed Lash Damage Rate +50%");
+  }
+  if (/Damage Rate: \+60%/i.test(barbedLash?.body ?? "")) {
+    fail("do not rewrite Hub Barbed Lash +50% to screenshot rank-2 +60%");
+  }
+  if (!/25% chance to afflict the target with Bleed/i.test(barbedLash?.body ?? "")) {
+    fail("keep Hub Barbed Lash 25% Bleed chance");
+  }
+  if (/30% chance to afflict the target with Bleed/i.test(barbedLash?.body ?? "")) {
+    fail("do not rewrite Hub Barbed Lash 25% to screenshot rank-2 30%");
+  }
+  if (!/for 2 rounds/i.test(barbedLash?.body ?? "")) {
+    fail("keep Hub Barbed Lash 2 rounds");
+  }
+  if (/2 round\(s\)/i.test(barbedLash?.body ?? "")) {
+    fail("do not rewrite Hub Barbed Lash 2 rounds to screenshot round(s)");
+  }
+  if (barbedLash?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+    fail("Barbed Lash should skip constant Bleed Damage Rate +20%");
+  }
+  if (
+    barbedLash?.scale.find((row) => row.label === "Bleed Chance")?.values.join(",") !==
+    "25%,30%,35%,42.5%,50%"
+  ) {
+    fail("Barbed Lash Bleed Chance mismatch");
+  }
+  if (glossNames(barbedLash).includes("Bleed")) {
+    fail("Barbed Lash Hub already defines Bleed; do not duplicate the glossary");
+  }
+  const armorBreak = insightForSource("thunderstrike", { kind: "habit", habit: 4 });
+  if (!/Increase Physical Damage Received by \+4\.8%/i.test(armorBreak?.body ?? "")) {
+    fail("keep Hub Thunderstrike Armor Break +4.8%");
+  }
+  if (/Increase the Physical Damage Received/i.test(armorBreak?.body ?? "")) {
+    fail("do not rewrite Hub Thunderstrike Armor Break to screenshot the Physical");
+  }
+  if (
+    armorBreak?.scale.find((row) => row.label === "Damage Received")?.values.join(",") ===
+    "8%,9.6%,11.2%,13.6%,16%"
+  ) {
+    fail("Thunderstrike Armor Break showed Venator 8% scale");
+  }
+  const staggeringAssault = insightForSource("thunderstrike", { kind: "habit", habit: 5 });
+  if (!/Each Round: 10% chance to afflict Stagger/i.test(staggeringAssault?.body ?? "")) {
+    fail("keep Hub Staggering Assault 10% chance");
+  }
+  if (/10% to afflict Stagger/i.test(staggeringAssault?.body ?? "") && !/10% chance to afflict Stagger/i.test(staggeringAssault?.body ?? "")) {
+    fail("do not rewrite Hub Staggering Assault 10% chance to screenshot 10% to afflict");
+  }
+  if (!/for 1 round\./i.test(staggeringAssault?.body ?? "")) {
+    fail("keep Hub Staggering Assault 1 round");
+  }
+  if (/1 round\(s\)/i.test(staggeringAssault?.body ?? "")) {
+    fail("do not rewrite Hub Staggering Assault 1 round to screenshot round(s)");
+  }
+  if (!/Attack Modifier Command or launching Basic Attacks/i.test(staggeringAssault?.body ?? "")) {
+    fail("keep Hub Staggering Assault Attack Modifier Command");
+  }
+  if (/Attack Modifier Commands or launching Basic Attacks/i.test(staggeringAssault?.body ?? "")) {
+    fail("do not rewrite Hub Staggering Assault Command to screenshot Commands");
+  }
+  if (staggeringAssault?.scale.length !== 1) {
+    fail(
+      `Staggering Assault should be one Stagger Chance row, got ${staggeringAssault?.scale.map((row) => row.label).join(", ")}`,
+    );
+  }
+  if (glossNames(staggeringAssault).includes("Stagger")) {
+    fail("Staggering Assault Hub already defines Stagger; do not duplicate the glossary");
+  }
+  if (glossNames(staggeringAssault).includes("Advantage") === false) {
+    fail("Staggering Assault should gloss Advantage");
+  }
+  if (findAbilityInsight("Battle Rush", { dragonId: "thunderstrike" })?.habit !== 1) {
+    fail("hovering Battle Rush should open Thunderstrike habit 1");
+  }
+  if (findAbilityInsight("Dragon's Might", { dragonId: "thunderstrike" })?.habit !== 2) {
+    fail("hovering Dragon's Might on Thunderstrike should open habit 2");
+  }
+  if (findAbilityInsight("Dragon's Might", { dragonId: "venator" })?.habit !== 2) {
+    fail("hovering Dragon's Might on Venator should still open habit 2");
+  }
+  if (findAbilityInsight("Barbed Lash", { dragonId: "thunderstrike" })?.habit !== 3) {
+    fail("hovering Barbed Lash should open Thunderstrike habit 3");
+  }
+  if (findAbilityInsight("Armor Break", { dragonId: "thunderstrike" })?.habit !== 4) {
+    fail("hovering Armor Break on Thunderstrike should open habit 4");
+  }
+  if (findAbilityInsight("Armor Break", { dragonId: "venator" })?.habit !== 4) {
+    fail("hovering Armor Break on Venator should still open habit 4");
+  }
+  if (findAbilityInsight("Staggering Assault", { dragonId: "thunderstrike" })?.title !== "Staggering Assault") {
+    fail("hovering Staggering Assault should open Thunderstrike habit 5");
+  }
+  const thunderstrikeCommand = insightForSource("thunderstrike", { kind: "command" });
+  if (!thunderstrikeCommand) fail("Thunderstrike command missing");
+  if (thunderstrikeCommand.title !== "Tail Whip") {
+    fail(`Thunderstrike command title is ${thunderstrikeCommand.title}, expected Tail Whip`);
+  }
+  if (commandHeading("thunderstrike") !== "Command · Tail Whip") {
+    fail("Thunderstrike command heading should be Command · Tail Whip");
+  }
+  if (/Tail Whip gains/i.test(thunderstrikeCommand.body)) {
+    fail("do not rewrite Hub Thunderstrike command to Tail Whip gains");
+  }
+  if (!/Odd-numbered Round: Deal Physical Damage/i.test(thunderstrikeCommand.body)) {
+    fail("keep Hub Thunderstrike command Odd-numbered Round");
+  }
+  if (
+    findAbilityInsight("Tail Whip", { dragonId: "thunderstrike" })?.kind !== "command"
+  ) {
+    fail("hovering Tail Whip should open Thunderstrike's Command");
+  }
+  if (!namedChips(thunderstrikeCommand).includes("Tail Whip")) {
+    fail("Thunderstrike command chips should include Tail Whip");
+  }
+  const whipTone = tokenizeAbilityText("Tail Whip").find(
+    (part) => part.value === "Tail Whip",
+  )?.tone;
+  if (whipTone !== "command") {
+    fail(`Tail Whip text tone is ${whipTone}, expected command`);
+  }
+  if (statusMarkPolarity("Tail Whip") != null) {
+    fail("Tail Whip is the Command name, not a buff/debuff mark");
+  }
+  const thunderstrikeCatalog = catalogFor(thunderstrike);
+  if (thunderstrikeCatalog.namedCount !== 5 || thunderstrikeCatalog.needsScreenshot) {
+    fail("Thunderstrike habit names from Star Progression should be complete");
+  }
+  if (thunderstrikeCatalog.command.names.includes("Tail Whip") === false) {
+    fail("Dev catalog should list Tail Whip on Thunderstrike's Command");
+  }
+  const thunderstrikeStagger = findAbilityInsight("Stagger", { dragonId: "thunderstrike" });
+  if (
+    thunderstrikeStagger?.dragonName !== "Thunderstrike" ||
+    thunderstrikeStagger.unlockStars !== 10
+  ) {
+    fail(
+      `Stagger on Thunderstrike should be 10★ Staggering Assault, got ${thunderstrikeStagger?.dragonName} ${thunderstrikeStagger?.unlockStars}`,
+    );
+  }
+  if (!/Attack Modifier Commands/i.test(thunderstrikeStagger?.body ?? "")) {
+    fail(`Stagger glossary missing Star Progression line: ${thunderstrikeStagger?.body}`);
+  }
+  if (/on their turn/i.test(thunderstrikeStagger?.body ?? "")) {
+    fail("do not extend Stagger glossary with Staggering Assault on their turn");
+  }
+  const thunderstrikeAdvantage = findAbilityInsight("Advantage", { dragonId: "thunderstrike" });
+  if (
+    thunderstrikeAdvantage?.neededBy?.dragonName !== "Thunderstrike" ||
+    thunderstrikeAdvantage.neededBy.gates.some((gate) => gate.stars === 10) === false
+  ) {
+    fail(
+      `Advantage on Thunderstrike should need 10★ Staggering Assault, got ${JSON.stringify(thunderstrikeAdvantage?.neededBy)}`,
+    );
+  }
+}
+checkThunderstrike();
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

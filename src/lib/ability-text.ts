@@ -121,6 +121,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Unbreakable Loyalty", tone: "command" },
   { phrase: "Eclipse Fervor", tone: "command" },
   { phrase: "Tactical Onslaught", tone: "command" },
+  { phrase: "Tail Whip", tone: "command" },
   { phrase: "Steady Erosion", tone: "debuff" },
   { phrase: "Resilient Bond", tone: "buff" },
   { phrase: "Fire Ward", tone: "buff" },
