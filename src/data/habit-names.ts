@@ -193,6 +193,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Quick-Witted",
     "Echoes of Deceit",
   ],
+  nyrena: [
+    "Battle Dread",
+    "Mindful Synergy",
+    "Deepen the Breach",
+    "Dragon's Ire",
+    "The Long Siege",
+  ],
 };
 
 export function habitDisplayName(

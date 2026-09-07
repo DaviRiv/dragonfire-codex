@@ -3942,6 +3942,182 @@ if (!/receiving Recovery/i.test(nullify.body)) {
   fail(`Nullify Recovery glossary missing Star Progression line: ${nullify.body}`);
 }
 
+const nyrena = getCatalogDragon("nyrena");
+if (!nyrena) fail("missing Nyrena");
+const nyrenaNames: [number, string, string[], string][] = [
+  [1, "Battle Dread", ["Strength/Initiative"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+  [2, "Mindful Synergy", ["Intelligence/Instinct"], "4%,4.8%,5.6%,6.8%,8%"],
+  [3, "Deepen the Breach", ["Damage Dealt", "Damage Dealt (2)"], "8%,9.6%,11.2%,13.6%,16%"],
+  [4, "Dragon's Ire", ["Damage Dealt"], "4%,4.8%,5.6%,6.8%,8%"],
+  [5, "The Long Siege", ["Damage Received"], "-5%,-6.5%,-8%,-10%,-12.5%"],
+];
+for (const [habit, title, labels, firstValues] of nyrenaNames) {
+  const row = insightForSource("nyrena", { kind: "habit", habit });
+  if (!row) fail(`Nyrena habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Nyrena habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const nyrenaBattleDread = insightForSource("nyrena", { kind: "habit", habit: 1 });
+if (
+  !/Reduce the Strength and Initiative \(enhanced by Intelligence\) of 3 Enemies/i.test(
+    nyrenaBattleDread?.body ?? "",
+  )
+) {
+  fail("keep Hub Nyrena Battle Dread Strength and Initiative (enhanced by Intelligence)");
+}
+if (!/by -4% until the end of combat/i.test(nyrenaBattleDread?.body ?? "")) {
+  fail("keep Hub Nyrena Battle Dread -4%");
+}
+if (/by -4\.8% until the end of combat/i.test(nyrenaBattleDread?.body ?? "")) {
+  fail("do not rewrite Hub Nyrena Battle Dread -4% to screenshot rank-2 flavor -4.8%");
+}
+const nyrenaMindful = insightForSource("nyrena", { kind: "habit", habit: 2 });
+if (
+  !/Increase the Intelligence and Instinct \(enhanced by Initiative\) of 3 Allies/i.test(
+    nyrenaMindful?.body ?? "",
+  )
+) {
+  fail("keep Hub Nyrena Mindful Synergy Intelligence and Instinct (enhanced by Initiative)");
+}
+if (!/by \+4% until the end of combat/i.test(nyrenaMindful?.body ?? "")) {
+  fail("keep Hub Nyrena Mindful Synergy +4%");
+}
+if (/by \+4\.8% until the end of combat/i.test(nyrenaMindful?.body ?? "")) {
+  fail("do not rewrite Hub Nyrena Mindful Synergy +4% to screenshot rank-2 flavor +4.8%");
+}
+const deepenTheBreach = insightForSource("nyrena", { kind: "habit", habit: 3 });
+if (!/Increase the Fire Damage Dealt of 1 Ally within adjacency/i.test(deepenTheBreach?.body ?? "")) {
+  fail("keep Hub Deepen the Breach 1 Ally within adjacency");
+}
+if (/1 other Ally/i.test(deepenTheBreach?.body ?? "")) {
+  fail("do not rewrite Hub Deepen the Breach 1 Ally to screenshot 1 other Ally");
+}
+if (!/for 5 round\(s\)/i.test(deepenTheBreach?.body ?? "")) {
+  fail("keep Hub Deepen the Breach 5 round(s)");
+}
+if (!/Increase your Tile Damage Dealt to the tile's durability/i.test(deepenTheBreach?.body ?? "")) {
+  fail("keep Hub Deepen the Breach Tile Damage sentence");
+}
+if (/Tile Damage Dealt by \+10%/i.test(deepenTheBreach?.body ?? "")) {
+  fail("do not invent Deepen the Breach Tile Damage +10% into Hub body");
+}
+if (
+  deepenTheBreach?.scale.find((row) => row.label === "Damage Dealt (2)")?.values.join(",") !==
+  "12%,14.4%,16.8%,20.4%,24%"
+) {
+  fail("Deepen the Breach ally Fire Damage Dealt mismatch");
+}
+if (deepenTheBreach?.scale.some((row) => /tile/i.test(row.label))) {
+  fail("Deepen the Breach must not invent Tile Damage; Hub has no Tile percent");
+}
+if (deepenTheBreach?.scale.some((row) => row.values.join(",") === "10%,12%,14%,17%,20%")) {
+  fail("Deepen the Breach must not invent Tile Damage 10–20%");
+}
+if (deepenTheBreach?.scale.length !== 2) {
+  fail(
+    `Deepen the Breach should be two Damage Dealt rows, got ${deepenTheBreach?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const dragonsIre = insightForSource("nyrena", { kind: "habit", habit: 4 });
+if (!/Increase your Tactical and Fire Damage Dealt by \+4%/i.test(dragonsIre?.body ?? "")) {
+  fail("keep Hub Dragon's Ire Tactical and Fire Damage Dealt +4%");
+}
+if (/Increase your Tactical and Fire Damage Dealt by \+4\.8%/i.test(dragonsIre?.body ?? "")) {
+  fail("do not rewrite Hub Dragon's Ire +4% to screenshot rank-2 flavor +4.8%");
+}
+const theLongSiege = insightForSource("nyrena", { kind: "habit", habit: 5 });
+if (!/Start of Round 6-10: Reduce the Physical Damage Received/i.test(theLongSiege?.body ?? "")) {
+  fail("keep Hub The Long Siege Start of Round 6-10 Physical Damage Received");
+}
+if (/Start of Rounds 6-10/i.test(theLongSiege?.body ?? "")) {
+  fail("do not rewrite Hub The Long Siege Round to screenshot Rounds");
+}
+if (!/When Defending, double this effect \(-10%\)/i.test(theLongSiege?.body ?? "")) {
+  fail("keep Hub The Long Siege defending double this effect");
+}
+if (theLongSiege?.scale.some((row) => row.values.join(",") === "-10%,-13%,-16%,-20%,-25%")) {
+  fail("The Long Siege should skip defending double this effect");
+}
+if (theLongSiege?.scale.length !== 1) {
+  fail(
+    `The Long Siege should be one Damage Received row, got ${theLongSiege?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (findAbilityInsight("Battle Dread", { dragonId: "nyrena" })?.habit !== 1) {
+  fail("hovering Battle Dread on Nyrena should open habit 1");
+}
+if (findAbilityInsight("Battle Dread", { dragonId: "caraxes" })?.habit !== 1) {
+  fail("hovering Battle Dread on Caraxes should still open habit 1");
+}
+if (
+  findAbilityInsight("Battle Dread", { dragonId: "nyrena" })?.scale.find(
+    (row) => row.label === "Strength/Initiative",
+  )?.values.join(",") !== "-4%,-4.8%,-5.6%,-6.8%,-8%"
+) {
+  fail("Nyrena Battle Dread should keep -4% scale, not Caraxes -6.5%");
+}
+if (findAbilityInsight("Mindful Synergy", { dragonId: "nyrena" })?.habit !== 2) {
+  fail("hovering Mindful Synergy on Nyrena should open habit 2");
+}
+if (findAbilityInsight("Mindful Synergy", { dragonId: "syrax" })?.habit !== 1) {
+  fail("hovering Mindful Synergy on Syrax should still open habit 1");
+}
+if (
+  findAbilityInsight("Mindful Synergy", { dragonId: "nyrena" })?.scale.find(
+    (row) => row.label === "Intelligence/Instinct",
+  )?.values.join(",") !== "4%,4.8%,5.6%,6.8%,8%"
+) {
+  fail("Nyrena Mindful Synergy should keep +4% scale, not Syrax +6.5%");
+}
+if (
+  findAbilityInsight("Deepen the Breach", { dragonId: "nyrena" })?.habit !== 3
+) {
+  fail("hovering Deepen the Breach should open Nyrena habit 3");
+}
+if (findAbilityInsight("Dragon's Ire", { dragonId: "nyrena" })?.habit !== 4) {
+  fail("hovering Dragon's Ire should open Nyrena habit 4");
+}
+if (
+  findAbilityInsight("The Long Siege", { dragonId: "nyrena" })?.title !==
+  "The Long Siege"
+) {
+  fail("hovering The Long Siege should open Nyrena habit 5");
+}
+const nyrenaCommand = insightForSource("nyrena", { kind: "command" });
+if (!nyrenaCommand) fail("Nyrena command missing");
+if (nyrenaCommand.title !== "Command") {
+  fail(`Nyrena command title is ${nyrenaCommand.title}, expected Command`);
+}
+if (commandHeading("nyrena") !== "Command") {
+  fail("Nyrena command heading should stay Command");
+}
+if (namedChips(nyrenaCommand).length !== 0) {
+  fail("Nyrena command chips should stay empty; Star Progression had no command name");
+}
+if (glossNames(nyrenaCommand).includes("Burn") === false) {
+  fail("Nyrena command should gloss Burn");
+}
+const nyrenaCatalog = catalogFor(nyrena);
+if (nyrenaCatalog.namedCount !== 5 || nyrenaCatalog.needsScreenshot) {
+  fail("Nyrena habit names from Star Progression should be complete");
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
