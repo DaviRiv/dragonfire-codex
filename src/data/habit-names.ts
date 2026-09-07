@@ -186,6 +186,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Wind's Favor",
     "First Light",
   ],
+  jagadrix: [
+    "Enervate",
+    "Second Wind",
+    "Whispering Sabotage",
+    "Quick-Witted",
+    "Echoes of Deceit",
+  ],
 };
 
 export function habitDisplayName(

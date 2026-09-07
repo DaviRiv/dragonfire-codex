@@ -3708,6 +3708,240 @@ if (/attack before all other combatants/i.test(dawnFirstStrike?.body ?? "")) {
   fail("do not rewrite First-Strike glossary act to First Light screenshot attack");
 }
 
+const jagadrix = getCatalogDragon("jagadrix");
+if (!jagadrix) fail("missing Jagadrix");
+const jagadrixNames: [number, string, string[], string][] = [
+  [1, "Enervate", ["Damage Dealt"], "-8%,-9.6%,-11.2%,-13.6%,-16%"],
+  [2, "Second Wind", ["Damage Dealt", "Recovery Rate"], "10%,12%,14%,17%,20%"],
+  [3, "Whispering Sabotage", ["Weakened Chance"], "25%,30%,35%,42.5%,50%"],
+  [4, "Quick-Witted", ["Intelligence/Initiative"], "12.5%,15%,17.5%,21.25%,25%"],
+  [5, "Echoes of Deceit", ["Instinct/Initiative", "Damage Rate"], "-6%,-7.8%,-9.6%,-12%,-15%"],
+];
+for (const [habit, title, labels, firstValues] of jagadrixNames) {
+  const row = insightForSource("jagadrix", { kind: "habit", habit });
+  if (!row) fail(`Jagadrix habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Jagadrix habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const jagEnervate = insightForSource("jagadrix", { kind: "habit", habit: 1 });
+if (!/Reduce Tactical Damage Dealt by -8%/i.test(jagEnervate?.body ?? "")) {
+  fail("keep Hub Jagadrix Enervate -8%");
+}
+if (/Reduce Tactical Damage Dealt by -11(?:\.2)?%/i.test(jagEnervate?.body ?? "")) {
+  fail("do not rewrite Hub Jagadrix Enervate -8% to screenshot rank-3 flavor");
+}
+const secondWind = insightForSource("jagadrix", { kind: "habit", habit: 2 });
+if (!/Increase your Damage Dealt by \+10%/i.test(secondWind?.body ?? "")) {
+  fail("keep Hub Second Wind +10%");
+}
+if (/Increase your Damage Dealt by \+14%/i.test(secondWind?.body ?? "")) {
+  fail("do not rewrite Hub Second Wind +10% to screenshot rank-3 flavor +14%");
+}
+if (!/Recovery Rate: \+150%/i.test(secondWind?.body ?? "")) {
+  fail("keep Hub Second Wind Recovery Rate +150%");
+}
+if (/Recovery Rate: \+210%/i.test(secondWind?.body ?? "")) {
+  fail("do not rewrite Hub Second Wind +150% to screenshot rank-3 flavor +210%");
+}
+if (!/Nullify Recovery prevents the target from receiving Recovery/i.test(secondWind?.body ?? "")) {
+  fail("keep Hub Second Wind Nullify Recovery sentence");
+}
+if (
+  secondWind?.scale.find((row) => row.label === "Recovery Rate")?.values.join(",") !==
+  "150%,180%,210%,255%,300%"
+) {
+  fail("Second Wind Recovery Rate mismatch");
+}
+if (glossNames(secondWind).includes("Nullify Recovery")) {
+  fail("Second Wind already explains Nullify Recovery; do not duplicate the glossary");
+}
+const whisperingSabotage = insightForSource("jagadrix", { kind: "habit", habit: 3 });
+if (!/25% chance to afflict 1 Enemy with Weakened \(-10%\)/i.test(whisperingSabotage?.body ?? "")) {
+  fail("keep Hub Whispering Sabotage 25%");
+}
+if (/35% chance to afflict 1 Enemy with Weakened/i.test(whisperingSabotage?.body ?? "")) {
+  fail("do not rewrite Hub Whispering Sabotage 25% to screenshot rank-3 flavor 35%");
+}
+if (/2 round\(s\)/i.test(whisperingSabotage?.body ?? "")) {
+  fail("do not rewrite Hub Whispering Sabotage 2 rounds to screenshot round(s)");
+}
+if (/reduces the target's Damage Dealt/i.test(whisperingSabotage?.body ?? "")) {
+  fail("do not copy Weakened glossary into Hub Whispering Sabotage text");
+}
+if (whisperingSabotage?.scale.some((row) => row.values.join(",") === "-10%,-10%,-10%,-10%,-10%")) {
+  fail("Whispering Sabotage should skip constant Weakened -10%");
+}
+if (glossNames(whisperingSabotage).includes("Weakened") === false) {
+  fail("Whispering Sabotage should gloss Weakened");
+}
+const jagQuickWitted = insightForSource("jagadrix", { kind: "habit", habit: 4 });
+if (!/Increase your Intelligence and Initiative by \+12\.5%/i.test(jagQuickWitted?.body ?? "")) {
+  fail("keep Hub Quick-Witted +12.5%");
+}
+const echoes = insightForSource("jagadrix", { kind: "habit", habit: 5 });
+if (!/Command reduce the Instinct and Initiative by -6%/i.test(echoes?.body ?? "")) {
+  fail("keep Hub Echoes of Deceit Command reduce");
+}
+if (/Cunning Whispers gains/i.test(echoes?.body ?? "")) {
+  fail("do not rewrite Hub Echoes of Deceit Command reduce to Cunning Whispers gains");
+}
+if (!/Command deal Fire Damage/i.test(echoes?.body ?? "")) {
+  fail("keep Hub Echoes of Deceit Command deal Fire Damage");
+}
+if (!/This damage is doubled if the target is afflicted with Panic/i.test(echoes?.body ?? "")) {
+  fail("keep Hub Echoes of Deceit doubled Panic sentence");
+}
+if (
+  echoes?.scale.find((row) => row.label === "Damage Rate")?.values.join(",") !==
+  "30%,39%,48%,60%,75%"
+) {
+  fail("Echoes of Deceit Damage Rate mismatch");
+}
+if (
+  echoes?.scale.some((row) =>
+    ["60%,78%,96%,120%,150%", "60%,78%,96%,120%,150%"].includes(row.values.join(",")),
+  )
+) {
+  fail("Echoes of Deceit should skip doubled Panic Damage Rate");
+}
+if (echoes?.scale.length !== 2) {
+  fail(
+    `Echoes of Deceit should be Instinct/Initiative and Damage Rate, got ${echoes?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(echoes).includes("Panic") === false) {
+  fail("Echoes of Deceit should gloss Panic");
+}
+if (findAbilityInsight("Enervate", { dragonId: "jagadrix" })?.habit !== 1) {
+  fail("hovering Enervate on Jagadrix should open habit 1");
+}
+if (findAbilityInsight("Enervate", { dragonId: "crimson" })?.habit !== 1) {
+  fail("hovering Enervate on Crimson should still open habit 1");
+}
+if (findAbilityInsight("Enervate", { dragonId: "tashix" })?.habit !== 1) {
+  fail("hovering Enervate on Tashix should still open habit 1");
+}
+if (
+  findAbilityInsight("Enervate", { dragonId: "jagadrix" })?.scale.find(
+    (row) => row.label === "Damage Dealt",
+  )?.values.join(",") !== "-8%,-9.6%,-11.2%,-13.6%,-16%"
+) {
+  fail("Jagadrix Enervate should keep -8% scale, not Crimson or Tashix");
+}
+if (findAbilityInsight("Second Wind", { dragonId: "jagadrix" })?.habit !== 2) {
+  fail("hovering Second Wind should open Jagadrix habit 2");
+}
+if (
+  findAbilityInsight("Whispering Sabotage", { dragonId: "jagadrix" })?.habit !== 3
+) {
+  fail("hovering Whispering Sabotage should open Jagadrix habit 3");
+}
+if (findAbilityInsight("Quick-Witted", { dragonId: "jagadrix" })?.habit !== 4) {
+  fail("hovering Quick-Witted on Jagadrix should open habit 4");
+}
+if (findAbilityInsight("Quick-Witted", { dragonId: "feskar" })?.habit !== 4) {
+  fail("hovering Quick-Witted on Feskar should still open habit 4");
+}
+if (
+  findAbilityInsight("Quick-Witted", { dragonId: "jagadrix" })?.scale.find(
+    (row) => row.label === "Intelligence/Initiative",
+  )?.values.join(",") !== "12.5%,15%,17.5%,21.25%,25%"
+) {
+  fail("Jagadrix Quick-Witted should keep +12.5% scale, not Feskar +16%");
+}
+if (
+  findAbilityInsight("Echoes of Deceit", { dragonId: "jagadrix" })?.title !==
+  "Echoes of Deceit"
+) {
+  fail("hovering Echoes of Deceit should open Jagadrix habit 5");
+}
+const jagCommand = insightForSource("jagadrix", { kind: "command" });
+if (!jagCommand) fail("Jagadrix command missing");
+if (jagCommand.title !== "Cunning Whispers") {
+  fail(`Jagadrix command title is ${jagCommand.title}, expected Cunning Whispers`);
+}
+if (commandHeading("jagadrix") !== "Command · Cunning Whispers") {
+  fail("Jagadrix command heading should be Command · Cunning Whispers");
+}
+if (/Cunning Whispers gains/i.test(jagCommand.body)) {
+  fail("do not rewrite Hub Jagadrix command to Cunning Whispers gains");
+}
+if (
+  findAbilityInsight("Cunning Whispers", { dragonId: "jagadrix" })?.kind !== "command"
+) {
+  fail("hovering Cunning Whispers should open Jagadrix's Command");
+}
+if (!namedChips(jagCommand).includes("Cunning Whispers")) {
+  fail("Jagadrix command chips should include Cunning Whispers");
+}
+const whispersTone = tokenizeAbilityText("Cunning Whispers").find(
+  (part) => part.value === "Cunning Whispers",
+)?.tone;
+if (whispersTone !== "command") {
+  fail(`Cunning Whispers text tone is ${whispersTone}, expected command`);
+}
+if (statusMarkPolarity("Cunning Whispers") != null) {
+  fail("Cunning Whispers is the Command name, not a buff/debuff mark");
+}
+if (statusMarkPolarity("Nullify Recovery") !== "debuff") {
+  fail("Nullify Recovery in habit text should get a debuff arrow");
+}
+const nullifyTone = tokenizeAbilityText("afflict yourself with Nullify Recovery").find(
+  (part) => part.value === "Nullify Recovery",
+)?.tone;
+if (nullifyTone !== "debuff") {
+  fail(`Nullify Recovery text tone is ${nullifyTone}, expected debuff`);
+}
+const jagCatalog = catalogFor(jagadrix);
+if (jagCatalog.namedCount !== 5 || jagCatalog.needsScreenshot) {
+  fail("Jagadrix habit names from Star Progression should be complete");
+}
+if (jagCatalog.command.names.includes("Cunning Whispers") === false) {
+  fail("Dev catalog should list Cunning Whispers on Jagadrix's Command");
+}
+const jagWeakened = findAbilityInsight("Weakened", { dragonId: "jagadrix" });
+if (
+  jagWeakened?.dragonName !== "Jagadrix" ||
+  jagWeakened.unlockStars !== 6
+) {
+  fail(
+    `Weakened on Jagadrix should be 6★ Whispering Sabotage, got ${jagWeakened?.dragonName} ${jagWeakened?.unlockStars}`,
+  );
+}
+const jagPanic = findAbilityInsight("Panic", { dragonId: "jagadrix" });
+if (
+  jagPanic?.neededBy?.dragonName !== "Jagadrix" ||
+  jagPanic.neededBy.gates.some((gate) => gate.stars === 10) === false
+) {
+  fail(
+    `Panic on Jagadrix should need 10★ Echoes of Deceit, got ${JSON.stringify(jagPanic?.neededBy)}`,
+  );
+}
+const nullify = findAbilityInsight("Nullify Recovery", { dragonId: "jagadrix" });
+if (!nullify || nullify.title !== "Nullify Recovery" || nullify.kind !== "buff") {
+  fail(`Nullify Recovery hover opened ${nullify?.kind}:${nullify?.title}`);
+}
+if (nullify.polarity !== "debuff") fail("Nullify Recovery is a debuff");
+if (!/receiving Recovery/i.test(nullify.body)) {
+  fail(`Nullify Recovery glossary missing Star Progression line: ${nullify.body}`);
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

@@ -101,6 +101,7 @@ const STATUS_NAMES = [
   "Evade",
   "Cleanse",
   "Bulwark",
+  "Nullify Recovery",
 ] as const;
 
 const SKIP_NAMES = new Set(

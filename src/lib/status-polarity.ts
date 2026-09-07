@@ -33,6 +33,7 @@ const DEBUFF_NAMES = new Set(
     "Vulnerable",
     "Prey",
     "Control",
+    "Nullify Recovery",
   ].map(keyName),
 );
 
