@@ -235,6 +235,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Armor Break",
     "Staggering Assault",
   ],
+  vesper: [
+    "Strategic Leader",
+    "Dragon's Insight",
+    "Savior's Waltz",
+    "Insightful Allies",
+    "Midnight Onslaught",
+  ],
 };
 
 export function habitDisplayName(

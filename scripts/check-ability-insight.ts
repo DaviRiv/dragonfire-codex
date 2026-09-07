@@ -5158,6 +5158,213 @@ function checkThunderstrike(): void {
 }
 checkThunderstrike();
 
+function checkVesper(): void {
+  const vesper = getCatalogDragon("vesper");
+  if (!vesper) fail("missing Vesper");
+  const vesperNames: [number, string, string[], string][] = [
+    [1, "Strategic Leader", ["Damage Dealt"], "8%,9.6%,11.2%,13.6%,16%"],
+    [2, "Dragon's Insight", ["Damage Received", "Instinct"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+    [3, "Savior's Waltz", ["Resistance Chance"], "12.5%,15%,17.5%,21.25%,25%"],
+    [4, "Insightful Allies", ["Instinct"], "8%,9.6%,11.2%,13.6%,16%"],
+    [5, "Midnight Onslaught", ["Confusion Chance"], "24%,31.2%,38.4%,48%,60%"],
+  ];
+  for (const [habit, title, labels, firstValues] of vesperNames) {
+    const row = insightForSource("vesper", { kind: "habit", habit });
+    if (!row) fail(`Vesper habit ${habit} missing`);
+    if (row.title !== title) {
+      fail(`Vesper habit ${habit} title is ${row.title}, expected ${title}`);
+    }
+    if (row.scale.some((line) => /power/i.test(line.label))) {
+      fail(`${title} must not invent Power`);
+    }
+    for (const label of labels) {
+      const line = row.scale.find((item) => item.label === label);
+      if (!line) {
+        fail(
+          `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+        );
+      }
+    }
+    const first = row.scale.find((item) => item.label === labels[0]);
+    if (first?.values.join(",") !== firstValues) {
+      fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+    }
+  }
+  const vesperLeader = insightForSource("vesper", { kind: "habit", habit: 1 });
+  if (!/Increase Tactical Damage Dealt by \+8%/i.test(vesperLeader?.body ?? "")) {
+    fail("keep Hub Vesper Strategic Leader Tactical Damage Dealt +8%");
+  }
+  if (!/prioritizes the Vanguard/i.test(vesperLeader?.body ?? "")) {
+    fail("keep Hub Vesper Strategic Leader Vanguard targeting");
+  }
+  if (/Tactical Damage Dealt by \+9\.6%/i.test(vesperLeader?.body ?? "")) {
+    fail("do not rewrite Hub Vesper Strategic Leader +8% to screenshot rank-2 +9.6%");
+  }
+  if (/Tactical Damage Dealt by \+10%/i.test(vesperLeader?.body ?? "")) {
+    fail("Vesper Strategic Leader should not show Velar +10% flavor");
+  }
+  if (
+    vesperLeader?.scale.find((row) => row.label === "Damage Dealt")?.values.join(",") ===
+    "10%,12%,14%,17%,20%"
+  ) {
+    fail("Vesper Strategic Leader showed Velar 10% scale");
+  }
+  const vesperInsight = insightForSource("vesper", { kind: "habit", habit: 2 });
+  if (!/Reduce your Damage Received by -4% and increase your Instinct by \+5%/i.test(vesperInsight?.body ?? "")) {
+    fail("keep Hub Vesper Dragon's Insight -4% and +5%");
+  }
+  if (/Damage Received by -4\.8%/i.test(vesperInsight?.body ?? "")) {
+    fail("do not rewrite Hub Vesper Dragon's Insight -4% to screenshot rank-2 -4.8%");
+  }
+  if (/Instinct by \+6%/i.test(vesperInsight?.body ?? "")) {
+    fail("do not rewrite Hub Vesper Dragon's Insight +5% to screenshot rank-2 +6%");
+  }
+  if (/Initiative by \+5%/i.test(vesperInsight?.body ?? "")) {
+    fail("do not rewrite Hub Vesper Dragon's Insight Instinct to short Initiative");
+  }
+  if (/Damage Received by -6%/i.test(vesperInsight?.body ?? "")) {
+    fail("Vesper Dragon's Insight should not show Kalspire -6% flavor");
+  }
+  if (
+    vesperInsight?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+    "5%,6%,7%,8.5%,10%"
+  ) {
+    fail("Vesper Dragon's Insight Instinct mismatch");
+  }
+  const saviorsWaltz = insightForSource("vesper", { kind: "habit", habit: 3 });
+  if (!/Each Round: 12\.5% chance to apply Resistance \(-10%\)/i.test(saviorsWaltz?.body ?? "")) {
+    fail("keep Hub Savior's Waltz 12.5% Resistance");
+  }
+  if (/13% chance to apply Resistance/i.test(saviorsWaltz?.body ?? "")) {
+    fail("do not rewrite Hub Savior's Waltz 12.5% to screenshot flavor 13%");
+  }
+  if (!/for 2 rounds/i.test(saviorsWaltz?.body ?? "")) {
+    fail("keep Hub Savior's Waltz 2 rounds");
+  }
+  if (/2 round\(s\)/i.test(saviorsWaltz?.body ?? "")) {
+    fail("do not rewrite Hub Savior's Waltz 2 rounds to screenshot round(s)");
+  }
+  if (/reduces the target's Damage Received/i.test(saviorsWaltz?.body ?? "")) {
+    fail("do not copy Resistance glossary into Hub Savior's Waltz text");
+  }
+  if (saviorsWaltz?.scale.some((row) => row.values.join(",") === "-10%,-10%,-10%,-10%,-10%")) {
+    fail("Savior's Waltz should skip constant Resistance -10%");
+  }
+  if (saviorsWaltz?.scale.length !== 1) {
+    fail(
+      `Savior's Waltz should be one Resistance Chance row, got ${saviorsWaltz?.scale.map((row) => row.label).join(", ")}`,
+    );
+  }
+  if (glossNames(saviorsWaltz).includes("Resistance") === false) {
+    fail("Savior's Waltz should gloss Resistance");
+  }
+  const vesperAllies = insightForSource("vesper", { kind: "habit", habit: 4 });
+  if (!/Increase Instinct by \+8% \(enhanced by Instinct\)/i.test(vesperAllies?.body ?? "")) {
+    fail("keep Hub Vesper Insightful Allies Instinct +8%");
+  }
+  if (/Increase Instinct by \+10%/i.test(vesperAllies?.body ?? "")) {
+    fail("Vesper Insightful Allies should not show Feskar +10% flavor");
+  }
+  if (
+    vesperAllies?.scale.find((row) => row.label === "Instinct")?.values.join(",") ===
+    "10%,12%,14%,17%,20%"
+  ) {
+    fail("Vesper Insightful Allies showed Feskar 10% scale");
+  }
+  const midnightOnslaught = insightForSource("vesper", { kind: "habit", habit: 5 });
+  if (!/Rounds 6-10: 24% chance to afflict Confusion/i.test(midnightOnslaught?.body ?? "")) {
+    fail("keep Hub Midnight Onslaught 24% Confusion");
+  }
+  if (/31\.2% chance to afflict Confusion/i.test(midnightOnslaught?.body ?? "")) {
+    fail("do not rewrite Hub Midnight Onslaught 24% to screenshot rank-2 31.2%");
+  }
+  if (!/for 2 rounds/i.test(midnightOnslaught?.body ?? "")) {
+    fail("keep Hub Midnight Onslaught 2 rounds");
+  }
+  if (/2 round\(s\)/i.test(midnightOnslaught?.body ?? "")) {
+    fail("do not rewrite Hub Midnight Onslaught 2 rounds to screenshot round(s)");
+  }
+  if (/mistake Allies for Enemies/i.test(midnightOnslaught?.body ?? "")) {
+    fail("do not copy Confusion glossary into Hub Midnight Onslaught text");
+  }
+  if (glossNames(midnightOnslaught).includes("Confusion") === false) {
+    fail("Midnight Onslaught should gloss Confusion");
+  }
+  if (findAbilityInsight("Strategic Leader", { dragonId: "vesper" })?.habit !== 1) {
+    fail("hovering Strategic Leader on Vesper should open habit 1");
+  }
+  if (findAbilityInsight("Strategic Leader", { dragonId: "velar" })?.habit !== 1) {
+    fail("hovering Strategic Leader on Velar should still open habit 1");
+  }
+  if (findAbilityInsight("Dragon's Insight", { dragonId: "vesper" })?.habit !== 2) {
+    fail("hovering Dragon's Insight on Vesper should open habit 2");
+  }
+  if (findAbilityInsight("Dragon's Insight", { dragonId: "shimmer" })?.habit !== 2) {
+    fail("hovering Dragon's Insight on Shimmer should still open habit 2");
+  }
+  if (findAbilityInsight("Dragon's Insight", { dragonId: "kalspire" })?.habit !== 4) {
+    fail("hovering Dragon's Insight on Kalspire should still open habit 4");
+  }
+  if (findAbilityInsight("Savior's Waltz", { dragonId: "vesper" })?.habit !== 3) {
+    fail("hovering Savior's Waltz should open Vesper habit 3");
+  }
+  if (findAbilityInsight("Insightful Allies", { dragonId: "vesper" })?.habit !== 4) {
+    fail("hovering Insightful Allies on Vesper should open habit 4");
+  }
+  if (findAbilityInsight("Insightful Allies", { dragonId: "feskar" })?.habit !== 2) {
+    fail("hovering Insightful Allies on Feskar should still open habit 2");
+  }
+  if (findAbilityInsight("Midnight Onslaught", { dragonId: "vesper" })?.title !== "Midnight Onslaught") {
+    fail("hovering Midnight Onslaught should open Vesper habit 5");
+  }
+  const vesperCommand = insightForSource("vesper", { kind: "command" });
+  if (!vesperCommand) fail("Vesper command missing");
+  if (vesperCommand.title !== "Command") {
+    fail(`Vesper command title is ${vesperCommand.title}, expected Command`);
+  }
+  if (commandHeading("vesper") !== "Command") {
+    fail("Vesper command heading should stay Command");
+  }
+  if (!/Each Round: 20% chance to afflict Slow/i.test(vesperCommand.body)) {
+    fail("keep Hub Vesper command Slow chance");
+  }
+  if (glossNames(vesperCommand).includes("Slow") === false) {
+    fail("Vesper command should gloss Slow");
+  }
+  const vesperCatalog = catalogFor(vesper);
+  if (vesperCatalog.namedCount !== 5 || vesperCatalog.needsScreenshot) {
+    fail("Vesper habit names from Star Progression should be complete");
+  }
+  const vesperConfusion = findAbilityInsight("Confusion", { dragonId: "vesper" });
+  if (
+    vesperConfusion?.dragonName !== "Vesper" ||
+    vesperConfusion.unlockStars !== 10
+  ) {
+    fail(
+      `Confusion on Vesper should be 10★ Midnight Onslaught, got ${vesperConfusion?.dragonName} ${vesperConfusion?.unlockStars}`,
+    );
+  }
+  if (!/mistake Allies for Enemies/i.test(vesperConfusion?.body ?? "")) {
+    fail(`Confusion glossary missing Star Progression line: ${vesperConfusion?.body}`);
+  }
+  const vesperResistance = findAbilityInsight("Resistance", { dragonId: "vesper" });
+  if (
+    vesperResistance?.dragonName !== "Vesper" ||
+    vesperResistance.unlockStars !== 6
+  ) {
+    fail(
+      `Resistance on Vesper should be 6★ Savior's Waltz, got ${vesperResistance?.dragonName} ${vesperResistance?.unlockStars}`,
+    );
+  }
+  const vesperSlow = findAbilityInsight("Slow", { dragonId: "vesper" });
+  if (vesperSlow?.dragonName !== "Vesper" || vesperSlow.unlockStars != null) {
+    fail(
+      `Slow on Vesper should be Command, got ${vesperSlow?.dragonName} ${vesperSlow?.unlockStars}`,
+    );
+  }
+}
+checkVesper();
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
