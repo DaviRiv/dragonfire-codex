@@ -13,6 +13,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   tairax: "Burning Ward",
   velar: "Whirlwind",
   feskar: "Calculated Assault",
+  antares: "Relentless Pursuit",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

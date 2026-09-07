@@ -2889,6 +2889,220 @@ if (
   );
 }
 
+const antares = getCatalogDragon("antares");
+if (!antares) fail("missing Antares");
+const antaresNames: [number, string, string[], string][] = [
+  [1, "Blazing Onslaught", ["Damage Received"], "11%,13.2%,15.4%,18.7%,22%"],
+  [2, "Dragon's Flair", ["Damage Dealt"], "8%,9.6%,11.2%,13.6%,16%"],
+  [3, "Fiery Precision", ["Damage Rate"], "20%,24%,28%,34%,40%"],
+  [4, "Dragon's Intellect", ["Damage Received", "Intelligence"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+  [5, "Redemption", ["Intelligence/Initiative", "Immunity Chance"], "6%,7.8%,9.6%,12%,15%"],
+];
+for (const [habit, title, labels, firstValues] of antaresNames) {
+  const row = insightForSource("antares", { kind: "habit", habit });
+  if (!row) fail(`Antares habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Antares habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const antaresOnslaught = insightForSource("antares", { kind: "habit", habit: 1 });
+if (!/Physical Damage Received \(Command & Habits\)/i.test(antaresOnslaught?.body ?? "")) {
+  fail("keep Hub Antares Blazing Onslaught Physical Damage Received (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(antaresOnslaught?.body ?? "")) {
+  fail("do not rewrite Hub Antares Blazing Onslaught Command & Habits to screenshot excluding Basic Attacks");
+}
+if (/3 round\(s\)/i.test(antaresOnslaught?.body ?? "")) {
+  fail("do not rewrite Hub Antares Blazing Onslaught 3 rounds to screenshot round(s)");
+}
+if (antaresOnslaught?.scale.length !== 1) {
+  fail(
+    `Antares Blazing Onslaught should be one Damage Received row, got ${antaresOnslaught?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const antaresFlair = insightForSource("antares", { kind: "habit", habit: 2 });
+if (!/Fire Damage Dealt by \+8%/i.test(antaresFlair?.body ?? "")) {
+  fail("keep Hub Antares Dragon's Flair +8%");
+}
+if (/Fire Damage Dealt by \+9\.6%/i.test(antaresFlair?.body ?? "")) {
+  fail("do not rewrite Hub Antares Dragon's Flair +8% to screenshot rank-2 flavor +9.6%");
+}
+const fieryPrecision = insightForSource("antares", { kind: "habit", habit: 3 });
+if (!/Each Round: Command deal Fire Damage/i.test(fieryPrecision?.body ?? "")) {
+  fail("keep Hub Fiery Precision Command deal Fire Damage");
+}
+if (/Relentless Pursuit gains/i.test(fieryPrecision?.body ?? "")) {
+  fail("do not rewrite Hub Fiery Precision Command deal to Relentless Pursuit gains");
+}
+if (/causes the target to attack after all other combatants/i.test(fieryPrecision?.body ?? "")) {
+  fail("do not copy Slow glossary into Hub Fiery Precision text");
+}
+if (glossNames(fieryPrecision).includes("Slow") === false) {
+  fail("Fiery Precision should gloss Slow");
+}
+const antaresIntellect = insightForSource("antares", { kind: "habit", habit: 4 });
+if (
+  antaresIntellect?.scale.find((row) => row.label === "Intelligence")?.values.join(
+    ",",
+  ) !== "5%,6%,7%,8.5%,10%"
+) {
+  fail("Antares Dragon's Intellect Intelligence mismatch");
+}
+const redemption = insightForSource("antares", { kind: "habit", habit: 5 });
+if (!/Each Round: 10% chance to grant yourself Immunity/i.test(redemption?.body ?? "")) {
+  fail("keep Hub Redemption Each Round Immunity chance");
+}
+if (/Start of Each Round/i.test(redemption?.body ?? "")) {
+  fail("do not rewrite Hub Redemption Each Round to screenshot Start of Each Round");
+}
+if (/2 round\(s\)/i.test(redemption?.body ?? "")) {
+  fail("do not rewrite Hub Redemption 2 rounds to screenshot round(s)");
+}
+if (
+  redemption?.scale.find((row) => row.label === "Immunity Chance")?.values.join(",") !==
+  "10%,13%,16%,20%,25%"
+) {
+  fail("Redemption Immunity Chance mismatch");
+}
+if (redemption?.scale.some((row) => row.label === "Vulnerable & Weakened Chance")) {
+  fail("Redemption chance should be Immunity Chance, not Vulnerable & Weakened Chance");
+}
+if (glossNames(redemption).includes("Vulnerable") === false) {
+  fail("Redemption should gloss Vulnerable");
+}
+if (glossNames(redemption).includes("Weakened") === false) {
+  fail("Redemption should gloss Weakened");
+}
+if (glossNames(redemption).includes("Immunity")) {
+  fail("do not invent an Immunity glossary; Star Progression had no definition line");
+}
+if (
+  findAbilityInsight("Blazing Onslaught", { dragonId: "antares" })?.habit !== 1
+) {
+  fail("hovering Blazing Onslaught on Antares should open habit 1");
+}
+if (
+  findAbilityInsight("Blazing Onslaught", { dragonId: "vhagar" })?.habit !== 4
+) {
+  fail("hovering Blazing Onslaught on Vhagar should still open habit 4");
+}
+if (
+  findAbilityInsight("Blazing Onslaught", { dragonId: "shadowsong" })?.habit !== 2
+) {
+  fail("hovering Blazing Onslaught on Shadowsong should still open habit 2");
+}
+if (
+  findAbilityInsight("Dragon's Flair", { dragonId: "antares" })?.habit !== 2
+) {
+  fail("hovering Dragon's Flair on Antares should open habit 2");
+}
+if (
+  findAbilityInsight("Dragon's Flair", { dragonId: "caraxes" })?.habit !== 2
+) {
+  fail("hovering Dragon's Flair on Caraxes should still open habit 2");
+}
+if (
+  findAbilityInsight("Dragon's Intellect", { dragonId: "antares" })?.habit !== 4
+) {
+  fail("hovering Dragon's Intellect on Antares should open habit 4");
+}
+if (
+  findAbilityInsight("Dragon's Intellect", { dragonId: "crimson" })?.habit !== 2
+) {
+  fail("hovering Dragon's Intellect on Crimson should still open habit 2");
+}
+if (
+  findAbilityInsight("Dragon's Intellect", { dragonId: "shadowsong" })?.habit !== 4
+) {
+  fail("hovering Dragon's Intellect on Shadowsong should still open habit 4");
+}
+if (
+  findAbilityInsight("Redemption", { dragonId: "antares" })?.title !== "Redemption"
+) {
+  fail("hovering Redemption should open Antares habit 5");
+}
+const antaresCommand = insightForSource("antares", { kind: "command" });
+if (!antaresCommand) fail("Antares command missing");
+if (antaresCommand.title !== "Relentless Pursuit") {
+  fail(`Antares command title is ${antaresCommand.title}, expected Relentless Pursuit`);
+}
+if (/Relentless Pursuit gains/i.test(antaresCommand.body)) {
+  fail("do not rewrite Hub Antares command to Relentless Pursuit gains");
+}
+if (
+  findAbilityInsight("Relentless Pursuit", { dragonId: "antares" })?.kind !== "command"
+) {
+  fail("hovering Relentless Pursuit should open Antares Command");
+}
+if (!namedChips(antaresCommand).includes("Relentless Pursuit")) {
+  fail("Antares command chips should include Relentless Pursuit");
+}
+if (glossNames(antaresCommand).includes("Vulnerable") === false) {
+  fail("Antares Command should gloss Vulnerable");
+}
+const pursuitTone = tokenizeAbilityText("Relentless Pursuit").find(
+  (part) => part.value === "Relentless Pursuit",
+)?.tone;
+if (pursuitTone !== "command") {
+  fail(`Relentless Pursuit text tone is ${pursuitTone}, expected command`);
+}
+if (statusMarkPolarity("Relentless Pursuit") != null) {
+  fail("Relentless Pursuit is the Command name, not a buff/debuff mark");
+}
+if (statusMarkPolarity("Immunity") !== "buff") {
+  fail("Immunity in habit text should get a buff arrow");
+}
+const immunityTone = tokenizeAbilityText("grant yourself Immunity").find(
+  (part) => part.value === "Immunity",
+)?.tone;
+if (immunityTone !== "buff") {
+  fail(`Immunity text tone is ${immunityTone}, expected buff`);
+}
+const antaresCatalog = catalogFor(antares);
+if (antaresCatalog.namedCount !== 5 || antaresCatalog.needsScreenshot) {
+  fail("Antares habit names from Star Progression should be complete");
+}
+if (antaresCatalog.command.names.includes("Relentless Pursuit") === false) {
+  fail("Dev catalog should list Relentless Pursuit on Antares Command");
+}
+const antaresVulnerable = findAbilityInsight("Vulnerable", { dragonId: "antares" });
+if (!antaresVulnerable || antaresVulnerable.kind !== "buff") {
+  fail(`Vulnerable hover opened ${antaresVulnerable?.kind}:${antaresVulnerable?.title}`);
+}
+if (antaresVulnerable.polarity !== "debuff") fail("Vulnerable is a debuff");
+if (
+  antaresVulnerable.dragonName !== "Antares" ||
+  antaresVulnerable.unlockStars != null
+) {
+  fail(
+    `Vulnerable on Antares should be Command, got ${antaresVulnerable.dragonName} ${antaresVulnerable.unlockStars}`,
+  );
+}
+const antaresSlow = findAbilityInsight("Slow", { dragonId: "antares" });
+if (
+  antaresSlow?.neededBy?.dragonName !== "Antares" ||
+  antaresSlow.neededBy.gates.some((gate) => gate.stars === 6) === false
+) {
+  fail(
+    `Slow on Antares should need 6★ Fiery Precision, got ${JSON.stringify(antaresSlow?.neededBy)}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

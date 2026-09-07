@@ -379,6 +379,7 @@ function labelForPercent(
         chanceFocus.toLowerCase().indexOf(a.toLowerCase()) -
         chanceFocus.toLowerCase().indexOf(b.toLowerCase()),
     );
+    if (/\bImmunity\b/i.test(chanceFocus)) return "Immunity Chance";
     if (granted.includes("Cleanse")) return "Cleanse Chance";
     const alsoBuffsStat =
       /increase\s+(?:your\s+)?(?:Strength|Instinct|Intelligence|Initiative)\b/i.test(

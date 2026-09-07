@@ -14,6 +14,7 @@ const BUFF_NAMES = new Set(
     "Stolen Flock",
     "Resilient Bond",
     "Mirage",
+    "Immunity",
   ].map(keyName),
 );
 

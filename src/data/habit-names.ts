@@ -158,6 +158,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Battle Guile",
     "Veiled Ambush",
   ],
+  antares: [
+    "Blazing Onslaught",
+    "Dragon's Flair",
+    "Fiery Precision",
+    "Dragon's Intellect",
+    "Redemption",
+  ],
 };
 
 export function habitDisplayName(
