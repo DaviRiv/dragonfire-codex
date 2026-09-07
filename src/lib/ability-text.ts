@@ -113,6 +113,8 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Breath of Fire", tone: "command" },
   { phrase: "Burning Ward", tone: "command" },
   { phrase: "Whirlwind", tone: "command" },
+  { phrase: "Calculated Assault", tone: "command" },
+  { phrase: "Resilient Bond", tone: "buff" },
   { phrase: "Rising Tide", tone: "buff" },
   { phrase: "Stolen Flock", tone: "buff" },
   { phrase: "Solar Flare", tone: "status" },

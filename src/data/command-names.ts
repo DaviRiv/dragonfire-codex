@@ -12,6 +12,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   shadowsong: "Breath of Fire",
   tairax: "Burning Ward",
   velar: "Whirlwind",
+  feskar: "Calculated Assault",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

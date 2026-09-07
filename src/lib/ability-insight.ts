@@ -424,6 +424,13 @@ function labelForPercent(
     return "Fire Damage Dealt (per Stack)";
   }
   if (
+    /Physical Damage Received/i.test(statBefore) &&
+    /each stacks? of /i.test(statBefore) &&
+    /by\s+$/i.test(statBefore)
+  ) {
+    return "Damage Received (per Stack)";
+  }
+  if (
     /Fire Damage Dealt/i.test(statBefore) &&
     /by\s+$/i.test(statBefore) &&
     /non-player|Food Tiles|Encounters against Beasts/i.test(after)

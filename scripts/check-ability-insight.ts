@@ -2222,6 +2222,177 @@ if (velarSlow?.dragonName !== "Velar" || velarSlow.unlockStars !== 6) {
   );
 }
 
+const feskar = getCatalogDragon("feskar");
+if (!feskar) fail("missing Feskar");
+const feskarNames: [number, string, string[], string][] = [
+  [1, "Resilient Bond", ["Damage Received (per Stack)"], "-6.5%,-7.8%,-9.1%,-11.05%,-13%"],
+  [2, "Insightful Allies", ["Instinct"], "10%,12%,14%,17%,20%"],
+  [3, "Emerald Inferno", ["Damage Rate"], "40%,48%,56%,68%,80%"],
+  [4, "Quick-Witted", ["Intelligence/Initiative"], "16%,19.2%,22.4%,27.2%,32%"],
+  [5, "Unyielding Grasp", ["Stagger Chance"], "10%,13%,16%,20%,25%"],
+];
+for (const [habit, title, labels, firstValues] of feskarNames) {
+  const row = insightForSource("feskar", { kind: "habit", habit });
+  if (!row) fail(`Feskar habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Feskar habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const resilientBond = insightForSource("feskar", { kind: "habit", habit: 1 });
+if (!/Physical Damage Received \(Command & Habits\)/i.test(resilientBond?.body ?? "")) {
+  fail("keep Hub Resilient Bond Physical Damage Received (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(resilientBond?.body ?? "")) {
+  fail("do not rewrite Hub Resilient Bond Command & Habits to screenshot excluding Basic Attacks");
+}
+if (!/Each Round: If the target Ally retreated/i.test(resilientBond?.body ?? "")) {
+  fail("keep Hub Resilient Bond Each Round retreat trigger");
+}
+if (/At the start of each round/i.test(resilientBond?.body ?? "")) {
+  fail("do not rewrite Hub Resilient Bond Each Round to screenshot At the start of each round");
+}
+if (!/-6\.5%/.test(resilientBond?.body ?? "")) {
+  fail("keep Hub Resilient Bond -6.5%");
+}
+if (/-6% until the end of combat/.test(resilientBond?.body ?? "")) {
+  fail("do not rewrite Hub Resilient Bond -6.5% to screenshot -6%");
+}
+if (glossNames(resilientBond).includes("Resilient Bond")) {
+  fail("Resilient Bond Hub already defines the stack; do not duplicate the glossary");
+}
+const insightfulAllies = insightForSource("feskar", { kind: "habit", habit: 2 });
+if (!/Increase Instinct by \+10% \(enhanced by Instinct\)/i.test(insightfulAllies?.body ?? "")) {
+  fail("keep Hub Insightful Allies Instinct +10% enhanced by Instinct");
+}
+const emeraldInferno = insightForSource("feskar", { kind: "habit", habit: 3 });
+if (/Calculated Assault gains/i.test(emeraldInferno?.body ?? "")) {
+  fail("do not rewrite Hub Emerald Inferno Command deal to Calculated Assault gains");
+}
+if (!/Command deal Fire Damage/i.test(emeraldInferno?.body ?? "")) {
+  fail("keep Hub Emerald Inferno Command deal Fire Damage");
+}
+if (!/Physical Damage \(Command & Habits\)/i.test(emeraldInferno?.body ?? "")) {
+  fail("keep Hub Emerald Inferno Physical Damage (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(emeraldInferno?.body ?? "")) {
+  fail("do not rewrite Hub Emerald Inferno Command & Habits to screenshot excluding Basic Attacks");
+}
+if (!/increased by 1\.5x against targets afflicted with Burn/i.test(emeraldInferno?.body ?? "")) {
+  fail("keep Hub Emerald Inferno 1.5x Burn Damage Rate");
+}
+if (emeraldInferno?.scale.some((row) => row.values.join(",") === "60%,72%,84%,102%,120%")) {
+  fail("Emerald Inferno should skip 1.5x derived Damage Rate");
+}
+if (emeraldInferno?.scale.length !== 1) {
+  fail(
+    `Emerald Inferno should be one Damage Rate row, got ${emeraldInferno?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(emeraldInferno).includes("Burn") === false) {
+  fail("Emerald Inferno should gloss Burn");
+}
+const quickWitted = insightForSource("feskar", { kind: "habit", habit: 4 });
+if (!/Intelligence and Initiative/i.test(quickWitted?.body ?? "")) {
+  fail("keep Hub Quick-Witted Intelligence and Initiative");
+}
+const unyieldingGrasp = insightForSource("feskar", { kind: "habit", habit: 5 });
+if (!/prioritizes warriors/i.test(unyieldingGrasp?.body ?? "")) {
+  fail("keep Hub Unyielding Grasp prioritizes warriors");
+}
+if (/3 round\(s\)/i.test(unyieldingGrasp?.body ?? "")) {
+  fail("do not rewrite Hub Unyielding Grasp 3 rounds to screenshot round(s)");
+}
+if (/prevents the target from using/i.test(unyieldingGrasp?.body ?? "")) {
+  fail("do not copy Stagger glossary into Hub Unyielding Grasp text");
+}
+if (glossNames(unyieldingGrasp).includes("Stagger") === false) {
+  fail("Unyielding Grasp should gloss Stagger");
+}
+if (
+  findAbilityInsight("Resilient Bond", { dragonId: "feskar" })?.title !==
+  "Resilient Bond"
+) {
+  fail("hovering Resilient Bond should open Feskar habit 1");
+}
+if (
+  findAbilityInsight("Unyielding Grasp", { dragonId: "feskar" })?.title !==
+  "Unyielding Grasp"
+) {
+  fail("hovering Unyielding Grasp should open Feskar habit 5");
+}
+const feskarCommand = insightForSource("feskar", { kind: "command" });
+if (!feskarCommand) fail("Feskar command missing");
+if (feskarCommand.title !== "Calculated Assault") {
+  fail(`Feskar command title is ${feskarCommand.title}, expected Calculated Assault`);
+}
+if (/Calculated Assault gains/i.test(feskarCommand.body)) {
+  fail("do not rewrite Hub command text to screenshot wording");
+}
+if (
+  findAbilityInsight("Calculated Assault", { dragonId: "feskar" })?.kind !== "command"
+) {
+  fail("hovering Calculated Assault should open Feskar's Command");
+}
+if (!namedChips(feskarCommand).includes("Calculated Assault")) {
+  fail("Feskar command chips should include Calculated Assault");
+}
+const assaultTone = tokenizeAbilityText("Calculated Assault").find(
+  (part) => part.value === "Calculated Assault",
+)?.tone;
+if (assaultTone !== "command") {
+  fail(`Calculated Assault text tone is ${assaultTone}, expected command`);
+}
+if (statusMarkPolarity("Resilient Bond") !== "buff") {
+  fail("Resilient Bond in habit text should get a buff arrow");
+}
+if (statusMarkPolarity("Calculated Assault") != null) {
+  fail("Calculated Assault is the Command name, not a buff/debuff mark");
+}
+const bondTone = tokenizeAbilityText("1 stack of Resilient Bond").find(
+  (part) => part.value === "Resilient Bond",
+)?.tone;
+if (bondTone !== "buff") {
+  fail(`Resilient Bond text tone is ${bondTone}, expected buff`);
+}
+const feskarCatalog = catalogFor(feskar);
+if (feskarCatalog.namedCount !== 5 || feskarCatalog.needsScreenshot) {
+  fail("Feskar habit names from Star Progression should be complete");
+}
+if (feskarCatalog.command.names.includes("Calculated Assault") === false) {
+  fail("Dev catalog should list Calculated Assault on Feskar's Command");
+}
+const feskarStagger = findAbilityInsight("Stagger", { dragonId: "feskar" });
+if (!feskarStagger || feskarStagger.kind !== "buff") {
+  fail(`Stagger hover opened ${feskarStagger?.kind}:${feskarStagger?.title}`);
+}
+if (feskarStagger.polarity !== "debuff") fail("Stagger is a debuff");
+if (!/Attack Modifier Commands/i.test(feskarStagger.body) || !/Basic Attacks/i.test(feskarStagger.body)) {
+  fail(`Stagger glossary missing Star Progression line: ${feskarStagger.body}`);
+}
+if (
+  feskarStagger.dragonName !== "Feskar" ||
+  feskarStagger.unlockStars !== 10
+) {
+  fail(
+    `Stagger on Feskar should be 10★ Unyielding Grasp, got ${feskarStagger.dragonName} ${feskarStagger.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

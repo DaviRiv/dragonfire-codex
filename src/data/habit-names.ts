@@ -130,6 +130,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Fierce Unity",
     "Breath of Renewal",
   ],
+  feskar: [
+    "Resilient Bond",
+    "Insightful Allies",
+    "Emerald Inferno",
+    "Quick-Witted",
+    "Unyielding Grasp",
+  ],
 };
 
 export function habitDisplayName(
