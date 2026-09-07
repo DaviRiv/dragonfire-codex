@@ -10,6 +10,8 @@ export const STATUS_GLOSSARY: Record<string, string> = {
   Advantage: "Increases the target's Damage Dealt.",
   Weakened: "Reduces the target's Damage Dealt.",
   Resistance: "Reduces the target's Damage Received.",
+  Taunt:
+    "Forces the target to launch their Basic Attacks against this dragon.",
   Overwhelm:
     "Prevents the target from using Active Commands and Habits on their turn.",
   Stun: "Prevents the target from using Commands and Habits, or launching Basic Attacks on their turn.",

@@ -144,6 +144,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Steel Shroud",
     "Cloak of Terror",
   ],
+  vaeldra: [
+    "Dragon's Valor",
+    "Ensnare",
+    "Tempting Distraction",
+    "Infernal Force",
+    "Siren's Call",
+  ],
 };
 
 export function habitDisplayName(

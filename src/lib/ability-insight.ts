@@ -324,6 +324,14 @@ function isDerivedPercent(text: string, index: number): boolean {
   return false;
 }
 
+function chanceClauseAround(after: string): string {
+  const first = after.split(/\.\s/)[0] ?? after;
+  const rest = after.slice(first.length).replace(/^\.\s*/, "");
+  if (!/^Targets that are already afflicted with /i.test(rest)) return first;
+  const second = rest.split(/\.\s/)[0] ?? rest;
+  return `${first}. ${second}`;
+}
+
 function labelForPercent(
   text: string,
   index: number,
@@ -332,7 +340,7 @@ function labelForPercent(
   const after = text.slice(index, index + 160);
   const before = text.slice(Math.max(0, index - 90), index);
   const statBefore = text.slice(Math.max(0, index - 160), index);
-  const chanceClause = after.split(/\.\s/)[0] ?? after;
+  const chanceClause = chanceClauseAround(after);
   const stackAfter = chanceClause.match(
     /(?:stack|stacks) of ([A-Z][A-Za-z][A-Za-z'’]*(?:[ -][A-Z][A-Za-z'’]*)*)/i,
   );

@@ -2548,6 +2548,170 @@ if (
   );
 }
 
+const vaeldra = getCatalogDragon("vaeldra");
+if (!vaeldra) fail("missing Vaeldra");
+const vaeldraNames: [number, string, string[], string][] = [
+  [1, "Dragon's Valor", ["Damage Received", "Strength"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [2, "Ensnare", ["Instinct/Initiative"], "-18%,-21.6%,-25.2%,-30.6%,-36%"],
+  [3, "Tempting Distraction", ["Damage Received"], "6%,7.2%,8.4%,10.2%,12%"],
+  [4, "Infernal Force", ["Damage Dealt"], "12%,14.4%,16.8%,20.4%,24%"],
+  [5, "Siren's Call", ["Damage Received", "Taunt & Stagger Chance"], "-10%,-13%,-16%,-20%,-25%"],
+];
+for (const [habit, title, labels, firstValues] of vaeldraNames) {
+  const row = insightForSource("vaeldra", { kind: "habit", habit });
+  if (!row) fail(`Vaeldra habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Vaeldra habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const vaeldraValor = insightForSource("vaeldra", { kind: "habit", habit: 1 });
+if (!/Reduce your Damage Received by -5% and increase your Strength by \+8\.5%/i.test(vaeldraValor?.body ?? "")) {
+  fail("keep Hub Dragon's Valor Damage Received and Strength");
+}
+if (
+  vaeldraValor?.scale.find((row) => row.label === "Strength")?.values.join(",") !==
+  "8.5%,10.2%,11.9%,14.45%,17%"
+) {
+  fail("Vaeldra Dragon's Valor Strength mismatch");
+}
+const vaeldraEnsnare = insightForSource("vaeldra", { kind: "habit", habit: 2 });
+if (!/Instinct and Initiative/i.test(vaeldraEnsnare?.body ?? "")) {
+  fail("keep Hub Vaeldra Ensnare Instinct and Initiative");
+}
+if (!/3 round\(s\)/i.test(vaeldraEnsnare?.body ?? "")) {
+  fail("keep Hub Vaeldra Ensnare 3 round(s)");
+}
+const temptingDistraction = insightForSource("vaeldra", { kind: "habit", habit: 3 });
+if (!/Physical Damage Received \(Command & Habits\)/i.test(temptingDistraction?.body ?? "")) {
+  fail("keep Hub Tempting Distraction Physical Damage Received (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(temptingDistraction?.body ?? "")) {
+  fail("do not rewrite Hub Tempting Distraction Command & Habits to screenshot excluding Basic Attacks");
+}
+if (/2 round\(s\)/i.test(temptingDistraction?.body ?? "")) {
+  fail("do not rewrite Hub Tempting Distraction 2 rounds to screenshot round(s)");
+}
+if (glossNames(temptingDistraction).includes("Taunt") === false) {
+  fail("Tempting Distraction should gloss Taunt");
+}
+const infernalForce = insightForSource("vaeldra", { kind: "habit", habit: 4 });
+if (!/Physical Damage Dealt \(Command & Habits\)/i.test(infernalForce?.body ?? "")) {
+  fail("keep Hub Infernal Force Physical Damage Dealt (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(infernalForce?.body ?? "")) {
+  fail("do not rewrite Hub Infernal Force Command & Habits to screenshot excluding Basic Attacks");
+}
+if (!/Each effects lasts/i.test(infernalForce?.body ?? "")) {
+  fail("keep Hub Infernal Force Each effects lasts");
+}
+if (/Each effect lasts/i.test(infernalForce?.body ?? "") && !/Each effects lasts/i.test(infernalForce?.body ?? "")) {
+  fail("do not rewrite Hub Infernal Force Each effects lasts");
+}
+const sirensCall = insightForSource("vaeldra", { kind: "habit", habit: 5 });
+if (!/will be afflict with Stagger instead/i.test(sirensCall?.body ?? "")) {
+  fail("keep Hub Siren's Call afflict spelling");
+}
+if (/will be afflicted with Stagger instead/i.test(sirensCall?.body ?? "")) {
+  fail("do not rewrite Hub Siren's Call afflict to screenshot afflicted");
+}
+if (/3 round\(s\)/i.test(sirensCall?.body ?? "")) {
+  fail("do not rewrite Hub Siren's Call 3 rounds to screenshot round(s)");
+}
+if (/forces the target to launch their Basic Attacks/i.test(sirensCall?.body ?? "")) {
+  fail("do not copy Taunt glossary into Hub Siren's Call text");
+}
+if (/prevents the target from using Attack Modifier Commands/i.test(sirensCall?.body ?? "")) {
+  fail("do not copy Stagger glossary into Hub Siren's Call text");
+}
+if (
+  sirensCall?.scale.find((row) => row.label === "Taunt & Stagger Chance")?.values.join(
+    ",",
+  ) !== "40%,52%,64%,80%,100%"
+) {
+  fail("Siren's Call Taunt & Stagger Chance mismatch");
+}
+if (glossNames(sirensCall).includes("Taunt") === false) {
+  fail("Siren's Call should gloss Taunt");
+}
+if (glossNames(sirensCall).includes("Stagger") === false) {
+  fail("Siren's Call should gloss Stagger");
+}
+if (
+  findAbilityInsight("Dragon's Valor", { dragonId: "vaeldra" })?.habit !== 1
+) {
+  fail("hovering Dragon's Valor on Vaeldra should open habit 1");
+}
+if (
+  findAbilityInsight("Dragon's Valor", { dragonId: "vermax" })?.habit !== 4
+) {
+  fail("hovering Dragon's Valor on Vermax should still open habit 4");
+}
+if (
+  findAbilityInsight("Ensnare", { dragonId: "vaeldra" })?.habit !== 2
+) {
+  fail("hovering Ensnare on Vaeldra should open habit 2");
+}
+if (
+  findAbilityInsight("Ensnare", { dragonId: "shadowsong" })?.habit !== 1
+) {
+  fail("hovering Ensnare on Shadowsong should still open habit 1");
+}
+if (
+  findAbilityInsight("Siren's Call", { dragonId: "vaeldra" })?.title !==
+  "Siren's Call"
+) {
+  fail("hovering Siren's Call should open Vaeldra habit 5");
+}
+const vaeldraCommand = insightForSource("vaeldra", { kind: "command" });
+if (!vaeldraCommand) fail("Vaeldra command missing");
+if (vaeldraCommand.title !== "Command") {
+  fail(`Vaeldra command title is ${vaeldraCommand.title}, expected Command`);
+}
+if (glossNames(vaeldraCommand).includes("Taunt") === false) {
+  fail("Vaeldra Command should gloss Taunt");
+}
+const vaeldraCatalog = catalogFor(vaeldra);
+if (vaeldraCatalog.namedCount !== 5 || vaeldraCatalog.needsScreenshot) {
+  fail("Vaeldra habit names from Star Progression should be complete");
+}
+const vaeldraTaunt = findAbilityInsight("Taunt", { dragonId: "vaeldra" });
+if (!vaeldraTaunt || vaeldraTaunt.kind !== "buff") {
+  fail(`Taunt hover opened ${vaeldraTaunt?.kind}:${vaeldraTaunt?.title}`);
+}
+if (vaeldraTaunt.polarity !== "buff") fail("Taunt is a buff");
+if (!/Basic Attacks/i.test(vaeldraTaunt.body) || !/against this dragon/i.test(vaeldraTaunt.body)) {
+  fail(`Taunt glossary missing Star Progression line: ${vaeldraTaunt.body}`);
+}
+if (vaeldraTaunt.dragonName !== "Vaeldra" || vaeldraTaunt.unlockStars != null) {
+  fail(
+    `Taunt on Vaeldra should be Command, got ${vaeldraTaunt.dragonName} ${vaeldraTaunt.unlockStars}`,
+  );
+}
+const vaeldraStagger = findAbilityInsight("Stagger", { dragonId: "vaeldra" });
+if (
+  vaeldraStagger?.dragonName !== "Vaeldra" ||
+  vaeldraStagger.unlockStars !== 10
+) {
+  fail(
+    `Stagger on Vaeldra should be 10★ Siren's Call, got ${vaeldraStagger?.dragonName} ${vaeldraStagger?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
