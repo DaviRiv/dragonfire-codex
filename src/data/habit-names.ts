@@ -207,6 +207,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Vital Essence",
     "Bountiful Gifts",
   ],
+  shimmer: [
+    "Crushing Force",
+    "Dragon's Insight",
+    "Loyal Shield",
+    "Unbroken Devotion",
+    "Sneak Attack",
+  ],
 };
 
 export function habitDisplayName(

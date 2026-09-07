@@ -322,6 +322,8 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/this damage is doubled/i.test(before)) return true;
   if (/this chance is doubled/i.test(before)) return true;
   if (/and is doubled \(/i.test(before)) return true;
+  if (/is doubled if/i.test(before)) return true;
+  if (/recovery is doubled/i.test(before)) return true;
   if (/triple the (?:damage|recovery)/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
   if (/by 2x/i.test(before)) return true;
@@ -385,7 +387,7 @@ function labelForPercent(
     if (/\bImmunity\b/i.test(chanceFocus)) return "Immunity Chance";
     if (granted.includes("Cleanse")) return "Cleanse Chance";
     const alsoBuffsStat =
-      /increase\s+(?:your\s+)?(?:Strength|Instinct|Intelligence|Initiative)\b/i.test(
+      /increase\s+(?:(?:your|the)\s+)?(?:Strength|Instinct|Intelligence|Initiative|(?:Physical|Tactical|Fire) Damage Dealt)\b/i.test(
         chanceClause,
       );
     if (granted.length > 1 && !alsoBuffsStat) {

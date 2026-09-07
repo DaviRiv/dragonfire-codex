@@ -118,6 +118,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Radiant Wings", tone: "command" },
   { phrase: "Cunning Whispers", tone: "command" },
   { phrase: "Nature's Reckoning", tone: "command" },
+  { phrase: "Unbreakable Loyalty", tone: "command" },
   { phrase: "Resilient Bond", tone: "buff" },
   { phrase: "Fire Ward", tone: "buff" },
   { phrase: "Mirage", tone: "buff" },

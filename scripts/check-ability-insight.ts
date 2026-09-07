@@ -4299,6 +4299,233 @@ if (bevlorinCatalog.command.names.includes("Nature's Reckoning") === false) {
   fail("Dev catalog should list Nature's Reckoning on Bevlorin's Command");
 }
 
+const shimmer = getCatalogDragon("shimmer");
+if (!shimmer) fail("missing Shimmer");
+const shimmerNames: [number, string, string[], string][] = [
+  [1, "Crushing Force", ["Damage Dealt"], "9%,10.8%,12.6%,15.3%,18%"],
+  [2, "Dragon's Insight", ["Damage Received", "Instinct"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+  [3, "Loyal Shield", ["Recovery Rate"], "30%,36%,42%,51%,60%"],
+  [4, "Unbroken Devotion", ["Recovery Received"], "15%,18%,21%,25.5%,30%"],
+  [5, "Sneak Attack", ["Sneak Attack Chance"], "14%,18.2%,22.4%,28%,35%"],
+];
+for (const [habit, title, labels, firstValues] of shimmerNames) {
+  const row = insightForSource("shimmer", { kind: "habit", habit });
+  if (!row) fail(`Shimmer habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Shimmer habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const crushingForce = insightForSource("shimmer", { kind: "habit", habit: 1 });
+if (!/Physical Damage Dealt \(Command & Habits\)/i.test(crushingForce?.body ?? "")) {
+  fail("keep Hub Crushing Force Physical Damage Dealt (Command & Habits)");
+}
+if (!/by \+9% for 3 rounds/i.test(crushingForce?.body ?? "")) {
+  fail("keep Hub Crushing Force +9% for 3 rounds");
+}
+if (/by \+10\.8% for 3 rounds/i.test(crushingForce?.body ?? "")) {
+  fail("do not rewrite Hub Crushing Force +9% to screenshot rank-2 flavor +10.8%");
+}
+if (/3 round\(s\)/i.test(crushingForce?.body ?? "")) {
+  fail("do not rewrite Hub Crushing Force 3 rounds to screenshot round(s)");
+}
+if (crushingForce?.scale.length !== 1) {
+  fail(
+    `Crushing Force should be one Damage Dealt row, got ${crushingForce?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const shimmerInsight = insightForSource("shimmer", { kind: "habit", habit: 2 });
+if (!/Reduce your Damage Received by -4% and increase your Instinct by \+5%/i.test(shimmerInsight?.body ?? "")) {
+  fail("keep Hub Shimmer Dragon's Insight -4% and +5%");
+}
+if (/Damage Received by -4\.8%/i.test(shimmerInsight?.body ?? "")) {
+  fail("do not rewrite Hub Shimmer Dragon's Insight -4% to screenshot rank-2 -4.8%");
+}
+if (/Instinct by \+6%/i.test(shimmerInsight?.body ?? "")) {
+  fail("do not rewrite Hub Shimmer Dragon's Insight +5% to screenshot rank-2 +6%");
+}
+if (
+  shimmerInsight?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+  "5%,6%,7%,8.5%,10%"
+) {
+  fail("Shimmer Dragon's Insight Instinct mismatch");
+}
+const loyalShield = insightForSource("shimmer", { kind: "habit", habit: 3 });
+if (!/Rounds 2,4,7,9: Command apply Recovery/i.test(loyalShield?.body ?? "")) {
+  fail("keep Hub Loyal Shield Command apply Recovery");
+}
+if (/Unbreakable Loyalty gains/i.test(loyalShield?.body ?? "")) {
+  fail("do not rewrite Hub Loyal Shield Command apply to Unbreakable Loyalty gains");
+}
+if (!/Recovery Rate: \+30%, enhanced by Instinct/i.test(loyalShield?.body ?? "")) {
+  fail("keep Hub Loyal Shield Recovery Rate +30%");
+}
+if (/Recovery Rate: \+42%/i.test(loyalShield?.body ?? "")) {
+  fail("do not rewrite Hub Loyal Shield +30% to screenshot rank-3 flavor +42%");
+}
+if (loyalShield?.scale.some((row) => row.values.join(",") === "60%,72%,84%,102%,120%")) {
+  fail("Loyal Shield should skip doubled Resistance Recovery Rate");
+}
+if (loyalShield?.scale.length !== 1) {
+  fail(
+    `Loyal Shield should be one Recovery Rate row, got ${loyalShield?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(loyalShield).includes("Resistance") === false) {
+  fail("Loyal Shield should gloss Resistance");
+}
+const shimmerUnbroken = insightForSource("shimmer", { kind: "habit", habit: 4 });
+if (!/Increase Recovery Received by \+15% of 2 other Allies/i.test(shimmerUnbroken?.body ?? "")) {
+  fail("keep Hub Shimmer Unbroken Devotion +15%");
+}
+if (/Increase Recovery Received by \+18%/i.test(shimmerUnbroken?.body ?? "")) {
+  fail("do not rewrite Hub Shimmer Unbroken Devotion +15% to screenshot rank-2 flavor +18%");
+}
+const sneakAttack = insightForSource("shimmer", { kind: "habit", habit: 5 });
+if (!/14% chance to increase Physical Damage Dealt by \+10%/i.test(sneakAttack?.body ?? "")) {
+  fail("keep Hub Sneak Attack 14% chance and +10%");
+}
+if (/18\.2% chance/i.test(sneakAttack?.body ?? "")) {
+  fail("do not rewrite Hub Sneak Attack 14% to screenshot rank-2 flavor 18.2%");
+}
+if (!/for 2 rounds/i.test(sneakAttack?.body ?? "")) {
+  fail("keep Hub Sneak Attack 2 rounds");
+}
+if (/2 round\(s\)/i.test(sneakAttack?.body ?? "")) {
+  fail("do not rewrite Hub Sneak Attack 2 rounds to screenshot round(s)");
+}
+if (!/the other Ally with the highest Strength/i.test(sneakAttack?.body ?? "")) {
+  fail("keep Hub Sneak Attack the other Ally");
+}
+if (!/First-Strike causes the target to attack before all other combatants each round/i.test(sneakAttack?.body ?? "")) {
+  fail("keep Hub Sneak Attack First-Strike attack sentence");
+}
+if (sneakAttack?.scale.some((row) => row.values.join(",") === "10%,10%,10%,10%,10%")) {
+  fail("Sneak Attack should skip constant Physical Damage Dealt +10%");
+}
+if (sneakAttack?.scale.some((row) => row.label === "First-Strike Chance")) {
+  fail("Sneak Attack chance row should be Sneak Attack Chance, not First-Strike Chance");
+}
+if (sneakAttack?.scale.length !== 1) {
+  fail(
+    `Sneak Attack should be one chance row, got ${sneakAttack?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(sneakAttack).includes("First-Strike")) {
+  fail("Sneak Attack already explains First-Strike; do not duplicate the glossary");
+}
+if (findAbilityInsight("Crushing Force", { dragonId: "shimmer" })?.habit !== 1) {
+  fail("hovering Crushing Force should open Shimmer habit 1");
+}
+if (findAbilityInsight("Dragon's Insight", { dragonId: "shimmer" })?.habit !== 2) {
+  fail("hovering Dragon's Insight on Shimmer should open habit 2");
+}
+if (findAbilityInsight("Dragon's Insight", { dragonId: "kalspire" })?.habit !== 4) {
+  fail("hovering Dragon's Insight on Kalspire should still open habit 4");
+}
+if (
+  findAbilityInsight("Dragon's Insight", { dragonId: "shimmer" })?.scale.find(
+    (row) => row.label === "Damage Received",
+  )?.values.join(",") !== "-4%,-4.8%,-5.6%,-6.8%,-8%"
+) {
+  fail("Shimmer Dragon's Insight should keep -4% scale, not Kalspire -6%");
+}
+if (findAbilityInsight("Loyal Shield", { dragonId: "shimmer" })?.habit !== 3) {
+  fail("hovering Loyal Shield should open Shimmer habit 3");
+}
+if (findAbilityInsight("Unbroken Devotion", { dragonId: "shimmer" })?.habit !== 4) {
+  fail("hovering Unbroken Devotion on Shimmer should open habit 4");
+}
+if (findAbilityInsight("Unbroken Devotion", { dragonId: "dawnseeker" })?.habit !== 2) {
+  fail("hovering Unbroken Devotion on Dawnseeker should still open habit 2");
+}
+if (findAbilityInsight("Unbroken Devotion", { dragonId: "rhysarion" })?.habit !== 4) {
+  fail("hovering Unbroken Devotion on Rhysarion should still open habit 4");
+}
+if (
+  findAbilityInsight("Unbroken Devotion", { dragonId: "rhysarion" })?.scale.find(
+    (row) => row.label === "Recovery Received",
+  )?.values.join(",") !== "20%,24%,28%,34%,40%"
+) {
+  fail("Rhysarion Unbroken Devotion should keep +20% scale, not Shimmer +15%");
+}
+if (findAbilityInsight("Sneak Attack", { dragonId: "shimmer" })?.title !== "Sneak Attack") {
+  fail("hovering Sneak Attack should open Shimmer habit 5");
+}
+const shimmerCommand = insightForSource("shimmer", { kind: "command" });
+if (!shimmerCommand) fail("Shimmer command missing");
+if (shimmerCommand.title !== "Unbreakable Loyalty") {
+  fail(`Shimmer command title is ${shimmerCommand.title}, expected Unbreakable Loyalty`);
+}
+if (commandHeading("shimmer") !== "Command · Unbreakable Loyalty") {
+  fail("Shimmer command heading should be Command · Unbreakable Loyalty");
+}
+if (/Unbreakable Loyalty gains/i.test(shimmerCommand.body)) {
+  fail("do not rewrite Hub Shimmer command to Unbreakable Loyalty gains");
+}
+if (
+  findAbilityInsight("Unbreakable Loyalty", { dragonId: "shimmer" })?.kind !== "command"
+) {
+  fail("hovering Unbreakable Loyalty should open Shimmer's Command");
+}
+if (!namedChips(shimmerCommand).includes("Unbreakable Loyalty")) {
+  fail("Shimmer command chips should include Unbreakable Loyalty");
+}
+const loyaltyTone = tokenizeAbilityText("Unbreakable Loyalty").find(
+  (part) => part.value === "Unbreakable Loyalty",
+)?.tone;
+if (loyaltyTone !== "command") {
+  fail(`Unbreakable Loyalty text tone is ${loyaltyTone}, expected command`);
+}
+if (statusMarkPolarity("Unbreakable Loyalty") != null) {
+  fail("Unbreakable Loyalty is the Command name, not a buff/debuff mark");
+}
+const shimmerCatalog = catalogFor(shimmer);
+if (shimmerCatalog.namedCount !== 5 || shimmerCatalog.needsScreenshot) {
+  fail("Shimmer habit names from Star Progression should be complete");
+}
+if (shimmerCatalog.command.names.includes("Unbreakable Loyalty") === false) {
+  fail("Dev catalog should list Unbreakable Loyalty on Shimmer's Command");
+}
+const shimmerFirstStrike = findAbilityInsight("First-Strike", { dragonId: "shimmer" });
+if (
+  shimmerFirstStrike?.dragonName !== "Shimmer" ||
+  shimmerFirstStrike.unlockStars !== 10
+) {
+  fail(
+    `First-Strike on Shimmer should be 10★ Sneak Attack, got ${shimmerFirstStrike?.dragonName} ${shimmerFirstStrike?.unlockStars}`,
+  );
+}
+if (!/act before all other combatants/i.test(shimmerFirstStrike?.body ?? "")) {
+  fail(`First-Strike glossary missing Star Progression line: ${shimmerFirstStrike?.body}`);
+}
+if (/attack before all other combatants/i.test(shimmerFirstStrike?.body ?? "")) {
+  fail("do not rewrite First-Strike glossary act to Sneak Attack Hub attack");
+}
+const shimmerResistance = findAbilityInsight("Resistance", { dragonId: "shimmer" });
+if (
+  shimmerResistance?.neededBy?.dragonName !== "Shimmer" ||
+  shimmerResistance.neededBy.gates.some((gate) => gate.stars === 6) === false
+) {
+  fail(
+    `Resistance on Shimmer should need 6★ Loyal Shield, got ${JSON.stringify(shimmerResistance?.neededBy)}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
