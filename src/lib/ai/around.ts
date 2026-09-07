@@ -1,7 +1,6 @@
 import { ONLINE_DPS_CORE } from "@/data/meta";
 import { DRAGONS } from "@/data/dragons";
 import { emptyPit, findDragon } from "@/lib/dragons";
-import { pairingReport } from "@/lib/pairing";
 import { isHealer, isTank } from "@/lib/roles";
 import { suggestFullLine } from "@/lib/suggest";
 import { emptySlots, makePick } from "@/lib/lineup";
@@ -47,26 +46,10 @@ function nameLine(line: BoardLine): string {
 }
 
 function whyFor(line: BoardLine): string {
-  const lineup = {
-    ...theoryLineup(line.troop, line.mode, line.leftStars),
-    name: line.name,
-    slots: {
-      left: makePick(line.left, line.leftStars, 1),
-      vanguard: makePick(line.vanguard, line.vanguardStars, 1),
-      right: makePick(line.right, line.rightStars, 1),
-    },
-  };
-  try {
-    const report = pairingReport(lineup, emptyPit());
-    const bits = report.pros.slice(0, 2).map((note) => note.title);
-    if (bits.length) return bits.join(". ");
-  } catch {
-    // Keep the seat sentence if pairing cannot run.
-  }
   const left = findDragon(line.left)?.name ?? line.left;
   const vanguard = findDragon(line.vanguard)?.name ?? line.vanguard;
   const right = findDragon(line.right)?.name ?? line.right;
-  return `${vanguard} soaks in Vanguard, ${left} on the left, ${right} on the right.`;
+  return `${vanguard} in Vanguard, ${left} on the left, ${right} on the right at ★${line.leftStars}.`;
 }
 
 function fillAround(opts: {

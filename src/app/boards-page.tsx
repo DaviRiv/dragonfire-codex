@@ -30,7 +30,7 @@ export function BoardsPage() {
   const [boards, setBoards] = useState<BoardPublic[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [source, setSource] = useState<"community" | "copilot" | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"off" | "copilot" | "community">("off");
 
   const dragon = DRAGONS.find((row) => row.id === dragonId) ?? null;
   const filtered = useMemo(() => {
@@ -52,7 +52,7 @@ export function BoardsPage() {
 
   async function loadCommunity() {
     if (!dragon) return;
-    setBusy(true);
+    setBusy("community");
     try {
       const data = await apiJson<{ boards: BoardPublic[] }>(
         `/api/boards?dragonId=${encodeURIComponent(dragon.id)}&stars=${stars}`,
@@ -63,7 +63,7 @@ export function BoardsPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not load boards.");
     } finally {
-      setBusy(false);
+      setBusy("off");
     }
   }
 
@@ -73,7 +73,7 @@ export function BoardsPage() {
       toast.error("Register an account to use Copilot.");
       return;
     }
-    setBusy(true);
+    setBusy("copilot");
     try {
       const data = await apiJson<{ boards: BoardPublic[] }>("/api/boards/suggest", {
         method: "POST",
@@ -90,7 +90,7 @@ export function BoardsPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Copilot could not seat a line.");
     } finally {
-      setBusy(false);
+      setBusy("off");
     }
   }
 
@@ -218,9 +218,9 @@ export function BoardsPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {user ? (
-                <Button onClick={() => void askCopilot()} disabled={busy}>
+                <Button onClick={() => void askCopilot()} disabled={busy !== "off"}>
                   <Sparkles />
-                  Ask Copilot
+                  {busy === "copilot" ? "Seating lines…" : "Ask Copilot"}
                 </Button>
               ) : (
                 <Link
@@ -233,10 +233,10 @@ export function BoardsPage() {
               )}
               <Button
                 variant="outline"
-                disabled={busy || !dragon}
+                disabled={busy !== "off" || !dragon}
                 onClick={() => void loadCommunity()}
               >
-                Show reviews
+                {busy === "community" ? "Loading…" : "Show reviews"}
               </Button>
             </div>
           </div>
