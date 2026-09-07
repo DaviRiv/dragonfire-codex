@@ -403,7 +403,8 @@ function labelForPercent(
   }
   if (
     /recover(?:y)? rate/i.test(before.slice(-24)) ||
-    /recover(?:y)? rate/i.test(after.slice(0, 24))
+    /recover(?:y)? rate/i.test(after.slice(0, 24)) ||
+    /\bthe Recovery to\s+$/i.test(before)
   ) {
     return "Recovery Rate";
   }

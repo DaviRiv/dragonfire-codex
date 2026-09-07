@@ -14,6 +14,7 @@ export const COMMAND_NAMES: Record<string, string> = {
   velar: "Whirlwind",
   feskar: "Calculated Assault",
   antares: "Relentless Pursuit",
+  dawnseeker: "Radiant Wings",
 };
 
 export function commandDisplayName(dragonId: string): string | undefined {

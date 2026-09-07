@@ -179,6 +179,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Iron Shell",
     "Mimicry",
   ],
+  dawnseeker: [
+    "Tactical Inferno",
+    "Unbroken Devotion",
+    "Sunbreak",
+    "Wind's Favor",
+    "First Light",
+  ],
 };
 
 export function habitDisplayName(

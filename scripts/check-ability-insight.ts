@@ -3497,6 +3497,217 @@ if (/on their turn/i.test(arulixStagger?.body ?? "")) {
   fail("do not extend Stagger glossary with Hypnotic Helix on their turn");
 }
 
+const dawnseeker = getCatalogDragon("dawnseeker");
+if (!dawnseeker) fail("missing Dawnseeker");
+const dawnseekerNames: [number, string, string[], string][] = [
+  [1, "Tactical Inferno", ["Damage Dealt"], "9%,10.8%,12.6%,15.3%,18%"],
+  [2, "Unbroken Devotion", ["Recovery Received"], "15%,18%,21%,25.5%,30%"],
+  [3, "Sunbreak", ["Damage Rate", "Recovery Rate"], "100%,110%,120%,135%,150%"],
+  [4, "Wind's Favor", ["Initiative"], "8%,9.6%,11.2%,13.6%,16%"],
+  [5, "First Light", ["Intelligence/Instinct", "First-Strike Chance"], "5%,6.5%,8%,10%,12.5%"],
+];
+for (const [habit, title, labels, firstValues] of dawnseekerNames) {
+  const row = insightForSource("dawnseeker", { kind: "habit", habit });
+  if (!row) fail(`Dawnseeker habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Dawnseeker habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const tacticalInferno = insightForSource("dawnseeker", { kind: "habit", habit: 1 });
+if (!/Increase the Tactical Damage Dealt of 1 Ally in any lane \(prioritizes the Left Flank\)/i.test(tacticalInferno?.body ?? "")) {
+  fail("keep Hub Dawnseeker Tactical Inferno Left Flank / Tactical Damage Dealt");
+}
+if (!/by \+9% for 3 rounds/i.test(tacticalInferno?.body ?? "")) {
+  fail("keep Hub Dawnseeker Tactical Inferno +9%");
+}
+if (/by \+10\.8% for 3 rounds/i.test(tacticalInferno?.body ?? "")) {
+  fail("do not rewrite Hub Dawnseeker Tactical Inferno +9% to screenshot rank-2 flavor +10.8%");
+}
+if (/3 round\(s\)/i.test(tacticalInferno?.body ?? "")) {
+  fail("do not rewrite Hub Dawnseeker Tactical Inferno 3 rounds to screenshot round(s)");
+}
+const infernoRanks = habitRankTexts("dawnseeker", 0);
+if (!infernoRanks?.[1]?.startsWith("start of Round 1")) {
+  fail("keep Hub Dawnseeker Tactical Inferno L2 start of Round 1");
+}
+const unbrokenDevotion = insightForSource("dawnseeker", { kind: "habit", habit: 2 });
+if (!/Increase Recovery Received by \+15%/i.test(unbrokenDevotion?.body ?? "")) {
+  fail("keep Hub Dawnseeker Unbroken Devotion +15%");
+}
+if (/Increase Recovery Received by \+18%/i.test(unbrokenDevotion?.body ?? "")) {
+  fail("do not rewrite Hub Dawnseeker Unbroken Devotion +15% to screenshot rank-2 flavor +18%");
+}
+const sunbreak = insightForSource("dawnseeker", { kind: "habit", habit: 3 });
+if (!/Command gains increase the Tactical Damage Rate/i.test(sunbreak?.body ?? "")) {
+  fail("keep Hub Sunbreak Command gains");
+}
+if (/Radiant Wings gains/i.test(sunbreak?.body ?? "")) {
+  fail("do not rewrite Hub Sunbreak Command gains to Radiant Wings gains");
+}
+if (!/increase the Recovery to \+60%/i.test(sunbreak?.body ?? "")) {
+  fail("keep Hub Sunbreak the Recovery to +60%");
+}
+if (/increase the Recovery Rate to/i.test(sunbreak?.body ?? "")) {
+  fail("do not rewrite Hub Sunbreak the Recovery to screenshot Recovery Rate");
+}
+if (
+  sunbreak?.scale.find((row) => row.label === "Recovery Rate")?.values.join(",") !==
+  "60%,66%,72%,81%,90%"
+) {
+  fail("Sunbreak Recovery Rate mismatch");
+}
+const windsFavor = insightForSource("dawnseeker", { kind: "habit", habit: 4 });
+if (!/Increase Initiative by \+8% \(enhanced by Initiative\)/i.test(windsFavor?.body ?? "")) {
+  fail("keep Hub Dawnseeker Wind's Favor +8%");
+}
+const firstLight = insightForSource("dawnseeker", { kind: "habit", habit: 5 });
+if (!/Increase Intelligence and Instinct \(enhanced by Initiative\) by \+5%/i.test(firstLight?.body ?? "")) {
+  fail("keep Hub First Light +5%");
+}
+if (/for 3 round\(s\)/i.test(firstLight?.body ?? "")) {
+  fail("do not rewrite Hub First Light 3 rounds to screenshot round(s)");
+}
+if (/20% chance to grant First-Strike/i.test(firstLight?.body ?? "") === false) {
+  fail("keep Hub First Light 20% First-Strike chance");
+}
+if (/causes the target to act/i.test(firstLight?.body ?? "") || /causes the target to attack/i.test(firstLight?.body ?? "")) {
+  fail("do not copy First-Strike glossary into Hub First Light text");
+}
+if (
+  firstLight?.scale.find((row) => row.label === "First-Strike Chance")?.values.join(
+    ",",
+  ) !== "20%,26%,32%,40%,50%"
+) {
+  fail("First Light First-Strike Chance mismatch");
+}
+if (glossNames(firstLight).includes("First-Strike") === false) {
+  fail("First Light should gloss First-Strike");
+}
+if (
+  findAbilityInsight("Tactical Inferno", { dragonId: "dawnseeker" })?.habit !== 1
+) {
+  fail("hovering Tactical Inferno on Dawnseeker should open habit 1");
+}
+if (
+  findAbilityInsight("Tactical Inferno", { dragonId: "syrax" })?.habit !== 4
+) {
+  fail("hovering Tactical Inferno on Syrax should still open habit 4");
+}
+if (
+  findAbilityInsight("Unbroken Devotion", { dragonId: "dawnseeker" })?.habit !== 2
+) {
+  fail("hovering Unbroken Devotion on Dawnseeker should open habit 2");
+}
+if (
+  findAbilityInsight("Unbroken Devotion", { dragonId: "rhysarion" })?.habit !== 4
+) {
+  fail("hovering Unbroken Devotion on Rhysarion should still open habit 4");
+}
+if (
+  findAbilityInsight("Wind's Favor", { dragonId: "dawnseeker" })?.habit !== 4
+) {
+  fail("hovering Wind's Favor on Dawnseeker should open habit 4");
+}
+if (
+  findAbilityInsight("Wind's Favor", { dragonId: "seasmoke" })?.habit !== 2
+) {
+  fail("hovering Wind's Favor on Seasmoke should still open habit 2");
+}
+if (
+  findAbilityInsight("Sunbreak", { dragonId: "dawnseeker" })?.habit !== 3
+) {
+  fail("hovering Sunbreak should open Dawnseeker habit 3");
+}
+if (findAbilityInsight("First Light", { dragonId: "dawnseeker" })?.title !== "First Light") {
+  fail("hovering First Light should open Dawnseeker habit 5");
+}
+if (
+  findAbilityInsight("Tactical Inferno", { dragonId: "dawnseeker" })?.scale.find(
+    (row) => row.label === "Damage Dealt",
+  )?.values.join(",") !== "9%,10.8%,12.6%,15.3%,18%"
+) {
+  fail("Dawnseeker Tactical Inferno should keep +9% scale, not Syrax +18%");
+}
+if (
+  findAbilityInsight("Unbroken Devotion", { dragonId: "dawnseeker" })?.scale.find(
+    (row) => row.label === "Recovery Received",
+  )?.values.join(",") !== "15%,18%,21%,25.5%,30%"
+) {
+  fail("Dawnseeker Unbroken Devotion should keep +15% scale, not Rhysarion +20%");
+}
+if (
+  findAbilityInsight("Wind's Favor", { dragonId: "dawnseeker" })?.scale.find(
+    (row) => row.label === "Initiative",
+  )?.values.join(",") !== "8%,9.6%,11.2%,13.6%,16%"
+) {
+  fail("Dawnseeker Wind's Favor should keep +8% scale, not Seasmoke +12.5%");
+}
+const dawnCommand = insightForSource("dawnseeker", { kind: "command" });
+if (!dawnCommand) fail("Dawnseeker command missing");
+if (dawnCommand.title !== "Radiant Wings") {
+  fail(`Dawnseeker command title is ${dawnCommand.title}, expected Radiant Wings`);
+}
+if (commandHeading("dawnseeker") !== "Command · Radiant Wings") {
+  fail("Dawnseeker command heading should be Command · Radiant Wings");
+}
+if (/Radiant Wings gains/i.test(dawnCommand.body)) {
+  fail("do not rewrite Hub Dawnseeker command to Radiant Wings gains");
+}
+if (
+  findAbilityInsight("Radiant Wings", { dragonId: "dawnseeker" })?.kind !== "command"
+) {
+  fail("hovering Radiant Wings should open Dawnseeker's Command");
+}
+if (!namedChips(dawnCommand).includes("Radiant Wings")) {
+  fail("Dawnseeker command chips should include Radiant Wings");
+}
+const wingsTone = tokenizeAbilityText("Radiant Wings").find(
+  (part) => part.value === "Radiant Wings",
+)?.tone;
+if (wingsTone !== "command") {
+  fail(`Radiant Wings text tone is ${wingsTone}, expected command`);
+}
+if (statusMarkPolarity("Radiant Wings") != null) {
+  fail("Radiant Wings is the Command name, not a buff/debuff mark");
+}
+const dawnCatalog = catalogFor(dawnseeker);
+if (dawnCatalog.namedCount !== 5 || dawnCatalog.needsScreenshot) {
+  fail("Dawnseeker habit names from Star Progression should be complete");
+}
+if (dawnCatalog.command.names.includes("Radiant Wings") === false) {
+  fail("Dev catalog should list Radiant Wings on Dawnseeker's Command");
+}
+const dawnFirstStrike = findAbilityInsight("First-Strike", { dragonId: "dawnseeker" });
+if (
+  dawnFirstStrike?.dragonName !== "Dawnseeker" ||
+  dawnFirstStrike.unlockStars !== 10
+) {
+  fail(
+    `First-Strike on Dawnseeker should be 10★ First Light, got ${dawnFirstStrike?.dragonName} ${dawnFirstStrike?.unlockStars}`,
+  );
+}
+if (!/act before all other combatants/i.test(dawnFirstStrike?.body ?? "")) {
+  fail(`First-Strike glossary missing Star Progression line: ${dawnFirstStrike?.body}`);
+}
+if (/attack before all other combatants/i.test(dawnFirstStrike?.body ?? "")) {
+  fail("do not rewrite First-Strike glossary act to First Light screenshot attack");
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
