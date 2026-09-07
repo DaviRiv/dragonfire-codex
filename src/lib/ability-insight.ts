@@ -319,6 +319,7 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/double these effects/i.test(before)) return true;
   if (/this damage is doubled/i.test(before)) return true;
   if (/this chance is doubled/i.test(before)) return true;
+  if (/and is doubled \(/i.test(before)) return true;
   if (/triple the (?:damage|recovery)/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
   return false;
@@ -579,7 +580,7 @@ function alreadyExplains(
   if (snippet.length >= 12 && hay.includes(snippet)) return true;
   if (!name.trim()) return false;
   return new RegExp(
-    String.raw`${escapeRe(name)}(?:\s+effects)?\s+(?:causes?|grants|increases|reduces|prevents|include)\b`,
+    String.raw`${escapeRe(name)}(?:\s+effects)?\s+(?:causes?|grants|increases?|reduces|prevents|include)\b`,
     "i",
   ).test(text);
 }
@@ -775,7 +776,7 @@ function extractKitBuffs(
   // Do not use the `i` flag: TITLE_NAME relies on [A-Z] so "Rising Tide reduces"
   // is not swallowed as the stack name. SENTENCE allows 2.5% without ending early.
   const eachRe = new RegExp(
-    String.raw`[Ee]ach stacks? of (${TITLE_NAME})${SENTENCE}\.`,
+    String.raw`[Ee]ach [Ss]tacks? of (${TITLE_NAME})${SENTENCE}\.`,
     "g",
   );
   for (const match of blob.matchAll(eachRe)) {

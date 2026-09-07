@@ -2712,6 +2712,183 @@ if (
   );
 }
 
+const tashix = getCatalogDragon("tashix");
+if (!tashix) fail("missing Tashix");
+const tashixNames: [number, string, string[], string][] = [
+  [1, "Enervate", ["Damage Dealt"], "-10.5%,-12.6%,-14.7%,-17.85%,-21%"],
+  [2, "Dragon's Cunning", ["Intelligence", "Instinct"], "12%,14.4%,16.8%,20.4%,24%"],
+  [3, "Cunning Ruse", ["Weakened Chance"], "10%,12%,14%,17%,20%"],
+  [4, "Battle Guile", ["Instinct/Initiative"], "-5%,-6%,-7%,-8.85%,-10.5%"],
+  [5, "Veiled Ambush", ["Damage Rate"], "150%,220%,290%,380%,500%"],
+];
+for (const [habit, title, labels, firstValues] of tashixNames) {
+  const row = insightForSource("tashix", { kind: "habit", habit });
+  if (!row) fail(`Tashix habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Tashix habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const tashixEnervate = insightForSource("tashix", { kind: "habit", habit: 1 });
+if (!/-10\.5%/.test(tashixEnervate?.body ?? "")) {
+  fail("keep Hub Tashix Enervate -10.5%");
+}
+if (/Reduce Tactical Damage Dealt by -12% of 1 Enemy/.test(tashixEnervate?.body ?? "")) {
+  fail("do not rewrite Hub Tashix Enervate -10.5% to screenshot rank-2 flavor -12%");
+}
+const tashixCunning = insightForSource("tashix", { kind: "habit", habit: 2 });
+if (!/Increase your Intelligence by \+12% and reduce Instinct by -10%/i.test(tashixCunning?.body ?? "")) {
+  fail("keep Hub Tashix Dragon's Cunning Intelligence and Instinct");
+}
+if (/enhanced by Initiative/i.test(tashixCunning?.body ?? "")) {
+  fail("do not rewrite Hub Tashix Dragon's Cunning to add screenshot enhanced by Initiative");
+}
+if (
+  tashixCunning?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+  "-10%,-12%,-14%,-17%,-20%"
+) {
+  fail("Tashix Dragon's Cunning Instinct mismatch");
+}
+if (
+  findAbilityInsight("Dragon's Cunning", { dragonId: "tashix" })?.habit !== 2
+) {
+  fail("hovering Dragon's Cunning on Tashix should open habit 2");
+}
+if (
+  findAbilityInsight("Dragon's Cunning", { dragonId: "sheepstealer" })?.habit !== 2
+) {
+  fail("hovering Dragon's Cunning on Sheepstealer should still open habit 2");
+}
+const cunningRuse = insightForSource("tashix", { kind: "habit", habit: 3 });
+if (!/This effect is checked separately/i.test(cunningRuse?.body ?? "")) {
+  fail("keep Hub Cunning Ruse This effect is checked separately");
+}
+if (/This chance is checked separately/i.test(cunningRuse?.body ?? "")) {
+  fail("do not rewrite Hub Cunning Ruse effect to screenshot chance");
+}
+if (!/afflict with Weakened \(-15%\) 3 Enemies/i.test(cunningRuse?.body ?? "")) {
+  fail("keep Hub Cunning Ruse afflict with Weakened wording");
+}
+if (/2 round\(s\)/i.test(cunningRuse?.body ?? "")) {
+  fail("do not rewrite Hub Cunning Ruse 2 rounds to screenshot round(s)");
+}
+if (/reduces the target's Damage Dealt/i.test(cunningRuse?.body ?? "")) {
+  fail("do not copy Weakened glossary into Hub Cunning Ruse text");
+}
+if (cunningRuse?.scale.some((row) => row.values.join(",") === "20%,24%,28%,34%,40%")) {
+  fail("Cunning Ruse should skip doubled Tactical Damage Weakened chance");
+}
+if (cunningRuse?.scale.some((row) => row.values.join(",") === "25%,25%,25%,25%,25%")) {
+  fail("Cunning Ruse should skip constant Mirage 25% chance");
+}
+if (cunningRuse?.scale.some((row) => row.values.join(",") === "2.5%,2.5%,2.5%,2.5%,2.5%")) {
+  fail("Cunning Ruse should skip constant Mirage +2.5%");
+}
+if (cunningRuse?.scale.length !== 1) {
+  fail(
+    `Cunning Ruse should be one Weakened Chance row, got ${cunningRuse?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(cunningRuse).includes("Weakened") === false) {
+  fail("Cunning Ruse should gloss Weakened");
+}
+if (glossNames(cunningRuse).includes("Mirage")) {
+  fail("Cunning Ruse Hub already defines Mirage; do not duplicate the glossary");
+}
+const battleGuile = insightForSource("tashix", { kind: "habit", habit: 4 });
+if (!/Instinct and Initiative by -5% \(enhanced by Initiative\)/i.test(battleGuile?.body ?? "")) {
+  fail("keep Hub Battle Guile Instinct and Initiative enhanced by Initiative");
+}
+const veiledAmbush = insightForSource("tashix", { kind: "habit", habit: 5 });
+if (!/If you have 7 or more Stacks of Mirage/i.test(veiledAmbush?.body ?? "")) {
+  fail("keep Hub Veiled Ambush If you have 7 or more Stacks");
+}
+if (/If you 7 or more/i.test(veiledAmbush?.body ?? "")) {
+  fail("do not rewrite Hub Veiled Ambush If you have to screenshot If you");
+}
+if (veiledAmbush?.scale.some((row) => row.values.join(",") === "25%,25%,25%,25%,25%")) {
+  fail("Veiled Ambush should skip constant Mirage 25% chance");
+}
+if (veiledAmbush?.scale.length !== 1) {
+  fail(
+    `Veiled Ambush should be one Damage Rate row, got ${veiledAmbush?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (
+  findAbilityInsight("Enervate", { dragonId: "tashix" })?.habit !== 1
+) {
+  fail("hovering Enervate on Tashix should open habit 1");
+}
+if (
+  findAbilityInsight("Enervate", { dragonId: "crimson" })?.habit !== 1
+) {
+  fail("hovering Enervate on Crimson should still open habit 1");
+}
+if (
+  findAbilityInsight("Veiled Ambush", { dragonId: "tashix" })?.title !==
+  "Veiled Ambush"
+) {
+  fail("hovering Veiled Ambush should open Tashix habit 5");
+}
+const tashixCommand = insightForSource("tashix", { kind: "command" });
+if (!tashixCommand) fail("Tashix command missing");
+if (tashixCommand.title !== "Command") {
+  fail(`Tashix command title is ${tashixCommand.title}, expected Command`);
+}
+if (!/Each Stack of Mirage increase your Fire Damage Dealt/i.test(tashixCommand.body)) {
+  fail("keep Hub Tashix command Mirage increase spelling");
+}
+if (glossNames(tashixCommand).includes("Mirage")) {
+  fail("Tashix command already defines Mirage; do not duplicate the glossary");
+}
+const tashixCatalog = catalogFor(tashix);
+if (tashixCatalog.namedCount !== 5 || tashixCatalog.needsScreenshot) {
+  fail("Tashix habit names from Star Progression should be complete");
+}
+const tashixMirage = findAbilityInsight("Mirage", { dragonId: "tashix" });
+if (!tashixMirage || tashixMirage.kind !== "buff") {
+  fail(`Mirage hover opened ${tashixMirage?.kind}:${tashixMirage?.title}`);
+}
+if (tashixMirage.polarity !== "buff") fail("Mirage is a buff");
+if (!/Fire Damage Dealt/i.test(tashixMirage.body) || !/2\.5%/i.test(tashixMirage.body)) {
+  fail(`Mirage missing stack definition: ${tashixMirage.body}`);
+}
+if (tashixMirage.unlockStars != null) {
+  fail(`Mirage on Tashix should be Command, got ${tashixMirage.unlockStars}`);
+}
+if (statusMarkPolarity("Mirage") !== "buff") {
+  fail("Mirage in habit text should get a buff arrow");
+}
+const mirageTone = tokenizeAbilityText("1 Stack of Mirage").find(
+  (part) => part.value === "Mirage",
+)?.tone;
+if (mirageTone !== "buff") {
+  fail(`Mirage text tone is ${mirageTone}, expected buff`);
+}
+const tashixWeakened = findAbilityInsight("Weakened", { dragonId: "tashix" });
+if (
+  tashixWeakened?.dragonName !== "Tashix" ||
+  tashixWeakened.unlockStars !== 6
+) {
+  fail(
+    `Weakened on Tashix should be 6★ Cunning Ruse, got ${tashixWeakened?.dragonName} ${tashixWeakened?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

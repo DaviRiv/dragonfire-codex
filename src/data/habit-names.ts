@@ -151,6 +151,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Infernal Force",
     "Siren's Call",
   ],
+  tashix: [
+    "Enervate",
+    "Dragon's Cunning",
+    "Cunning Ruse",
+    "Battle Guile",
+    "Veiled Ambush",
+  ],
 };
 
 export function habitDisplayName(
