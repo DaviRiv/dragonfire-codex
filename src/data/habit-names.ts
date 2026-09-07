@@ -137,6 +137,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Quick-Witted",
     "Unyielding Grasp",
   ],
+  zivern: [
+    "Battle Mastery",
+    "Keen Instinct",
+    "Fearsome Reach",
+    "Steel Shroud",
+    "Cloak of Terror",
+  ],
 };
 
 export function habitDisplayName(

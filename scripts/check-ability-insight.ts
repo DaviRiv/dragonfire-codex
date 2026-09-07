@@ -2393,6 +2393,161 @@ if (
   );
 }
 
+const zivern = getCatalogDragon("zivern");
+if (!zivern) fail("missing Zivern");
+const zivernNames: [number, string, string[], string][] = [
+  [1, "Battle Mastery", ["Strength/Instinct"], "-5%,-6%,-7%,-8.85%,-10.5%"],
+  [2, "Keen Instinct", ["Intelligence/Instinct"], "16%,19.2%,22.4%,27.2%,32%"],
+  [3, "Fearsome Reach", ["Panic Chance"], "30%,36%,42%,51%,60%"],
+  [4, "Steel Shroud", ["Damage Received"], "-3.5%,-4.2%,-4.9%,-5.95%,-7%"],
+  [5, "Cloak of Terror", ["Overwhelm Chance"], "10%,13%,16%,20%,25%"],
+];
+for (const [habit, title, labels, firstValues] of zivernNames) {
+  const row = insightForSource("zivern", { kind: "habit", habit });
+  if (!row) fail(`Zivern habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Zivern habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const battleMastery = insightForSource("zivern", { kind: "habit", habit: 1 });
+if (!/Strength and Instinct \(enhanced by Intelligence\) of 3 Enemies/i.test(battleMastery?.body ?? "")) {
+  fail("keep Hub Battle Mastery Strength and Instinct enhanced by Intelligence");
+}
+if (battleMastery?.scale.some((row) => row.label === "Intelligence")) {
+  fail("Battle Mastery must not label the scale as Intelligence");
+}
+const keenInstinct = insightForSource("zivern", { kind: "habit", habit: 2 });
+if (!/Intelligence and Instinct/i.test(keenInstinct?.body ?? "")) {
+  fail("keep Hub Keen Instinct Intelligence and Instinct");
+}
+const fearsomeReach = insightForSource("zivern", { kind: "habit", habit: 3 });
+if (!/Odd-numbered Rounds: 30% chance/i.test(fearsomeReach?.body ?? "")) {
+  fail("keep Hub Fearsome Reach 30% chance");
+}
+if (/2 round\(s\)/i.test(fearsomeReach?.body ?? "")) {
+  fail("do not rewrite Hub Fearsome Reach 2 rounds to screenshot round(s)");
+}
+if (/deals Tactical Damage to the target each round/i.test(fearsomeReach?.body ?? "")) {
+  fail("do not copy Panic glossary into Hub Fearsome Reach text");
+}
+if (fearsomeReach?.scale.some((row) => row.values.join(",") === "-15%,-15%,-15%,-15%,-15%")) {
+  fail("Fearsome Reach should skip constant Instinct -15%");
+}
+if (fearsomeReach?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Fearsome Reach should skip constant Panic Damage Rate +20%");
+}
+if (fearsomeReach?.scale.length !== 1) {
+  fail(
+    `Fearsome Reach should be one chance row, got ${fearsomeReach?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(fearsomeReach).includes("Panic") === false) {
+  fail("Fearsome Reach should gloss Panic");
+}
+const steelShroud = insightForSource("zivern", { kind: "habit", habit: 4 });
+if (!/Physical Damage Received \(Command & Habits\)/i.test(steelShroud?.body ?? "")) {
+  fail("keep Hub Steel Shroud Physical Damage Received (Command & Habits)");
+}
+if (/excluding Basic Attacks/i.test(steelShroud?.body ?? "")) {
+  fail("do not rewrite Hub Steel Shroud Command & Habits to screenshot excluding Basic Attacks");
+}
+if (!/-3\.5%/.test(steelShroud?.body ?? "")) {
+  fail("keep Hub Steel Shroud -3.5%");
+}
+if (/by -3% of 2 other Allies/i.test(steelShroud?.body ?? "")) {
+  fail("do not rewrite Hub Steel Shroud -3.5% to screenshot -3%");
+}
+if (steelShroud?.scale.length !== 1) {
+  fail(
+    `Steel Shroud should be one Damage Received row, got ${steelShroud?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const cloakOfTerror = insightForSource("zivern", { kind: "habit", habit: 5 });
+if (!/This chance is doubled \(20%\)/i.test(cloakOfTerror?.body ?? "")) {
+  fail("keep Hub Cloak of Terror doubled (20%) Vulnerable chance");
+}
+if (/2 round\(s\)/i.test(cloakOfTerror?.body ?? "")) {
+  fail("do not rewrite Hub Cloak of Terror 2 rounds to screenshot round(s)");
+}
+if (/prevents the target from using Active Commands/i.test(cloakOfTerror?.body ?? "")) {
+  fail("do not copy Overwhelm glossary into Hub Cloak of Terror text");
+}
+if (cloakOfTerror?.scale.some((row) => row.values.join(",") === "20%,26%,32%,40%,50%")) {
+  fail("Cloak of Terror should skip doubled Vulnerable Overwhelm chance");
+}
+if (cloakOfTerror?.scale.length !== 1) {
+  fail(
+    `Cloak of Terror should be one Overwhelm Chance row, got ${cloakOfTerror?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(cloakOfTerror).includes("Overwhelm") === false) {
+  fail("Cloak of Terror should gloss Overwhelm");
+}
+if (glossNames(cloakOfTerror).includes("Vulnerable") === false) {
+  fail("Cloak of Terror should gloss Vulnerable");
+}
+if (
+  findAbilityInsight("Battle Mastery", { dragonId: "zivern" })?.title !==
+  "Battle Mastery"
+) {
+  fail("hovering Battle Mastery should open Zivern habit 1");
+}
+if (
+  findAbilityInsight("Cloak of Terror", { dragonId: "zivern" })?.title !==
+  "Cloak of Terror"
+) {
+  fail("hovering Cloak of Terror should open Zivern habit 5");
+}
+const zivernCommand = insightForSource("zivern", { kind: "command" });
+if (!zivernCommand) fail("Zivern command missing");
+if (zivernCommand.title !== "Command") {
+  fail(`Zivern command title is ${zivernCommand.title}, expected Command`);
+}
+const zivernCatalog = catalogFor(zivern);
+if (zivernCatalog.namedCount !== 5 || zivernCatalog.needsScreenshot) {
+  fail("Zivern habit names from Star Progression should be complete");
+}
+const zivernOverwhelm = findAbilityInsight("Overwhelm", { dragonId: "zivern" });
+if (!zivernOverwhelm || zivernOverwhelm.kind !== "buff") {
+  fail(`Overwhelm hover opened ${zivernOverwhelm?.kind}:${zivernOverwhelm?.title}`);
+}
+if (zivernOverwhelm.polarity !== "debuff") fail("Overwhelm is a debuff");
+if (!/Active Commands/i.test(zivernOverwhelm.body) || !/Habits/i.test(zivernOverwhelm.body)) {
+  fail(`Overwhelm glossary missing Star Progression line: ${zivernOverwhelm.body}`);
+}
+if (
+  zivernOverwhelm.dragonName !== "Zivern" ||
+  zivernOverwhelm.unlockStars !== 10
+) {
+  fail(
+    `Overwhelm on Zivern should be 10★ Cloak of Terror, got ${zivernOverwhelm.dragonName} ${zivernOverwhelm.unlockStars}`,
+  );
+}
+const zivernPanic = findAbilityInsight("Panic", { dragonId: "zivern" });
+if (
+  zivernPanic?.dragonName !== "Zivern" ||
+  zivernPanic.unlockStars !== 6
+) {
+  fail(
+    `Panic on Zivern should be 6★ Fearsome Reach, got ${zivernPanic?.dragonName} ${zivernPanic?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);
