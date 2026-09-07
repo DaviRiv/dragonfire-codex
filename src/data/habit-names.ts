@@ -172,6 +172,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Fire Ward",
     "Turn the Line",
   ],
+  arulix: [
+    "Hypnotic Helix",
+    "Battle Cunning",
+    "Spiral Surge",
+    "Iron Shell",
+    "Mimicry",
+  ],
 };
 
 export function habitDisplayName(

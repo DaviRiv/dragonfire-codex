@@ -2,6 +2,7 @@
  * Ability insight extraction. Run: npx tsx --tsconfig tsconfig.json scripts/check-ability-insight.ts
  */
 import { getCatalogDragon } from "@/data/dragons";
+import { commandHeading } from "@/data/command-names";
 import { catalogFor } from "@/lib/dragon-catalog";
 import {
   findAbilityInsight,
@@ -3267,6 +3268,233 @@ if (
   fail(
     `Weakened on Arrax should be Command, got ${arraxWeakened?.dragonName} ${arraxWeakened?.unlockStars}`,
   );
+}
+
+const arulix = getCatalogDragon("arulix");
+if (!arulix) fail("missing Arulix");
+const arulixNames: [number, string, string[], string][] = [
+  [1, "Hypnotic Helix", ["Overwhelm Chance", "Stagger Chance"], "12.5%,15%,17.5%,21.3%,25%"],
+  [2, "Battle Cunning", ["Strength/Intelligence"], "-4%,-4.8%,-5.6%,-6.8%,-8%"],
+  [3, "Spiral Surge", ["Damage Rate"], "20%,24%,28%,34%,40%"],
+  [4, "Iron Shell", ["Damage Received"], "-2.5%,-3%,-3.5%,-4.25%,-5%"],
+  [5, "Mimicry", ["Mimicry Chance"], "25%,32.5%,40%,50%,62.5%"],
+];
+for (const [habit, title, labels, firstValues] of arulixNames) {
+  const row = insightForSource("arulix", { kind: "habit", habit });
+  if (!row) fail(`Arulix habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Arulix habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const hypnoticHelix = insightForSource("arulix", { kind: "habit", habit: 1 });
+if (!/12\.5% chance to Overwhelm/i.test(hypnoticHelix?.body ?? "")) {
+  fail("keep Hub Hypnotic Helix 12.5%");
+}
+if (/15% chance to Overwhelm/i.test(hypnoticHelix?.body ?? "")) {
+  fail("do not rewrite Hub Hypnotic Helix 12.5% to screenshot rank-2 flavor 15%");
+}
+if (/2 round\(s\)/i.test(hypnoticHelix?.body ?? "")) {
+  fail("do not rewrite Hub Hypnotic Helix 2 rounds to screenshot round(s)");
+}
+if (/prioritize Fire Damage dealers/i.test(hypnoticHelix?.body ?? "")) {
+  fail("do not rewrite Hub Hypnotic Helix prioritizes the Fire Damage dealers");
+}
+if (/prevents the target from using/i.test(hypnoticHelix?.body ?? "")) {
+  fail("do not copy Overwhelm or Stagger glossary into Hub Hypnotic Helix text");
+}
+if (
+  hypnoticHelix?.scale.find((row) => row.label === "Stagger Chance")?.values.join(
+    ",",
+  ) !== "12.5%,15%,17.5%,21.3%,25%"
+) {
+  fail("Hypnotic Helix Stagger Chance mismatch");
+}
+if (hypnoticHelix?.scale.length !== 2) {
+  fail(
+    `Hypnotic Helix should be Overwhelm Chance and Stagger Chance, got ${hypnoticHelix?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const battleCunning = insightForSource("arulix", { kind: "habit", habit: 2 });
+if (!/Reduce Strength and Intelligence by -4%/i.test(battleCunning?.body ?? "")) {
+  fail("keep Hub Arulix Battle Cunning -4%");
+}
+if (/Reduce Strength and Intelligence by -4\.8%/i.test(battleCunning?.body ?? "")) {
+  fail("do not rewrite Hub Arulix Battle Cunning -4% to screenshot rank-2 flavor -4.8%");
+}
+const spiralSurge = insightForSource("arulix", { kind: "habit", habit: 3 });
+if (!/Damage Rate:\+20%/i.test(spiralSurge?.body ?? "")) {
+  fail("keep Hub Spiral Surge Damage Rate:+20%");
+}
+if (spiralSurge?.scale.length !== 1) {
+  fail(
+    `Spiral Surge should be one Damage Rate row, got ${spiralSurge?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (
+  spiralSurge?.scale.some((row) => row.values.join(",") === "30%,36%,42%,51%,60%")
+) {
+  fail("Spiral Surge should skip 1.5x Round 5 Damage Rate");
+}
+if (
+  spiralSurge?.scale.some((row) => row.values.join(",") === "40%,48%,56%,68%,80%")
+) {
+  fail("Spiral Surge should skip 2x Round 8 Damage Rate");
+}
+const ironShell = insightForSource("arulix", { kind: "habit", habit: 4 });
+if (!/Physical Damage Received \(Command and Habits\)/i.test(ironShell?.body ?? "")) {
+  fail("keep Hub Iron Shell Physical Damage Received (Command and Habits)");
+}
+if (/excluding Basic Attacks/i.test(ironShell?.body ?? "")) {
+  fail("do not rewrite Hub Iron Shell Command and Habits to screenshot excluding Basic Attacks");
+}
+if (!/-2\.5%/.test(ironShell?.body ?? "")) {
+  fail("keep Hub Iron Shell -2.5%");
+}
+if (/by -2% until the end of combat/.test(ironShell?.body ?? "")) {
+  fail("do not rewrite Hub Iron Shell -2.5% to screenshot body -2%");
+}
+if (ironShell?.scale.length !== 1) {
+  fail(
+    `Iron Shell should be one Damage Received row, got ${ironShell?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const mimicry = insightForSource("arulix", { kind: "habit", habit: 5 });
+if (!/Start of Each Round: If any ally is afflicted with Weakened or Vulnerable/i.test(mimicry?.body ?? "")) {
+  fail("keep Hub Mimicry Start of Each Round");
+}
+if (/2 round\(s\)/i.test(mimicry?.body ?? "")) {
+  fail("do not rewrite Hub Mimicry 2 rounds to screenshot round(s)");
+}
+if (/32\.5% chance to apply that same effect to 1 Enemy/i.test(mimicry?.body ?? "")) {
+  fail("do not rewrite Hub Mimicry 25% to screenshot rank-2 flavor 32.5%");
+}
+if (/reduces the target's Damage Dealt/i.test(mimicry?.body ?? "") || /increases the target's Damage Received/i.test(mimicry?.body ?? "")) {
+  fail("do not copy Weakened or Vulnerable glossary into Hub Mimicry text");
+}
+if (mimicry?.scale.length !== 1) {
+  fail(
+    `Mimicry should be one Mimicry Chance row, got ${mimicry?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (glossNames(mimicry).includes("Weakened") === false) {
+  fail("Mimicry should gloss Weakened");
+}
+if (glossNames(mimicry).includes("Vulnerable") === false) {
+  fail("Mimicry should gloss Vulnerable");
+}
+if (glossNames(mimicry).includes("Advantage") === false) {
+  fail("Mimicry should gloss Advantage");
+}
+if (glossNames(mimicry).includes("Resistance") === false) {
+  fail("Mimicry should gloss Resistance");
+}
+if (glossNames(hypnoticHelix).includes("Overwhelm") === false) {
+  fail("Hypnotic Helix should gloss Overwhelm");
+}
+if (glossNames(hypnoticHelix).includes("Stagger") === false) {
+  fail("Hypnotic Helix should gloss Stagger");
+}
+if (
+  findAbilityInsight("Hypnotic Helix", { dragonId: "arulix" })?.habit !== 1
+) {
+  fail("hovering Hypnotic Helix should open Arulix habit 1");
+}
+if (
+  findAbilityInsight("Battle Cunning", { dragonId: "arulix" })?.habit !== 2
+) {
+  fail("hovering Battle Cunning on Arulix should open habit 2");
+}
+if (
+  findAbilityInsight("Battle Cunning", { dragonId: "kalspire" })?.habit !== 2
+) {
+  fail("hovering Battle Cunning on Kalspire should still open habit 2");
+}
+if (
+  findAbilityInsight("Battle Cunning", { dragonId: "arulix" })?.scale.find(
+    (row) => row.label === "Strength/Intelligence",
+  )?.values.join(",") !== "-4%,-4.8%,-5.6%,-6.8%,-8%"
+) {
+  fail("Arulix Battle Cunning should keep -4% scale, not Kalspire -6.5%");
+}
+if (
+  findAbilityInsight("Battle Cunning", { dragonId: "kalspire" })?.scale.find(
+    (row) => row.label === "Strength/Intelligence",
+  )?.values.join(",") !== "-6.5%,-7.8%,-9.1%,-11.05%,-13%"
+) {
+  fail("Kalspire Battle Cunning should keep -6.5% scale");
+}
+if (
+  findAbilityInsight("Spiral Surge", { dragonId: "arulix" })?.habit !== 3
+) {
+  fail("hovering Spiral Surge should open Arulix habit 3");
+}
+if (
+  findAbilityInsight("Iron Shell", { dragonId: "arulix" })?.habit !== 4
+) {
+  fail("hovering Iron Shell should open Arulix habit 4");
+}
+if (findAbilityInsight("Mimicry", { dragonId: "arulix" })?.title !== "Mimicry") {
+  fail("hovering Mimicry should open Arulix habit 5");
+}
+const arulixCommand = insightForSource("arulix", { kind: "command" });
+if (!arulixCommand) fail("Arulix command missing");
+if (arulixCommand.title !== "Command") {
+  fail(`Arulix command title is ${arulixCommand.title}, expected Command`);
+}
+if (commandHeading("arulix") !== "Command") {
+  fail("Arulix command heading should stay Command");
+}
+if (!/Reounds 1,2,3,5,8/i.test(arulixCommand.body)) {
+  fail("keep Hub Arulix Command Reounds spelling");
+}
+if (/Rounds 1,2,3,5,8: Deal Tactical Damage/i.test(arulixCommand.body)) {
+  fail("do not rewrite Hub Arulix Command Reounds to Rounds");
+}
+const arulixCatalog = catalogFor(arulix);
+if (arulixCatalog.namedCount !== 5 || arulixCatalog.needsScreenshot) {
+  fail("Arulix habit names from Star Progression should be complete");
+}
+const arulixOverwhelm = findAbilityInsight("Overwhelm", { dragonId: "arulix" });
+if (
+  arulixOverwhelm?.dragonName !== "Arulix" ||
+  arulixOverwhelm.unlockStars !== 2
+) {
+  fail(
+    `Overwhelm on Arulix should be 2★ Hypnotic Helix, got ${arulixOverwhelm?.dragonName} ${arulixOverwhelm?.unlockStars}`,
+  );
+}
+if (!/Active Commands and Habits on their turn/i.test(arulixOverwhelm?.body ?? "")) {
+  fail(`Overwhelm glossary missing Star Progression line: ${arulixOverwhelm?.body}`);
+}
+const arulixStagger = findAbilityInsight("Stagger", { dragonId: "arulix" });
+if (
+  arulixStagger?.dragonName !== "Arulix" ||
+  arulixStagger.unlockStars !== 2
+) {
+  fail(
+    `Stagger on Arulix should be 2★ Hypnotic Helix, got ${arulixStagger?.dragonName} ${arulixStagger?.unlockStars}`,
+  );
+}
+if (!/Attack Modifier Commands/i.test(arulixStagger?.body ?? "") || !/Basic Attacks/i.test(arulixStagger?.body ?? "")) {
+  fail(`Stagger glossary missing Star Progression line: ${arulixStagger?.body}`);
+}
+if (/on their turn/i.test(arulixStagger?.body ?? "")) {
+  fail("do not extend Stagger glossary with Hypnotic Helix on their turn");
 }
 
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });

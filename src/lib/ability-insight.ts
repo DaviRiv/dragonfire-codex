@@ -323,6 +323,7 @@ function isDerivedPercent(text: string, index: number): boolean {
   if (/and is doubled \(/i.test(before)) return true;
   if (/triple the (?:damage|recovery)/i.test(before)) return true;
   if (/1\.5x/i.test(before)) return true;
+  if (/by 2x/i.test(before)) return true;
   return false;
 }
 
@@ -494,6 +495,10 @@ function labelForPercent(
   return "Value";
 }
 
+function baseScaleLabel(label: string): string {
+  return label.replace(/ \(\d+\)$/, "");
+}
+
 export function scaleRowsFromRanks(
   ranks: string[],
   habitTitle?: string,
@@ -514,12 +519,21 @@ export function scaleRowsFromRanks(
     );
     if (new Set(values).size <= 1) continue;
     let label = labelForPercent(ranks[0], index, habitTitle);
+    const valuesKey = values.join(",");
     if (
       /^Fire Damage Received$/i.test(label) &&
       rows.some(
         (row) =>
           /^Damage Received$/i.test(row.label) &&
-          row.values.join(",") === values.join(","),
+          row.values.join(",") === valuesKey,
+      )
+    ) {
+      continue;
+    }
+    if (
+      rows.some(
+        (row) =>
+          baseScaleLabel(row.label) === label && row.values.join(",") === valuesKey,
       )
     ) {
       continue;
