@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { Egg, Flame, Sparkles, Swords, Wrench } from "lucide-react";
+import { Egg, Flame, Sparkles, Star, Swords, UserRound, Wrench } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Team", icon: Swords },
+  { href: "/", label: "Boards", icon: Star },
+  { href: "/team", label: "Team", icon: Swords },
   { href: "/coach", label: "Copilot", icon: Sparkles },
   { href: "/pit", label: "Pit", icon: Flame },
   { href: "/hatchery", label: "Hatchery", icon: Egg },
@@ -61,19 +63,43 @@ function DevLinks({ compact }: { compact?: boolean }) {
   );
 }
 
+function AccountLink() {
+  const pathname = usePathname();
+  const { ready, user } = useAuth();
+  const active = isActive(pathname, "/account");
+  const label = !ready ? "Account" : user ? user.username : "Sign in";
+  return (
+    <Link
+      href="/account"
+      className={cn(
+        "inline-flex max-w-36 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
+        active && "bg-muted text-foreground",
+      )}
+    >
+      <UserRound className="size-4 shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-3 sm:h-14 sm:px-4">
+      <header className="sticky top-0 z-40 border-b border-amber-500/20 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-2 px-3 sm:h-14 sm:px-4">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30">
               <Flame className="size-4" />
             </span>
-            <span className="font-heading text-base tracking-[0.16em] sm:text-lg sm:tracking-[0.18em]">
-              DRAGONFIRE
+            <span className="min-w-0">
+              <span className="font-heading block text-base leading-none tracking-[0.16em] sm:text-lg sm:tracking-[0.18em]">
+                DRAGONFIRE
+              </span>
+              <span className="mt-0.5 hidden text-[10px] tracking-[0.18em] text-amber-200/70 uppercase sm:block">
+                Pit · Boards
+              </span>
             </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
@@ -101,19 +127,21 @@ export function SiteHeader() {
             <Suspense fallback={null}>
               <DevLinks />
             </Suspense>
+            <AccountLink />
           </nav>
-          <div className="md:hidden">
+          <div className="flex items-center gap-1 md:hidden">
             <Suspense fallback={null}>
               <DevLinks compact />
             </Suspense>
+            <AccountLink />
           </div>
         </div>
       </header>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-4">
+        <ul className="mx-auto grid max-w-6xl grid-cols-5">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);
@@ -122,7 +150,7 @@ export function SiteHeader() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-xs text-muted-foreground",
+                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] text-muted-foreground",
                     active && "text-amber-100",
                   )}
                 >

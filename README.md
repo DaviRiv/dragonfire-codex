@@ -1,13 +1,26 @@
 # Dragonfire Pit
 
 Unofficial fan tool for **Game of Thrones: Dragonfire**. Log the dragons you
-hatched, then pick a three-dragon team. **Suggest team** ranks a line from
+hatched, then pick a three-dragon team. **Boards** is the main table: pick a
+dragon and the star rank you have, let **Copilot** seat several lines, then
+rate them and leave notes. **Suggest team** on Team still ranks a line from
 what you own (or from the hatchery in Theory). Nothing here is affiliated
 with HBO, Warner Bros., or the game.
 
 ## What you can do
 
-- **Team** — formation on the left (or on top on a phone). The full ranked
+- **Account** — register a username on this server (no email). That unlocks
+  **Copilot** and lets you rate / comment on Boards. Passwords are stored as
+  scrypt hashes in `data/` on the machine running the app. Set `AUTH_SECRET`
+  in `.env` for a stable session key; otherwise one is written to
+  `data/.auth-secret`.
+- **Boards** (home) — pick a released dragon and a 1–10★ rank, then **Ask
+  Copilot** for several three-dragon lines around that pick (same healer /
+  soak / damage rules as Suggest). Each line is a public card: 1–5★ rating
+  and a notes thread, like a Yelp page for formations. Anyone can read
+  reviews. Signing in is required to generate, rate, or comment. **Seat on
+  Team** still saves the line locally in your browser.
+- **Team** (`/team`) — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first, hiding anyone already slotted. Role filters on
@@ -53,7 +66,7 @@ with HBO, Warner Bros., or the game.
   **ChatGPT** copies a filled prompt with your pit or the full hatchery.
   Paste it at chatgpt.com — this app never calls an API. Optional note
   (spear rally, skip Vhagar) goes into the same text.
-  **Copilot** — a local ranker for three-dragon lines. Ask for the online
+- **Copilot** — a local ranker for three-dragon lines (account required). Ask for the online
   DPS meta core, a shield PvP line, or who soaks if Vhagar is busy. The
   boards it picks sit beside the thread. **Seat on Team** saves that
   line. **Copy for ChatGPT** includes the current online meta: Left
@@ -91,9 +104,9 @@ with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: four bottom tabs, the team
-then the ranked list, and on a wider screen the list is a full column on
-the right so the formation stays in view.
+The layout is built for a phone in one hand: five bottom tabs (Boards, Team,
+Copilot, Pit, Hatchery), then the ranked list on Team. On a wider screen the
+Team list is a full column on the right so the formation stays in view.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** purple, **Fire** red-orange, **Recovery** green,
@@ -133,11 +146,12 @@ with `npm run sync-hub`.
 
 ## ChatGPT and Copilot
 
-On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
+Register an account to open Copilot. On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
 not JSON) and paste it at chatgpt.com. The prompt includes **current
 meta**: online PvP DPS is Left Malachite, Vanguard Vhagar, Right Venator.
 Copilot on `/coach` ranks locally with the same rules as Suggest, and
-seats that core when those names are free.
+seats that core when those names are free. Boards uses the same ranker to
+propose several lines around one dragon and star rank.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.

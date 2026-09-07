@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AccountGate } from "@/components/account-gate";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
@@ -162,6 +163,11 @@ export function CoachPage() {
   const pitTooSmall = pool === "pit" && roster.length < 3;
 
   return (
+    <AccountGate
+      next="/coach"
+      title="Copilot is for registered accounts"
+      description="Create a free username on this server to rank three-dragon lines. Boards reviews stay readable without signing in."
+    >
     <div className="space-y-3">
       <div>
         <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
@@ -308,5 +314,6 @@ export function CoachPage() {
         </div>
       )}
     </div>
+    </AccountGate>
   );
 }

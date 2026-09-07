@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local accounts, session secret, and Boards reviews
+/data/*
+!/data/.gitkeep
+
 # vercel
 .vercel
 
