@@ -371,7 +371,7 @@ export function DevPage() {
           <p className="mt-1 max-w-xl text-[13px] leading-snug text-muted-foreground">
             Hub kit plus in-game habit names from Star Progression screenshots.
             Moondancer, Venator, Malachite, Rhysarion, Sunfyre, Kalspire,
-            Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, and Nyrena are filled in. Send
+            Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, and Bevlorin are filled in. Send
             the same five habit cards for the next dragon and they land here.
           </p>
         </div>

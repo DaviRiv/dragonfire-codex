@@ -3222,8 +3222,8 @@ if (
 ) {
   fail("hovering Fire Ward on Arrax should open habit 4");
 }
-if (findAbilityInsight("Fire Ward", { dragonId: "bevlorin" })?.kind !== "buff") {
-  fail("hovering Fire Ward on Bevlorin should still open the extracted stack");
+if (findAbilityInsight("Fire Ward", { dragonId: "bevlorin" })?.habit !== 1) {
+  fail("hovering Fire Ward on Bevlorin should open habit 1");
 }
 if (
   findAbilityInsight("Headlong Into Danger", { dragonId: "arrax" })?.habit !== 1
@@ -4116,6 +4116,187 @@ if (glossNames(nyrenaCommand).includes("Burn") === false) {
 const nyrenaCatalog = catalogFor(nyrena);
 if (nyrenaCatalog.namedCount !== 5 || nyrenaCatalog.needsScreenshot) {
   fail("Nyrena habit names from Star Progression should be complete");
+}
+
+const bevlorin = getCatalogDragon("bevlorin");
+if (!bevlorin) fail("missing Bevlorin");
+const bevlorinNames: [number, string, string[], string][] = [
+  [1, "Fire Ward", ["Damage Received (per Stack)"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [2, "Dragon's Fury", ["Damage Dealt"], "4%,4.8%,5.6%,6.8%,8%"],
+  [3, "Renewal", ["Recovery Rate"], "17.5%,21%,24.5%,29.75%,35%"],
+  [4, "Vital Essence", ["Strength", "Recovery Dealt"], "10%,12%,14%,17%,20%"],
+  [5, "Bountiful Gifts", ["Strength/Intelligence/Instinct/Initiative"], "16%,20.8%,25.6%,32%,40%"],
+];
+for (const [habit, title, labels, firstValues] of bevlorinNames) {
+  const row = insightForSource("bevlorin", { kind: "habit", habit });
+  if (!row) fail(`Bevlorin habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Bevlorin habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const bevlorinFireWard = insightForSource("bevlorin", { kind: "habit", habit: 1 });
+if (!/Each Round: If the target Ally retreated/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("keep Hub Bevlorin Fire Ward Each Round");
+}
+if (/At the start of each round, if the target Ally retreated/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("do not rewrite Hub Bevlorin Fire Ward Each Round to Arrax At the start of each round");
+}
+if (!/Fire Damage \(Command & Habits\) Received/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("keep Hub Bevlorin Fire Ward Fire Damage (Command & Habits) Received");
+}
+if (/reduces the target's Fire Damage Received/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("do not rewrite Hub Bevlorin Fire Ward Command & Habits to Arrax target's Fire Damage Received");
+}
+if (!/Received by -5% until the end of combat/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("keep Hub Bevlorin Fire Ward -5%");
+}
+if (/Received by -6% until the end of combat/i.test(bevlorinFireWard?.body ?? "")) {
+  fail("do not rewrite Hub Bevlorin Fire Ward -5% to screenshot rank-2 flavor -6%");
+}
+if (glossNames(bevlorinFireWard).includes("Fire Ward")) {
+  fail("Bevlorin Fire Ward Hub already defines the stack; do not duplicate the glossary");
+}
+if (bevlorinFireWard?.scale.length !== 1) {
+  fail(
+    `Bevlorin Fire Ward should be one Damage Received (per Stack) row, got ${bevlorinFireWard?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const dragonsFury = insightForSource("bevlorin", { kind: "habit", habit: 2 });
+if (!/Physical Damage \(Command & Habits\) and Fire Damage Dealt by \+4%/i.test(dragonsFury?.body ?? "")) {
+  fail("keep Hub Dragon's Fury Physical Damage (Command & Habits) and Fire Damage Dealt +4%");
+}
+if (/Physical Damage \(Command & Habits\) and Fire Damage Dealt by \+4\.8%/i.test(dragonsFury?.body ?? "")) {
+  fail("do not rewrite Hub Dragon's Fury +4% to screenshot rank-2 flavor +4.8%");
+}
+if (/At the start of combat/i.test(dragonsFury?.body ?? "")) {
+  fail("do not rewrite Hub Dragon's Fury Start of Combat to screenshot At the start of combat");
+}
+const bevlorinRenewal = insightForSource("bevlorin", { kind: "habit", habit: 3 });
+if (!/Odd-numbered rounds: Command apply Recovery/i.test(bevlorinRenewal?.body ?? "")) {
+  fail("keep Hub Renewal Command apply Recovery");
+}
+if (/Nature's Reckoning gains/i.test(bevlorinRenewal?.body ?? "")) {
+  fail("do not rewrite Hub Renewal Command apply to Nature's Reckoning gains");
+}
+if (!/Recovery Rate: \+17\.5%/i.test(bevlorinRenewal?.body ?? "")) {
+  fail("keep Hub Renewal Recovery Rate +17.5%");
+}
+if (/Recovery Rate: \+21%/i.test(bevlorinRenewal?.body ?? "")) {
+  fail("do not rewrite Hub Renewal +17.5% to screenshot rank-2 flavor +21%");
+}
+const vitalEssence = insightForSource("bevlorin", { kind: "habit", habit: 4 });
+if (!/Increase your Strength by \+10% and your Recovery Dealt by \+15%/i.test(vitalEssence?.body ?? "")) {
+  fail("keep Hub Vital Essence Strength +10% and Recovery Dealt +15%");
+}
+if (/Increase your Strength by \+12%/i.test(vitalEssence?.body ?? "")) {
+  fail("do not rewrite Hub Vital Essence +10% to screenshot rank-2 flavor +12%");
+}
+if (/At the start of combat/i.test(vitalEssence?.body ?? "")) {
+  fail("do not rewrite Hub Vital Essence Start of Combat to screenshot At the start of combat");
+}
+if (
+  vitalEssence?.scale.find((row) => row.label === "Recovery Dealt")?.values.join(",") !==
+  "15%,18%,21%,25.5%,30%"
+) {
+  fail("Vital Essence Recovery Dealt mismatch");
+}
+const bountifulGifts = insightForSource("bevlorin", { kind: "habit", habit: 5 });
+if (!/for 2 rounds/i.test(bountifulGifts?.body ?? "")) {
+  fail("keep Hub Bountiful Gifts 2 rounds");
+}
+if (/2 round\(s\)/i.test(bountifulGifts?.body ?? "")) {
+  fail("do not rewrite Hub Bountiful Gifts 2 rounds to screenshot round(s)");
+}
+if (/enhanced by Intelligence/i.test(bountifulGifts?.body ?? "")) {
+  fail("do not copy screenshot enhanced by Intelligence into Hub Bountiful Gifts");
+}
+if (/the Ally with the highest/i.test(bountifulGifts?.body ?? "")) {
+  fail("do not rewrite Hub Bountiful Gifts Ally with highest to screenshot the Ally with the highest");
+}
+if (bountifulGifts?.scale.some((row) => row.values.join(",") === "20%,20%,20%,20%,20%")) {
+  fail("Bountiful Gifts should skip constant 20% chance");
+}
+if (bountifulGifts?.scale.some((row) => row.label === "Initiative")) {
+  fail("Bountiful Gifts should not collapse the four-stat buff to Initiative");
+}
+if (bountifulGifts?.scale.length !== 1) {
+  fail(
+    `Bountiful Gifts should be one four-stat row, got ${bountifulGifts?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+if (findAbilityInsight("Fire Ward", { dragonId: "bevlorin" })?.habit !== 1) {
+  fail("hovering Fire Ward on Bevlorin should open habit 1");
+}
+if (findAbilityInsight("Fire Ward", { dragonId: "arrax" })?.habit !== 4) {
+  fail("hovering Fire Ward on Arrax should still open habit 4");
+}
+if (!/Each Round: If the target Ally retreated/i.test(findAbilityInsight("Fire Ward", { dragonId: "bevlorin" })?.body ?? "")) {
+  fail("Bevlorin Fire Ward hover should keep Hub Each Round, not Arrax wording");
+}
+if (findAbilityInsight("Dragon's Fury", { dragonId: "bevlorin" })?.habit !== 2) {
+  fail("hovering Dragon's Fury should open Bevlorin habit 2");
+}
+if (findAbilityInsight("Renewal", { dragonId: "bevlorin" })?.habit !== 3) {
+  fail("hovering Renewal should open Bevlorin habit 3");
+}
+if (findAbilityInsight("Vital Essence", { dragonId: "bevlorin" })?.habit !== 4) {
+  fail("hovering Vital Essence should open Bevlorin habit 4");
+}
+if (
+  findAbilityInsight("Bountiful Gifts", { dragonId: "bevlorin" })?.title !==
+  "Bountiful Gifts"
+) {
+  fail("hovering Bountiful Gifts should open Bevlorin habit 5");
+}
+const bevlorinCommand = insightForSource("bevlorin", { kind: "command" });
+if (!bevlorinCommand) fail("Bevlorin command missing");
+if (bevlorinCommand.title !== "Nature's Reckoning") {
+  fail(`Bevlorin command title is ${bevlorinCommand.title}, expected Nature's Reckoning`);
+}
+if (commandHeading("bevlorin") !== "Command · Nature's Reckoning") {
+  fail("Bevlorin command heading should be Command · Nature's Reckoning");
+}
+if (/Nature's Reckoning gains/i.test(bevlorinCommand.body)) {
+  fail("do not rewrite Hub Bevlorin command to Nature's Reckoning gains");
+}
+if (
+  findAbilityInsight("Nature's Reckoning", { dragonId: "bevlorin" })?.kind !== "command"
+) {
+  fail("hovering Nature's Reckoning should open Bevlorin's Command");
+}
+if (!namedChips(bevlorinCommand).includes("Nature's Reckoning")) {
+  fail("Bevlorin command chips should include Nature's Reckoning");
+}
+const reckoningTone = tokenizeAbilityText("Nature's Reckoning").find(
+  (part) => part.value === "Nature's Reckoning",
+)?.tone;
+if (reckoningTone !== "command") {
+  fail(`Nature's Reckoning text tone is ${reckoningTone}, expected command`);
+}
+if (statusMarkPolarity("Nature's Reckoning") != null) {
+  fail("Nature's Reckoning is the Command name, not a buff/debuff mark");
+}
+const bevlorinCatalog = catalogFor(bevlorin);
+if (bevlorinCatalog.namedCount !== 5 || bevlorinCatalog.needsScreenshot) {
+  fail("Bevlorin habit names from Star Progression should be complete");
+}
+if (bevlorinCatalog.command.names.includes("Nature's Reckoning") === false) {
+  fail("Dev catalog should list Nature's Reckoning on Bevlorin's Command");
 }
 
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });

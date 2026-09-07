@@ -200,6 +200,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Dragon's Ire",
     "The Long Siege",
   ],
+  bevlorin: [
+    "Fire Ward",
+    "Dragon's Fury",
+    "Renewal",
+    "Vital Essence",
+    "Bountiful Gifts",
+  ],
 };
 
 export function habitDisplayName(

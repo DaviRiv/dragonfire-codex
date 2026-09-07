@@ -427,6 +427,15 @@ function labelForPercent(
   if (/\bInstinct and Initiative\b/i.test(statBefore) && /by\s+$/i.test(statBefore)) {
     return "Instinct/Initiative";
   }
+  if (
+    /highest Strength/i.test(text) &&
+    /highest Intelligence/i.test(text) &&
+    /highest Instinct/i.test(text) &&
+    /highest Initiative/i.test(text) &&
+    /by\s+$/i.test(statBefore)
+  ) {
+    return "Strength/Intelligence/Instinct/Initiative";
+  }
   if (/\bEvade\s*\($/i.test(before)) {
     return "Evade Rate";
   }
@@ -438,7 +447,7 @@ function labelForPercent(
     return "Fire Damage Dealt (per Stack)";
   }
   if (
-    /(?:Physical|Fire) Damage Received/i.test(statBefore) &&
+    /(?:Physical|Fire) Damage(?:\s*\([^)]+\))?\s*Received/i.test(statBefore) &&
     /each stacks? of /i.test(statBefore) &&
     /by\s+$/i.test(statBefore)
   ) {
