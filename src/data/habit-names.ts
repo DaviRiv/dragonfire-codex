@@ -165,6 +165,13 @@ export const HABIT_NAMES: Record<string, (string | undefined)[]> = {
     "Dragon's Intellect",
     "Redemption",
   ],
+  arrax: [
+    "Headlong Into Danger",
+    "Stone Bulwark",
+    "Adaptive Guard",
+    "Fire Ward",
+    "Turn the Line",
+  ],
 };
 
 export function habitDisplayName(

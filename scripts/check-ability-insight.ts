@@ -3103,6 +3103,172 @@ if (
   );
 }
 
+const arrax = getCatalogDragon("arrax");
+if (!arrax) fail("missing Arrax");
+const arraxNames: [number, string, string[], string][] = [
+  [1, "Headlong Into Danger", ["Damage Received", "Instinct"], "-10%,-8%,-6%,-3%,-0%"],
+  [2, "Stone Bulwark", ["Damage Received"], "-2.5%,-3%,-3.5%,-4.25%,-5%"],
+  [3, "Adaptive Guard", ["Damage Received"], "-9%,-10.8%,-12.6%,-15.3%,-18%"],
+  [4, "Fire Ward", ["Damage Received (per Stack)"], "-5%,-6%,-7%,-8.5%,-10%"],
+  [5, "Turn the Line", ["Damage Received"], "9%,11.7%,14.4%,18%,22.5%"],
+];
+for (const [habit, title, labels, firstValues] of arraxNames) {
+  const row = insightForSource("arrax", { kind: "habit", habit });
+  if (!row) fail(`Arrax habit ${habit} missing`);
+  if (row.title !== title) {
+    fail(`Arrax habit ${habit} title is ${row.title}, expected ${title}`);
+  }
+  if (row.scale.some((line) => /power/i.test(line.label))) {
+    fail(`${title} must not invent Power`);
+  }
+  for (const label of labels) {
+    const line = row.scale.find((item) => item.label === label);
+    if (!line) {
+      fail(
+        `${title} missing ${label}: ${row.scale.map((item) => item.label).join(", ")}`,
+      );
+    }
+  }
+  const first = row.scale.find((item) => item.label === labels[0]);
+  if (first?.values.join(",") !== firstValues) {
+    fail(`${title} ${labels[0]} ${first?.values.join(",")} !== ${firstValues}`);
+  }
+}
+const headlong = insightForSource("arrax", { kind: "habit", habit: 1 });
+if (!/increase your Physical Damage Received by -10%/i.test(headlong?.body ?? "")) {
+  fail("keep Hub Headlong Into Danger Physical Damage Received -10%");
+}
+if (/Physical Damage Received by \+10%/i.test(headlong?.body ?? "")) {
+  fail("do not rewrite Hub Headlong Into Danger -10% to screenshot +10%");
+}
+if (/Physical Damage Received by \+8%/i.test(headlong?.body ?? "")) {
+  fail("do not rewrite Hub Headlong Into Danger L1 to screenshot rank-2 +8%");
+}
+if (/4 round\(s\)/i.test(headlong?.body ?? "")) {
+  fail("do not rewrite Hub Headlong Into Danger 4 rounds to screenshot round(s)");
+}
+if (headlong?.scale.some((row) => row.values.join(",") === "25%,25%,25%,25%,25%")) {
+  fail("Headlong Into Danger should skip constant Strength / Physical Damage Dealt");
+}
+if (headlong?.scale.some((row) => row.values.join(",") === "10%,10%,10%,10%,10%")) {
+  fail("Headlong Into Danger should skip constant Initiative +10%");
+}
+if (
+  headlong?.scale.find((row) => row.label === "Instinct")?.values.join(",") !==
+  "-40%,-32%,-24%,-12%,-0%"
+) {
+  fail("Headlong Into Danger Instinct mismatch");
+}
+const stoneBulwark = insightForSource("arrax", { kind: "habit", habit: 2 });
+if (!/Tactical Damage and Fire Damage Received/i.test(stoneBulwark?.body ?? "")) {
+  fail("keep Hub Stone Bulwark Tactical Damage and Fire Damage Received");
+}
+if (!/-2\.5%/.test(stoneBulwark?.body ?? "")) {
+  fail("keep Hub Stone Bulwark -2.5%");
+}
+if (/by -3% until the end of combat/.test(stoneBulwark?.body ?? "")) {
+  fail("do not rewrite Hub Stone Bulwark -2.5% to screenshot rank-2 -3%");
+}
+if (stoneBulwark?.scale.length !== 1) {
+  fail(
+    `Stone Bulwark should be one Damage Received row, got ${stoneBulwark?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const adaptiveGuard = insightForSource("arrax", { kind: "habit", habit: 3 });
+if (!/\(When leading Archers\)/i.test(adaptiveGuard?.body ?? "")) {
+  fail("keep Hub Adaptive Guard (When leading Archers)");
+}
+if (!/When leading Shieldbearers\)/i.test(adaptiveGuard?.body ?? "")) {
+  fail("keep Hub Adaptive Guard When leading Shieldbearers)");
+}
+if (/\(When leading Shieldbearers\)/i.test(adaptiveGuard?.body ?? "")) {
+  fail("do not rewrite Hub Adaptive Guard missing paren to screenshot When leading Shieldbearers");
+}
+if (/4 round\(s\)/i.test(adaptiveGuard?.body ?? "")) {
+  fail("do not rewrite Hub Adaptive Guard 4 rounds to screenshot round(s)");
+}
+if (adaptiveGuard?.scale.length !== 1) {
+  fail(
+    `Adaptive Guard should be one Damage Received row, got ${adaptiveGuard?.scale.map((row) => row.label).join(", ")}`,
+  );
+}
+const fireWard = insightForSource("arrax", { kind: "habit", habit: 4 });
+if (!/At the start of each round/i.test(fireWard?.body ?? "")) {
+  fail("keep Hub Arrax Fire Ward At the start of each round");
+}
+if (/Each Round: If the target Ally retreated/.test(fireWard?.body ?? "")) {
+  fail("do not rewrite Hub Arrax Fire Ward At the start of each round to Bevlorin Each Round");
+}
+if (!/reduces the target's Fire Damage Received/i.test(fireWard?.body ?? "")) {
+  fail("keep Hub Arrax Fire Ward target's Fire Damage Received");
+}
+if (/Fire Damage \(Command & Habits\) Received/i.test(fireWard?.body ?? "")) {
+  fail("do not rewrite Hub Arrax Fire Ward to Bevlorin Command & Habits wording");
+}
+if (glossNames(fireWard).includes("Fire Ward")) {
+  fail("Fire Ward Hub already defines the stack; do not duplicate the glossary");
+}
+const turnTheLine = insightForSource("arrax", { kind: "habit", habit: 5 });
+if (!/for 4 rounds/i.test(turnTheLine?.body ?? "")) {
+  fail("keep Hub Turn the Line 4 rounds");
+}
+if (/4 round\(s\)/i.test(turnTheLine?.body ?? "")) {
+  fail("do not rewrite Hub Turn the Line 4 rounds to screenshot round(s)");
+}
+if (
+  findAbilityInsight("Fire Ward", { dragonId: "arrax" })?.kind !== "habit" ||
+  findAbilityInsight("Fire Ward", { dragonId: "arrax" })?.habit !== 4
+) {
+  fail("hovering Fire Ward on Arrax should open habit 4");
+}
+if (findAbilityInsight("Fire Ward", { dragonId: "bevlorin" })?.kind !== "buff") {
+  fail("hovering Fire Ward on Bevlorin should still open the extracted stack");
+}
+if (
+  findAbilityInsight("Headlong Into Danger", { dragonId: "arrax" })?.habit !== 1
+) {
+  fail("hovering Headlong Into Danger should open Arrax habit 1");
+}
+if (
+  findAbilityInsight("Turn the Line", { dragonId: "arrax" })?.title !==
+  "Turn the Line"
+) {
+  fail("hovering Turn the Line should open Arrax habit 5");
+}
+const arraxCommand = insightForSource("arrax", { kind: "command" });
+if (!arraxCommand) fail("Arrax command missing");
+if (arraxCommand.title !== "Command") {
+  fail(`Arrax command title is ${arraxCommand.title}, expected Command`);
+}
+if (arraxCommand.scale.some((row) => row.values.join(",") === "50%,50%,50%,50%,50%")) {
+  fail("Arrax command should skip doubled Weakened chance");
+}
+if (glossNames(arraxCommand).includes("Weakened") === false) {
+  fail("Arrax Command should gloss Weakened");
+}
+if (statusMarkPolarity("Fire Ward") !== "buff") {
+  fail("Fire Ward in habit text should get a buff arrow");
+}
+const fireWardTone = tokenizeAbilityText("1 stack of Fire Ward").find(
+  (part) => part.value === "Fire Ward",
+)?.tone;
+if (fireWardTone !== "buff") {
+  fail(`Fire Ward text tone is ${fireWardTone}, expected buff`);
+}
+const arraxCatalog = catalogFor(arrax);
+if (arraxCatalog.namedCount !== 5 || arraxCatalog.needsScreenshot) {
+  fail("Arrax habit names from Star Progression should be complete");
+}
+const arraxWeakened = findAbilityInsight("Weakened", { dragonId: "arrax" });
+if (
+  arraxWeakened?.dragonName !== "Arrax" ||
+  arraxWeakened.unlockStars != null
+) {
+  fail(
+    `Weakened on Arrax should be Command, got ${arraxWeakened?.dragonName} ${arraxWeakened?.unlockStars}`,
+  );
+}
+
 const weakened = findAbilityInsight("Weakened", { dragonId: "vhagar" });
 if (!weakened || weakened.title !== "Weakened" || weakened.kind !== "buff") {
   fail(`Weakened hover opened ${weakened?.kind}:${weakened?.title}`);

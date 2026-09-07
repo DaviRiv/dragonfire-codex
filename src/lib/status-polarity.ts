@@ -15,6 +15,7 @@ const BUFF_NAMES = new Set(
     "Resilient Bond",
     "Mirage",
     "Immunity",
+    "Fire Ward",
   ].map(keyName),
 );
 

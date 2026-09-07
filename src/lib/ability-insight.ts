@@ -246,6 +246,7 @@ function clauseAround(text: string, index: number): string {
 
 function isCombinedPhysicalFireReceived(clause: string): boolean {
   if (!/Fire Damage Received/i.test(clause)) return false;
+  if (/Tactical Damage and Fire Damage Received/i.test(clause)) return true;
   return /Physical Damage(?: \(Command(?: &| and) Habits\))? Received(?: \(Command(?: &| and) Habits\))?/i.test(
     clause,
   );
@@ -434,7 +435,7 @@ function labelForPercent(
     return "Fire Damage Dealt (per Stack)";
   }
   if (
-    /Physical Damage Received/i.test(statBefore) &&
+    /(?:Physical|Fire) Damage Received/i.test(statBefore) &&
     /each stacks? of /i.test(statBefore) &&
     /by\s+$/i.test(statBefore)
   ) {
@@ -513,6 +514,16 @@ export function scaleRowsFromRanks(
     );
     if (new Set(values).size <= 1) continue;
     let label = labelForPercent(ranks[0], index, habitTitle);
+    if (
+      /^Fire Damage Received$/i.test(label) &&
+      rows.some(
+        (row) =>
+          /^Damage Received$/i.test(row.label) &&
+          row.values.join(",") === values.join(","),
+      )
+    ) {
+      continue;
+    }
     const seen = usedLabels.get(label) ?? 0;
     usedLabels.set(label, seen + 1);
     if (seen > 0) label = `${label} (${seen + 1})`;

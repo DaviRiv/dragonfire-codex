@@ -116,6 +116,7 @@ const ABILITY_PHRASES: { phrase: string; tone: GameTone }[] = [
   { phrase: "Calculated Assault", tone: "command" },
   { phrase: "Relentless Pursuit", tone: "command" },
   { phrase: "Resilient Bond", tone: "buff" },
+  { phrase: "Fire Ward", tone: "buff" },
   { phrase: "Mirage", tone: "buff" },
   { phrase: "Immunity", tone: "buff" },
   { phrase: "Rising Tide", tone: "buff" },
