@@ -242,8 +242,10 @@ export function BoardsPage() {
           </div>
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">
-            Select a dragon to start. Copilot needs a registered account; anyone
-            can read the reviews.
+            Select a dragon to start.
+            {user
+              ? " Ask Copilot to seat several lines around that pick, then rate what actually held."
+              : " Copilot needs a registered account; anyone can read the reviews."}
           </p>
         )}
       </section>
