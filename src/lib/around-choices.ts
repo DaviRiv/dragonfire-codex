@@ -2,7 +2,7 @@ import { STATUS_GLOSSARY } from "@/data/status-glossary";
 import { canonAbility, dragonProvides } from "@/lib/abilities";
 import { suggestTeamsAround } from "@/lib/ai/around";
 import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards";
-import { emptyPit } from "@/lib/dragons";
+import { emptyPit, newOwnedDragon } from "@/lib/dragons";
 import { defaultHabits } from "@/lib/habits";
 import { pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
@@ -81,16 +81,42 @@ function fromSynergy(notes: SynergyNote[]): ChoiceNote[] {
   return notes.map((note) => ({ title: note.text }));
 }
 
+function noteKey(title: string): string {
+  return title.toLowerCase().split(".")[0]?.trim() ?? title.toLowerCase();
+}
+
 function dedupeNotes(notes: ChoiceNote[]): ChoiceNote[] {
   const seen = new Set<string>();
   const next: ChoiceNote[] = [];
   for (const note of notes) {
-    const key = note.title.toLowerCase();
+    const key = noteKey(note.title);
     if (seen.has(key)) continue;
     seen.add(key);
     next.push(note);
   }
   return next;
+}
+
+function stateAtStars(
+  line: BoardLine,
+  stars: number,
+  state: PitState,
+): PitState {
+  const seats = seatsOf(line);
+  const owned = state.owned.filter((row) => !seats.includes(row.dragonId));
+  for (const id of seats) {
+    const prev = state.owned.find((row) => row.dragonId === id);
+    owned.push(
+      newOwnedDragon(
+        id,
+        stars,
+        prev?.reignLevel ?? 1,
+        defaultHabits(stars),
+        prev?.habitRanks,
+      ),
+    );
+  }
+  return { ...state, owned };
 }
 
 function evaluateLine(
@@ -103,8 +129,9 @@ function evaluateLine(
     ...lineupFromBoard({ ...line, id: `around-${boardFingerprint(line)}` }),
     craftStars: stars,
   };
-  const pairing = pairingReport(lineup, state);
-  const synergy = analyzeLineup(lineup, state);
+  const ranked = stateAtStars(line, stars, state);
+  const pairing = pairingReport(lineup, ranked);
+  const synergy = analyzeLineup(lineup, ranked);
   const pinnedKit = kitNotesFor(pinnedId, stars);
   const partnerKit = seatsOf(line)
     .filter((id) => id !== pinnedId)

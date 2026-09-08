@@ -50,6 +50,12 @@ function checkKalspire(): void {
     panic.length === six.length,
     "★6 Kalspire lines must list Panic from Hub + glossary",
   );
+  assert(
+    six.every(
+      (choice) => !choice.cons.some((note) => note.title === "Kalspire has Panic at 6★"),
+    ),
+    "★6 is already the Panic gate — do not list it as a missing star con",
+  );
 
   const four = choicesAroundDragon({
     dragonId: "kalspire",

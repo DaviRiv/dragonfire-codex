@@ -168,7 +168,7 @@ export function CoachPage() {
     <AccountGate
       next="/coach"
       title="Copilot (beta) is for registered accounts"
-      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team reviews and Talk stay readable without signing in."
+      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team and Talk stay readable without signing in."
     >
     <div className="space-y-3">
       <div>
@@ -182,8 +182,8 @@ export function CoachPage() {
           <Link href="/team" className="text-amber-200 hover:underline">
             Pick a dragon on Team
           </Link>{" "}
-          to read community lines and reviews. Copy for ChatGPT includes the
-          current online meta (Malachite / Vhagar / Venator).
+          to compare complete lines built around that name. Copy for ChatGPT
+          includes the current online meta (Malachite / Vhagar / Venator).
         </p>
       </div>
       <MetaCard />

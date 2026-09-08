@@ -29,20 +29,20 @@ export const metadata: Metadata = {
     template: "%s · Dragonfire Pit",
   },
   description:
-    "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
+    "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",
     siteName: "Dragonfire Pit",
     title: "Dragonfire Pit — Team builder for three-dragon lines",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
   },
   twitter: {
     card: "summary",
     title: "Dragonfire Pit — Team builder for three-dragon lines",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
   },
   appleWebApp: {
     capable: true,

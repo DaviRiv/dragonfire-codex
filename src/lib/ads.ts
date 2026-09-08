@@ -21,7 +21,7 @@ export const AD_SLOT_META: Record<
       [728, 90],
       [320, 50],
     ],
-    house: "Pick a dragon on Team — community lines and reviews for what held in the field.",
+    house: "Pick one dragon on Team — compare complete lines built around that name.",
     href: "/team",
   },
   sidebar: {
@@ -39,7 +39,7 @@ export const AD_SLOT_META: Record<
   feed: {
     label: "In-content",
     sizes: [[300, 250]],
-    house: "Copilot is in beta. Team is where you pick a dragon and read reviews.",
+    house: "Copilot is in beta. Team builds several lines around the dragon you pick.",
     href: "/coach",
   },
   anchor: {
