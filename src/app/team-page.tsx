@@ -304,14 +304,22 @@ export function TeamPage() {
         <h1 className="font-heading text-lg tracking-wide sm:text-xl">
           Team builder
         </h1>
-        <Link
-          href="/coach"
-          className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
-        >
-          <Sparkles className="size-4" />
-          Open Copilot
-          <BetaBadge />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/counter"
+            className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+          >
+            Counter a line
+          </Link>
+          <Link
+            href="/coach"
+            className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+          >
+            <Sparkles className="size-4" />
+            Open Copilot
+            <BetaBadge />
+          </Link>
+        </div>
       </div>
 
       {!dragon ? (

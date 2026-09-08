@@ -283,6 +283,8 @@ export function choicesAroundDragon(opts: {
   mode?: LineupMode;
   limit?: number;
   state?: PitState;
+  /** Only seat lines on `troop` — skip affinity/other-troop variants. */
+  lockTroop?: boolean;
 }): AroundChoice[] {
   const dragon = getCatalogDragon(opts.dragonId);
   if (!dragon) return [];
@@ -294,7 +296,9 @@ export function choicesAroundDragon(opts: {
   const seen = new Set<string>();
 
   const affinities = new Set(dragon.affinities);
-  const troops = uniqueTroops(opts.dragonId, opts.troop);
+  const troops = opts.lockTroop
+    ? [opts.troop]
+    : uniqueTroops(opts.dragonId, opts.troop);
   const kitByTroop = new Map(
     troops.map((troop) => [
       troop,

@@ -9,6 +9,7 @@ import {
   MessagesSquare,
   Sparkles,
   Swords,
+  Target,
   UserRound,
   Wrench,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/team", label: "Team", icon: Swords },
+  { href: "/counter", label: "Counter", icon: Target },
   { href: "/talk", label: "Talk", icon: MessagesSquare },
   { href: "/coach", label: "Copilot", icon: Sparkles, beta: true },
   { href: "/pit", label: "Pit", icon: Flame },
@@ -107,7 +109,7 @@ export function SiteHeader() {
                 DRAGONFIRE
               </span>
               <span className="mt-0.5 hidden text-[10px] tracking-[0.18em] text-amber-200/70 uppercase sm:block">
-                Pit · Team
+                Pit · Team · Counter
               </span>
             </span>
           </Link>
@@ -151,7 +153,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-5">
+        <ul className="mx-auto grid max-w-6xl grid-cols-6">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);
@@ -160,7 +162,7 @@ export function SiteHeader() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] text-muted-foreground",
+                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0 text-[9px] text-muted-foreground sm:text-[10px]",
                     active && "text-amber-100",
                   )}
                 >

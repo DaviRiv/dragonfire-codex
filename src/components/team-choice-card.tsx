@@ -12,21 +12,25 @@ import { CheckCircle2, TriangleAlert } from "lucide-react";
 export function TeamLineList({
   choices,
   pinnedId,
+  ownedIds,
   activeId,
   seated,
   onHighlight,
+  label = "Teams around this dragon",
 }: {
   choices: AroundChoice[];
-  pinnedId: string;
+  pinnedId?: string | null;
+  ownedIds?: Set<string>;
   activeId: string | null;
   seated?: boolean;
   onHighlight: (id: string) => void;
+  label?: string;
 }) {
   return (
     <ul
       data-team-list
       role="listbox"
-      aria-label="Teams around this dragon"
+      aria-label={label}
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
     >
       {choices.map((choice) => {
@@ -52,7 +56,15 @@ export function TeamLineList({
                 {SLOT_IDS.map((slot) => {
                   const dragonId = choice.line[slot];
                   const dragon = getCatalogDragon(dragonId);
-                  const pinned = dragonId === pinnedId;
+                  const pinned = Boolean(pinnedId && dragonId === pinnedId);
+                  const owned = Boolean(ownedIds?.has(dragonId));
+                  const seatStars =
+                    slot === "left"
+                      ? choice.line.leftStars
+                      : slot === "vanguard"
+                        ? choice.line.vanguardStars
+                        : choice.line.rightStars;
+                  const showStars = pinned || owned;
                   return (
                     <span key={slot} className="flex min-w-0 items-center gap-1.5">
                       <DragonIcon
@@ -60,16 +72,8 @@ export function TeamLineList({
                         name={dragon?.name}
                         rarity={dragon?.rarity}
                         size="sm"
-                        stars={
-                          pinned
-                            ? slot === "left"
-                              ? choice.line.leftStars
-                              : slot === "vanguard"
-                                ? choice.line.vanguardStars
-                                : choice.line.rightStars
-                            : undefined
-                        }
-                        selected={pinned}
+                        stars={showStars ? seatStars : undefined}
+                        selected={pinned || owned}
                       />
                       <span className="min-w-0">
                         <span className="block text-[10px] tracking-wide text-muted-foreground uppercase">
@@ -78,12 +82,18 @@ export function TeamLineList({
                         <span
                           className={cn(
                             "block truncate text-[13px] leading-tight",
-                            pinned && "text-amber-100",
+                            (pinned || owned) && "text-amber-100",
                           )}
                         >
                           {dragon?.name ?? dragonId}
                         </span>
-                        {pinned ? null : (
+                        {showStars ? (
+                          pinned ? null : (
+                            <span className="block truncate text-[10px] text-muted-foreground">
+                              Pit ★{seatStars}
+                            </span>
+                          )
+                        ) : (
                           <span className="block truncate text-[10px] text-muted-foreground">
                             Goal
                           </span>
@@ -118,11 +128,13 @@ export function TeamNotesPanel({
   seated,
   tweakHref,
   onUse,
+  hint,
 }: {
   choice: AroundChoice | null;
   seated?: boolean;
   tweakHref?: string | null;
   onUse: () => void;
+  hint?: string;
 }) {
   if (!choice) {
     return (
@@ -150,8 +162,8 @@ export function TeamNotesPanel({
           {troopShort[choice.line.troop]} · {choice.label}
         </p>
         <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-          Only the dragon you built around uses the star stepper. The other two
-          are goals — payoffs name the rank that maxes their kit.
+          {hint ??
+            "Only the dragon you built around uses the star stepper. The other two are goals — payoffs name the rank that maxes their kit."}
         </p>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-y-auto overscroll-contain px-3 py-2.5">

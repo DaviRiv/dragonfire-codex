@@ -8,19 +8,26 @@ function usesWideLayout(pathname: string): boolean {
   return (
     pathname === "/team" ||
     pathname.startsWith("/team/") ||
+    pathname === "/counter" ||
+    pathname.startsWith("/counter/") ||
     pathname === "/lineups" ||
     pathname.startsWith("/lineups/")
   );
 }
 
-function isTeam(pathname: string): boolean {
-  return pathname === "/team" || pathname.startsWith("/team/");
+function isWorkspace(pathname: string): boolean {
+  return (
+    pathname === "/team" ||
+    pathname.startsWith("/team/") ||
+    pathname === "/counter" ||
+    pathname.startsWith("/counter/")
+  );
 }
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const wide = usesWideLayout(pathname);
-  const team = isTeam(pathname);
+  const team = isWorkspace(pathname);
 
   return (
     <div

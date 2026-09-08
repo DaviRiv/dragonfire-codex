@@ -150,6 +150,45 @@ export const troopCounters: Record<
   },
 };
 
+/** Troops that win the tile triangle against this army. Siege loses to every other type. */
+export function troopsThatBeat(enemy: TroopType): TroopType[] {
+  if (enemy === "siege") {
+    return TROOP_TYPES.filter((item) => item !== "siege");
+  }
+  return TROOP_TYPES.filter((item) => troopCounters[item].beats === enemy);
+}
+
+export function defaultCounterTroop(enemy: TroopType): TroopType {
+  return troopsThatBeat(enemy)[0] ?? "cavalry";
+}
+
+export type TroopMatchup = "beats" | "even" | "loses" | "siege";
+
+export function troopMatchup(ours: TroopType, theirs: TroopType): TroopMatchup {
+  if (ours === "siege") return "siege";
+  if (theirs === "siege") return "beats";
+  if (troopCounters[ours].beats === theirs) return "beats";
+  if (troopCounters[ours].losesTo === theirs) return "loses";
+  return "even";
+}
+
+export function troopMatchupCopy(ours: TroopType, theirs: TroopType): string {
+  const match = troopMatchup(ours, theirs);
+  if (match === "siege") {
+    return "Siege loses to every troop on tiles.";
+  }
+  if (match === "beats") {
+    if (theirs === "siege") {
+      return `${troopLabels[ours]} beat Siege on tiles.`;
+    }
+    return `${troopLabels[ours]} beat ${troopLabels[theirs]} on tiles.`;
+  }
+  if (match === "loses") {
+    return `${troopLabels[ours]} lose to ${troopLabels[theirs]} on tiles.`;
+  }
+  return `Even ${troopLabels[ours]} march — no troop advantage.`;
+}
+
 export const statLabels = {
   strength: "Strength",
   instinct: "Instinct",
