@@ -10,7 +10,7 @@ import { suggestTeamsAround } from "@/lib/ai/around";
 import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards";
 import { emptyPit, newOwnedDragon } from "@/lib/dragons";
 import { defaultHabits, dragonKit } from "@/lib/habits";
-import { breedLabels } from "@/lib/labels";
+import { TROOP_TYPES, breedLabels } from "@/lib/labels";
 import { partnerRules, pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
 import type { Dragon, Lineup, LineupMode, PitState, TroopType } from "@/lib/types";
@@ -37,10 +37,18 @@ export type AroundChoice = {
 function uniqueTroops(dragonId: string, preferred: TroopType): TroopType[] {
   const dragon = getCatalogDragon(dragonId);
   const next: TroopType[] = [];
-  for (const troop of [preferred, ...(dragon?.affinities ?? [])]) {
+  for (const troop of [
+    preferred,
+    ...(dragon?.affinities ?? []),
+    ...TROOP_TYPES,
+  ]) {
     if (!next.includes(troop)) next.push(troop);
   }
-  return next.slice(0, 3);
+  return next;
+}
+
+function trioKey(line: BoardLine): string {
+  return `${[line.left, line.vanguard, line.right].slice().sort().join("|")}|${line.troop}`;
 }
 
 function seatsOf(line: BoardLine): string[] {
@@ -217,10 +225,10 @@ function evaluateLine(
   state: PitState,
 ): AroundChoice {
   const pinned = getCatalogDragon(pinnedId);
-  const lineup = {
-    ...lineupFromBoard({ ...line, id: `around-${boardFingerprint(line)}` }),
-    craftStars: stars,
-  };
+  const lineup = lineupFromBoard({
+    ...line,
+    id: `around-${boardFingerprint(line)}`,
+  });
   const ranked = overlayPinned(pinnedId, stars, state);
   const pairing = pairingReport(lineup, ranked);
   const synergy = analyzeLineup(lineup, ranked);
@@ -271,14 +279,15 @@ export function choicesAroundDragon(opts: {
   dragonId: string;
   stars: number;
   troop: TroopType;
-  mode: LineupMode;
+  mode?: LineupMode;
   limit?: number;
   state?: PitState;
 }): AroundChoice[] {
   const dragon = getCatalogDragon(opts.dragonId);
   if (!dragon) return [];
   const stars = Math.min(10, Math.max(1, Math.round(opts.stars) || 1));
-  const limit = opts.limit ?? 6;
+  const limit = opts.limit ?? 16;
+  const mode = opts.mode ?? "pvp";
   const state = opts.state ?? emptyPit();
   const found: AroundChoice[] = [];
   const seen = new Set<string>();
@@ -288,8 +297,8 @@ export function choicesAroundDragon(opts: {
       dragonId: opts.dragonId,
       stars,
       troop,
-      mode: opts.mode,
-      limit: troop === opts.troop ? 5 : 3,
+      mode,
+      limit: troop === opts.troop ? 18 : 8,
     });
     for (const line of lines) {
       const key = boardFingerprint(line);
@@ -300,7 +309,15 @@ export function choicesAroundDragon(opts: {
   }
 
   found.sort((a, b) => b.score - a.score);
-  return found.slice(0, limit);
+  const best = new Map<string, AroundChoice>();
+  for (const choice of found) {
+    const key = trioKey(choice.line);
+    const prev = best.get(key);
+    if (!prev || choice.score > prev.score) best.set(key, choice);
+  }
+  return [...best.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 export function seatStars(line: BoardLine, dragonId: string): number | null {

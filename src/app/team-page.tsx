@@ -17,9 +17,9 @@ import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { choicesAroundDragon } from "@/lib/around-choices";
 import { rememberBuild } from "@/lib/build-session";
 import { newId, nowIso } from "@/lib/dragons";
-import { MODES, TROOP_TYPES, modeShort, troopShort } from "@/lib/labels";
+import { TROOP_TYPES, troopShort } from "@/lib/labels";
 import { usePit } from "@/lib/store";
-import type { LineupMode, TroopType } from "@/lib/types";
+import type { TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -45,7 +45,6 @@ export function TeamPage() {
   const [troop, setTroop] = useState<TroopType>(
     seed?.affinities[0] ?? "shieldbearers",
   );
-  const [mode, setMode] = useState<LineupMode>("pvp");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [seatedId, setSeatedId] = useState<string | null>(null);
@@ -65,10 +64,9 @@ export function TeamPage() {
       dragonId: dragon.id,
       stars,
       troop,
-      mode,
       state,
     });
-  }, [dragon, stars, troop, mode, state]);
+  }, [dragon, stars, troop, state]);
 
   const active = choices.find((row) => row.id === activeId) ?? choices[0] ?? null;
 
@@ -293,18 +291,6 @@ export function TeamPage() {
                 }}
               >
                 {troopShort[item]}
-              </MiniChip>
-            ))}
-            {MODES.map((item) => (
-              <MiniChip
-                key={item}
-                active={mode === item}
-                onClick={() => {
-                  setMode(item);
-                  setPickedId(null);
-                }}
-              >
-                {modeShort[item]}
               </MiniChip>
             ))}
           </div>

@@ -4,7 +4,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { Button } from "@/components/ui/button";
 import { getCatalogDragon } from "@/data/dragons";
 import type { AroundChoice, ChoiceNote } from "@/lib/around-choices";
-import { modeShort, slotShort, troopShort } from "@/lib/labels";
+import { slotShort, troopShort } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
@@ -94,7 +94,7 @@ export function TeamLineList({
                 })}
               </div>
               <span className="hidden shrink-0 text-right text-[11px] tracking-wide text-amber-100/80 uppercase sm:block">
-                {troopShort[choice.line.troop]} · {modeShort[choice.line.mode]}
+                {troopShort[choice.line.troop]}
                 {seated && active ? (
                   <span className="mt-0.5 block font-normal normal-case text-emerald-200">
                     Seated
@@ -147,8 +147,7 @@ export function TeamNotesPanel({
           {choice.line.name}
         </p>
         <p className="mt-0.5 text-[11px] tracking-wide text-amber-100/80 uppercase">
-          {troopShort[choice.line.troop]} · {modeShort[choice.line.mode]} ·{" "}
-          {choice.label}
+          {troopShort[choice.line.troop]} · {choice.label}
         </p>
         <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
           Only the dragon you built around uses the star stepper. The other two

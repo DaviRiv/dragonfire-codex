@@ -25,7 +25,7 @@ function checkKalspire(): void {
     troop: "cavalry",
     mode: "pvp",
   });
-  assert(six.length >= 3, `expected 3+ Kalspire lines, got ${six.length}`);
+  assert(six.length >= 10, `expected 10+ Kalspire lines, got ${six.length}`);
   assert(
     six.every((choice) => boardHasDragon(choice.line, "kalspire", 6)),
     "every line must include Kalspire at ★6",
@@ -84,7 +84,7 @@ function checkMalachite(): void {
     troop: "shieldbearers",
     mode: "pvp",
   });
-  assert(lines.length >= 3, `expected 3+ Malachite lines, got ${lines.length}`);
+  assert(lines.length >= 10, `expected 10+ Malachite lines, got ${lines.length}`);
   assert(
     lines.every((choice) => boardHasDragon(choice.line, "malachite", 6)),
     "every Malachite line must include Malachite at ★6",

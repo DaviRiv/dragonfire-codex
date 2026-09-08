@@ -2,7 +2,7 @@ import { ONLINE_DPS_CORE } from "@/data/meta";
 import { DRAGONS } from "@/data/dragons";
 import { emptyPit, findDragon } from "@/lib/dragons";
 import { isHealer, isTank } from "@/lib/roles";
-import { suggestFullLine } from "@/lib/suggest";
+import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { emptySlots, makePick } from "@/lib/lineup";
 import type { BoardLine } from "@/lib/boards";
 import { boardFingerprint } from "@/lib/boards";
@@ -52,6 +52,38 @@ function whyFor(line: BoardLine): string {
   return `${vanguard} in Vanguard, ${left} on the left, ${right} on the right.`;
 }
 
+function lineFromIds(opts: {
+  troop: TroopType;
+  mode: LineupMode;
+  pinnedId: string;
+  stars: number;
+  left: string;
+  vanguard: string;
+  right: string;
+}): BoardLine | null {
+  const ids = [opts.left, opts.vanguard, opts.right];
+  if (new Set(ids).size !== 3) return null;
+  if (!ids.includes(opts.pinnedId)) return null;
+  if (ids.some((id) => !findDragon(id))) return null;
+  const draft: BoardLine = {
+    name: "",
+    why: "",
+    troop: opts.troop,
+    mode: opts.mode,
+    left: opts.left,
+    vanguard: opts.vanguard,
+    right: opts.right,
+    leftStars: opts.left === opts.pinnedId ? opts.stars : 1,
+    vanguardStars: opts.vanguard === opts.pinnedId ? opts.stars : 1,
+    rightStars: opts.right === opts.pinnedId ? opts.stars : 1,
+  };
+  return {
+    ...draft,
+    name: nameLine(draft),
+    why: whyFor(draft),
+  };
+}
+
 function fillAround(opts: {
   dragonId: string;
   stars: number;
@@ -73,26 +105,81 @@ function fillAround(opts: {
   const vanguard = lineup.slots.vanguard;
   const right = lineup.slots.right;
   if (!left || !vanguard || !right) return null;
-  const ids = [left.dragonId, vanguard.dragonId, right.dragonId];
-  if (new Set(ids).size !== 3) return null;
-  if (!ids.includes(opts.dragonId)) return null;
-  const draft: BoardLine = {
-    name: "",
-    why: "",
+  return lineFromIds({
     troop: opts.troop,
     mode: opts.mode,
+    pinnedId: opts.dragonId,
+    stars: opts.stars,
     left: left.dragonId,
     vanguard: vanguard.dragonId,
     right: right.dragonId,
-    leftStars: left.dragonId === opts.dragonId ? opts.stars : 1,
-    vanguardStars: vanguard.dragonId === opts.dragonId ? opts.stars : 1,
-    rightStars: right.dragonId === opts.dragonId ? opts.stars : 1,
-  };
-  return {
-    ...draft,
-    name: nameLine(draft),
-    why: whyFor(draft),
-  };
+  });
+}
+
+function fillPartners(opts: {
+  dragonId: string;
+  stars: number;
+  slot: SlotId;
+  troop: TroopType;
+  mode: LineupMode;
+  firstPool: number;
+  secondPool: number;
+}): BoardLine[] {
+  const lineup = theoryLineup(opts.troop, opts.mode, opts.stars);
+  lineup.slots[opts.slot] = makePick(opts.dragonId, opts.stars, 1);
+  const fillOrder = (["vanguard", "left", "right"] as SlotId[]).filter(
+    (slot) => slot !== opts.slot,
+  );
+  const [firstSlot, secondSlot] = fillOrder;
+  if (!firstSlot || !secondSlot) return [];
+
+  const firsts = suggestDragons({
+    lineup,
+    slot: firstSlot,
+    state: emptyPit(),
+  }).slice(0, opts.firstPool);
+
+  const out: BoardLine[] = [];
+  for (const first of firsts) {
+    if (first.dragon.id === opts.dragonId) continue;
+    const working: Lineup = {
+      ...lineup,
+      slots: { ...lineup.slots },
+    };
+    working.slots[firstSlot] = makePick(first.dragon.id, 1, 1);
+    const seconds = suggestDragons({
+      lineup: working,
+      slot: secondSlot,
+      state: emptyPit(),
+    }).slice(0, opts.secondPool);
+    for (const second of seconds) {
+      if (
+        second.dragon.id === opts.dragonId ||
+        second.dragon.id === first.dragon.id
+      ) {
+        continue;
+      }
+      const seats = {
+        left: opts.dragonId,
+        vanguard: opts.dragonId,
+        right: opts.dragonId,
+        [opts.slot]: opts.dragonId,
+        [firstSlot]: first.dragon.id,
+        [secondSlot]: second.dragon.id,
+      };
+      const line = lineFromIds({
+        troop: opts.troop,
+        mode: opts.mode,
+        pinnedId: opts.dragonId,
+        stars: opts.stars,
+        left: seats.left,
+        vanguard: seats.vanguard,
+        right: seats.right,
+      });
+      if (line) out.push(line);
+    }
+  }
+  return out;
 }
 
 function metaLine(stars: number, dragonId: string): BoardLine | null {
@@ -100,19 +187,15 @@ function metaLine(stars: number, dragonId: string): BoardLine | null {
   const ids = [core.left.id, core.vanguard.id, core.right.id];
   if (!ids.includes(dragonId)) return null;
   if (ids.some((id) => !findDragon(id))) return null;
-  const draft: BoardLine = {
-    name: core.name,
-    why: core.why,
+  return lineFromIds({
     troop: core.troop,
     mode: core.mode,
+    pinnedId: dragonId,
+    stars,
     left: core.left.id,
     vanguard: core.vanguard.id,
     right: core.right.id,
-    leftStars: core.left.id === dragonId ? stars : 1,
-    vanguardStars: core.vanguard.id === dragonId ? stars : 1,
-    rightStars: core.right.id === dragonId ? stars : 1,
-  };
-  return draft;
+  });
 }
 
 export function suggestTeamsAround(opts: {
@@ -144,13 +227,13 @@ export function suggestTeamsAround(opts: {
     found.push(line);
   }
 
-  if (opts.mode === "pvp" && opts.troop === "shieldbearers") {
+  if (opts.troop === ONLINE_DPS_CORE.troop) {
     take(metaLine(stars, opts.dragonId));
   }
 
   for (const slot of slotOrder) {
     const exclude = new Set<string>();
-    for (let attempt = 0; attempt < 4 && found.length < limit; attempt++) {
+    for (let attempt = 0; attempt < 6 && found.length < limit; attempt++) {
       const line = fillAround({
         dragonId: opts.dragonId,
         stars,
@@ -164,6 +247,24 @@ export function suggestTeamsAround(opts: {
       for (const id of seatsOf(line)) {
         if (id !== opts.dragonId) exclude.add(id);
       }
+    }
+  }
+
+  const firstPool = limit > 8 ? 8 : 5;
+  const secondPool = limit > 8 ? 6 : 4;
+  for (const slot of slotOrder) {
+    if (found.length >= limit) break;
+    for (const line of fillPartners({
+      dragonId: opts.dragonId,
+      stars,
+      slot,
+      troop: opts.troop,
+      mode: opts.mode,
+      firstPool,
+      secondPool,
+    })) {
+      take(line);
+      if (found.length >= limit) break;
     }
   }
 
