@@ -526,6 +526,32 @@ export function CounterPage() {
             : ""}
         </p>
       ) : null}
+      {complete ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-foreground/10 pt-2">
+          <p className="mr-1 text-[11px] tracking-wide text-muted-foreground uppercase">
+            You march
+          </p>
+          {TROOP_TYPES.map((item) => (
+            <MiniChip
+              key={item}
+              active={ourTroop === item}
+              onClick={() => pickOurTroop(item)}
+            >
+              {troopShort[item]}
+              {item === recommended ? " · beats" : ""}
+            </MiniChip>
+          ))}
+          <p className="w-full text-[11px] text-muted-foreground">
+            {troopMatchupCopy(ourTroop, enemyTroop)}
+            {beaters.length > 1 && ourTroop === recommended
+              ? ` Also beats them: ${beaters
+                  .filter((item) => item !== recommended)
+                  .map((item) => troopShort[item])
+                  .join(", ")}.`
+              : ""}
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 
@@ -562,34 +588,8 @@ export function CounterPage() {
           />
         </>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_minmax(12.5rem,40%)] gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
-          <div className="min-w-0 space-y-2 lg:col-start-1 lg:row-start-1">
-            {picker}
-            <div className="flex flex-wrap items-center gap-1 rounded-2xl bg-card/60 px-2.5 py-2 ring-1 ring-foreground/10">
-              <p className="mr-1 text-[11px] tracking-wide text-muted-foreground uppercase">
-                You march
-              </p>
-              {TROOP_TYPES.map((item) => (
-                <MiniChip
-                  key={item}
-                  active={ourTroop === item}
-                  onClick={() => pickOurTroop(item)}
-                >
-                  {troopShort[item]}
-                  {item === recommended ? " · beats" : ""}
-                </MiniChip>
-              ))}
-              <p className="w-full pt-1 text-[11px] text-muted-foreground">
-                {troopMatchupCopy(ourTroop, enemyTroop)}
-                {beaters.length > 1 && ourTroop === recommended
-                  ? ` Also beats them: ${beaters
-                      .filter((item) => item !== recommended)
-                      .map((item) => troopShort[item])
-                      .join(", ")}.`
-                  : ""}
-              </p>
-            </div>
-          </div>
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(11rem,1fr)_minmax(8rem,30%)] gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">{picker}</div>
           {choices.length === 0 ? (
             <EmptyState
               className="min-h-0 py-8 lg:col-start-1 lg:row-start-2"
