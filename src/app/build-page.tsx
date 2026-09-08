@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LineupEditor } from "@/app/lineups/lineup-editor";
@@ -30,9 +31,11 @@ function readKind(): LineupKind {
 export function BuildPage({
   pin,
   onPublished,
+  belowFormation,
 }: {
   pin?: { dragonId: string; stars: number } | null;
   onPublished?: (board: BoardPublic) => void;
+  belowFormation?: ReactNode;
 }) {
   const { user } = useAuth();
   const {
@@ -54,6 +57,16 @@ export function BuildPage({
     if (!ready) return;
     ensureLineup(kind === "theory" ? "New theory" : "New lineup", kind);
   }, [ready, kind, ensureLineup]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (state.owned.length === 0 && kind === "pit") {
+      const lineup = ensureLineup("New theory", "theory");
+      setKind("theory");
+      setActiveId(lineup.id);
+      rememberBuild("theory", lineup.id);
+    }
+  }, [ready, state.owned.length, kind, ensureLineup]);
 
   function selectLineup(id: string, nextKind = kind) {
     setActiveId(id);
@@ -226,6 +239,7 @@ export function BuildPage({
         lineupId={resolvedId}
         embedded
         onOpenLineup={(id) => selectLineup(id)}
+        belowFormation={belowFormation}
       />
     </div>
   );

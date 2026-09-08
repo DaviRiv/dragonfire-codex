@@ -22,8 +22,9 @@ here is affiliated with HBO, Warner Bros., or the game.
   Talk threads that already seat them. **Seat on Team** saves a reviewed
   line locally. **Post this line for review** publishes your own formation
   (account required). Anyone can read reviews. Copilot does not run here.
-  Formation on the left (or on top on a phone). The full ranked
-  list sits beside it on desktop, directly under it on mobile. Tap a lane,
+  Formation on the left (or on top on a phone). The ranked pick list
+  owns the right side on desktop and stays sticky while you scroll.
+  Community reviews sit under the formation as a compact list. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first, hiding anyone already slotted. Role filters on
   that list are dungeon jobs: **Healing**, **Tanking**, **Damage**, and
@@ -113,7 +114,8 @@ Team list is a full column on the right so the formation stays in view.
 
 Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
 Publisher Tag (`gpt.js`) leaderboard under the header, 300×250 rectangles in
-the right rail, an in-feed unit on Talk, and a 320×50 mobile banner above the
+the right rail (hidden on Team and saved lineups so the pick list can use
+that side), an in-feed unit on Talk, and a 320×50 mobile banner above the
 tab bar. Set `NEXT_PUBLIC_GPT_AD_UNIT` (Ad Manager) or
 `NEXT_PUBLIC_ADSENSE_CLIENT` plus slot IDs. With those empty, the same slots
 show labeled house ads so the layout is visible without a publisher account.

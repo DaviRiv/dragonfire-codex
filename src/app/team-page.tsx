@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BuildPage } from "@/app/build-page";
-import { BoardCard } from "@/components/board-card";
+import { BoardListItem } from "@/components/board-list-item";
 import { DragonIcon } from "@/components/dragon-icon";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
@@ -12,19 +12,21 @@ import { StarStepper } from "@/components/star-rank";
 import { TalkThreadCard } from "@/components/talk-thread-card";
 import { BetaBadge } from "@/components/beta-badge";
 import { Input } from "@/components/ui/input";
-import { buttonVariants } from "@/components/ui/button";
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { apiJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { boardHasDragon, type BoardPublic } from "@/lib/boards";
+import { lineupFromAiLine } from "@/lib/ai/coach";
+import { rememberBuild } from "@/lib/build-session";
+import { newId, nowIso } from "@/lib/dragons";
 import { MODES, TROOP_TYPES, modeShort, troopShort } from "@/lib/labels";
+import { usePit } from "@/lib/store";
 import type { LineupMode, TroopType } from "@/lib/types";
 import type { TalkThreadSummary } from "@/lib/talk-types";
 import { cn } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-type Pane = "recs" | "build";
 type TroopFilter = TroopType | "all";
 type ModeFilter = LineupMode | "all";
 
@@ -36,10 +38,13 @@ export function TeamPage() {
   const router = useRouter();
   const search = useSearchParams();
   const { user } = useAuth();
+  const { state, addLineup } = usePit();
+  const pickerRef = useRef<HTMLDivElement>(null);
   const initialDragon = getCatalogDragon(search.get("dragon") ?? "")?.id ?? null;
   const initialStars = clampStars(Number(search.get("stars") ?? 6));
 
   const [query, setQuery] = useState("");
+  const [openPicker, setOpenPicker] = useState(false);
   const [dragonId, setDragonId] = useState<string | null>(initialDragon);
   const [stars, setStars] = useState(initialStars);
   const [troop, setTroop] = useState<TroopFilter>("all");
@@ -49,7 +54,6 @@ export function TeamPage() {
   const [threads, setThreads] = useState<TalkThreadSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [pane, setPane] = useState<Pane>(initialDragon ? "recs" : "build");
 
   const dragon = dragonId ? (getCatalogDragon(dragonId) ?? null) : null;
   const filtered = useMemo(() => {
@@ -85,7 +89,8 @@ export function TeamPage() {
     setLoaded(false);
     setBoards([]);
     setThreads([]);
-    setPane("recs");
+    setQuery("");
+    setOpenPicker(false);
     writeQuery(id, stars);
   }
 
@@ -94,6 +99,17 @@ export function TeamPage() {
     setStars(value);
     writeQuery(dragonId, value);
   }
+
+  useEffect(() => {
+    if (!openPicker) return;
+    function onDoc(event: MouseEvent) {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setOpenPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [openPicker]);
 
   useEffect(() => {
     if (!dragonId) {
@@ -154,86 +170,83 @@ export function TeamPage() {
     replaceBoard(data.board);
   }
 
-  async function onComment(boardId: string, text: string) {
-    const data = await apiJson<{ board: BoardPublic }>(
-      `/api/boards/${boardId}/comments`,
-      {
-        method: "POST",
-        body: JSON.stringify({ text }),
-      },
+  function seatBoard(board: BoardPublic) {
+    const line = {
+      name: board.name,
+      troop: board.troop,
+      mode: board.mode,
+      left: board.left,
+      vanguard: board.vanguard,
+      right: board.right,
+      why: board.why,
+    };
+    const owned = [board.left, board.vanguard, board.right].every((id) =>
+      state.owned.some((row) => row.dragonId === id),
     );
-    replaceBoard(data.board);
+    const filled = lineupFromAiLine(line, state, owned ? "pit" : "hatchery");
+    const created = {
+      ...filled,
+      id: newId("lineup"),
+      updatedAt: nowIso(),
+    };
+    addLineup(created);
+    rememberBuild(created.kind, created.id);
+    toast.success(`Seated ${board.name} on Team.`);
   }
 
-  const recs = (
-    <section className="space-y-3">
+  const reviews = (
+    <section className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-2">
+        <p className="text-label">
+          {dragon
+            ? `Reviews · ${dragon.name}`
+            : "Reviews"}
+        </p>
+        {shownBoards.length > 0 ? (
+          <span className="text-[11px] text-muted-foreground">
+            {shownBoards.length} line{shownBoards.length === 1 ? "" : "s"}
+          </span>
+        ) : null}
+      </div>
       {!dragon ? (
-        <EmptyState
-          title="Pick a dragon to team-build"
-          description="Community lines, star ratings, and Talk threads for that name land here. Copilot stays on its own page."
-        />
+        <p className="px-3 py-4 text-sm text-muted-foreground">
+          Pick a dragon above to load community lines and Talk for that name.
+        </p>
       ) : busy && !loaded ? (
-        <p className="text-sm text-muted-foreground">
-          Loading recommendations for {dragon.name}…
+        <p className="px-3 py-4 text-sm text-muted-foreground">
+          Loading reviews for {dragon.name}…
         </p>
       ) : shownBoards.length === 0 && threads.length === 0 ? (
         <EmptyState
           title={`No reviews for ${dragon.name} yet`}
-          description="Fill left, vanguard, and right, then post the line for review — or open Talk. Copilot is a separate beta chat if you want a ranked suggestion."
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                className={cn(buttonVariants())}
-                onClick={() => setPane("build")}
-              >
-                Open the formation
-              </button>
-              <Link
-                href="/talk/new"
-                className={cn(buttonVariants({ variant: "outline" }))}
-              >
-                Discuss in Talk
-              </Link>
-            </div>
-          }
+          description="Fill the three seats from the list on the right, then post the line."
+          className="rounded-none border-0 py-8"
         />
       ) : (
         <>
           {shownBoards.length > 0 ? (
-            <div className="space-y-3">
-              <p className="text-label">
-                Community lines · {shownBoards.length}
-              </p>
-              <div className="grid gap-3">
-                {shownBoards.map((board) => (
-                  <BoardCard
-                    key={board.id}
-                    board={board}
-                    nextPath="/team"
-                    onRate={onRate}
-                    onComment={onComment}
-                    onSeated={() => setPane("build")}
-                  />
-                ))}
-              </div>
-            </div>
+            <ul>
+              {shownBoards.map((board) => (
+                <BoardListItem
+                  key={board.id}
+                  board={board}
+                  nextPath="/team"
+                  onRate={onRate}
+                  onSeat={seatBoard}
+                />
+              ))}
+            </ul>
           ) : (
-            <EmptyState
-              title="No lines match those filters"
-              description="Clear troop, mode, or the star-rank chip to see every posted line with this dragon."
-            />
+            <p className="px-3 py-3 text-sm text-muted-foreground">
+              No lines match those filters.
+            </p>
           )}
           {threads.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-label">Talk · {threads.length}</p>
-              <ul className="space-y-2">
-                {threads.map((thread) => (
-                  <li key={thread.id}>
-                    <TalkThreadCard thread={thread} />
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-2 border-t border-border/50 p-2">
+              <p className="text-label px-1">Talk · {threads.length}</p>
+              {threads.map((thread) => (
+                <TalkThreadCard key={thread.id} thread={thread} />
+              ))}
             </div>
           ) : null}
         </>
@@ -241,54 +254,101 @@ export function TeamPage() {
     </section>
   );
 
-  const builder = (
-    <section className="space-y-3">
-      <p className="text-label">Your formation</p>
-      <BuildPage
-        pin={dragon ? { dragonId: dragon.id, stars } : null}
-        onPublished={(board) => {
-          replaceBoard(board);
-          setPane("recs");
-          setLoaded(true);
-        }}
-      />
-    </section>
-  );
-
   return (
-    <div className="space-y-4">
-      <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/15 via-card/80 to-black/40 px-4 py-5 ring-1 ring-amber-400/25 sm:px-6 sm:py-7">
-        <p className="text-label">Dragonfire Pit · Team</p>
-        <h1 className="font-heading mt-1 text-2xl tracking-wide sm:text-4xl">
-          Team builder
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Pick the dragon you want to march. Rated community lines and Talk
-          notes for that name show up beside your formation. Copilot is a
-          separate beta chat — it does not run this page.
-        </p>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="font-heading text-xl tracking-wide sm:text-2xl">
+            Team builder
+          </h1>
+          <p className="mt-0.5 max-w-xl text-sm text-muted-foreground">
+            Formation on the left. Ranked pick list on the right. Copilot is a
+            separate beta chat.
+          </p>
+        </div>
         <Link
           href="/coach"
-          className="mt-3 inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
         >
           <Sparkles className="size-4" />
           Open Copilot
           <BetaBadge />
         </Link>
-      </section>
+      </div>
 
-      <section className="rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/10 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          <div className="min-w-0 flex-1">
-            <p className="text-label">Dragon</p>
-            <Input
-              className="mt-1"
-              placeholder="Search the hatchery…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              enterKeyHint="search"
-            />
+      <section
+        ref={pickerRef}
+        className="rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/10"
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <p className="text-label">Build around</p>
+            <div className="relative mt-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder={
+                  dragon ? `Change from ${dragon.name}…` : "Search a dragon…"
+                }
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setOpenPicker(true);
+                }}
+                onFocus={() => setOpenPicker(true)}
+                enterKeyHint="search"
+              />
+            </div>
+            {openPicker ? (
+              <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl bg-popover py-1 shadow-lg ring-1 ring-foreground/15">
+                {filtered.length === 0 ? (
+                  <li className="px-3 py-2 text-sm text-muted-foreground">
+                    No hatchery match.
+                  </li>
+                ) : (
+                  filtered.map((row) => (
+                    <li key={row.id}>
+                      <button
+                        type="button"
+                        onClick={() => pickDragon(row.id)}
+                        className={cn(
+                          "flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-muted",
+                          row.id === dragonId && "bg-amber-500/15",
+                        )}
+                      >
+                        <DragonIcon
+                          dragonId={row.id}
+                          name={row.name}
+                          rarity={row.rarity}
+                          size="xs"
+                        />
+                        <span className="text-sm">{row.name}</span>
+                        <span className="ml-auto text-[11px] text-muted-foreground">
+                          {row.epithet}
+                        </span>
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            ) : null}
           </div>
+          {dragon ? (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 ring-1 ring-amber-400/30">
+              <DragonIcon
+                dragonId={dragon.id}
+                name={dragon.name}
+                rarity={dragon.rarity}
+                selected
+                size="sm"
+                stars={stars}
+              />
+              <div>
+                <p className="text-sm text-amber-50">{dragon.name}</p>
+                <p className="text-[11px] text-muted-foreground">★{stars}</p>
+              </div>
+            </div>
+          ) : null}
           <div>
             <p className="text-label">Stars you have</p>
             <div className="mt-1">
@@ -299,72 +359,32 @@ export function TeamPage() {
             </div>
           </div>
         </div>
-        <div className="mt-3 grid max-h-56 grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-          {filtered.map((row) => {
-            const selected = row.id === dragonId;
-            return (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() => pickDragon(row.id)}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center ring-1 ring-transparent hover:bg-muted",
-                  selected && "bg-amber-500/15 ring-amber-300/70",
-                )}
-              >
-                <DragonIcon
-                  dragonId={row.id}
-                  name={row.name}
-                  rarity={row.rarity}
-                  selected={selected}
-                  size="lg"
-                  stars={selected ? stars : undefined}
-                />
-                <span className="line-clamp-1 w-full text-[11px] text-muted-foreground">
-                  {row.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
         {dragon ? (
-          <div className="mt-3 space-y-2 border-t border-foreground/10 pt-3">
-            <p className="text-sm text-foreground">
-              Building around{" "}
-              <span className="text-amber-100">{dragon.name}</span> at ★{stars}.
-              Habits unlock at 2 / 4 / 6 / 8 / 10.
-            </p>
-            <div className="flex flex-wrap gap-1">
+          <div className="mt-3 flex flex-wrap gap-1 border-t border-foreground/10 pt-3">
+            <MiniChip active={troop === "all"} onClick={() => setTroop("all")}>
+              All troops
+            </MiniChip>
+            {TROOP_TYPES.map((item) => (
               <MiniChip
-                active={troop === "all"}
-                onClick={() => setTroop("all")}
+                key={item}
+                active={troop === item}
+                onClick={() => setTroop(item)}
               >
-                All troops
+                {troopShort[item]}
               </MiniChip>
-              {TROOP_TYPES.map((item) => (
-                <MiniChip
-                  key={item}
-                  active={troop === item}
-                  onClick={() => setTroop(item)}
-                >
-                  {troopShort[item]}
-                </MiniChip>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <MiniChip active={mode === "all"} onClick={() => setMode("all")}>
-                All modes
+            ))}
+            <MiniChip active={mode === "all"} onClick={() => setMode("all")}>
+              All modes
+            </MiniChip>
+            {MODES.map((item) => (
+              <MiniChip
+                key={item}
+                active={mode === item}
+                onClick={() => setMode(item)}
+              >
+                {modeShort[item]}
               </MiniChip>
-              {MODES.map((item) => (
-                <MiniChip
-                  key={item}
-                  active={mode === item}
-                  onClick={() => setMode(item)}
-                >
-                  {modeShort[item]}
-                </MiniChip>
-              ))}
-            </div>
+            ))}
             <MiniChip
               active={matchStars}
               onClick={() => setMatchStars((value) => !value)}
@@ -373,29 +393,21 @@ export function TeamPage() {
             </MiniChip>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Select a dragon to load community recommendations and reviews.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Optional. The list on the right ranks every hatchery dragon for the
+            selected lane.
           </p>
         )}
       </section>
 
-      <div className="flex gap-1 lg:hidden">
-        <MiniChip active={pane === "recs"} onClick={() => setPane("recs")}>
-          Reviews
-        </MiniChip>
-        <MiniChip active={pane === "build"} onClick={() => setPane("build")}>
-          Formation
-        </MiniChip>
-      </div>
-
-      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
-        <div className={cn(pane === "recs" ? "block" : "hidden", "lg:block")}>
-          {recs}
-        </div>
-        <div className={cn(pane === "build" ? "block" : "hidden", "lg:block")}>
-          {builder}
-        </div>
-      </div>
+      <BuildPage
+        pin={dragon ? { dragonId: dragon.id, stars } : null}
+        belowFormation={reviews}
+        onPublished={(board) => {
+          replaceBoard(board);
+          setLoaded(true);
+        }}
+      />
     </div>
   );
 }

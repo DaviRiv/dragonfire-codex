@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -46,10 +47,12 @@ export function LineupEditor({
   lineupId,
   embedded,
   onOpenLineup,
+  belowFormation,
 }: {
   lineupId: string;
   embedded?: boolean;
   onOpenLineup?: (id: string) => void;
+  belowFormation?: ReactNode;
 }) {
   const {
     ready,
@@ -239,8 +242,8 @@ export function LineupEditor({
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(24rem,38rem)_minmax(0,1fr)] lg:items-start lg:gap-5">
-      <div className="space-y-2 lg:sticky lg:top-[calc(3.5rem+env(safe-area-inset-top))]">
+    <div className="lg:grid lg:grid-cols-[minmax(20rem,28rem)_minmax(24rem,1fr)] lg:items-start lg:gap-4 xl:grid-cols-[minmax(22rem,30rem)_minmax(28rem,1fr)]">
+      <div className="space-y-2">
         <FormationBoard
           lineup={lineup}
           state={state}
@@ -289,6 +292,8 @@ export function LineupEditor({
 
         {pairing ? <PairingPanel report={pairing} /> : null}
 
+        {belowFormation}
+
         <div className="hidden space-y-2 lg:block">
           <TeamExtras
             lineup={active}
@@ -307,98 +312,97 @@ export function LineupEditor({
 
       <section
         ref={pickRef}
-        className="mt-3 min-w-0 scroll-mt-[4.25rem] space-y-2 lg:mt-0"
+        className="mt-3 min-w-0 scroll-mt-[4.25rem] lg:sticky lg:top-[calc(3.5rem+env(safe-area-inset-top))] lg:mt-0 lg:flex lg:max-h-[calc(100dvh-5.25rem)] lg:flex-col"
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">
-            {selectedDragon
-              ? `Replace ${selectedDragon.name}`
-              : `Pick ${slotShort[selectedSlot]}`}
-          </h2>
-          <Button
-            size="sm"
-            variant="outline"
-            className="shrink-0"
-            disabled={!selectedDragon}
-            onClick={() => {
-              if (selectedDragon) setInspecting(selectedDragon);
-            }}
-          >
-            Full stats
-          </Button>
-          <Button
-            size="sm"
-            onClick={fillLine}
-            className="shrink-0"
-            disabled={pitEmpty}
-          >
-            <Sparkles data-icon="inline-start" />
-            Suggest
-          </Button>
-          {!isTheory && !pitEmpty ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={nextArmy}
-              className="shrink-0"
-            >
-              Next army
-            </Button>
-          ) : null}
-        </div>
-        <p className="text-[13px] leading-snug text-muted-foreground">
-          {pitEmpty
-            ? "Mark owned dragons in Hatchery to rank a team."
-            : isTheory
-              ? roleFilter === "all"
-                ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden. Unowned rows are goals, not a march.`
-                : `${suggestions.length} ${roleLabels[roleFilter].toLowerCase()} for ${slotShort[selectedSlot].toLowerCase()}.`
-              : skipsUsedDragons(active)
-                ? `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}, skipping dragons already on another saved team.`
-                : `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}. Suggest never seats a dragon you do not own.`}
-        </p>
-        {!isTheory && !pitEmpty ? (
-          <div className="flex flex-wrap gap-1">
-            <MiniChip
-              active={skipsUsedDragons(active)}
-              onClick={() => updateLineup(active.id, { excludeUsed: true })}
-            >
-              Skip other teams
-            </MiniChip>
-            <MiniChip
-              active={!skipsUsedDragons(active)}
-              onClick={() => updateLineup(active.id, { excludeUsed: false })}
-            >
-              Allow reuse
-            </MiniChip>
-          </div>
-        ) : null}
-        {gapHeadline ? (
-          <p className="rounded-xl bg-[#3a1210] px-2.5 py-2 text-[13px] leading-snug text-red-50 ring-1 ring-[#c34a2c]/70">
-            {gapHeadline}
-          </p>
-        ) : null}
-        {selectedSlot === "vanguard" ? (
-          <p
-            className="line-clamp-2 rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[13px] leading-snug text-emerald-50 ring-1 ring-emerald-500/25"
-            title={
-              selectedDragon
-                ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
-                : slotHints.vanguard
-            }
-          >
-            <span className="font-heading tracking-wide text-emerald-200">
-              Vanguard
-            </span>
-            {" · "}
-            {selectedDragon
-              ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
-              : slotHints.vanguard}
-          </p>
-        ) : null}
-
-        <div className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-card/80 ring-1 ring-amber-400/25">
           <div className="space-y-2 border-b border-border/50 p-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">
+                {selectedDragon
+                  ? `Replace ${selectedDragon.name}`
+                  : `Pick list · ${slotShort[selectedSlot]}`}
+              </h2>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0"
+                disabled={!selectedDragon}
+                onClick={() => {
+                  if (selectedDragon) setInspecting(selectedDragon);
+                }}
+              >
+                Full stats
+              </Button>
+              <Button
+                size="sm"
+                onClick={fillLine}
+                className="shrink-0"
+                disabled={pitEmpty}
+              >
+                <Sparkles data-icon="inline-start" />
+                Suggest
+              </Button>
+              {!isTheory && !pitEmpty ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={nextArmy}
+                  className="shrink-0"
+                >
+                  Next army
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-[13px] leading-snug text-muted-foreground">
+              {pitEmpty
+                ? "Mark owned dragons in Hatchery to rank a team."
+                : isTheory
+                  ? roleFilter === "all"
+                    ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden. Unowned rows are goals, not a march.`
+                    : `${suggestions.length} ${roleLabels[roleFilter].toLowerCase()} for ${slotShort[selectedSlot].toLowerCase()}.`
+                  : skipsUsedDragons(active)
+                    ? `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}, skipping dragons already on another saved team.`
+                    : `${suggestions.length} in your pit for ${slotShort[selectedSlot].toLowerCase()}. Suggest never seats a dragon you do not own.`}
+            </p>
+            {!isTheory && !pitEmpty ? (
+              <div className="flex flex-wrap gap-1">
+                <MiniChip
+                  active={skipsUsedDragons(active)}
+                  onClick={() => updateLineup(active.id, { excludeUsed: true })}
+                >
+                  Skip other teams
+                </MiniChip>
+                <MiniChip
+                  active={!skipsUsedDragons(active)}
+                  onClick={() => updateLineup(active.id, { excludeUsed: false })}
+                >
+                  Allow reuse
+                </MiniChip>
+              </div>
+            ) : null}
+            {gapHeadline ? (
+              <p className="rounded-xl bg-[#3a1210] px-2.5 py-2 text-[13px] leading-snug text-red-50 ring-1 ring-[#c34a2c]/70">
+                {gapHeadline}
+              </p>
+            ) : null}
+            {selectedSlot === "vanguard" ? (
+              <p
+                className="line-clamp-2 rounded-lg bg-emerald-950/40 px-2.5 py-2 text-[13px] leading-snug text-emerald-50 ring-1 ring-emerald-500/25"
+                title={
+                  selectedDragon
+                    ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
+                    : slotHints.vanguard
+                }
+              >
+                <span className="font-heading tracking-wide text-emerald-200">
+                  Vanguard
+                </span>
+                {" · "}
+                {selectedDragon
+                  ? `${selectedDragon.name}: ${vanguardBonus(selectedDragon, true)}`
+                  : slotHints.vanguard}
+              </p>
+            ) : null}
             <div className="flex min-w-0 items-center gap-1.5">
               <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -473,54 +477,61 @@ export function LineupEditor({
             </p>
           </div>
 
-        {pitEmpty ? (
-          <EmptyState
-            title="Add your dragons first"
-            description="Log hatched dragons in the pit, then come back and pick a team. Suggest team ranks what you own."
-            className="rounded-none border-0"
-            action={
-              <div className="grid w-full max-w-sm gap-2">
-                <Button onClick={loadSample}>Load sample pit</Button>
-                <Button variant="outline" onClick={() => router.push("/pit")}>
-                  Open pit
-                </Button>
-              </div>
-            }
-          />
-        ) : suggestions.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-            {isTheory
-              ? roleFilter === "all"
-                ? "Nothing matches. Try Hatchery, or clear the search."
-                : `No ${roleLabels[roleFilter].toLowerCase()} matches. Try All, or clear the search.`
-              : query.trim() || roleFilter !== "all"
-                ? roleFilter === "all"
-                  ? "Nothing in your pit matches. Clear the search."
-                  : `No ${roleLabels[roleFilter].toLowerCase()} in your pit matches. Try All, or clear the search.`
-                : "Everyone in your pit is already on this team. Clear a lane to see other picks."}
-          </p>
-        ) : (
-          <ul className="divide-y divide-border/50">
-            {suggestions.map((suggestion, index) => (
-              <li key={suggestion.dragon.id}>
-                <SuggestTile
-                  suggestion={suggestion}
-                  selected={slottedHere(suggestion.dragon.id) === selectedSlot}
-                  kind={active.kind}
-                  ignoreLevel={active.ignoreLevel}
-                  rank={index + 1}
-                  onPick={() => pick(suggestion.dragon.id)}
-                  onInspect={() => setInspecting(suggestion.dragon)}
-                  onSaveNotes={(ownedId, notes) =>
-                    updateOwned(ownedId, { notes })
-                  }
-                  slot={selectedSlot}
-                  showAbilities={showAbilities}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {pitEmpty ? (
+              <EmptyState
+                title="Add your dragons first"
+                description="Log hatched dragons in the pit, then come back and pick a team. Suggest team ranks what you own."
+                className="rounded-none border-0"
+                action={
+                  <div className="grid w-full max-w-sm gap-2">
+                    <Button onClick={loadSample}>Load sample pit</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/pit")}
+                    >
+                      Open pit
+                    </Button>
+                  </div>
+                }
+              />
+            ) : suggestions.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                {isTheory
+                  ? roleFilter === "all"
+                    ? "Nothing matches. Try Hatchery, or clear the search."
+                    : `No ${roleLabels[roleFilter].toLowerCase()} matches. Try All, or clear the search.`
+                  : query.trim() || roleFilter !== "all"
+                    ? roleFilter === "all"
+                      ? "Nothing in your pit matches. Clear the search."
+                      : `No ${roleLabels[roleFilter].toLowerCase()} in your pit matches. Try All, or clear the search.`
+                    : "Everyone in your pit is already on this team. Clear a lane to see other picks."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border/50">
+                {suggestions.map((suggestion, index) => (
+                  <li key={suggestion.dragon.id}>
+                    <SuggestTile
+                      suggestion={suggestion}
+                      selected={
+                        slottedHere(suggestion.dragon.id) === selectedSlot
+                      }
+                      kind={active.kind}
+                      ignoreLevel={active.ignoreLevel}
+                      rank={index + 1}
+                      onPick={() => pick(suggestion.dragon.id)}
+                      onInspect={() => setInspecting(suggestion.dragon)}
+                      onSaveNotes={(ownedId, notes) =>
+                        updateOwned(ownedId, { notes })
+                      }
+                      slot={selectedSlot}
+                      showAbilities={showAbilities}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </section>
 
