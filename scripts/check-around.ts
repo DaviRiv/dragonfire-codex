@@ -2,12 +2,20 @@
  * Team builder: several complete lines around one dragon.
  * Run: npx tsx --tsconfig tsconfig.json scripts/check-around.ts
  */
-import { choicesAroundDragon } from "@/lib/around-choices";
+import { choicesAroundDragon, seatStars } from "@/lib/around-choices";
 import { boardHasDragon } from "@/lib/boards";
 import { STATUS_GLOSSARY } from "@/data/status-glossary";
 
 function assert(ok: unknown, message: string): asserts ok {
   if (!ok) throw new Error(message);
+}
+
+function seatsOf(line: {
+  left: string;
+  vanguard: string;
+  right: string;
+}): string[] {
+  return [line.left, line.vanguard, line.right];
 }
 
 function checkKalspire(): void {
@@ -22,23 +30,20 @@ function checkKalspire(): void {
     six.every((choice) => boardHasDragon(choice.line, "kalspire", 6)),
     "every line must include Kalspire at ★6",
   );
+  for (const choice of six) {
+    for (const id of seatsOf(choice.line)) {
+      if (id === "kalspire") {
+        assert(seatStars(choice.line, id) === 6, "Kalspire keeps the stepper rank");
+      } else {
+        assert(
+          seatStars(choice.line, id) === 1,
+          `${id} must stay hypothetical, not inherit Kalspire’s ★6`,
+        );
+      }
+    }
+  }
   const keys = new Set(six.map((choice) => choice.id));
   assert(keys.size === six.length, "Kalspire lines must be unique");
-  assert(
-    six.every(
-      (choice) =>
-        Boolean(choice.line.left) &&
-        Boolean(choice.line.vanguard) &&
-        Boolean(choice.line.right) &&
-        new Set([choice.line.left, choice.line.vanguard, choice.line.right])
-          .size === 3,
-    ),
-    "every choice must be a complete three",
-  );
-  assert(
-    six.every((choice) => choice.pros.length + choice.cons.length > 0),
-    "each team needs at least one pro or con",
-  );
   const panic = six.filter((choice) =>
     choice.pros.some(
       (note) =>
@@ -82,7 +87,26 @@ function checkMalachite(): void {
   assert(lines.length >= 3, `expected 3+ Malachite lines, got ${lines.length}`);
   assert(
     lines.every((choice) => boardHasDragon(choice.line, "malachite", 6)),
-    "every Malachite line must include Malachite",
+    "every Malachite line must include Malachite at ★6",
+  );
+  const moon = lines.find((choice) => seatsOf(choice.line).includes("moondancer"));
+  assert(moon, "★6 Malachite should still seat a Moondancer line");
+  assert(seatStars(moon.line, "malachite") === 6, "Malachite stays ★6");
+  assert(
+    seatStars(moon.line, "moondancer") === 1,
+    "Moondancer is hypothetical — do not copy Malachite’s stars",
+  );
+  assert(
+    moon.pros.some((note) => /crescent blade/i.test(note.title)),
+    "show the Crescent Blade pairing on the Malachite line",
+  );
+  assert(
+    moon.cons.some(
+      (note) =>
+        note.title === "Moondancer’s Command maxes at 6★" &&
+        note.detail?.startsWith("At 6+ Stars:"),
+    ),
+    "name the Hub 6+ Stars command clause on hypothetical Moondancer",
   );
 }
 

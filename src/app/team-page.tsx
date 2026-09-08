@@ -14,7 +14,6 @@ import {
 import { BetaBadge } from "@/components/beta-badge";
 import { Input } from "@/components/ui/input";
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
-import { lineupFromAiLine } from "@/lib/ai/coach";
 import { choicesAroundDragon } from "@/lib/around-choices";
 import { rememberBuild } from "@/lib/build-session";
 import { newId, nowIso } from "@/lib/dragons";
@@ -144,13 +143,15 @@ export function TeamPage() {
 
   function useActive() {
     if (!active) return;
-    const owned = [active.line.left, active.line.vanguard, active.line.right].every(
-      (id) => state.owned.some((row) => row.dragonId === id),
+    const ids = [active.line.left, active.line.vanguard, active.line.right];
+    const owned = ids.every((id) =>
+      state.owned.some((row) => row.dragonId === id),
     );
-    const filled = lineupFromAiLine(active.line, state, owned ? "pit" : "hatchery");
     const created = {
-      ...filled,
+      ...active.lineup,
       id: newId("lineup"),
+      kind: owned ? ("pit" as const) : ("theory" as const),
+      ignoreLevel: !owned,
       craftStars: stars,
       updatedAt: nowIso(),
     };
@@ -264,7 +265,9 @@ export function TeamPage() {
             </div>
           ) : null}
           <div>
-            <p className="text-label">Stars you have</p>
+            <p className="text-label">
+              Stars on {dragon?.name ?? "this dragon"}
+            </p>
             <div className="mt-1">
               <StarStepper
                 value={stars}

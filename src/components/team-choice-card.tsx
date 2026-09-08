@@ -61,11 +61,13 @@ export function TeamLineList({
                         rarity={dragon?.rarity}
                         size="sm"
                         stars={
-                          slot === "left"
-                            ? choice.line.leftStars
-                            : slot === "vanguard"
-                              ? choice.line.vanguardStars
-                              : choice.line.rightStars
+                          pinned
+                            ? slot === "left"
+                              ? choice.line.leftStars
+                              : slot === "vanguard"
+                                ? choice.line.vanguardStars
+                                : choice.line.rightStars
+                            : undefined
                         }
                         selected={pinned}
                       />
@@ -81,6 +83,11 @@ export function TeamLineList({
                         >
                           {dragon?.name ?? dragonId}
                         </span>
+                        {pinned ? null : (
+                          <span className="block truncate text-[10px] text-muted-foreground">
+                            Goal
+                          </span>
+                        )}
                       </span>
                     </span>
                   );
@@ -142,6 +149,10 @@ export function TeamNotesPanel({
         <p className="mt-0.5 text-[11px] tracking-wide text-amber-100/80 uppercase">
           {troopShort[choice.line.troop]} · {modeShort[choice.line.mode]} ·{" "}
           {choice.label}
+        </p>
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+          Only the dragon you built around uses the star stepper. The other two
+          are goals — payoffs name the rank that maxes their kit.
         </p>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-2 overflow-y-auto overscroll-contain px-3 py-2.5">

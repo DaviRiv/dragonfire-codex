@@ -22,13 +22,15 @@ here is affiliated with HBO, Warner Bros., or the game.
   several complete three-dragon lines around that name (healer, soak, and
   damage seats from the same Suggest rules as Copilot). Kalspire at ★6
   lists **Panic** from Hub habit 3 plus the Star Progression glossary
-  (“Deals Tactical Damage to the target each round.”). Other seats add
-  their live Hub provides when those names have glossary lines
-  (First-Strike, Double-Strike, Advantage, Vulnerable, Taunt, …), plus
-  pairing payoffs and gaps. Those threes sit in a scrollable list on the
-  left. Highlight a line to read **Pros** and **Cons** on the right; the
-  rest of the page stays put. **Use this team** saves it. **Tweak seats**
-  opens the saved lineup editor. Copilot does not run here.
+  (“Deals Tactical Damage to the target each round.”). The star stepper
+  applies only to that dragon. The other two seats are hypothetical goals
+  — a ★6 Malachite line still seats Moondancer, and Pros/Cons name Hub
+  gates such as Command “At 6+ Stars” rather than copying Malachite’s
+  rank onto Moondancer. Other seats add their live Hub provides when
+  those names have glossary lines, plus pairing payoffs and gaps. Highlight
+  a line to read **Pros** and **Cons** on the right; the rest of the page
+  stays put. **Use this team** saves it. **Tweak seats** opens the saved
+  lineup editor. Copilot does not run here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
   core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats

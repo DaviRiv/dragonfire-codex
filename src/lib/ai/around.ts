@@ -49,7 +49,7 @@ function whyFor(line: BoardLine): string {
   const left = findDragon(line.left)?.name ?? line.left;
   const vanguard = findDragon(line.vanguard)?.name ?? line.vanguard;
   const right = findDragon(line.right)?.name ?? line.right;
-  return `${vanguard} in Vanguard, ${left} on the left, ${right} on the right at ★${line.leftStars}.`;
+  return `${vanguard} in Vanguard, ${left} on the left, ${right} on the right.`;
 }
 
 function fillAround(opts: {
@@ -66,7 +66,8 @@ function fillAround(opts: {
     excludeIds: opts.exclude,
   });
   for (const pick of picks) {
-    lineup.slots[pick.slot] = makePick(pick.dragon.id, opts.stars, 1);
+    const rank = pick.dragon.id === opts.dragonId ? opts.stars : 1;
+    lineup.slots[pick.slot] = makePick(pick.dragon.id, rank, 1);
   }
   const left = lineup.slots.left;
   const vanguard = lineup.slots.vanguard;
@@ -83,9 +84,9 @@ function fillAround(opts: {
     left: left.dragonId,
     vanguard: vanguard.dragonId,
     right: right.dragonId,
-    leftStars: opts.stars,
-    vanguardStars: opts.stars,
-    rightStars: opts.stars,
+    leftStars: left.dragonId === opts.dragonId ? opts.stars : 1,
+    vanguardStars: vanguard.dragonId === opts.dragonId ? opts.stars : 1,
+    rightStars: right.dragonId === opts.dragonId ? opts.stars : 1,
   };
   return {
     ...draft,
@@ -107,9 +108,9 @@ function metaLine(stars: number, dragonId: string): BoardLine | null {
     left: core.left.id,
     vanguard: core.vanguard.id,
     right: core.right.id,
-    leftStars: stars,
-    vanguardStars: stars,
-    rightStars: stars,
+    leftStars: core.left.id === dragonId ? stars : 1,
+    vanguardStars: core.vanguard.id === dragonId ? stars : 1,
+    rightStars: core.right.id === dragonId ? stars : 1,
   };
   return draft;
 }

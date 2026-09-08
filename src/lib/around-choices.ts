@@ -1,13 +1,19 @@
+import { HABIT_NAMES } from "@/data/habit-names";
 import { STATUS_GLOSSARY } from "@/data/status-glossary";
-import { canonAbility, dragonProvides } from "@/lib/abilities";
+import { getCatalogDragon } from "@/data/dragons";
+import {
+  canonAbility,
+  dragonProvides,
+  provideUnlockStars,
+} from "@/lib/abilities";
 import { suggestTeamsAround } from "@/lib/ai/around";
 import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards";
 import { emptyPit, newOwnedDragon } from "@/lib/dragons";
-import { defaultHabits } from "@/lib/habits";
-import { pairingReport, type PairingNote } from "@/lib/pairing";
+import { defaultHabits, dragonKit } from "@/lib/habits";
+import { breedLabels } from "@/lib/labels";
+import { partnerRules, pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
-import { getCatalogDragon } from "@/data/dragons";
-import type { Lineup, LineupMode, PitState, TroopType } from "@/lib/types";
+import type { Dragon, Lineup, LineupMode, PitState, TroopType } from "@/lib/types";
 
 export type ChoiceNote = {
   title: string;
@@ -28,14 +34,6 @@ export type AroundChoice = {
   cons: ChoiceNote[];
 };
 
-/** Glossary statuses that raise Damage Dealt or Damage Received on a target. */
-const DAMAGE_PAYOFFS = new Set([
-  "First-Strike",
-  "Double-Strike",
-  "Advantage",
-  "Vulnerable",
-]);
-
 function uniqueTroops(dragonId: string, preferred: TroopType): TroopType[] {
   const dragon = getCatalogDragon(dragonId);
   const next: TroopType[] = [];
@@ -47,6 +45,15 @@ function uniqueTroops(dragonId: string, preferred: TroopType): TroopType[] {
 
 function seatsOf(line: BoardLine): string[] {
   return [line.left, line.vanguard, line.right];
+}
+
+function pitRank(state: PitState, dragonId: string): number | null {
+  return state.owned.find((row) => row.dragonId === dragonId)?.starRank ?? null;
+}
+
+/** Hypothetical partners sit at Command until the pit names a rank. */
+function partnerRank(state: PitState, dragonId: string): number {
+  return pitRank(state, dragonId) ?? 1;
 }
 
 function kitNotesFor(dragonId: string, stars: number): ChoiceNote[] {
@@ -64,6 +71,93 @@ function kitNotesFor(dragonId: string, stars: number): ChoiceNote[] {
       detail: glossary,
       ability,
       dragonId,
+    });
+  }
+  return notes;
+}
+
+function commandPlusClause(
+  dragon: Dragon,
+): { stars: number; clause: string } | null {
+  const match = dragon.command.match(/At (\d+)\+\s*Stars:\s*([^.]+)\./i);
+  if (!match) return null;
+  return {
+    stars: Number(match[1]),
+    clause: `At ${match[1]}+ Stars: ${match[2].trim()}.`,
+  };
+}
+
+function kitTouchesPinned(
+  body: string,
+  pinned: Dragon,
+  pinnedStars: number,
+  gifts: string[],
+): boolean {
+  const hay = body.toLowerCase();
+  const breed = breedLabels[pinned.breed].toLowerCase();
+  if (hay.includes(breed)) return true;
+  for (const gift of gifts) {
+    if (gift && hay.includes(gift.toLowerCase())) return true;
+  }
+  const habits = defaultHabits(pinnedStars);
+  for (const gate of pinned.provides ?? []) {
+    const ability = canonAbility(gate.ability);
+    if (!dragonProvides(pinned, ability, pinnedStars, habits)) continue;
+    if (hay.includes(ability.toLowerCase())) return true;
+  }
+  return false;
+}
+
+function partnerGoalNotes(
+  partnerId: string,
+  pinned: Dragon,
+  pinnedStars: number,
+  state: PitState,
+): ChoiceNote[] {
+  const partner = getCatalogDragon(partnerId);
+  if (!partner) return [];
+  const have = partnerRank(state, partnerId);
+  const notes: ChoiceNote[] = [];
+  const gifts = partnerRules(partner)
+    .map((rule) => rule.gift)
+    .filter((gift): gift is string => Boolean(gift));
+  const plus = commandPlusClause(partner);
+  const commandTouches =
+    kitTouchesPinned(partner.command, pinned, pinnedStars, gifts) ||
+    partnerRules(partner).some((rule) => rule.breed === pinned.breed);
+  if (plus && commandTouches && have < plus.stars) {
+    notes.push({
+      title: `${partner.name}’s Command maxes at ${plus.stars}★`,
+      detail: plus.clause,
+      dragonId: partnerId,
+    });
+  }
+  const kit = dragonKit(partner);
+  for (const extra of kit.extras) {
+    if (extra.unlockStars == null || extra.unlockStars <= have) continue;
+    if (extra.title === "Vanguard") continue;
+    if (!kitTouchesPinned(extra.body, pinned, pinnedStars, gifts)) continue;
+    const habit = Number(extra.title.match(/Habit (\d+)/)?.[1] ?? 0);
+    const habitName = HABIT_NAMES[partner.id]?.[habit - 1];
+    const label = habitName ?? extra.title;
+    const sentence = extra.body.split(/(?<=\.)\s+/)[0] ?? extra.body;
+    notes.push({
+      title: `${partner.name}’s ${label} unlocks at ${extra.unlockStars}★`,
+      detail: sentence.trim(),
+      dragonId: partnerId,
+    });
+  }
+  for (const gate of partner.provides ?? []) {
+    const ability = canonAbility(gate.ability);
+    const need = provideUnlockStars(partner, ability);
+    if (need == null || need <= have) continue;
+    const glossary = STATUS_GLOSSARY[ability];
+    if (!glossary) continue;
+    notes.push({
+      title: `${partner.name}’s ${ability} unlocks at ${need}★`,
+      detail: glossary,
+      ability,
+      dragonId: partnerId,
     });
   }
   return notes;
@@ -97,25 +191,22 @@ function dedupeNotes(notes: ChoiceNote[]): ChoiceNote[] {
   return next;
 }
 
-function stateAtStars(
-  line: BoardLine,
+function overlayPinned(
+  pinnedId: string,
   stars: number,
   state: PitState,
 ): PitState {
-  const seats = seatsOf(line);
-  const owned = state.owned.filter((row) => !seats.includes(row.dragonId));
-  for (const id of seats) {
-    const prev = state.owned.find((row) => row.dragonId === id);
-    owned.push(
-      newOwnedDragon(
-        id,
-        stars,
-        prev?.reignLevel ?? 1,
-        defaultHabits(stars),
-        prev?.habitRanks,
-      ),
-    );
-  }
+  const prev = state.owned.find((row) => row.dragonId === pinnedId);
+  const owned = state.owned.filter((row) => row.dragonId !== pinnedId);
+  owned.push(
+    newOwnedDragon(
+      pinnedId,
+      stars,
+      prev?.reignLevel ?? 1,
+      defaultHabits(stars),
+      prev?.habitRanks,
+    ),
+  );
   return { ...state, owned };
 }
 
@@ -125,40 +216,44 @@ function evaluateLine(
   stars: number,
   state: PitState,
 ): AroundChoice {
+  const pinned = getCatalogDragon(pinnedId);
   const lineup = {
     ...lineupFromBoard({ ...line, id: `around-${boardFingerprint(line)}` }),
     craftStars: stars,
   };
-  const ranked = stateAtStars(line, stars, state);
+  const ranked = overlayPinned(pinnedId, stars, state);
   const pairing = pairingReport(lineup, ranked);
   const synergy = analyzeLineup(lineup, ranked);
-  const pinnedKit = kitNotesFor(pinnedId, stars);
-  const partnerKit = seatsOf(line)
+  const kit = pinned ? kitNotesFor(pinnedId, stars) : [];
+  const goals = seatsOf(line)
     .filter((id) => id !== pinnedId)
-    .flatMap((id) => kitNotesFor(id, stars));
-  const partnerDamage = partnerKit.filter(
-    (note) => note.ability && DAMAGE_PAYOFFS.has(note.ability),
-  );
-  const partnerOther = partnerKit.filter(
-    (note) => !note.ability || !DAMAGE_PAYOFFS.has(note.ability),
-  );
+    .flatMap((id) =>
+      pinned ? partnerGoalNotes(id, pinned, stars, ranked) : [],
+    );
+  const pairingPros = fromPairing(pairing.pros);
+  const pairingCons = fromPairing(pairing.cons).filter((note) => {
+    if (!pinned) return true;
+    if (note.title.startsWith(`${pinned.name} has `) && note.title.includes(" at ")) {
+      return false;
+    }
+    return true;
+  });
   const pros = dedupeNotes([
-    ...pinnedKit,
-    ...partnerDamage,
-    ...fromPairing(pairing.pros),
-    ...partnerOther,
+    ...kit,
+    ...pairingPros,
     ...fromSynergy(synergy.notes.filter((note) => note.tone === "good")),
   ]).slice(0, 6);
   const cons = dedupeNotes([
-    ...fromPairing(pairing.cons),
+    ...goals,
+    ...pairingCons,
     ...fromSynergy(synergy.notes.filter((note) => note.tone === "warn")),
-  ]).slice(0, 5);
+  ]).slice(0, 6);
   const score =
     synergy.score +
     pairing.pros.length * 10 -
-    pairing.cons.length * 7 +
-    pinnedKit.length * 6 +
-    partnerDamage.length * 8;
+    pairing.cons.length * 7 -
+    goals.length * 3 +
+    kit.length * 6;
   return {
     id: boardFingerprint(line),
     line,
@@ -206,4 +301,11 @@ export function choicesAroundDragon(opts: {
 
   found.sort((a, b) => b.score - a.score);
   return found.slice(0, limit);
+}
+
+export function seatStars(line: BoardLine, dragonId: string): number | null {
+  if (line.left === dragonId) return line.leftStars;
+  if (line.vanguard === dragonId) return line.vanguardStars;
+  if (line.right === dragonId) return line.rightStars;
+  return null;
 }
