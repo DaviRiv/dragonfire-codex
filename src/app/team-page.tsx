@@ -3,32 +3,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BuildPage } from "@/app/build-page";
-import { BoardListItem } from "@/components/board-list-item";
 import { DragonIcon } from "@/components/dragon-icon";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
 import { StarStepper } from "@/components/star-rank";
-import { TalkThreadCard } from "@/components/talk-thread-card";
+import { TeamChoiceCard } from "@/components/team-choice-card";
 import { BetaBadge } from "@/components/beta-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
-import { apiJson } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import { boardHasDragon, type BoardPublic } from "@/lib/boards";
 import { lineupFromAiLine } from "@/lib/ai/coach";
+import { choicesAroundDragon } from "@/lib/around-choices";
 import { rememberBuild } from "@/lib/build-session";
 import { newId, nowIso } from "@/lib/dragons";
 import { MODES, TROOP_TYPES, modeShort, troopShort } from "@/lib/labels";
 import { usePit } from "@/lib/store";
 import type { LineupMode, TroopType } from "@/lib/types";
-import type { TalkThreadSummary } from "@/lib/talk-types";
 import { cn } from "@/lib/utils";
 import { Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-
-type TroopFilter = TroopType | "all";
-type ModeFilter = LineupMode | "all";
 
 function clampStars(value: number): number {
   return Math.min(10, Math.max(1, Math.round(value) || 6));
@@ -37,23 +30,22 @@ function clampStars(value: number): number {
 export function TeamPage() {
   const router = useRouter();
   const search = useSearchParams();
-  const { user } = useAuth();
   const { state, addLineup } = usePit();
   const pickerRef = useRef<HTMLDivElement>(null);
   const initialDragon = getCatalogDragon(search.get("dragon") ?? "")?.id ?? null;
   const initialStars = clampStars(Number(search.get("stars") ?? 6));
+  const seed = initialDragon ? getCatalogDragon(initialDragon) : null;
 
   const [query, setQuery] = useState("");
-  const [openPicker, setOpenPicker] = useState(false);
+  const [openPicker, setOpenPicker] = useState(!initialDragon);
   const [dragonId, setDragonId] = useState<string | null>(initialDragon);
   const [stars, setStars] = useState(initialStars);
-  const [troop, setTroop] = useState<TroopFilter>("all");
-  const [mode, setMode] = useState<ModeFilter>("all");
-  const [matchStars, setMatchStars] = useState(false);
-  const [boards, setBoards] = useState<BoardPublic[]>([]);
-  const [threads, setThreads] = useState<TalkThreadSummary[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [troop, setTroop] = useState<TroopType>(
+    seed?.affinities[0] ?? "shieldbearers",
+  );
+  const [mode, setMode] = useState<LineupMode>("pvp");
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const [seatedId, setSeatedId] = useState<string | null>(null);
 
   const dragon = dragonId ? (getCatalogDragon(dragonId) ?? null) : null;
   const filtered = useMemo(() => {
@@ -64,17 +56,16 @@ export function TeamPage() {
     );
   }, [query]);
 
-  const shownBoards = useMemo(() => {
-    if (!dragonId) return [];
-    return boards.filter((board) => {
-      if (!boardHasDragon(board, dragonId, matchStars ? stars : undefined)) {
-        return false;
-      }
-      if (troop !== "all" && board.troop !== troop) return false;
-      if (mode !== "all" && board.mode !== mode) return false;
-      return true;
+  const choices = useMemo(() => {
+    if (!dragon) return [];
+    return choicesAroundDragon({
+      dragonId: dragon.id,
+      stars,
+      troop,
+      mode,
+      state,
     });
-  }, [boards, dragonId, matchStars, stars, troop, mode]);
+  }, [dragon, stars, troop, mode, state]);
 
   function writeQuery(nextDragon: string | null, nextStars: number) {
     const params = new URLSearchParams();
@@ -85,18 +76,20 @@ export function TeamPage() {
   }
 
   function pickDragon(id: string) {
+    const next = getCatalogDragon(id);
     setDragonId(id);
-    setLoaded(false);
-    setBoards([]);
-    setThreads([]);
     setQuery("");
     setOpenPicker(false);
+    setPickedId(null);
+    setSeatedId(null);
+    if (next?.affinities[0]) setTroop(next.affinities[0]);
     writeQuery(id, stars);
   }
 
   function changeStars(next: number) {
     const value = clampStars(next);
     setStars(value);
+    setPickedId(null);
     writeQuery(dragonId, value);
   }
 
@@ -111,148 +104,27 @@ export function TeamPage() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [openPicker]);
 
-  useEffect(() => {
-    if (!dragonId) {
-      setBoards([]);
-      setThreads([]);
-      setLoaded(false);
-      setBusy(false);
-      return;
-    }
-    let cancelled = false;
-    setBusy(true);
-    void Promise.all([
-      apiJson<{ boards: BoardPublic[] }>(
-        `/api/boards?dragonId=${encodeURIComponent(dragonId)}`,
-      ),
-      apiJson<{ threads: TalkThreadSummary[] }>(
-        `/api/talk?dragonId=${encodeURIComponent(dragonId)}`,
-      ),
-    ])
-      .then(([boardData, talkData]) => {
-        if (cancelled) return;
-        setBoards(boardData.boards);
-        setThreads(talkData.threads);
-        setLoaded(true);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Could not load recommendations.",
-        );
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [dragonId, user?.id]);
-
-  function replaceBoard(next: BoardPublic) {
-    setBoards((current) => {
-      const exists = current.some((board) => board.id === next.id);
-      if (!exists) return [next, ...current];
-      return current.map((board) => (board.id === next.id ? next : board));
-    });
-  }
-
-  async function onRate(boardId: string, value: number) {
-    const data = await apiJson<{ board: BoardPublic }>(
-      `/api/boards/${boardId}/rate`,
-      {
-        method: "POST",
-        body: JSON.stringify({ stars: value }),
-      },
+  function useChoice(choiceId: string) {
+    const choice = choices.find((row) => row.id === choiceId);
+    if (!choice) return;
+    const owned = [choice.line.left, choice.line.vanguard, choice.line.right].every(
+      (id) => state.owned.some((row) => row.dragonId === id),
     );
-    replaceBoard(data.board);
-  }
-
-  function seatBoard(board: BoardPublic) {
-    const line = {
-      name: board.name,
-      troop: board.troop,
-      mode: board.mode,
-      left: board.left,
-      vanguard: board.vanguard,
-      right: board.right,
-      why: board.why,
-    };
-    const owned = [board.left, board.vanguard, board.right].every((id) =>
-      state.owned.some((row) => row.dragonId === id),
-    );
-    const filled = lineupFromAiLine(line, state, owned ? "pit" : "hatchery");
+    const filled = lineupFromAiLine(choice.line, state, owned ? "pit" : "hatchery");
     const created = {
       ...filled,
       id: newId("lineup"),
+      craftStars: stars,
       updatedAt: nowIso(),
     };
     addLineup(created);
     rememberBuild(created.kind, created.id);
-    toast.success(`Seated ${board.name} on Team.`);
+    setPickedId(choice.id);
+    setSeatedId(created.id);
+    toast.success(`Seated ${choice.line.name}.`);
   }
 
-  const reviews = (
-    <section className="overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10">
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-2">
-        <p className="text-label">
-          {dragon
-            ? `Reviews · ${dragon.name}`
-            : "Reviews"}
-        </p>
-        {shownBoards.length > 0 ? (
-          <span className="text-[11px] text-muted-foreground">
-            {shownBoards.length} line{shownBoards.length === 1 ? "" : "s"}
-          </span>
-        ) : null}
-      </div>
-      {!dragon ? (
-        <p className="px-3 py-4 text-sm text-muted-foreground">
-          Pick a dragon above to load community lines and Talk for that name.
-        </p>
-      ) : busy && !loaded ? (
-        <p className="px-3 py-4 text-sm text-muted-foreground">
-          Loading reviews for {dragon.name}…
-        </p>
-      ) : shownBoards.length === 0 && threads.length === 0 ? (
-        <EmptyState
-          title={`No reviews for ${dragon.name} yet`}
-          description="Fill the three seats from the list on the right, then post the line."
-          className="rounded-none border-0 py-8"
-        />
-      ) : (
-        <>
-          {shownBoards.length > 0 ? (
-            <ul>
-              {shownBoards.map((board) => (
-                <BoardListItem
-                  key={board.id}
-                  board={board}
-                  nextPath="/team"
-                  onRate={onRate}
-                  onSeat={seatBoard}
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className="px-3 py-3 text-sm text-muted-foreground">
-              No lines match those filters.
-            </p>
-          )}
-          {threads.length > 0 ? (
-            <div className="space-y-2 border-t border-border/50 p-2">
-              <p className="text-label px-1">Talk · {threads.length}</p>
-              {threads.map((thread) => (
-                <TalkThreadCard key={thread.id} thread={thread} />
-              ))}
-            </div>
-          ) : null}
-        </>
-      )}
-    </section>
-  );
+  const liveTags = (dragon?.tags ?? []).slice(0, 4);
 
   return (
     <div className="space-y-3">
@@ -262,8 +134,9 @@ export function TeamPage() {
             Team builder
           </h1>
           <p className="mt-0.5 max-w-xl text-sm text-muted-foreground">
-            Formation on the left. Ranked pick list on the right. Copilot is a
-            separate beta chat.
+            Pick the one dragon you want to march around. The builder seats
+            several complete lines for that name — compare kit payoffs and
+            gaps, then take one. Copilot is a separate beta chat.
           </p>
         </div>
         <Link
@@ -323,7 +196,7 @@ export function TeamPage() {
                           size="xs"
                         />
                         <span className="text-sm">{row.name}</span>
-                        <span className="ml-auto text-[11px] text-muted-foreground">
+                        <span className="ml-auto truncate pl-2 text-[11px] text-muted-foreground">
                           {row.epithet}
                         </span>
                       </button>
@@ -334,7 +207,10 @@ export function TeamPage() {
             ) : null}
           </div>
           {dragon ? (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 ring-1 ring-amber-400/30">
+            <div
+              data-build-around={dragon.id}
+              className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 ring-1 ring-amber-400/30"
+            >
               <DragonIcon
                 dragonId={dragon.id}
                 name={dragon.name}
@@ -345,7 +221,10 @@ export function TeamPage() {
               />
               <div>
                 <p className="text-sm text-amber-50">{dragon.name}</p>
-                <p className="text-[11px] text-muted-foreground">★{stars}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  ★{stars}
+                  {liveTags.length ? ` · ${liveTags.join(" · ")}` : ""}
+                </p>
               </div>
             </div>
           ) : null}
@@ -361,53 +240,76 @@ export function TeamPage() {
         </div>
         {dragon ? (
           <div className="mt-3 flex flex-wrap gap-1 border-t border-foreground/10 pt-3">
-            <MiniChip active={troop === "all"} onClick={() => setTroop("all")}>
-              All troops
-            </MiniChip>
-            {TROOP_TYPES.map((item) => (
+            {(
+              [
+                ...dragon.affinities,
+                ...TROOP_TYPES.filter((item) => !dragon.affinities.includes(item)),
+              ] as TroopType[]
+            ).map((item) => (
               <MiniChip
                 key={item}
                 active={troop === item}
-                onClick={() => setTroop(item)}
+                onClick={() => {
+                  setTroop(item);
+                  setPickedId(null);
+                }}
               >
                 {troopShort[item]}
               </MiniChip>
             ))}
-            <MiniChip active={mode === "all"} onClick={() => setMode("all")}>
-              All modes
-            </MiniChip>
             {MODES.map((item) => (
               <MiniChip
                 key={item}
                 active={mode === item}
-                onClick={() => setMode(item)}
+                onClick={() => {
+                  setMode(item);
+                  setPickedId(null);
+                }}
               >
                 {modeShort[item]}
               </MiniChip>
             ))}
-            <MiniChip
-              active={matchStars}
-              onClick={() => setMatchStars((value) => !value)}
-            >
-              ★{stars} only
-            </MiniChip>
           </div>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Optional. The list on the right ranks every hatchery dragon for the
-            selected lane.
-          </p>
-        )}
+        ) : null}
       </section>
 
-      <BuildPage
-        pin={dragon ? { dragonId: dragon.id, stars } : null}
-        belowFormation={reviews}
-        onPublished={(board) => {
-          replaceBoard(board);
-          setLoaded(true);
-        }}
-      />
+      {!dragon ? (
+        <EmptyState
+          title="Pick the dragon you want to march around"
+          description="One name — Kalspire, Malachite, Vhagar. The builder seats several complete threes around that pick so you can compare kit payoffs and gaps."
+        />
+      ) : choices.length === 0 ? (
+        <EmptyState
+          title={`No three-dragon line around ${dragon.name}`}
+          description="Try another troop type. Suggest still needs a healer, a soak, and a damage seat."
+        />
+      ) : (
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-label">
+              Lines around {dragon.name} · {choices.length}
+            </p>
+            {seatedId ? (
+              <Link
+                href={`/lineups/${seatedId}`}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                Tweak seats
+              </Link>
+            ) : null}
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {choices.map((choice) => (
+              <TeamChoiceCard
+                key={choice.id}
+                choice={choice}
+                selected={pickedId === choice.id}
+                onPick={() => useChoice(choice.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

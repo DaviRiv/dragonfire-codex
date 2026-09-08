@@ -1,74 +1,33 @@
 # Dragonfire Pit
 
 Unofficial fan tool for **Game of Thrones: Dragonfire**. Log the dragons you
-hatched, then pick a three-dragon team. **Team** is the main table: pick a
-dragon and the star rank you have, then read community lines, ratings, and
-Talk notes beside your formation. **Copilot** is a separate beta chat. Nothing
+hatched, then pick a three-dragon team. **Team** is the main table: pick the
+one dragon you want to build around, then choose among complete lines the
+builder seats for that name. **Copilot** is a separate beta chat. Nothing
 here is affiliated with HBO, Warner Bros., or the game.
 
 ## What you can do
 
 - **Account** — register a username on this server (no email). That unlocks
-  **Copilot** and lets you rate, comment, or post a line on Team. Passwords
-  are stored as scrypt hashes in `data/` on the machine running the app. Set
+  **Copilot** and lets you start Talk threads or reply. Passwords are stored
+  as scrypt hashes in `data/` on the machine running the app. Set
   `AUTH_SECRET` in `.env` for a stable session key; otherwise one is written
   to `data/.auth-secret`.
 - **Talk** (`/talk`) — a message board for three-dragon lines. Anyone can
   read. Register to start a thread or reply. Attach a reviewed line from
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
-- **Team** (`/team`) — pick a released dragon and a 1–10★ rank. Community
-  three-dragon lines with 1–5★ ratings and notes load for that name, plus
-  Talk threads that already seat them. **Seat on Team** saves a reviewed
-  line locally. **Post this line for review** publishes your own formation
-  (account required). Anyone can read reviews. Copilot does not run here.
-  Formation on the left (or on top on a phone). The ranked pick list
-  owns the right side on desktop and stays sticky while you scroll.
-  Community reviews sit under the formation as a compact list. Tap a lane,
-  then pick from the column — every matching dragon is listed, best fit
-  for **this team** first, hiding anyone already slotted. Role filters on
-  that list are dungeon jobs: **Healing**, **Tanking**, **Damage**, and
-  **Crowd control** (Kalspire is both Damage and CC). Troop type and
-  mode sit on the formation as chips. Search and the hatchery/pit
-  pool stay on the pick list. Ranking fills composition in order: a
-  healer if nobody Recovers, then damage mitigation (Taunt or Damage
-  Received), then a damage dealer to finish. Feeding Burn so a tank’s
-  Taunt can hit 50% does not outrank a missing healer. The formation is
-  large so you can read the lane. Pick rows stay thin: name, role chips,
-  and synergy, or the **vanguard skill** when that lane is selected.
-  Healers always show the Recovery line with its star gate (Command,
-  2★, 6★, 10★) so a 10★ habit is not mistaken for a Command heal.
-  Gates you do not own yet (or that sit above the dragon in your pit)
-  render in red with a warning icon — a 10★ Velar heal stays a goal
-  until you actually have 10 stars.
-  Turn on **Abilities** for command and the unique **(6+ stars)** skill.
-  Open a row for the full command, Habits 1–5, vanguard skill, and stats
-  at the bottom. When a pairing is live — Moondancer granting Crescent
-  Blade to Malachite, or Syrax feeding First-Strike to Caraxes — the
-  formation slot names the granted ability, hover shows the combat
-  numbers, Watch out lists the same payoff, and **Full stats** on the
-  selected slotted dragon opens the sheet with a Live synergy block.
-  Those bonuses are kit effects, not added into Hub power.
-  **Watch out** under the formation names idle kit (red) and
-  *why* the kit wants it (Vhagar’s Taunt is 25%, or 50% against Burn),
-  plus whether stars are too low, the partner is not in this three, they are
-  already on another saved team, the Vanguard flank is empty, or the
-  march troop does not match. Named partners come from kit text
-  (Moondancer wants an ally Sentinel) and Hub `needs` (Caraxes wants
-  First-Strike). A 6★ Slow on a 4★ Caraxes is a star warning, not a
-  “missing teammate” guess. Suggest on a pit line only seats dragons you
-  own. **Next army** opens a new pit team from leftovers (skip dragons
-  already on another saved formation; **Allow reuse** if you want the
-  in-game overlap). Theory can still slot unowned dragons — those rows
-  are goals, not a march. Ability text, stats-by-level, troop counts,
-  and Hub power come from [Dragonfire-Hub](https://dragonfire-hub.com/).
-  Hub power is stars + reign only, not in-game Army Power.
-  **Game** is three bullets from public Reign metadata: a three-dragon
-  line, what survives a Campaign reset, and the troop triangle.
-  **Why this team** splits pros (green, left) and cons (red, right).
-  **ChatGPT** copies a filled prompt with your pit or the full hatchery.
-  Paste it at chatgpt.com — this app never calls an API. Optional note
-  (spear rally, skip Vhagar) goes into the same text.
+- **Team** (`/team`) — pick **one** released dragon and the 1–10★ rank you
+  have. The page does not list the hatchery as a pick column. It builds
+  several complete three-dragon lines around that name (healer, soak, and
+  damage seats from the same Suggest rules as Copilot). Kalspire at ★6
+  lists **Panic** from Hub habit 3 plus the Star Progression glossary
+  (“Deals Tactical Damage to the target each round.”). Other seats add
+  their live Hub provides when those names have glossary lines
+  (First-Strike, Double-Strike, Advantage, Vulnerable, Taunt, …), plus
+  pairing payoffs and gaps. Each card shows that line’s **Pros** and
+  **Cons**. **Use this team** saves it. **Tweak seats** opens the saved
+  lineup editor. Copilot does not run here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
   core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
@@ -101,21 +60,37 @@ here is affiliated with HBO, Warner Bros., or the game.
   Debuffs such as Overwhelm
   use a red down arrow. Habit upgrade Power is not in the Hub dump, so
   it is not shown.
-- **Saved** (desktop nav, or Team → Saved) — named formations and optional
-  teams that bundle several lines (PvP, rally, defense).
+- **Saved** (desktop nav, or Team → Tweak seats) — named formations and
+  optional teams that bundle several lines (PvP, rally, defense). The
+  editor is formation on the left (or on top on a phone) and a ranked
+  pick list on the right. Tap a lane, then pick from the column — every
+  matching dragon is listed, best fit for **this team** first, hiding
+  anyone already slotted. Role filters are dungeon jobs: **Healing**,
+  **Tanking**, **Damage**, and **Crowd control** (Kalspire is both Damage
+  and CC). Ranking fills composition in order: a healer if nobody
+  Recovers, then damage mitigation (Taunt or Damage Received), then a
+  damage dealer to finish. Feeding Burn so a tank’s Taunt can hit 50%
+  does not outrank a missing healer. Suggest on a pit line only seats
+  dragons you own. **Next army** opens a new pit team from leftovers.
+  Theory can still slot unowned dragons — those rows are goals, not a
+  march. Ability text, stats-by-level, troop counts, and Hub power come
+  from [Dragonfire-Hub](https://dragonfire-hub.com/). Hub power is stars
+  + reign only. **Why this team** splits pros (green) and cons (red).
+  **ChatGPT** copies a filled prompt. Paste it at chatgpt.com — this app
+  never calls an API.
 - **Dev** — personal metadata catalog, hidden unless you open
   `/dev?dev=1` once on this browser. Habit names from Star Progression
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
 The layout is built for a phone in one hand: five bottom tabs (Team, Talk,
-Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen the
-Team list is a full column on the right so the formation stays in view.
+Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen Team
+shows two columns of complete lines around the dragon you picked.
 
 Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
 Publisher Tag (`gpt.js`) leaderboard under the header, 300×250 rectangles in
-the right rail (hidden on Team and saved lineups so the pick list can use
-that side), an in-feed unit on Talk, and a 320×50 mobile banner above the
+the right rail (hidden on Team and saved lineups so those pages can use the
+width), an in-feed unit on Talk, and a 320×50 mobile banner above the
 tab bar. Set `NEXT_PUBLIC_GPT_AD_UNIT` (Ad Manager) or
 `NEXT_PUBLIC_ADSENSE_CLIENT` plus slot IDs. With those empty, the same slots
 show labeled house ads so the layout is visible without a publisher account.
@@ -158,13 +133,14 @@ with `npm run sync-hub`.
 
 ## ChatGPT and Copilot
 
-Register an account to open **Copilot (beta)**. On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
-not JSON) and paste it at chatgpt.com. The prompt includes **current
-meta**: online PvP DPS is Left Malachite, Vanguard Vhagar, Right Venator.
-Copilot on `/coach` ranks locally with the same rules as Suggest, and
-seats that core when those names are free. Team is where you pick a dragon
-and read user recommendations and reviews. Treat Copilot seats as a
-starting point, not a guarantee.
+Register an account to open **Copilot (beta)**. On a saved lineup, open
+**ChatGPT** to copy a filled prompt (dragon names, not JSON) and paste it
+at chatgpt.com. The prompt includes **current meta**: online PvP DPS is
+Left Malachite, Vanguard Vhagar, Right Venator. Copilot on `/coach` ranks
+locally with the same rules as Suggest, and seats that core when those
+names are free. Team is where you pick one dragon and choose among the
+lines built around that name. Treat Copilot seats as a starting point,
+not a guarantee.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.

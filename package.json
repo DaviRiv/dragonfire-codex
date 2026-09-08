@@ -9,6 +9,7 @@
     "lint": "eslint",
     "sync-hub": "node scripts/sync-hub.mjs",
     "check:boards": "npx tsx --tsconfig tsconfig.json scripts/check-boards.ts",
+    "check:around": "npx tsx --tsconfig tsconfig.json scripts/check-around.ts",
     "check:talk": "npx tsx --tsconfig tsconfig.json scripts/check-talk.ts"
   },
   "dependencies": {
