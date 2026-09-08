@@ -48,6 +48,10 @@ function trioKey(line: BoardLine): string {
   return [line.left, line.vanguard, line.right].slice().sort().join("|");
 }
 
+function seatingKey(line: BoardLine): string {
+  return `${line.left}|${line.vanguard}|${line.right}`;
+}
+
 function seatsOf(line: BoardLine): string[] {
   return [line.left, line.vanguard, line.right];
 }
@@ -315,7 +319,7 @@ export function choicesAroundDragon(opts: {
         mode,
         limit: troop === opts.troop ? 16 : 6,
       }),
-      ...kit.slice(0, troop === opts.troop || affinities.has(troop) ? 8 : 0),
+      ...kit.slice(0, troop === opts.troop || affinities.has(troop) ? 12 : 0),
     ];
     for (const line of lines) {
       const key = boardFingerprint(line);
@@ -326,21 +330,46 @@ export function choicesAroundDragon(opts: {
   }
 
   found.sort((a, b) => b.score - a.score);
-  const best = new Map<string, AroundChoice>();
+  const bestSeat = new Map<string, AroundChoice>();
   for (const choice of found) {
-    const key = trioKey(choice.line);
-    const prev = best.get(key);
-    if (!prev || choice.score > prev.score) best.set(key, choice);
+    const key = seatingKey(choice.line);
+    const prev = bestSeat.get(key);
+    if (!prev || choice.score > prev.score) bestSeat.set(key, choice);
   }
-  const ranked = [...best.values()].sort((a, b) => b.score - a.score);
+  const ranked = [...bestSeat.values()].sort((a, b) => b.score - a.score);
   const kitKeep = new Set<string>();
   for (const troop of troops) {
     if (troop !== opts.troop && !affinities.has(troop)) continue;
     const kit = kitByTroop.get(troop) ?? [];
-    for (const line of kit.slice(0, 5)) kitKeep.add(trioKey(line));
+    const trios = new Set<string>();
+    for (const line of kit) {
+      if (trios.size >= 5) break;
+      trios.add(trioKey(line));
+    }
+    for (const line of kit) {
+      if (trios.has(trioKey(line))) kitKeep.add(seatingKey(line));
+    }
   }
-  const kitPinned = ranked.filter((choice) => kitKeep.has(trioKey(choice.line)));
-  const rest = ranked.filter((choice) => !kitKeep.has(trioKey(choice.line)));
+  const trioCount = new Map<string, number>();
+  function takeSeating(choice: AroundChoice): boolean {
+    const trio = trioKey(choice.line);
+    const n = trioCount.get(trio) ?? 0;
+    if (n >= 2) return false;
+    trioCount.set(trio, n + 1);
+    return true;
+  }
+  const kitPinned: AroundChoice[] = [];
+  for (const choice of ranked) {
+    if (!kitKeep.has(seatingKey(choice.line))) continue;
+    if (!takeSeating(choice)) continue;
+    kitPinned.push(choice);
+  }
+  const rest: AroundChoice[] = [];
+  for (const choice of ranked) {
+    if (kitPinned.includes(choice)) continue;
+    if (!takeSeating(choice)) continue;
+    rest.push(choice);
+  }
   const soak = rest.filter((choice) =>
     seatsOf(choice.line).some((id) => {
       const row = getCatalogDragon(id);

@@ -143,6 +143,28 @@ function checkRhysarionMalachiteVenator(): void {
     ),
     "Malachite’s default Cavalry view must still list Rhysarion / Venator",
   );
+
+  const rhys = choicesAroundDragon({
+    dragonId: "rhysarion",
+    stars: 6,
+    troop: "shieldbearers",
+  });
+  assert(
+    rhys.some((choice) => choice.line.vanguard === "rhysarion"),
+    "Rhysarion lines must include Vanguard seating",
+  );
+  assert(
+    rhys.some((choice) => choice.line.left === "rhysarion"),
+    "Rhysarion lines must still include Left seating",
+  );
+  assert(
+    rhys.some(
+      (choice) =>
+        choice.line.vanguard === "rhysarion" &&
+        hasIds(choice.line, ["rhysarion", "malachite", "venator"]),
+    ),
+    "Rhysarion / Malachite / Venator must appear with Rhysarion in Vanguard",
+  );
 }
 
 checkKalspire();

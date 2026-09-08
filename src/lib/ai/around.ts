@@ -8,10 +8,23 @@ import type { BoardLine } from "@/lib/boards";
 import { boardFingerprint } from "@/lib/boards";
 import type { Dragon, Lineup, LineupMode, SlotId, TroopType } from "@/lib/types";
 
+/**
+ * Ordered seats this kit actually wants. Tanks soak in Vanguard. Sentinel
+ * Recovery (Malachite) stays Left. Healers whose Vanguard habit buffs the
+ * Right Flank (Rhysarion) prefer Vanguard so that buff lands on a teammate;
+ * Left is the other legal seat. Finishers go Right.
+ */
+export function preferredSlots(dragon: Dragon): SlotId[] {
+  if (isTank(dragon)) return ["vanguard"];
+  if (isHealer(dragon)) {
+    if (dragon.flankBonus === "right") return ["vanguard", "left"];
+    return ["left"];
+  }
+  return ["right"];
+}
+
 export function preferredSlot(dragon: Dragon): SlotId {
-  if (isTank(dragon)) return "vanguard";
-  if (isHealer(dragon)) return "left";
-  return "right";
+  return preferredSlots(dragon)[0] ?? "right";
 }
 
 function theoryLineup(troop: TroopType, mode: LineupMode, stars: number): Lineup {
@@ -36,6 +49,14 @@ function unique<T>(items: T[]): T[] {
 
 function seatsOf(line: BoardLine): string[] {
   return [line.left, line.vanguard, line.right];
+}
+
+function trioKey(line: Pick<BoardLine, "left" | "vanguard" | "right">): string {
+  return [line.left, line.vanguard, line.right].slice().sort().join("|");
+}
+
+function seatingKey(line: Pick<BoardLine, "left" | "vanguard" | "right">): string {
+  return `${line.left}|${line.vanguard}|${line.right}`;
 }
 
 function nameLine(line: BoardLine): string {
@@ -194,6 +215,7 @@ function kitLineScore(line: BoardLine): number {
     if (dragon.affinities.includes(line.troop)) score += 18;
     if (dragon.flankBonus === "right" && slot !== "right") score += 32;
     if (dragon.flankBonus === "left" && slot !== "left") score += 32;
+    if (dragon.flankBonus === "right" && slot === "vanguard") score += 8;
     if (dragon.flankBonus === slot) score -= 8;
   }
   if (dragons.some(isHealer) && dragons.some(isFinisher)) score += 20;
@@ -220,22 +242,28 @@ function placePartners(
     right: "",
   };
   seats[pinSlot] = pinnedId;
-  const remaining = (["vanguard", "left", "right"] as SlotId[]).filter(
+  let remaining = (["vanguard", "left", "right"] as SlotId[]).filter(
     (slot) => slot !== pinSlot,
   );
-  const firstPref = preferredSlot(first);
-  const secondPref = preferredSlot(second);
-  if (remaining.includes(firstPref)) {
-    seats[firstPref] = first.id;
-    const last = remaining.find((slot) => slot !== firstPref);
-    if (last) seats[last] = second.id;
-  } else if (remaining.includes(secondPref)) {
-    seats[secondPref] = second.id;
-    const last = remaining.find((slot) => slot !== secondPref);
-    if (last) seats[last] = first.id;
-  } else {
+
+  function seat(dragon: Dragon): boolean {
+    for (const slot of preferredSlots(dragon)) {
+      if (!remaining.includes(slot)) continue;
+      seats[slot] = dragon.id;
+      remaining = remaining.filter((open) => open !== slot);
+      return true;
+    }
+    return false;
+  }
+
+  const placedFirst = seat(first);
+  const placedSecond = seat(second);
+  if (!placedFirst && remaining[0]) {
     seats[remaining[0]] = first.id;
-    seats[remaining[1]] = second.id;
+    remaining = remaining.slice(1);
+  }
+  if (!placedSecond && remaining[0]) {
+    seats[remaining[0]] = second.id;
   }
   return { left: seats.left, vanguard: seats.vanguard, right: seats.right };
 }
@@ -303,7 +331,7 @@ function fillKitPairs(opts: {
         ...seats,
       });
       if (!line) continue;
-      const key = [line.left, line.vanguard, line.right].slice().sort().join("|");
+      const key = seatingKey(line);
       const score = kitLineScore(line);
       const prev = best.get(key);
       if (!prev || score > prev.score) best.set(key, { line, score });
@@ -339,13 +367,39 @@ export function kitTeamsAround(opts: {
   const dragon = DRAGONS.find((row) => row.id === opts.dragonId);
   if (!dragon) return [];
   const stars = Math.min(10, Math.max(1, Math.round(opts.stars) || 1));
-  return fillKitPairs({
-    dragonId: opts.dragonId,
-    stars,
-    slot: preferredSlot(dragon),
-    troop: opts.troop,
-    mode: opts.mode,
-  });
+  const slots = preferredSlots(dragon);
+  const batches = slots.map((slot) =>
+    fillKitPairs({
+      dragonId: opts.dragonId,
+      stars,
+      slot,
+      troop: opts.troop,
+      mode: opts.mode,
+    }),
+  );
+  const primary = batches[0] ?? [];
+  const rest = batches.slice(1).flat();
+  const restByTrio = new Map<string, BoardLine[]>();
+  for (const line of rest) {
+    const key = trioKey(line);
+    const rows = restByTrio.get(key) ?? [];
+    rows.push(line);
+    restByTrio.set(key, rows);
+  }
+  const out: BoardLine[] = [];
+  const seen = new Set<string>();
+  function take(line: BoardLine) {
+    const key = seatingKey(line);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(line);
+  }
+  for (const line of primary) {
+    take(line);
+    for (const alt of restByTrio.get(trioKey(line)) ?? []) take(alt);
+  }
+  for (const line of rest) take(line);
+  return out;
 }
 
 export function suggestTeamsAround(opts: {
@@ -360,7 +414,7 @@ export function suggestTeamsAround(opts: {
   const stars = Math.min(10, Math.max(1, Math.round(opts.stars) || 1));
   const limit = opts.limit ?? 5;
   const slotOrder = unique([
-    preferredSlot(dragon),
+    ...preferredSlots(dragon),
     "left",
     "vanguard",
     "right",
@@ -419,7 +473,7 @@ export function suggestTeamsAround(opts: {
     }
   }
 
-  for (const slot of unique([preferredSlot(dragon), ...slotOrder])) {
+  for (const slot of slotOrder) {
     if (found.length >= limit) break;
     for (const line of fillKitPairs({
       dragonId: opts.dragonId,

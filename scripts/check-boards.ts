@@ -5,7 +5,11 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { preferredSlot, suggestTeamsAround } from "@/lib/ai/around";
+import {
+  preferredSlot,
+  preferredSlots,
+  suggestTeamsAround,
+} from "@/lib/ai/around";
 import {
   commentError,
   nextPath,
@@ -30,10 +34,19 @@ function assert(ok: unknown, message: string): asserts ok {
 const vhagar = getCatalogDragon("vhagar");
 const malachite = getCatalogDragon("malachite");
 const venator = getCatalogDragon("venator");
-assert(vhagar && malachite && venator, "missing catalog dragons");
+const rhysarion = getCatalogDragon("rhysarion");
+assert(vhagar && malachite && venator && rhysarion, "missing catalog dragons");
 assert(preferredSlot(vhagar) === "vanguard", "Vhagar should soak in Vanguard");
 assert(preferredSlot(malachite) === "left", "Malachite should sit Left");
 assert(preferredSlot(venator) === "right", "Venator should finish Right");
+assert(
+  preferredSlot(rhysarion) === "vanguard",
+  "Rhysarion’s Right Flank habit prefers Vanguard",
+);
+assert(
+  preferredSlots(rhysarion).includes("left"),
+  "Rhysarion can still sit Left",
+);
 
 const around = suggestTeamsAround({
   dragonId: "malachite",
