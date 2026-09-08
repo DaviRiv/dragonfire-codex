@@ -56,10 +56,11 @@ export function LineupCard({
                 custom={dragon?.custom}
                 empty={!dragon}
                 size="lg"
-                stars={resolved?.starRank}
               />
               <p className="w-full truncate text-[13px] font-medium">
-                {dragon?.name ?? "Empty"}
+                {dragon
+                  ? `${dragon.name} · ★${resolved?.starRank ?? 1}`
+                  : "Empty"}
               </p>
             </div>
           );

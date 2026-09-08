@@ -140,16 +140,13 @@ export function PitPage() {
                       rarity={dragon.rarity}
                       custom={dragon.custom}
                       size="md"
-                      stars={owned.starRank}
-                      starsLayout="row"
                     />
                     <span className="min-w-0 flex-1">
                       <span className="font-heading block truncate text-sm">
                         {dragon.name}
                       </span>
                       <span className="block truncate text-[13px] text-muted-foreground">
-                        {breedLabels[dragon.breed]} · Reign{" "}
-                        {owned.reignLevel}
+                        ★{owned.starRank} · Reign {owned.reignLevel}
                         {used.length
                           ? ` · ${used.length} team${used.length === 1 ? "" : "s"}`
                           : ""}

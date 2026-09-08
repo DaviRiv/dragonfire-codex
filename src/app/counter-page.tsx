@@ -339,87 +339,120 @@ export function CounterPage() {
   const beaters = troopsThatBeat(enemyTroop);
   const recommended = defaultCounterTroop(enemyTroop);
 
+  const compactChip = "min-h-7 px-2 py-0 text-[11px]";
+  const intel = profile
+    ? [
+        profile.healers.length
+          ? `Recovery ${profile.healers.map((row) => `${row.dragon.name} ★${row.stars}`).join(", ")}`
+          : "No live Recovery",
+        profile.tanks.length
+          ? `Taunt ${profile.tanks.map((row) => row.dragon.name).join(", ")}`
+          : null,
+        profile.lockedHeal.length
+          ? `Locked ${profile.lockedHeal.map((row) => `${row.name} ${row.stars}★`).join(", ")}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+
   const picker = (
     <section
       ref={pickerRef}
       data-counter-enemy
-      className="shrink-0 rounded-2xl bg-card/60 p-2.5 ring-1 ring-foreground/10"
+      className="shrink-0 rounded-xl bg-card/60 px-2 py-1.5 ring-1 ring-foreground/10"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-label">They march</p>
-        <div className="flex flex-wrap justify-end gap-1">
-          <MiniChip active={false} onClick={loadCore}>
-            Online DPS core
-          </MiniChip>
-          <span className="hidden sm:contents">
-            {saved.slice(0, 4).map(({ lineup, board }) =>
-              board ? (
-                <MiniChip
-                  key={lineup.id}
-                  onClick={() =>
-                    loadBoard(
-                      board.left,
-                      board.vanguard,
-                      board.right,
-                      board.troop,
-                      {
-                        left: board.leftStars,
-                        vanguard: board.vanguardStars,
-                        right: board.rightStars,
-                      },
-                    )
-                  }
-                >
-                  {lineup.name}
-                </MiniChip>
-              ) : null,
-            )}
-          </span>
-        </div>
+      <div className="flex flex-wrap items-center gap-1">
+        <p className="text-label mr-1">They</p>
+        <MiniChip className={compactChip} onClick={loadCore}>
+          DPS core
+        </MiniChip>
+        <span className="hidden sm:contents">
+          {saved.slice(0, 3).map(({ lineup, board }) =>
+            board ? (
+              <MiniChip
+                key={lineup.id}
+                className={compactChip}
+                onClick={() =>
+                  loadBoard(
+                    board.left,
+                    board.vanguard,
+                    board.right,
+                    board.troop,
+                    {
+                      left: board.leftStars,
+                      vanguard: board.vanguardStars,
+                      right: board.rightStars,
+                    },
+                  )
+                }
+              >
+                {lineup.name}
+              </MiniChip>
+            ) : null,
+          )}
+        </span>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-1.5">
+      <div className="mt-1.5 grid grid-cols-3 gap-1">
         {SLOT_IDS.map((slot) => {
           const seat = seats[slot];
           const dragon = seat.dragonId ? getCatalogDragon(seat.dragonId) : null;
           const open = openSlot === slot;
           return (
-            <div
-              key={slot}
-              data-enemy-seat={slot}
-              className="relative rounded-xl bg-black/25 p-1.5 ring-1 ring-foreground/10 sm:p-2"
-            >
-              <p className="text-label">{slotShort[slot]}</p>
+            <div key={slot} data-enemy-seat={slot} className="relative min-w-0">
               {dragon ? (
-                <div className="mt-1 flex items-center gap-1.5">
+                <div className="flex min-w-0 items-center gap-1">
                   <DragonIcon
                     dragonId={dragon.id}
                     name={dragon.name}
                     rarity={dragon.rarity}
-                    size="sm"
+                    size="xs"
                     selected
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] text-amber-50 sm:text-sm">
+                    <p className="truncate text-[12px] leading-tight text-amber-50">
                       {dragon.name}
                     </p>
-                    <p className="hidden truncate text-[11px] text-muted-foreground sm:block">
-                      {dragon.epithet}
-                    </p>
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        aria-label={`One less star on ${dragon.name}`}
+                        className="flex size-6 items-center justify-center rounded text-[12px] ring-1 ring-foreground/20 hover:bg-muted"
+                        onClick={() =>
+                          setSeat(slot, { stars: clampStars(seat.stars - 1) })
+                        }
+                      >
+                        −
+                      </button>
+                      <span className="min-w-6 text-center text-[11px] tabular-nums text-amber-200">
+                        ★{seat.stars}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`One more star on ${dragon.name}`}
+                        className="flex size-6 items-center justify-center rounded text-[12px] ring-1 ring-foreground/20 hover:bg-muted"
+                        onClick={() =>
+                          setSeat(slot, { stars: clampStars(seat.stars + 1) })
+                        }
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Clear ${slotShort[slot]}`}
+                        className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={() => setSeat(slot, { dragonId: null })}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    aria-label={`Clear ${slotShort[slot]}`}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={() => setSeat(slot, { dragonId: null })}
-                  >
-                    <X className="size-4" />
-                  </button>
                 </div>
               ) : (
-                <div className="relative mt-1">
-                  <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-1.5 size-3 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    className="h-9 pl-7 text-sm sm:h-10"
+                    className="h-8 pl-6 text-[12px]"
                     placeholder={slotShort[slot]}
                     value={open ? query : ""}
                     onChange={(event) => {
@@ -465,91 +498,59 @@ export function CounterPage() {
                   )}
                 </ul>
               ) : null}
-              {dragon ? (
-                <div className="mt-1 flex items-center justify-center gap-0.5">
-                  <button
-                    type="button"
-                    aria-label={`One less star on ${dragon.name}`}
-                    className="flex size-8 items-center justify-center rounded-md text-sm ring-1 ring-foreground/20 hover:bg-muted"
-                    onClick={() =>
-                      setSeat(slot, { stars: clampStars(seat.stars - 1) })
-                    }
-                  >
-                    −
-                  </button>
-                  <span className="min-w-8 text-center text-[12px] tabular-nums text-amber-200">
-                    ★{seat.stars}
-                  </span>
-                  <button
-                    type="button"
-                    aria-label={`One more star on ${dragon.name}`}
-                    className="flex size-8 items-center justify-center rounded-md text-sm ring-1 ring-foreground/20 hover:bg-muted"
-                    onClick={() =>
-                      setSeat(slot, { stars: clampStars(seat.stars + 1) })
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-              ) : null}
             </div>
           );
         })}
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-foreground/10 pt-2">
-        <p className="mr-1 text-[11px] tracking-wide text-muted-foreground uppercase">
-          Their troop
+      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
+          Them
         </p>
         {TROOP_TYPES.map((item) => (
           <MiniChip
-            key={item}
+            key={`enemy-${item}`}
+            className={compactChip}
             active={enemyTroop === item}
             onClick={() => pickEnemyTroop(item)}
           >
             {troopShort[item]}
           </MiniChip>
         ))}
+        {complete ? (
+          <>
+            <span className="mx-0.5 text-muted-foreground">|</span>
+            <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
+              You
+            </p>
+            {TROOP_TYPES.map((item) => (
+              <MiniChip
+                key={`ours-${item}`}
+                className={compactChip}
+                active={ourTroop === item}
+                onClick={() => pickOurTroop(item)}
+              >
+                {troopShort[item]}
+                {item === recommended ? " · beats" : ""}
+              </MiniChip>
+            ))}
+          </>
+        ) : null}
       </div>
       {complete && profile ? (
-        <p className="mt-2 text-[12px] leading-snug text-muted-foreground" data-enemy-intel>
-          {profile.healers.length
-            ? `Live Recovery: ${profile.healers.map((row) => `${row.dragon.name} ★${row.stars}`).join(", ")}.`
-            : "No live Recovery on this line."}
-          {profile.tanks.length
-            ? ` Taunt: ${profile.tanks.map((row) => row.dragon.name).join(", ")}.`
-            : ""}
-          {profile.lockedHeal.length
-            ? ` Still locked: ${profile.lockedHeal
-                .map((row) => `${row.name} Recovery at ${row.stars}★`)
-                .join(", ")}.`
-            : ""}
-        </p>
-      ) : null}
-      {complete ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-foreground/10 pt-2">
-          <p className="mr-1 text-[11px] tracking-wide text-muted-foreground uppercase">
-            You march
-          </p>
-          {TROOP_TYPES.map((item) => (
-            <MiniChip
-              key={item}
-              active={ourTroop === item}
-              onClick={() => pickOurTroop(item)}
-            >
-              {troopShort[item]}
-              {item === recommended ? " · beats" : ""}
-            </MiniChip>
-          ))}
-          <p className="w-full text-[11px] text-muted-foreground">
-            {troopMatchupCopy(ourTroop, enemyTroop)}
-            {beaters.length > 1 && ourTroop === recommended
-              ? ` Also beats them: ${beaters
+        <p
+          className="mt-1 truncate text-[11px] text-muted-foreground"
+          data-enemy-intel
+          title={`${intel}. ${troopMatchupCopy(ourTroop, enemyTroop)}${
+            beaters.length > 1 && ourTroop === recommended
+              ? ` Also: ${beaters
                   .filter((item) => item !== recommended)
                   .map((item) => troopShort[item])
                   .join(", ")}.`
-              : ""}
-          </p>
-        </div>
+              : ""
+          }`}
+        >
+          {intel}. {troopMatchupCopy(ourTroop, enemyTroop)}
+        </p>
       ) : null}
     </section>
   );
@@ -559,16 +560,14 @@ export function CounterPage() {
       data-counter-page
       className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden"
     >
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-        <h1 className="font-heading text-lg tracking-wide sm:text-xl">
-          Team counter
-        </h1>
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <h1 className="font-heading text-base tracking-wide">Counter</h1>
         <Link
           href="/team"
-          className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+          className="inline-flex items-center gap-1 text-[13px] text-amber-200 hover:underline"
         >
-          <Swords className="size-4" />
-          Build around one dragon
+          <Swords className="size-3.5" />
+          Around one dragon
         </Link>
       </div>
 
@@ -577,8 +576,8 @@ export function CounterPage() {
           {picker}
           <EmptyState
             className="min-h-0 flex-1 py-8 sm:py-10"
-            title="Seat the three dragons you have to beat"
-            description="Set each star rank. Troop advantage on tiles is Cavalry over Shields, Shields over Archers, Archers over Spears, Spears over Cavalry. Siege loses to every troop."
+            title="Seat the three you have to beat"
+            description="Set each star rank next to the name. Cavalry beat Shields, Shields beat Archers, Archers beat Spears, Spears beat Cavalry. Siege loses to every troop."
             action={
               <Button type="button" onClick={loadCore}>
                 Load the online DPS core
@@ -587,7 +586,7 @@ export function CounterPage() {
           />
         </>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(11rem,1fr)_minmax(8rem,30%)] gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(12rem,1fr)_minmax(7rem,28%)] gap-1.5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">{picker}</div>
           {choices.length === 0 ? (
             <EmptyState
@@ -600,14 +599,11 @@ export function CounterPage() {
               ref={listRef}
               tabIndex={0}
               onKeyDown={onListKey}
-              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-2"
+              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-2"
             >
-              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-3 py-2">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-2 py-1.5">
                 <p className="text-label">
-                  Lines that counter · {choices.length}
-                </p>
-                <p className="hidden text-[11px] text-muted-foreground sm:block">
-                  Highlight a line. Only this list scrolls.
+                  Counters · {choices.length}
                 </p>
               </div>
               <TeamLineList
@@ -628,7 +624,6 @@ export function CounterPage() {
                 pickedId === active?.id && seatedId ? `/lineups/${seatedId}` : null
               }
               onUse={useActive}
-              hint="Troop advantage is the tile triangle. Recovery answers use Stun, Overwhelm, or Prey when those kits are actually on the line. Dragons in your Hatchery keep their stars; everyone else is a goal."
             />
           </div>
         </div>

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
 import { dragonImageSrc } from "@/components/dragon-portrait";
-import { StarBand } from "@/components/portrait-stars";
 import type { Breed, Rarity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -13,16 +12,6 @@ const sizeClass = {
   xl: "size-[4.75rem]",
   "2xl": "size-[5.75rem]",
   "3xl": "size-24 sm:size-32",
-} as const;
-
-const starSize = {
-  xs: "xs",
-  sm: "sm",
-  md: "md",
-  lg: "md",
-  xl: "lg",
-  "2xl": "xl",
-  "3xl": "xl",
 } as const;
 
 const rarityRing: Record<Rarity, string> = {
@@ -43,8 +32,6 @@ export function DragonIcon({
   selected,
   size = "md",
   className,
-  stars,
-  starsLayout = "arc",
   dimmed,
   onClick,
 }: {
@@ -57,14 +44,12 @@ export function DragonIcon({
   selected?: boolean;
   size?: IconSize;
   className?: string;
-  /** Hub rank 0–10. Shown as five slots: yellow then red. */
+  /** Ignored — rank belongs in labels and steppers, not on the face. */
   stars?: number;
   starsLayout?: "arc" | "row";
   dimmed?: boolean;
   onClick?: () => void;
 }) {
-  const rank = stars ?? 0;
-  const showStars = stars != null && !empty;
   const faceClass = cn(
     "relative block size-full overflow-hidden rounded-full bg-black/50",
     empty
@@ -99,39 +84,19 @@ export function DragonIcon({
     </>
   );
 
-  const band = showStars ? (
-    <StarBand
-      value={rank}
-      size={starSize[size]}
-      layout={starsLayout === "arc" ? "arc" : "row"}
-      className={
-        starsLayout === "arc"
-          ? "absolute inset-x-[-12%] bottom-[-3px] z-10"
-          : undefined
-      }
-    />
-  ) : null;
-
   return (
-    <div
-      className={cn(
-        "relative inline-flex shrink-0 flex-col items-center overflow-visible",
-        showStars && starsLayout === "row" && "gap-0.5",
-        showStars && starsLayout === "arc" && "pb-1.5",
-        className,
+    <div className={cn("relative inline-flex shrink-0", sizeClass[size], className)}>
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className={cn(faceClass, "border-0 p-0 select-none")}
+        >
+          {face}
+        </button>
+      ) : (
+        <div className={faceClass}>{face}</div>
       )}
-    >
-      <div className={cn("relative", sizeClass[size])}>
-        {onClick ? (
-          <button type="button" onClick={onClick} className={cn(faceClass, "border-0 p-0 select-none")}>
-            {face}
-          </button>
-        ) : (
-          <div className={faceClass}>{face}</div>
-        )}
-        {starsLayout === "arc" ? band : null}
-      </div>
-      {starsLayout === "row" ? band : null}
     </div>
   );
 }

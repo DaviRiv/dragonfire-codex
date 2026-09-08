@@ -16,13 +16,16 @@ export function starRankCaption(value: number): string {
 export function StarStepper({
   value,
   onDelta,
+  size = "md",
 }: {
   value: number;
   onDelta: (delta: number) => void;
+  size?: "sm" | "md";
 }) {
+  const compact = size === "sm";
   return (
     <div
-      className="flex items-center justify-center gap-1"
+      className="flex items-center justify-center gap-0.5"
       aria-label={starRankCaption(value)}
     >
       <Button
@@ -31,7 +34,7 @@ export function StarStepper({
         variant="outline"
         aria-label="One less star"
         disabled={value <= 0}
-        className="min-h-11 min-w-11"
+        className={compact ? "size-8 min-h-8 min-w-8" : "min-h-11 min-w-11"}
         onClick={(event) => {
           event.stopPropagation();
           onDelta(-1);
@@ -41,7 +44,8 @@ export function StarStepper({
       </Button>
       <span
         className={cn(
-          "min-w-10 text-center text-[13px] tabular-nums",
+          "text-center tabular-nums",
+          compact ? "min-w-8 text-[12px]" : "min-w-10 text-[13px]",
           value > STAR_ROW ? "text-red-400" : "text-amber-200",
         )}
       >
@@ -53,7 +57,7 @@ export function StarStepper({
         variant="outline"
         aria-label="One more star"
         disabled={value >= STAR_MAX}
-        className="min-h-11 min-w-11"
+        className={compact ? "size-8 min-h-8 min-w-8" : "min-h-11 min-w-11"}
         onClick={(event) => {
           event.stopPropagation();
           onDelta(1);

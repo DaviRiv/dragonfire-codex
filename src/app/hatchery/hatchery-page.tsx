@@ -89,8 +89,6 @@ export function HatcheryPage() {
                 rarity={dragon.rarity}
                 size="2xl"
                 dimmed={stars <= 0}
-                stars={stars}
-                starsLayout="row"
                 onClick={() => setInspecting(dragon)}
               />
               <div className="mt-0.5">

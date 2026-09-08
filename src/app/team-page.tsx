@@ -69,6 +69,10 @@ export function TeamPage() {
   }, [dragon, stars, troop, state]);
 
   const active = choices.find((row) => row.id === activeId) ?? choices[0] ?? null;
+  const ownedIds = useMemo(
+    () => new Set(state.owned.map((row) => row.dragonId)),
+    [state.owned],
+  );
 
   useEffect(() => {
     const html = document.documentElement;
@@ -180,32 +184,30 @@ export function TeamPage() {
     }
   }
 
-  const liveTags = (dragon?.tags ?? []).slice(0, 4);
+  const liveTags = (dragon?.tags ?? []).slice(0, 3);
+  const compactChip = "min-h-7 px-2 py-0 text-[11px]";
 
   const picker = (
       <section
         ref={pickerRef}
-        className="shrink-0 rounded-2xl bg-card/60 p-2.5 ring-1 ring-foreground/10"
+        className="shrink-0 rounded-xl bg-card/60 px-2 py-1.5 ring-1 ring-foreground/10"
       >
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-0 flex-1">
-            <p className="text-label">Build around</p>
-            <div className="relative mt-1">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder={
-                  dragon ? `Change from ${dragon.name}…` : "Search a dragon…"
-                }
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setOpenPicker(true);
-                }}
-                onFocus={() => setOpenPicker(true)}
-                enterKeyHint="search"
-              />
-            </div>
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 pl-8 text-sm"
+              placeholder={
+                dragon ? `Change from ${dragon.name}…` : "Search a dragon…"
+              }
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setOpenPicker(true);
+              }}
+              onFocus={() => setOpenPicker(true)}
+              enterKeyHint="search"
+            />
             {openPicker ? (
               <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl bg-popover py-1 shadow-lg ring-1 ring-foreground/15">
                 {filtered.length === 0 ? (
@@ -243,38 +245,36 @@ export function TeamPage() {
           {dragon ? (
             <div
               data-build-around={dragon.id}
-              className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-2 py-1.5 ring-1 ring-amber-400/30"
+              className="flex min-w-0 items-center gap-1.5 rounded-lg bg-amber-500/10 px-1.5 py-1 ring-1 ring-amber-400/30"
             >
               <DragonIcon
                 dragonId={dragon.id}
                 name={dragon.name}
                 rarity={dragon.rarity}
                 selected
-                size="sm"
+                size="xs"
               />
-              <div>
-                <p className="text-sm text-amber-50">{dragon.name}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  ★{stars}
-                  {liveTags.length ? ` · ${liveTags.join(" · ")}` : ""}
-                </p>
-              </div>
+              <p className="max-w-[9rem] truncate text-[13px] text-amber-50 sm:max-w-none">
+                {dragon.name}
+                {liveTags.length ? (
+                  <span className="hidden text-muted-foreground sm:inline">
+                    {" "}
+                    · {liveTags.join(" · ")}
+                  </span>
+                ) : null}
+              </p>
             </div>
           ) : null}
-          <div>
-            <p className="text-label" data-star-owner>
-              Stars on {dragon?.name ?? "this dragon"}
-            </p>
-            <div className="mt-1">
-              <StarStepper
-                value={stars}
-                onDelta={(delta) => changeStars(stars + delta)}
-              />
-            </div>
+          <div data-star-owner aria-label={`Stars on ${dragon?.name ?? "this dragon"}`}>
+            <StarStepper
+              size="sm"
+              value={stars}
+              onDelta={(delta) => changeStars(stars + delta)}
+            />
           </div>
         </div>
         {dragon ? (
-          <div className="mt-2 flex flex-wrap gap-1 border-t border-foreground/10 pt-2">
+          <div className="mt-1.5 flex flex-wrap gap-1">
             {(
               [
                 ...dragon.affinities,
@@ -283,6 +283,7 @@ export function TeamPage() {
             ).map((item) => (
               <MiniChip
                 key={item}
+                className={compactChip}
                 active={troop === item}
                 onClick={() => {
                   setTroop(item);
@@ -299,23 +300,21 @@ export function TeamPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-        <h1 className="font-heading text-lg tracking-wide sm:text-xl">
-          Team builder
-        </h1>
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <h1 className="font-heading text-base tracking-wide">Team</h1>
         <div className="flex items-center gap-3">
           <Link
             href="/counter"
-            className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+            className="text-[13px] text-amber-200 hover:underline"
           >
-            Counter a line
+            Counter
           </Link>
           <Link
             href="/coach"
-            className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+            className="inline-flex items-center gap-1 text-[13px] text-amber-200 hover:underline"
           >
-            <Sparkles className="size-4" />
-            Open Copilot
+            <Sparkles className="size-3.5" />
+            Copilot
             <BetaBadge />
           </Link>
         </div>
@@ -331,7 +330,7 @@ export function TeamPage() {
           />
         </>
       ) : (
-        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_minmax(12.5rem,40%)] gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_minmax(10rem,34%)] gap-1.5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">{picker}</div>
           {choices.length === 0 ? (
             <EmptyState
@@ -344,19 +343,17 @@ export function TeamPage() {
               ref={listRef}
               tabIndex={0}
               onKeyDown={onListKey}
-              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-2"
+              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-2"
             >
-              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-3 py-2">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-2 py-1.5">
                 <p className="text-label">
-                  Lines around {dragon.name} · {choices.length}
-                </p>
-                <p className="hidden text-[11px] text-muted-foreground sm:block">
-                  Highlight a line. Only this list scrolls.
+                  Around {dragon.name} · {choices.length}
                 </p>
               </div>
               <TeamLineList
                 choices={choices}
                 pinnedId={dragon.id}
+                ownedIds={ownedIds}
                 activeId={active?.id ?? null}
                 seated={pickedId === active?.id}
                 onHighlight={setActiveId}

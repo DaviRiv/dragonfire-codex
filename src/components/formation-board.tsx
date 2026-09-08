@@ -158,13 +158,13 @@ function SlotButton({
         empty={!dragon}
         selected={selected}
         size="3xl"
-        stars={resolved?.starRank}
       />
       <span className="text-label text-amber-200/90">
         {slotShort[slot]}
       </span>
       <span className="max-w-full truncate px-0.5 text-sm font-medium">
         {dragon?.name ?? (pickable ? "Tap to pick" : "—")}
+        {resolved ? ` · ★${resolved.starRank}` : ""}
       </span>
       {resolved && lineup.kind === "pit" && !lineup.ignoreLevel ? (
         <span className="text-xs text-amber-100/85">

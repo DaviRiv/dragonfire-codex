@@ -49,13 +49,6 @@ export function BoardListItem({
                   name={dragon.name}
                   rarity={dragon.rarity}
                   size="xs"
-                  stars={
-                    index === 0
-                      ? board.leftStars
-                      : index === 1
-                        ? board.vanguardStars
-                        : board.rightStars
-                  }
                 />
               ) : null,
             )}
