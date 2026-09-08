@@ -1,7 +1,7 @@
 import { ONLINE_DPS_CORE } from "@/data/meta";
 import { DRAGONS } from "@/data/dragons";
 import { emptyPit, findDragon } from "@/lib/dragons";
-import { isHealer, isTank } from "@/lib/roles";
+import { isFinisher, isHealer, isTank } from "@/lib/roles";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { emptySlots, makePick } from "@/lib/lineup";
 import type { BoardLine } from "@/lib/boards";
@@ -182,6 +182,138 @@ function fillPartners(opts: {
   return out;
 }
 
+function kitLineScore(line: BoardLine): number {
+  const left = findDragon(line.left);
+  const vanguard = findDragon(line.vanguard);
+  const right = findDragon(line.right);
+  if (!left || !vanguard || !right) return 0;
+  const bySlot = { left, vanguard, right } as const;
+  const dragons = [left, vanguard, right];
+  let score = 0;
+  for (const [slot, dragon] of Object.entries(bySlot) as [SlotId, Dragon][]) {
+    if (dragon.affinities.includes(line.troop)) score += 18;
+    if (dragon.flankBonus === "right" && slot !== "right") score += 32;
+    if (dragon.flankBonus === "left" && slot !== "left") score += 32;
+    if (dragon.flankBonus === slot) score -= 8;
+  }
+  if (dragons.some(isHealer) && dragons.some(isFinisher)) score += 20;
+  if (new Set(dragons.map((dragon) => dragon.breed)).size === 3) score += 12;
+  if (
+    !dragons.some(isTank) &&
+    dragons.filter(isHealer).length >= 2 &&
+    dragons.some(isFinisher)
+  ) {
+    score += 24;
+  }
+  return score;
+}
+
+function placePartners(
+  pinSlot: SlotId,
+  pinnedId: string,
+  first: Dragon,
+  second: Dragon,
+): { left: string; vanguard: string; right: string } {
+  const seats: Record<SlotId, string> = {
+    left: "",
+    vanguard: "",
+    right: "",
+  };
+  seats[pinSlot] = pinnedId;
+  const remaining = (["vanguard", "left", "right"] as SlotId[]).filter(
+    (slot) => slot !== pinSlot,
+  );
+  const firstPref = preferredSlot(first);
+  const secondPref = preferredSlot(second);
+  if (remaining.includes(firstPref)) {
+    seats[firstPref] = first.id;
+    const last = remaining.find((slot) => slot !== firstPref);
+    if (last) seats[last] = second.id;
+  } else if (remaining.includes(secondPref)) {
+    seats[secondPref] = second.id;
+    const last = remaining.find((slot) => slot !== secondPref);
+    if (last) seats[last] = first.id;
+  } else {
+    seats[remaining[0]] = first.id;
+    seats[remaining[1]] = second.id;
+  }
+  return { left: seats.left, vanguard: seats.vanguard, right: seats.right };
+}
+
+function fillKitPairs(opts: {
+  dragonId: string;
+  stars: number;
+  slot: SlotId;
+  troop: TroopType;
+  mode: LineupMode;
+}): BoardLine[] {
+  const others = DRAGONS.filter((dragon) => dragon.id !== opts.dragonId);
+  const pinned = findDragon(opts.dragonId);
+  const healers = others.filter(isHealer);
+  const finishers = others.filter(isFinisher);
+  const tanks = others.filter(isTank);
+  const pool: Dragon[][] = [];
+  if (pinned && isFinisher(pinned) && !isHealer(pinned)) {
+    for (let i = 0; i < healers.length; i++) {
+      for (let j = i + 1; j < healers.length; j++) {
+        pool.push([healers[i], healers[j]]);
+      }
+    }
+    for (const healer of healers) {
+      for (const tank of tanks) {
+        pool.push([healer, tank]);
+      }
+    }
+  } else {
+    for (const healer of healers) {
+      for (const finisher of finishers) {
+        if (healer.id === finisher.id) continue;
+        pool.push([healer, finisher]);
+      }
+    }
+    if (pinned && isHealer(pinned)) {
+      for (const healer of healers) {
+        for (const second of healers) {
+          if (healer.id >= second.id) continue;
+          pool.push([healer, second]);
+        }
+      }
+    }
+  }
+  if (pool.length === 0) {
+    for (let i = 0; i < others.length; i++) {
+      for (let j = i + 1; j < others.length; j++) {
+        pool.push([others[i], others[j]]);
+      }
+    }
+  }
+
+  const best = new Map<string, { line: BoardLine; score: number }>();
+  for (const [first, second] of pool) {
+    for (const pair of [
+      [first, second],
+      [second, first],
+    ] as const) {
+      const seats = placePartners(opts.slot, opts.dragonId, pair[0], pair[1]);
+      const line = lineFromIds({
+        troop: opts.troop,
+        mode: opts.mode,
+        pinnedId: opts.dragonId,
+        stars: opts.stars,
+        ...seats,
+      });
+      if (!line) continue;
+      const key = [line.left, line.vanguard, line.right].slice().sort().join("|");
+      const score = kitLineScore(line);
+      const prev = best.get(key);
+      if (!prev || score > prev.score) best.set(key, { line, score });
+    }
+  }
+  return [...best.values()]
+    .sort((a, b) => b.score - a.score || a.line.name.localeCompare(b.line.name))
+    .map((row) => row.line);
+}
+
 function metaLine(stars: number, dragonId: string): BoardLine | null {
   const core = ONLINE_DPS_CORE;
   const ids = [core.left.id, core.vanguard.id, core.right.id];
@@ -195,6 +327,24 @@ function metaLine(stars: number, dragonId: string): BoardLine | null {
     left: core.left.id,
     vanguard: core.vanguard.id,
     right: core.right.id,
+  });
+}
+
+export function kitTeamsAround(opts: {
+  dragonId: string;
+  stars: number;
+  troop: TroopType;
+  mode: LineupMode;
+}): BoardLine[] {
+  const dragon = DRAGONS.find((row) => row.id === opts.dragonId);
+  if (!dragon) return [];
+  const stars = Math.min(10, Math.max(1, Math.round(opts.stars) || 1));
+  return fillKitPairs({
+    dragonId: opts.dragonId,
+    stars,
+    slot: preferredSlot(dragon),
+    troop: opts.troop,
+    mode: opts.mode,
   });
 }
 
@@ -217,9 +367,10 @@ export function suggestTeamsAround(opts: {
   ] as SlotId[]);
   const found: BoardLine[] = [];
   const seen = new Set<string>();
+  const compCap = limit > 8 ? Math.max(7, limit - 8) : limit;
 
-  function take(line: BoardLine | null) {
-    if (!line || found.length >= limit) return;
+  function take(line: BoardLine | null, cap = limit) {
+    if (!line || found.length >= cap) return;
     if (!seatsOf(line).includes(opts.dragonId)) return;
     const key = boardFingerprint(line);
     if (seen.has(key)) return;
@@ -228,12 +379,12 @@ export function suggestTeamsAround(opts: {
   }
 
   if (opts.troop === ONLINE_DPS_CORE.troop) {
-    take(metaLine(stars, opts.dragonId));
+    take(metaLine(stars, opts.dragonId), compCap);
   }
 
   for (const slot of slotOrder) {
     const exclude = new Set<string>();
-    for (let attempt = 0; attempt < 6 && found.length < limit; attempt++) {
+    for (let attempt = 0; attempt < 6 && found.length < compCap; attempt++) {
       const line = fillAround({
         dragonId: opts.dragonId,
         stars,
@@ -243,7 +394,7 @@ export function suggestTeamsAround(opts: {
         exclude,
       });
       if (!line) break;
-      take(line);
+      take(line, compCap);
       for (const id of seatsOf(line)) {
         if (id !== opts.dragonId) exclude.add(id);
       }
@@ -253,7 +404,7 @@ export function suggestTeamsAround(opts: {
   const firstPool = limit > 8 ? 6 : 4;
   const secondPool = limit > 8 ? 4 : 3;
   for (const slot of slotOrder) {
-    if (found.length >= limit) break;
+    if (found.length >= compCap) break;
     for (const line of fillPartners({
       dragonId: opts.dragonId,
       stars,
@@ -262,6 +413,20 @@ export function suggestTeamsAround(opts: {
       mode: opts.mode,
       firstPool,
       secondPool,
+    })) {
+      take(line, compCap);
+      if (found.length >= compCap) break;
+    }
+  }
+
+  for (const slot of unique([preferredSlot(dragon), ...slotOrder])) {
+    if (found.length >= limit) break;
+    for (const line of fillKitPairs({
+      dragonId: opts.dragonId,
+      stars,
+      slot,
+      troop: opts.troop,
+      mode: opts.mode,
     })) {
       take(line);
       if (found.length >= limit) break;

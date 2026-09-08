@@ -6,11 +6,12 @@ import {
   dragonProvides,
   provideUnlockStars,
 } from "@/lib/abilities";
-import { suggestTeamsAround } from "@/lib/ai/around";
+import { kitTeamsAround, suggestTeamsAround } from "@/lib/ai/around";
 import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards";
 import { emptyPit, newOwnedDragon } from "@/lib/dragons";
 import { defaultHabits, dragonKit } from "@/lib/habits";
 import { TROOP_TYPES, breedLabels } from "@/lib/labels";
+import { isTank } from "@/lib/roles";
 import { partnerRules, pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
 import type { Dragon, Lineup, LineupMode, PitState, TroopType } from "@/lib/types";
@@ -44,7 +45,7 @@ function uniqueTroops(dragonId: string, preferred: TroopType): TroopType[] {
 }
 
 function trioKey(line: BoardLine): string {
-  return `${[line.left, line.vanguard, line.right].slice().sort().join("|")}|${line.troop}`;
+  return [line.left, line.vanguard, line.right].slice().sort().join("|");
 }
 
 function seatsOf(line: BoardLine): string[] {
@@ -289,13 +290,23 @@ export function choicesAroundDragon(opts: {
   const seen = new Set<string>();
 
   for (const troop of uniqueTroops(opts.dragonId, opts.troop)) {
-    const lines = suggestTeamsAround({
-      dragonId: opts.dragonId,
-      stars,
-      troop,
-      mode,
-      limit: troop === opts.troop ? 16 : 4,
-    });
+    const lines = [
+      ...suggestTeamsAround({
+        dragonId: opts.dragonId,
+        stars,
+        troop,
+        mode,
+        limit: troop === opts.troop ? 16 : 4,
+      }),
+      ...(troop === opts.troop
+        ? kitTeamsAround({
+            dragonId: opts.dragonId,
+            stars,
+            troop,
+            mode,
+          }).slice(0, 8)
+        : []),
+    ];
     for (const line of lines) {
       const key = boardFingerprint(line);
       if (seen.has(key)) continue;
@@ -311,9 +322,39 @@ export function choicesAroundDragon(opts: {
     const prev = best.get(key);
     if (!prev || choice.score > prev.score) best.set(key, choice);
   }
-  return [...best.values()]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+  const ranked = [...best.values()].sort((a, b) => b.score - a.score);
+  const kitKeep = new Set(
+    kitTeamsAround({
+      dragonId: opts.dragonId,
+      stars,
+      troop: opts.troop,
+      mode,
+    })
+      .slice(0, 5)
+      .map((line) => trioKey(line)),
+  );
+  const kitPinned = ranked.filter((choice) => kitKeep.has(trioKey(choice.line)));
+  const rest = ranked.filter((choice) => !kitKeep.has(trioKey(choice.line)));
+  const soak = rest.filter((choice) =>
+    seatsOf(choice.line).some((id) => {
+      const row = getCatalogDragon(id);
+      return Boolean(row && isTank(row));
+    }),
+  );
+  const flex = rest.filter((choice) => !soak.includes(choice));
+  const remaining = Math.max(0, limit - kitPinned.length);
+  const soakTake = Math.min(soak.length, Math.max(6, remaining - 4));
+  const mixed: AroundChoice[] = [...kitPinned];
+  for (const choice of [
+    ...soak.slice(0, soakTake),
+    ...flex.slice(0, Math.max(0, remaining - soakTake)),
+    ...rest,
+  ]) {
+    if (mixed.some((row) => row.id === choice.id)) continue;
+    mixed.push(choice);
+    if (mixed.length >= limit) break;
+  }
+  return mixed.sort((a, b) => b.score - a.score);
 }
 
 export function seatStars(line: BoardLine, dragonId: string): number | null {

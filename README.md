@@ -19,8 +19,10 @@ here is affiliated with HBO, Warner Bros., or the game.
   Gathering.
 - **Team** (`/team`) — pick **one** released dragon and the 1–10★ rank you
   have. The page does not list the hatchery as a pick column. It builds
-  several complete three-dragon lines around that name (healer, soak, and
-  damage seats from the same Suggest rules as Copilot). Troop chips change
+  several complete three-dragon lines around that name. It still prefers a
+  healer, a soak, and a damage seat, but it also keeps healer-and-finisher
+  lines that skip a Taunt tank — so a march like Rhysarion / Malachite /
+  Venator is listed when you build around any of those three. Troop chips change
   the army the line marches with. Dragons are not tagged PvP or PvE —
   kit pairing is the same in either fight. Kalspire at ★6 lists **Panic**
   from Hub habit 3 plus the Star Progression glossary (“Deals Tactical

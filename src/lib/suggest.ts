@@ -52,6 +52,7 @@ function scoreDragon(
   lineup: Lineup,
   slot: SlotId,
   teammates: ResolvedSlot[],
+  fillGaps = true,
 ): DragonSuggestion {
   let score = 0;
   const weighted: { text: string; weight: number }[] = [];
@@ -136,20 +137,22 @@ function scoreDragon(
     !teamRoles.has("healing") &&
     !hasCompRole(dragon, "healing");
 
-  for (const advice of suggestCompNotes(
-    dragon,
-    teammates.map((mate) => ({
-      dragon: mate.dragon,
-      atStars: mate.starRank,
-      habits: liveOwnedHabits(mate.owned, lineup.kind),
-      habitRanks: liveOwnedHabitRanks(mate.owned),
-    })),
-    slot,
-  )) {
-    note(advice.text, advice.weight, advice.points);
+  if (fillGaps) {
+    for (const advice of suggestCompNotes(
+      dragon,
+      teammates.map((mate) => ({
+        dragon: mate.dragon,
+        atStars: mate.starRank,
+        habits: liveOwnedHabits(mate.owned, lineup.kind),
+        habitRanks: liveOwnedHabitRanks(mate.owned),
+      })),
+      slot,
+    )) {
+      note(advice.text, advice.weight, advice.points);
+    }
   }
 
-  if (slot === "vanguard") {
+  if (fillGaps && slot === "vanguard") {
     if (hasCompRole(dragon, "tanking")) {
       note(
         teammates.length ? "Tank soak for this team" : "Tank soak",
@@ -264,6 +267,7 @@ export function suggestDragons({
   pool = "all",
   role = "all",
   excludeIds,
+  fillGaps = true,
 }: {
   lineup: Lineup;
   slot: SlotId;
@@ -273,6 +277,7 @@ export function suggestDragons({
   pool?: "all" | "owned" | "unowned";
   role?: CompRole | "all";
   excludeIds?: Set<string>;
+  fillGaps?: boolean;
 }): DragonSuggestion[] {
   const used = slottedDragonIds(lineup, state);
   const teammates = teammatesForSlot(lineup, state, slot);
@@ -318,11 +323,14 @@ export function suggestDragons({
         lineup,
         slot,
         teammates,
+        fillGaps,
       ),
     )
     .sort(
       (a, b) =>
-        compPriority(a.dragon, mates) - compPriority(b.dragon, mates) ||
+        (fillGaps
+          ? compPriority(a.dragon, mates) - compPriority(b.dragon, mates)
+          : 0) ||
         b.score - a.score ||
         a.dragon.name.localeCompare(b.dragon.name),
     );

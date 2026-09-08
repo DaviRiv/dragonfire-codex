@@ -110,6 +110,31 @@ function checkMalachite(): void {
   );
 }
 
+function hasIds(
+  line: { left: string; vanguard: string; right: string },
+  ids: string[],
+): boolean {
+  const seats = seatsOf(line);
+  return ids.every((id) => seats.includes(id));
+}
+
+function checkRhysarionMalachiteVenator(): void {
+  for (const dragonId of ["malachite", "rhysarion", "venator"] as const) {
+    const lines = choicesAroundDragon({
+      dragonId,
+      stars: 6,
+      troop: "shieldbearers",
+    });
+    assert(
+      lines.some((choice) =>
+        hasIds(choice.line, ["rhysarion", "malachite", "venator"]),
+      ),
+      `${dragonId} lines must include Rhysarion / Malachite / Venator`,
+    );
+  }
+}
+
 checkKalspire();
 checkMalachite();
+checkRhysarionMalachiteVenator();
 console.log("check-around ok");
