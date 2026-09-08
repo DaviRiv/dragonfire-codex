@@ -5,7 +5,7 @@ import { TeamPage } from "../team-page";
 export const metadata: Metadata = {
   title: "Team",
   description:
-    "Pick one dragon. Compare complete three-dragon lines built around that name, with kit pros and cons.",
+    "Pick one dragon. Highlight a three-dragon line to compare kit pros and cons on the right.",
 };
 
 export default function Page() {

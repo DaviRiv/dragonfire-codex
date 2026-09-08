@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DragonIcon } from "@/components/dragon-icon";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
 import { StarStepper } from "@/components/star-rank";
-import { TeamChoiceCard } from "@/components/team-choice-card";
+import {
+  TeamLineList,
+  TeamNotesPanel,
+} from "@/components/team-choice-card";
 import { BetaBadge } from "@/components/beta-badge";
-import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { lineupFromAiLine } from "@/lib/ai/coach";
@@ -32,6 +34,7 @@ export function TeamPage() {
   const search = useSearchParams();
   const { state, addLineup } = usePit();
   const pickerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const initialDragon = getCatalogDragon(search.get("dragon") ?? "")?.id ?? null;
   const initialStars = clampStars(Number(search.get("stars") ?? 6));
   const seed = initialDragon ? getCatalogDragon(initialDragon) : null;
@@ -44,6 +47,7 @@ export function TeamPage() {
     seed?.affinities[0] ?? "shieldbearers",
   );
   const [mode, setMode] = useState<LineupMode>("pvp");
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [seatedId, setSeatedId] = useState<string | null>(null);
 
@@ -67,6 +71,18 @@ export function TeamPage() {
     });
   }, [dragon, stars, troop, mode, state]);
 
+  const active = choices.find((row) => row.id === activeId) ?? choices[0] ?? null;
+
+  useEffect(() => {
+    if (!choices.length) {
+      setActiveId(null);
+      return;
+    }
+    if (!choices.some((row) => row.id === activeId)) {
+      setActiveId(choices[0].id);
+    }
+  }, [choices, activeId]);
+
   function writeQuery(nextDragon: string | null, nextStars: number) {
     const params = new URLSearchParams();
     if (nextDragon) params.set("dragon", nextDragon);
@@ -80,6 +96,7 @@ export function TeamPage() {
     setDragonId(id);
     setQuery("");
     setOpenPicker(false);
+    setActiveId(null);
     setPickedId(null);
     setSeatedId(null);
     if (next?.affinities[0]) setTroop(next.affinities[0]);
@@ -104,13 +121,12 @@ export function TeamPage() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [openPicker]);
 
-  function useChoice(choiceId: string) {
-    const choice = choices.find((row) => row.id === choiceId);
-    if (!choice) return;
-    const owned = [choice.line.left, choice.line.vanguard, choice.line.right].every(
+  function useActive() {
+    if (!active) return;
+    const owned = [active.line.left, active.line.vanguard, active.line.right].every(
       (id) => state.owned.some((row) => row.dragonId === id),
     );
-    const filled = lineupFromAiLine(choice.line, state, owned ? "pit" : "hatchery");
+    const filled = lineupFromAiLine(active.line, state, owned ? "pit" : "hatchery");
     const created = {
       ...filled,
       id: newId("lineup"),
@@ -119,41 +135,39 @@ export function TeamPage() {
     };
     addLineup(created);
     rememberBuild(created.kind, created.id);
-    setPickedId(choice.id);
+    setPickedId(active.id);
     setSeatedId(created.id);
-    toast.success(`Seated ${choice.line.name}.`);
+    toast.success(`Seated ${active.line.name}.`);
+  }
+
+  function onListKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (!choices.length) return;
+    const index = Math.max(
+      0,
+      choices.findIndex((row) => row.id === (active?.id ?? "")),
+    );
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      const next = choices[Math.min(choices.length - 1, index + 1)];
+      if (next) setActiveId(next.id);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const next = choices[Math.max(0, index - 1)];
+      if (next) setActiveId(next.id);
+    } else if (event.key === "Enter" && active) {
+      event.preventDefault();
+      useActive();
+    }
   }
 
   const liveTags = (dragon?.tags ?? []).slice(0, 4);
 
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="font-heading text-xl tracking-wide sm:text-2xl">
-            Team builder
-          </h1>
-          <p className="mt-0.5 max-w-xl text-sm text-muted-foreground">
-            Pick the one dragon you want to march around. The builder seats
-            several complete lines for that name — compare kit payoffs and
-            gaps, then take one. Copilot is a separate beta chat.
-          </p>
-        </div>
-        <Link
-          href="/coach"
-          className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
-        >
-          <Sparkles className="size-4" />
-          Open Copilot
-          <BetaBadge />
-        </Link>
-      </div>
-
+  const picker = (
       <section
         ref={pickerRef}
-        className="rounded-2xl bg-card/60 p-3 ring-1 ring-foreground/10"
+        className="shrink-0 rounded-2xl bg-card/60 p-2.5 ring-1 ring-foreground/10"
       >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <p className="text-label">Build around</p>
             <div className="relative mt-1">
@@ -173,7 +187,7 @@ export function TeamPage() {
               />
             </div>
             {openPicker ? (
-              <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl bg-popover py-1 shadow-lg ring-1 ring-foreground/15">
+              <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl bg-popover py-1 shadow-lg ring-1 ring-foreground/15">
                 {filtered.length === 0 ? (
                   <li className="px-3 py-2 text-sm text-muted-foreground">
                     No hatchery match.
@@ -239,7 +253,7 @@ export function TeamPage() {
           </div>
         </div>
         {dragon ? (
-          <div className="mt-3 flex flex-wrap gap-1 border-t border-foreground/10 pt-3">
+          <div className="mt-2 flex flex-wrap gap-1 border-t border-foreground/10 pt-2">
             {(
               [
                 ...dragon.affinities,
@@ -272,43 +286,77 @@ export function TeamPage() {
           </div>
         ) : null}
       </section>
+  );
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+        <h1 className="font-heading text-lg tracking-wide sm:text-xl">
+          Team builder
+        </h1>
+        <Link
+          href="/coach"
+          className="inline-flex items-center gap-1.5 text-sm text-amber-200 hover:underline"
+        >
+          <Sparkles className="size-4" />
+          Open Copilot
+          <BetaBadge />
+        </Link>
+      </div>
 
       {!dragon ? (
-        <EmptyState
-          title="Pick the dragon you want to march around"
-          description="One name — Kalspire, Malachite, Vhagar. The builder seats several complete threes around that pick so you can compare kit payoffs and gaps."
-        />
-      ) : choices.length === 0 ? (
-        <EmptyState
-          title={`No three-dragon line around ${dragon.name}`}
-          description="Try another troop type. Suggest still needs a healer, a soak, and a damage seat."
-        />
+        <>
+          {picker}
+          <EmptyState
+            className="min-h-0 flex-1 py-8 sm:py-10"
+            title="Pick the dragon you want to march around"
+            description="One name — Kalspire, Malachite, Vhagar. The builder seats several complete threes around that pick so you can compare kit payoffs and gaps."
+          />
+        </>
       ) : (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-label">
-              Lines around {dragon.name} · {choices.length}
-            </p>
-            {seatedId ? (
-              <Link
-                href={`/lineups/${seatedId}`}
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-              >
-                Tweak seats
-              </Link>
-            ) : null}
-          </div>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {choices.map((choice) => (
-              <TeamChoiceCard
-                key={choice.id}
-                choice={choice}
-                selected={pickedId === choice.id}
-                onPick={() => useChoice(choice.id)}
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_minmax(12.5rem,40%)] gap-2 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:grid-rows-[auto_minmax(0,1fr)]">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">{picker}</div>
+          {choices.length === 0 ? (
+            <EmptyState
+              className="min-h-0 py-8 lg:col-start-1 lg:row-start-2"
+              title={`No three-dragon line around ${dragon.name}`}
+              description="Try another troop type. Suggest still needs a healer, a soak, and a damage seat."
+            />
+          ) : (
+            <section
+              ref={listRef}
+              tabIndex={0}
+              onKeyDown={onListKey}
+              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-2"
+            >
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-3 py-2">
+                <p className="text-label">
+                  Lines around {dragon.name} · {choices.length}
+                </p>
+                <p className="hidden text-[11px] text-muted-foreground sm:block">
+                  Highlight a line. Only this list scrolls.
+                </p>
+              </div>
+              <TeamLineList
+                choices={choices}
+                pinnedId={dragon.id}
+                activeId={active?.id ?? null}
+                seated={pickedId === active?.id}
+                onHighlight={setActiveId}
               />
-            ))}
+            </section>
+          )}
+          <div className="min-h-0 min-w-0 lg:col-start-2 lg:row-span-2">
+            <TeamNotesPanel
+              choice={active}
+              seated={pickedId === active?.id}
+              tweakHref={
+                pickedId === active?.id && seatedId ? `/lineups/${seatedId}` : null
+              }
+              onUse={useActive}
+            />
           </div>
-        </section>
+        </div>
       )}
     </div>
   );

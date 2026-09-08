@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Geist, Geist_Mono } from "next/font/google";
 import { AdScripts } from "@/components/ad-scripts";
-import { AdSlot } from "@/components/ad-slot";
 import { AppFrame } from "@/components/app-frame";
+import { MobileAnchorAd } from "@/components/mobile-anchor-ad";
 import { Providers } from "@/components/providers";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -69,18 +70,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AdScripts />
           <SiteHeader />
           <AppFrame>{children}</AppFrame>
-          <div className="fixed inset-x-0 z-30 lg:hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom))]">
-            <div className="border-t border-border/40 bg-background/90 px-2 py-1">
-              <AdSlot slot="anchor" />
-            </div>
-          </div>
-          <footer className="hidden border-t border-border/60 px-4 py-6 text-center text-xs text-muted-foreground md:block">
-            Fan-made. Not affiliated with HBO, Warner Bros., or Game of
-            Thrones: Dragonfire. Ad slots follow a Wowhead-style layout
-            (leaderboard, sidebar rectangles, mobile banner) via Google
-            Publisher Tag or AdSense when configured; otherwise they show
-            house ads for this tool.
-          </footer>
+          <MobileAnchorAd />
+          <SiteFooter />
         </Providers>
       </body>
     </html>

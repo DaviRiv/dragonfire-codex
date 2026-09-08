@@ -25,9 +25,10 @@ here is affiliated with HBO, Warner Bros., or the game.
   (“Deals Tactical Damage to the target each round.”). Other seats add
   their live Hub provides when those names have glossary lines
   (First-Strike, Double-Strike, Advantage, Vulnerable, Taunt, …), plus
-  pairing payoffs and gaps. Each card shows that line’s **Pros** and
-  **Cons**. **Use this team** saves it. **Tweak seats** opens the saved
-  lineup editor. Copilot does not run here.
+  pairing payoffs and gaps. Those threes sit in a scrollable list on the
+  left. Highlight a line to read **Pros** and **Cons** on the right; the
+  rest of the page stays put. **Use this team** saves it. **Tweak seats**
+  opens the saved lineup editor. Copilot does not run here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
   core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
@@ -84,8 +85,9 @@ here is affiliated with HBO, Warner Bros., or the game.
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
 The layout is built for a phone in one hand: five bottom tabs (Team, Talk,
-Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen Team
-shows two columns of complete lines around the dragon you picked.
+Copilot, Pit, Hatchery). Copilot is marked **beta**. After you pick a dragon,
+Team keeps the picker fixed, scrolls only the list of threes, and pins Pros
+and Cons on the right (under the list on a phone).
 
 Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
 Publisher Tag (`gpt.js`) leaderboard under the header, 300×250 rectangles in
