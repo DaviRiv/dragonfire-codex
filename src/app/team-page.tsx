@@ -74,6 +74,27 @@ export function TeamPage() {
   const active = choices.find((row) => row.id === activeId) ?? choices[0] ?? null;
 
   useEffect(() => {
+    const html = document.documentElement;
+    const { body } = document;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyHeight: body.style.height,
+      bodyMinHeight: body.style.minHeight,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.height = "100%";
+    body.style.minHeight = "100%";
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.height = prev.bodyHeight;
+      body.style.minHeight = prev.bodyMinHeight;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!choices.length) {
       setActiveId(null);
       return;
@@ -289,7 +310,7 @@ export function TeamPage() {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-lg tracking-wide sm:text-xl">
           Team builder

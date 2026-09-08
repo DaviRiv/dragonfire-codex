@@ -28,7 +28,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         "mx-auto flex w-full flex-1 flex-col px-3 sm:px-4",
         wide ? "max-w-[92rem]" : "max-w-7xl",
         team
-          ? "h-[calc(100dvh-3rem-env(safe-area-inset-top))] min-h-0 overflow-hidden py-2 pb-[calc(4.25rem+env(safe-area-inset-bottom))] sm:h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] lg:pb-3"
+          ? "h-full min-h-0 overflow-hidden py-2 pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-3"
           : "py-3 sm:py-6 pb-[calc(9.25rem+env(safe-area-inset-bottom))] lg:pb-8",
       )}
     >
