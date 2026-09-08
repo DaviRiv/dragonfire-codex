@@ -265,7 +265,7 @@ export function TeamPage() {
             </div>
           ) : null}
           <div>
-            <p className="text-label">
+            <p className="text-label" data-star-owner>
               Stars on {dragon?.name ?? "this dragon"}
             </p>
             <div className="mt-1">
