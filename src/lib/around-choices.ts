@@ -337,37 +337,57 @@ export function choicesAroundDragon(opts: {
     if (!prev || choice.score > prev.score) bestSeat.set(key, choice);
   }
   const ranked = [...bestSeat.values()].sort((a, b) => b.score - a.score);
-  const kitKeep = new Set<string>();
-  for (const troop of troops) {
-    if (troop !== opts.troop && !affinities.has(troop)) continue;
+
+  function kitTriosFor(troop: TroopType): string[] {
     const kit = kitByTroop.get(troop) ?? [];
-    const trios = new Set<string>();
+    const trios: string[] = [];
     for (const line of kit) {
-      if (trios.size >= 5) break;
-      trios.add(trioKey(line));
+      const key = trioKey(line);
+      if (trios.includes(key)) continue;
+      trios.push(key);
+      if (trios.length >= 5) break;
     }
-    for (const line of kit) {
-      if (trios.has(trioKey(line))) kitKeep.add(seatingKey(line));
-    }
+    return trios;
   }
-  const trioCount = new Map<string, number>();
-  function takeSeating(choice: AroundChoice): boolean {
-    const trio = trioKey(choice.line);
-    const n = trioCount.get(trio) ?? 0;
-    if (n >= 2) return false;
-    trioCount.set(trio, n + 1);
-    return true;
+
+  function seatingsOf(trio: string): AroundChoice[] {
+    return ranked.filter((row) => trioKey(row.line) === trio).slice(0, 2);
   }
+
   const kitPinned: AroundChoice[] = [];
-  for (const choice of ranked) {
-    if (!kitKeep.has(seatingKey(choice.line))) continue;
-    if (!takeSeating(choice)) continue;
-    kitPinned.push(choice);
+  const pinnedTrios = new Set<string>();
+  const kitRoom = Math.min(limit, 12);
+
+  function pinTrio(trio: string, room: number) {
+    if (pinnedTrios.has(trio) || kitPinned.length >= room) return;
+    const pair = seatingsOf(trio);
+    if (pair.length === 0) return;
+    pinnedTrios.add(trio);
+    for (const row of pair) {
+      if (kitPinned.length >= room) break;
+      kitPinned.push(row);
+    }
+  }
+
+  const selectedRoom = Math.max(8, kitRoom - 2);
+  for (const trio of kitTriosFor(opts.troop)) pinTrio(trio, selectedRoom);
+  for (const troop of troops) {
+    if (troop === opts.troop || !affinities.has(troop)) continue;
+    for (const trio of kitTriosFor(troop)) pinTrio(trio, kitRoom);
+  }
+
+  const trioCount = new Map<string, number>();
+  for (const row of kitPinned) {
+    const trio = trioKey(row.line);
+    trioCount.set(trio, (trioCount.get(trio) ?? 0) + 1);
   }
   const rest: AroundChoice[] = [];
   for (const choice of ranked) {
     if (kitPinned.includes(choice)) continue;
-    if (!takeSeating(choice)) continue;
+    const trio = trioKey(choice.line);
+    const n = trioCount.get(trio) ?? 0;
+    if (n >= 2) continue;
+    trioCount.set(trio, n + 1);
     rest.push(choice);
   }
   const soak = rest.filter((choice) =>

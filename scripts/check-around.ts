@@ -149,6 +149,7 @@ function checkRhysarionMalachiteVenator(): void {
     stars: 6,
     troop: "shieldbearers",
   });
+  assert(rhys.length <= 16, `Rhysarion list must stay at 16 rows, got ${rhys.length}`);
   assert(
     rhys.some((choice) => choice.line.vanguard === "rhysarion"),
     "Rhysarion lines must include Vanguard seating",
