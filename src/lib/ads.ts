@@ -21,8 +21,8 @@ export const AD_SLOT_META: Record<
       [728, 90],
       [320, 50],
     ],
-    house: "Rate three-dragon lines on Boards — the pit table for what held in the field.",
-    href: "/",
+    house: "Pick a dragon on Team — community lines and reviews for what held in the field.",
+    href: "/team",
   },
   sidebar: {
     label: "Medium rectangle",
@@ -39,7 +39,7 @@ export const AD_SLOT_META: Record<
   feed: {
     label: "In-content",
     sizes: [[300, 250]],
-    house: "Copilot is in beta. Register, pick a dragon, and seat a line — then discuss it in Talk.",
+    house: "Copilot is in beta. Team is where you pick a dragon and read reviews.",
     href: "/coach",
   },
   anchor: {

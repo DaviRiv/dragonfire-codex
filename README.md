@@ -1,30 +1,28 @@
 # Dragonfire Pit
 
 Unofficial fan tool for **Game of Thrones: Dragonfire**. Log the dragons you
-hatched, then pick a three-dragon team. **Boards** is the main table: pick a
-dragon and the star rank you have, let **Copilot** seat several lines, then
-rate them and leave notes. **Suggest team** on Team still ranks a line from
-what you own (or from the hatchery in Theory). Nothing here is affiliated
-with HBO, Warner Bros., or the game.
+hatched, then pick a three-dragon team. **Team** is the main table: pick a
+dragon and the star rank you have, then read community lines, ratings, and
+Talk notes beside your formation. **Copilot** is a separate beta chat. Nothing
+here is affiliated with HBO, Warner Bros., or the game.
 
 ## What you can do
 
 - **Account** — register a username on this server (no email). That unlocks
-  **Copilot** and lets you rate / comment on Boards. Passwords are stored as
-  scrypt hashes in `data/` on the machine running the app. Set `AUTH_SECRET`
-  in `.env` for a stable session key; otherwise one is written to
-  `data/.auth-secret`.
-- **Boards** (home) — pick a released dragon and a 1–10★ rank, then **Ask
-  Copilot** for several three-dragon lines around that pick (same healer /
-  soak / damage rules as Suggest). Each line is a public card: 1–5★ rating
-  and a notes thread, like a Yelp page for formations. Anyone can read
-  reviews. Signing in is required to generate, rate, or comment. **Seat on
-  Team** still saves the line locally in your browser.
+  **Copilot** and lets you rate, comment, or post a line on Team. Passwords
+  are stored as scrypt hashes in `data/` on the machine running the app. Set
+  `AUTH_SECRET` in `.env` for a stable session key; otherwise one is written
+  to `data/.auth-secret`.
 - **Talk** (`/talk`) — a message board for three-dragon lines. Anyone can
-  read. Register to start a thread or reply. Attach a Boards line from
+  read. Register to start a thread or reply. Attach a reviewed line from
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
-- **Team** (`/team`) — formation on the left (or on top on a phone). The full ranked
+- **Team** (`/team`) — pick a released dragon and a 1–10★ rank. Community
+  three-dragon lines with 1–5★ ratings and notes load for that name, plus
+  Talk threads that already seat them. **Seat on Team** saves a reviewed
+  line locally. **Post this line for review** publishes your own formation
+  (account required). Anyone can read reviews. Copilot does not run here.
+  Formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
   for **this team** first, hiding anyone already slotted. Role filters on
@@ -70,11 +68,12 @@ with HBO, Warner Bros., or the game.
   **ChatGPT** copies a filled prompt with your pit or the full hatchery.
   Paste it at chatgpt.com — this app never calls an API. Optional note
   (spear rally, skip Vhagar) goes into the same text.
-- **Copilot (beta)** — a local ranker for three-dragon lines (account required). Ask for the online
-  DPS meta core, a shield PvP line, or who soaks if Vhagar is busy. The
-  boards it picks sit beside the thread. **Seat on Team** saves that
-  line. **Copy for ChatGPT** includes the current online meta: Left
-  Malachite, Vanguard Vhagar, Right Venator as the best PvP DPS lineup.
+- **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
+  (account required), separate from Team. Ask for the online DPS meta
+  core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
+  sit beside the thread. **Seat on Team** saves that line. **Copy for
+  ChatGPT** includes the current online meta: Left Malachite, Vanguard
+  Vhagar, Right Venator as the best PvP DPS lineup.
 - **Pit** — reign, notes, and which teams they sit on. Stars live in
   Hatchery (0★ means you do not have them). Slotting a team never changes
   stars.
@@ -108,8 +107,8 @@ with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: six bottom tabs (Boards, Talk,
-Team, Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen the
+The layout is built for a phone in one hand: five bottom tabs (Team, Talk,
+Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen the
 Team list is a full column on the right so the formation stays in view.
 
 Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
@@ -161,9 +160,9 @@ Register an account to open **Copilot (beta)**. On Team, open **ChatGPT** to cop
 not JSON) and paste it at chatgpt.com. The prompt includes **current
 meta**: online PvP DPS is Left Malachite, Vanguard Vhagar, Right Venator.
 Copilot on `/coach` ranks locally with the same rules as Suggest, and
-seats that core when those names are free. Boards uses the same ranker to
-propose several lines around one dragon and star rank. Treat Copilot seats
-as a starting point, not a guarantee.
+seats that core when those names are free. Team is where you pick a dragon
+and read user recommendations and reviews. Treat Copilot seats as a
+starting point, not a guarantee.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.

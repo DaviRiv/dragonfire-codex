@@ -11,7 +11,8 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const raw = url.searchParams.get("category");
   const category = raw && isTalkCategory(raw) ? raw : undefined;
-  const threads = await listThreads(category);
+  const dragonId = url.searchParams.get("dragonId")?.trim() || undefined;
+  const threads = await listThreads({ category, dragonId });
   return NextResponse.json({ threads });
 }
 

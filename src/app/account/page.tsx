@@ -5,7 +5,7 @@ import { AccountPage } from "./account-page";
 export const metadata: Metadata = {
   title: "Account",
   description:
-    "Register or sign in to unlock Copilot and to rate three-dragon lines on Boards.",
+    "Register or sign in to unlock Copilot and to rate three-dragon lines on Team.",
 };
 
 export default function Page() {

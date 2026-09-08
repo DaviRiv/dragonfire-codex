@@ -62,11 +62,11 @@ export function AccountPage() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Signed in as <span className="text-amber-100">{user.username}</span>.
-            Copilot and Boards reviews use this name.
+            Copilot and team-line reviews use this name.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => router.push("/")}>Open Boards</Button>
+          <Button onClick={() => router.push("/team")}>Open Team</Button>
           <Button variant="outline" onClick={() => router.push("/coach")}>
             Open Copilot
           </Button>
@@ -90,8 +90,8 @@ export function AccountPage() {
           Account
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Register to unlock Copilot and to rate or comment on Boards lines.
-          Passwords stay on this server; there is no email login.
+          Register to unlock Copilot and to rate or post three-dragon lines on
+          Team. Passwords stay on this server; there is no email login.
         </p>
       </div>
       <div className="flex gap-1">
@@ -144,7 +144,11 @@ export function AccountPage() {
         <Link href="/coach" className="text-amber-200 hover:underline">
           /coach
         </Link>{" "}
-        and Ask Copilot on Boards both open.
+        opens, and you can rate or post lines on{" "}
+        <Link href="/team" className="text-amber-200 hover:underline">
+          Team
+        </Link>
+        .
       </p>
     </div>
   );

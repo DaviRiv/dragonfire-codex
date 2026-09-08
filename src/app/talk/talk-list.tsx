@@ -6,7 +6,7 @@ import { AdSlot } from "@/components/ad-slot";
 import { accountHref } from "@/components/account-gate";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
-import { TalkLineChip } from "@/components/talk-line";
+import { TalkThreadCard } from "@/components/talk-thread-card";
 import { buttonVariants } from "@/components/ui/button";
 import { apiJson } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -18,17 +18,6 @@ import {
 } from "@/lib/talk-types";
 import { cn } from "@/lib/utils";
 import { MessagesSquare } from "lucide-react";
-
-function formatWhen(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export function TalkListPage() {
   const { user } = useAuth();
@@ -132,29 +121,7 @@ export function TalkListPage() {
                   <AdSlot slot="feed" />
                 </div>
               ) : null}
-              <Link
-                href={`/talk/${thread.id}`}
-                className="block rounded-2xl bg-card/70 px-3 py-3 ring-1 ring-foreground/10 hover:bg-muted/50 sm:px-4"
-              >
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="rounded-full px-2 py-0.5 text-[11px] tracking-wide text-amber-100 ring-1 ring-amber-400/35">
-                    {talkCategoryLabels[thread.category]}
-                  </span>
-                  <h2 className="font-heading min-w-0 flex-1 text-base tracking-wide">
-                    {thread.title}
-                  </h2>
-                </div>
-                {thread.line ? (
-                  <div className="mt-1">
-                    <TalkLineChip line={thread.line} />
-                  </div>
-                ) : null}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {thread.author} · {thread.replyCount}{" "}
-                  {thread.replyCount === 1 ? "reply" : "replies"} · last{" "}
-                  {formatWhen(thread.lastReplyAt)}
-                </p>
-              </Link>
+              <TalkThreadCard thread={thread} />
             </li>
           ))}
         </ul>

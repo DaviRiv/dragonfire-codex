@@ -96,13 +96,19 @@ export async function getBoard(id: string): Promise<BoardRecord | null> {
 export async function queryBoards(filter: {
   dragonId?: string;
   stars?: number;
+  troop?: BoardLine["troop"];
+  mode?: BoardLine["mode"];
   viewerId?: string | null;
   limit?: number;
 }): Promise<BoardPublic[]> {
   const boards = await listBoards();
   const filtered = boards.filter((board) => {
-    if (!filter.dragonId) return true;
-    return boardHasDragon(board, filter.dragonId, filter.stars);
+    if (filter.dragonId && !boardHasDragon(board, filter.dragonId, filter.stars)) {
+      return false;
+    }
+    if (filter.troop && board.troop !== filter.troop) return false;
+    if (filter.mode && board.mode !== filter.mode) return false;
+    return true;
   });
   filtered.sort((a, b) => {
     const score = ratingScore(b) - ratingScore(a);

@@ -17,7 +17,7 @@ export function preferredSlot(dragon: Dragon): SlotId {
 function theoryLineup(troop: TroopType, mode: LineupMode, stars: number): Lineup {
   return {
     id: "boards-theory",
-    name: "Boards",
+    name: "Team",
     kind: "theory",
     mode,
     troop,

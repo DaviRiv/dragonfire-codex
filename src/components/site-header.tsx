@@ -8,7 +8,6 @@ import {
   Flame,
   MessagesSquare,
   Sparkles,
-  Star,
   Swords,
   UserRound,
   Wrench,
@@ -19,9 +18,8 @@ import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Boards", icon: Star },
-  { href: "/talk", label: "Talk", icon: MessagesSquare },
   { href: "/team", label: "Team", icon: Swords },
+  { href: "/talk", label: "Talk", icon: MessagesSquare },
   { href: "/coach", label: "Copilot", icon: Sparkles, beta: true },
   { href: "/pit", label: "Pit", icon: Flame },
   { href: "/hatchery", label: "Hatchery", icon: Egg },
@@ -100,7 +98,7 @@ export function SiteHeader() {
     <>
       <header className="sticky top-0 z-40 border-b border-amber-500/20 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-2 px-3 sm:h-14 sm:px-4">
-          <Link href="/" className="flex min-w-0 items-center gap-2">
+          <Link href="/team" className="flex min-w-0 items-center gap-2">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30">
               <Flame className="size-4" />
             </span>
@@ -109,7 +107,7 @@ export function SiteHeader() {
                 DRAGONFIRE
               </span>
               <span className="mt-0.5 hidden text-[10px] tracking-[0.18em] text-amber-200/70 uppercase sm:block">
-                Pit · Boards
+                Pit · Team
               </span>
             </span>
           </Link>
@@ -153,7 +151,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-6">
+        <ul className="mx-auto grid max-w-6xl grid-cols-5">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);

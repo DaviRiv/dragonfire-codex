@@ -16,6 +16,7 @@ import {
   averageStars,
   boardFingerprint,
   boardHasDragon,
+  parseBoardLine,
 } from "@/lib/boards";
 import { getCatalogDragon } from "@/data/dragons";
 import { hashPassword, verifyPassword } from "@/lib/server/password";
@@ -100,6 +101,24 @@ try {
   });
   assert(listed.length >= 1, "query should find Malachite ★6 boards");
   assert(listed[0].myRating === 5 || listed.some((row) => row.myRating === 5), "viewer rating");
+  const parsed = parseBoardLine({
+    left: "malachite",
+    vanguard: "vhagar",
+    right: "venator",
+    leftStars: 6,
+    vanguardStars: 6,
+    rightStars: 6,
+    troop: "shieldbearers",
+    mode: "pvp",
+    why: "Online DPS core at six stars.",
+  });
+  assert(!("error" in parsed), "parse a posted line");
+  if ("error" in parsed) throw new Error("parse a posted line");
+  assert(parsed.left === "malachite", "parsed left");
+  const posted = await upsertSuggestedLines([parsed], signed.user.id);
+  assert(posted.length === 1, "user-posted line upserts");
+  const anyStars = await queryBoards({ dragonId: "malachite" });
+  assert(anyStars.length >= 1, "query without a star filter");
 } finally {
   await rm(tmp, { recursive: true, force: true });
 }

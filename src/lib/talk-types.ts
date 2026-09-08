@@ -61,3 +61,15 @@ export function isTalkCategory(value: unknown): value is TalkCategory {
     (TALK_CATEGORIES as readonly string[]).includes(value)
   );
 }
+
+export function talkLineHasDragon(
+  line: TalkLine | null | undefined,
+  dragonId: string,
+): boolean {
+  if (!line) return false;
+  return (
+    line.left === dragonId ||
+    line.vanguard === dragonId ||
+    line.right === dragonId
+  );
+}

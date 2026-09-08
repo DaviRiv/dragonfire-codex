@@ -47,8 +47,31 @@ async function main(): Promise<void> {
     if ("error" in thread) throw new Error(thread.error);
     assert(thread.replyCount === 0, "new thread has no replies");
     assert(thread.line?.vanguard === "vhagar", "line attached");
-    const listed = await listThreads("pvp");
+    const listed = await listThreads({ category: "pvp" });
     assert(listed.some((row) => row.id === thread.id), "listed in pvp");
+    const aroundMal = await listThreads({ dragonId: "malachite" });
+    assert(aroundMal.some((row) => row.id === thread.id), "listed for Malachite");
+    const aroundVhagar = await listThreads({ dragonId: "vhagar" });
+    assert(
+      aroundVhagar.some((row) => row.id === thread.id),
+      "Vhagar is on the attached line",
+    );
+    const soak = await createThread(created.user, {
+      title: "Vhagar soak without Burn still worth it?",
+      body: "Who soaks if we skip Burn feeders.",
+      category: "pvp",
+    });
+    if ("error" in soak) throw new Error(soak.error);
+    const named = await listThreads({ dragonId: "vhagar" });
+    assert(
+      named.some((row) => row.id === soak.id),
+      "title mention should count for Vhagar",
+    );
+    const aroundSun = await listThreads({ dragonId: "sunfyre" });
+    assert(
+      !aroundSun.some((row) => row.id === thread.id || row.id === soak.id),
+      "Sunfyre filter should skip those threads",
+    );
     const replied = await replyToThread(
       thread.id,
       created.user,

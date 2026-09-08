@@ -32,14 +32,16 @@ function formatWhen(iso: string): string {
 
 export function BoardCard({
   board,
-  nextPath = "/",
+  nextPath = "/team",
   onRate,
   onComment,
+  onSeated,
 }: {
   board: BoardPublic;
   nextPath?: string;
   onRate: (boardId: string, stars: number) => Promise<void>;
   onComment: (boardId: string, text: string) => Promise<void>;
+  onSeated?: () => void;
 }) {
   const { user } = useAuth();
   const { state, addLineup } = usePit();
@@ -71,6 +73,7 @@ export function BoardCard({
     addLineup(created);
     rememberBuild(created.kind, created.id);
     toast.success(`Seated ${board.name} on Team.`);
+    onSeated?.();
   }
 
   async function submitComment() {

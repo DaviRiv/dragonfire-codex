@@ -24,24 +24,24 @@ const cinzel = Cinzel({
 
 export const metadata: Metadata = {
   title: {
-    default: "Dragonfire Pit — Boards for three-dragon lines",
+    default: "Dragonfire Pit — Team builder for three-dragon lines",
     template: "%s · Dragonfire Pit",
   },
   description:
-    "Unofficial Game of Thrones: Dragonfire pit and team tool. Register for Copilot (beta), pick a dragon and star rank, then rate and discuss the lines.",
+    "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",
     siteName: "Dragonfire Pit",
-    title: "Dragonfire Pit — Boards for three-dragon lines",
+    title: "Dragonfire Pit — Team builder for three-dragon lines",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Register for Copilot (beta), pick a dragon and star rank, then rate and discuss the lines.",
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
   },
   twitter: {
     card: "summary",
-    title: "Dragonfire Pit — Boards for three-dragon lines",
+    title: "Dragonfire Pit — Team builder for three-dragon lines",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Register for Copilot (beta), pick a dragon and star rank, then rate and discuss the lines.",
+      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick a dragon, read community lines and reviews, then build your formation. Copilot is a separate beta chat.",
   },
   appleWebApp: {
     capable: true,

@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { BuildPage } from "../build-page";
+import { Suspense } from "react";
+import { TeamPage } from "../team-page";
 
 export const metadata: Metadata = {
   title: "Team",
   description:
-    "Build a three-dragon line from your pit or the hatchery, then save it.",
+    "Pick a dragon, read community three-dragon lines and reviews, then build your own formation.",
 };
 
 export default function Page() {
-  return <BuildPage />;
+  return (
+    <Suspense
+      fallback={<p className="text-sm text-muted-foreground">Opening team…</p>}
+    >
+      <TeamPage />
+    </Suspense>
+  );
 }

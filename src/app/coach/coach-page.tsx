@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
@@ -167,7 +168,7 @@ export function CoachPage() {
     <AccountGate
       next="/coach"
       title="Copilot (beta) is for registered accounts"
-      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Boards reviews and Talk stay readable without signing in."
+      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team reviews and Talk stay readable without signing in."
     >
     <div className="space-y-3">
       <div>
@@ -177,9 +178,12 @@ export function CoachPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Beta. A local ranker for three-dragon lines — same rules as Suggest,
-          no API. Formations are a starting point, not a guarantee. Copy for
-          ChatGPT includes the current online meta (Malachite / Vhagar /
-          Venator).
+          no API. This is not the team builder.{" "}
+          <Link href="/team" className="text-amber-200 hover:underline">
+            Pick a dragon on Team
+          </Link>{" "}
+          to read community lines and reviews. Copy for ChatGPT includes the
+          current online meta (Malachite / Vhagar / Venator).
         </p>
       </div>
       <MetaCard />
@@ -229,7 +233,7 @@ export function CoachPage() {
               ))
             ) : (
               <p className="rounded-2xl bg-card/40 px-3 py-8 text-center text-sm text-muted-foreground ring-1 ring-foreground/10">
-                Ask for a core, a rally, or a soak. The boards land here.
+                Ask for a core, a rally, or a soak. Ranked lines land here.
               </p>
             )}
           </section>

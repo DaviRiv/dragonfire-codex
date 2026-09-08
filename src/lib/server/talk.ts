@@ -1,3 +1,4 @@
+import { getCatalogDragon } from "@/data/dragons";
 import { randomBytes } from "node:crypto";
 import {
   POST_MAX,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/talk";
 import {
   isTalkCategory,
+  talkLineHasDragon,
   type TalkCategory,
   type TalkLine,
   type TalkReply,
@@ -68,13 +70,25 @@ function toDetail(thread: TalkThreadRecord): TalkThreadDetail {
   };
 }
 
-export async function listThreads(
-  category?: TalkCategory,
-): Promise<TalkThreadSummary[]> {
+export async function listThreads(filter?: {
+  category?: TalkCategory;
+  dragonId?: string;
+}): Promise<TalkThreadSummary[]> {
   const file = await readJsonFile(talkFile(), EMPTY);
-  const rows = category
-    ? file.threads.filter((thread) => thread.category === category)
-    : file.threads;
+  const dragonName = filter?.dragonId
+    ? getCatalogDragon(filter.dragonId)?.name.toLowerCase()
+    : undefined;
+  const rows = file.threads.filter((thread) => {
+    if (filter?.category && thread.category !== filter.category) return false;
+    if (filter?.dragonId) {
+      const onLine = talkLineHasDragon(thread.line, filter.dragonId);
+      const inText = dragonName
+        ? `${thread.title} ${thread.body}`.toLowerCase().includes(dragonName)
+        : false;
+      if (!onLine && !inText) return false;
+    }
+    return true;
+  });
   return [...rows]
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .map(toSummary);
