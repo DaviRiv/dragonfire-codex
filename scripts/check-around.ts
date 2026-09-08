@@ -132,6 +132,17 @@ function checkRhysarionMalachiteVenator(): void {
       `${dragonId} lines must include Rhysarion / Malachite / Venator`,
     );
   }
+  const cavalry = choicesAroundDragon({
+    dragonId: "malachite",
+    stars: 6,
+    troop: "cavalry",
+  });
+  assert(
+    cavalry.some((choice) =>
+      hasIds(choice.line, ["rhysarion", "malachite", "venator"]),
+    ),
+    "Malachite’s default Cavalry view must still list Rhysarion / Venator",
+  );
 }
 
 checkKalspire();

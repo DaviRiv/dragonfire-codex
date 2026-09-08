@@ -289,23 +289,33 @@ export function choicesAroundDragon(opts: {
   const found: AroundChoice[] = [];
   const seen = new Set<string>();
 
-  for (const troop of uniqueTroops(opts.dragonId, opts.troop)) {
+  const affinities = new Set(dragon.affinities);
+  const troops = uniqueTroops(opts.dragonId, opts.troop);
+  const kitByTroop = new Map(
+    troops.map((troop) => [
+      troop,
+      troop === opts.troop || affinities.has(troop)
+        ? kitTeamsAround({
+            dragonId: opts.dragonId,
+            stars,
+            troop,
+            mode,
+          })
+        : [],
+    ]),
+  );
+
+  for (const troop of troops) {
+    const kit = kitByTroop.get(troop) ?? [];
     const lines = [
       ...suggestTeamsAround({
         dragonId: opts.dragonId,
         stars,
         troop,
         mode,
-        limit: troop === opts.troop ? 16 : 4,
+        limit: troop === opts.troop ? 16 : 6,
       }),
-      ...(troop === opts.troop
-        ? kitTeamsAround({
-            dragonId: opts.dragonId,
-            stars,
-            troop,
-            mode,
-          }).slice(0, 8)
-        : []),
+      ...kit.slice(0, troop === opts.troop || affinities.has(troop) ? 8 : 0),
     ];
     for (const line of lines) {
       const key = boardFingerprint(line);
@@ -323,16 +333,12 @@ export function choicesAroundDragon(opts: {
     if (!prev || choice.score > prev.score) best.set(key, choice);
   }
   const ranked = [...best.values()].sort((a, b) => b.score - a.score);
-  const kitKeep = new Set(
-    kitTeamsAround({
-      dragonId: opts.dragonId,
-      stars,
-      troop: opts.troop,
-      mode,
-    })
-      .slice(0, 5)
-      .map((line) => trioKey(line)),
-  );
+  const kitKeep = new Set<string>();
+  for (const troop of troops) {
+    if (troop !== opts.troop && !affinities.has(troop)) continue;
+    const kit = kitByTroop.get(troop) ?? [];
+    for (const line of kit.slice(0, 5)) kitKeep.add(trioKey(line));
+  }
   const kitPinned = ranked.filter((choice) => kitKeep.has(trioKey(choice.line)));
   const rest = ranked.filter((choice) => !kitKeep.has(trioKey(choice.line)));
   const soak = rest.filter((choice) =>
