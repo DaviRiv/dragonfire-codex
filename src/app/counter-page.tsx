@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DragonIcon } from "@/components/dragon-icon";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
-import { StarStepper } from "@/components/star-rank";
 import {
   TeamLineList,
   TeamNotesPanel,
@@ -348,29 +347,37 @@ export function CounterPage() {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-label">They march</p>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap justify-end gap-1">
           <MiniChip active={false} onClick={loadCore}>
             Online DPS core
           </MiniChip>
-          {saved.slice(0, 4).map(({ lineup, board }) =>
-            board ? (
-              <MiniChip
-                key={lineup.id}
-                onClick={() =>
-                  loadBoard(board.left, board.vanguard, board.right, board.troop, {
-                    left: board.leftStars,
-                    vanguard: board.vanguardStars,
-                    right: board.rightStars,
-                  })
-                }
-              >
-                {lineup.name}
-              </MiniChip>
-            ) : null,
-          )}
+          <span className="hidden sm:contents">
+            {saved.slice(0, 4).map(({ lineup, board }) =>
+              board ? (
+                <MiniChip
+                  key={lineup.id}
+                  onClick={() =>
+                    loadBoard(
+                      board.left,
+                      board.vanguard,
+                      board.right,
+                      board.troop,
+                      {
+                        left: board.leftStars,
+                        vanguard: board.vanguardStars,
+                        right: board.rightStars,
+                      },
+                    )
+                  }
+                >
+                  {lineup.name}
+                </MiniChip>
+              ) : null,
+            )}
+          </span>
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
         {SLOT_IDS.map((slot) => {
           const seat = seats[slot];
           const dragon = seat.dragonId ? getCatalogDragon(seat.dragonId) : null;
@@ -379,11 +386,11 @@ export function CounterPage() {
             <div
               key={slot}
               data-enemy-seat={slot}
-              className="relative rounded-xl bg-black/25 p-2 ring-1 ring-foreground/10"
+              className="relative rounded-xl bg-black/25 p-1.5 ring-1 ring-foreground/10 sm:p-2"
             >
               <p className="text-label">{slotShort[slot]}</p>
               {dragon ? (
-                <div className="mt-1 flex items-center gap-2">
+                <div className="mt-1 flex items-center gap-1.5">
                   <DragonIcon
                     dragonId={dragon.id}
                     name={dragon.name}
@@ -393,8 +400,10 @@ export function CounterPage() {
                     selected
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-amber-50">{dragon.name}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">
+                    <p className="truncate text-[13px] text-amber-50 sm:text-sm">
+                      {dragon.name}
+                    </p>
+                    <p className="hidden truncate text-[11px] text-muted-foreground sm:block">
                       {dragon.epithet}
                     </p>
                   </div>
@@ -411,8 +420,8 @@ export function CounterPage() {
                 <div className="relative mt-1">
                   <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    className="h-10 pl-7 text-sm"
-                    placeholder={`Search ${slotShort[slot].toLowerCase()}…`}
+                    className="h-9 pl-7 text-sm sm:h-10"
+                    placeholder={slotShort[slot]}
                     value={open ? query : ""}
                     onChange={(event) => {
                       setQuery(event.target.value);
@@ -458,13 +467,30 @@ export function CounterPage() {
                 </ul>
               ) : null}
               {dragon ? (
-                <div className="mt-1">
-                  <StarStepper
-                    value={seat.stars}
-                    onDelta={(delta) =>
-                      setSeat(slot, { stars: clampStars(seat.stars + delta) })
+                <div className="mt-1 flex items-center justify-center gap-0.5">
+                  <button
+                    type="button"
+                    aria-label={`One less star on ${dragon.name}`}
+                    className="flex size-8 items-center justify-center rounded-md text-sm ring-1 ring-foreground/20 hover:bg-muted"
+                    onClick={() =>
+                      setSeat(slot, { stars: clampStars(seat.stars - 1) })
                     }
-                  />
+                  >
+                    −
+                  </button>
+                  <span className="min-w-8 text-center text-[12px] tabular-nums text-amber-200">
+                    ★{seat.stars}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`One more star on ${dragon.name}`}
+                    className="flex size-8 items-center justify-center rounded-md text-sm ring-1 ring-foreground/20 hover:bg-muted"
+                    onClick={() =>
+                      setSeat(slot, { stars: clampStars(seat.stars + 1) })
+                    }
+                  >
+                    +
+                  </button>
                 </div>
               ) : null}
             </div>
