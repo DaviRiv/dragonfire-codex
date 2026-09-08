@@ -176,7 +176,7 @@ export function analyzeLineup(lineup: Lineup, state: PitState): SynergyReport {
   if (placed.some((p) => hasCompRole(p.dragon, "healing"))) {
     notes.push({
       tone: "good",
-      text: "A healer is in the lineup — Recovery on allies helps PvE tiles and longer fights.",
+      text: "A healer is in the lineup — Recovery on allies helps longer fights.",
     });
   }
 
