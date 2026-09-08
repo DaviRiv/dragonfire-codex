@@ -37,14 +37,10 @@ export type AroundChoice = {
 function uniqueTroops(dragonId: string, preferred: TroopType): TroopType[] {
   const dragon = getCatalogDragon(dragonId);
   const next: TroopType[] = [];
-  for (const troop of [
-    preferred,
-    ...(dragon?.affinities ?? []),
-    ...TROOP_TYPES,
-  ]) {
+  for (const troop of [preferred, ...(dragon?.affinities ?? []), ...TROOP_TYPES]) {
     if (!next.includes(troop)) next.push(troop);
   }
-  return next;
+  return next.slice(0, 4);
 }
 
 function trioKey(line: BoardLine): string {
@@ -298,7 +294,7 @@ export function choicesAroundDragon(opts: {
       stars,
       troop,
       mode,
-      limit: troop === opts.troop ? 18 : 8,
+      limit: troop === opts.troop ? 16 : 4,
     });
     for (const line of lines) {
       const key = boardFingerprint(line);

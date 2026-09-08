@@ -250,8 +250,8 @@ export function suggestTeamsAround(opts: {
     }
   }
 
-  const firstPool = limit > 8 ? 8 : 5;
-  const secondPool = limit > 8 ? 6 : 4;
+  const firstPool = limit > 8 ? 6 : 4;
+  const secondPool = limit > 8 ? 4 : 3;
   for (const slot of slotOrder) {
     if (found.length >= limit) break;
     for (const line of fillPartners({
