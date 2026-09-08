@@ -251,7 +251,6 @@ export function TeamPage() {
                 rarity={dragon.rarity}
                 selected
                 size="sm"
-                stars={stars}
               />
               <div>
                 <p className="text-sm text-amber-50">{dragon.name}</p>

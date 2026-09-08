@@ -396,7 +396,6 @@ export function CounterPage() {
                     name={dragon.name}
                     rarity={dragon.rarity}
                     size="sm"
-                    stars={seat.stars}
                     selected
                   />
                   <div className="min-w-0 flex-1">

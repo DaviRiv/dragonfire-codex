@@ -72,7 +72,6 @@ export function TeamLineList({
                         name={dragon?.name}
                         rarity={dragon?.rarity}
                         size="sm"
-                        stars={showStars ? seatStars : undefined}
                         selected={pinned || owned}
                       />
                       <span className="min-w-0">
@@ -88,11 +87,9 @@ export function TeamLineList({
                           {dragon?.name ?? dragonId}
                         </span>
                         {showStars ? (
-                          pinned ? null : (
-                            <span className="block truncate text-[10px] text-muted-foreground">
-                              Pit ★{seatStars}
-                            </span>
-                          )
+                          <span className="block truncate text-[10px] text-muted-foreground">
+                            {pinned ? `★${seatStars}` : `Pit ★${seatStars}`}
+                          </span>
                         ) : (
                           <span className="block truncate text-[10px] text-muted-foreground">
                             Goal
