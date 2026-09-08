@@ -20,6 +20,10 @@ with HBO, Warner Bros., or the game.
   and a notes thread, like a Yelp page for formations. Anyone can read
   reviews. Signing in is required to generate, rate, or comment. **Seat on
   Team** still saves the line locally in your browser.
+- **Talk** (`/talk`) — a message board for three-dragon lines. Anyone can
+  read. Register to start a thread or reply. Attach a Boards line from
+  **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
+  Gathering.
 - **Team** (`/team`) — formation on the left (or on top on a phone). The full ranked
   list sits beside it on desktop, directly under it on mobile. Tap a lane,
   then pick from the column — every matching dragon is listed, best fit
@@ -66,7 +70,7 @@ with HBO, Warner Bros., or the game.
   **ChatGPT** copies a filled prompt with your pit or the full hatchery.
   Paste it at chatgpt.com — this app never calls an API. Optional note
   (spear rally, skip Vhagar) goes into the same text.
-- **Copilot** — a local ranker for three-dragon lines (account required). Ask for the online
+- **Copilot (beta)** — a local ranker for three-dragon lines (account required). Ask for the online
   DPS meta core, a shield PvP line, or who soaks if Vhagar is busy. The
   boards it picks sit beside the thread. **Seat on Team** saves that
   line. **Copy for ChatGPT** includes the current online meta: Left
@@ -104,9 +108,16 @@ with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: five bottom tabs (Boards, Team,
-Copilot, Pit, Hatchery), then the ranked list on Team. On a wider screen the
+The layout is built for a phone in one hand: six bottom tabs (Boards, Talk,
+Team, Copilot, Pit, Hatchery). Copilot is marked **beta**. On a wider screen the
 Team list is a full column on the right so the formation stays in view.
+
+Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
+Publisher Tag (`gpt.js`) leaderboard under the header, 300×250 rectangles in
+the right rail, an in-feed unit on Talk, and a 320×50 mobile banner above the
+tab bar. Set `NEXT_PUBLIC_GPT_AD_UNIT` (Ad Manager) or
+`NEXT_PUBLIC_ADSENSE_CLIENT` plus slot IDs. With those empty, the same slots
+show labeled house ads so the layout is visible without a publisher account.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** purple, **Fire** red-orange, **Recovery** green,
@@ -146,12 +157,13 @@ with `npm run sync-hub`.
 
 ## ChatGPT and Copilot
 
-Register an account to open Copilot. On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
+Register an account to open **Copilot (beta)**. On Team, open **ChatGPT** to copy or export a filled prompt (dragon names,
 not JSON) and paste it at chatgpt.com. The prompt includes **current
 meta**: online PvP DPS is Left Malachite, Vanguard Vhagar, Right Venator.
 Copilot on `/coach` ranks locally with the same rules as Suggest, and
 seats that core when those names are free. Boards uses the same ranker to
-propose several lines around one dragon and star rank.
+propose several lines around one dragon and star rank. Treat Copilot seats
+as a starting point, not a guarantee.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.

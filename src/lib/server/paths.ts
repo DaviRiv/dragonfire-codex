@@ -12,6 +12,10 @@ export function boardsFile(): string {
   return path.join(dataDir(), "boards.json");
 }
 
+export function talkFile(): string {
+  return path.join(dataDir(), "talk.json");
+}
+
 export function secretFile(): string {
   return path.join(dataDir(), ".auth-secret");
 }

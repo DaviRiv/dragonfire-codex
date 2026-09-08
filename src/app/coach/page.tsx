@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { CoachPage } from "./coach-page";
 
 export const metadata: Metadata = {
-  title: "Copilot",
+  title: "Copilot (beta)",
   description:
-    "Local formation copilot for three-dragon lines from your pit or the hatchery. Copy the same roster into ChatGPT for a longer take.",
+    "Beta local formation copilot for three-dragon lines from your pit or the hatchery. Copy the same roster into ChatGPT for a longer take.",
 };
 
 export default function Page() {

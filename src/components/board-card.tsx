@@ -5,7 +5,8 @@ import Link from "next/link";
 import { FormationBoard } from "@/components/formation-board";
 import { StarVote } from "@/components/star-vote";
 import { accountHref } from "@/components/account-gate";
-import { Button } from "@/components/ui/button";
+import { talkNewHref } from "@/components/talk-line";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { pairingReport } from "@/lib/pairing";
 import { lineupFromBoard, type BoardPublic } from "@/lib/boards";
@@ -15,6 +16,7 @@ import { usePit } from "@/lib/store";
 import { rememberBuild } from "@/lib/build-session";
 import { newId, nowIso } from "@/lib/dragons";
 import { lineupFromAiLine } from "@/lib/ai/coach";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 function formatWhen(iso: string): string {
@@ -108,6 +110,12 @@ export function BoardCard({
         <Button size="sm" onClick={seat}>
           Seat on Team
         </Button>
+        <Link
+          href={talkNewHref(board.id)}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          Discuss in Talk
+        </Link>
         <Button
           size="sm"
           variant="outline"

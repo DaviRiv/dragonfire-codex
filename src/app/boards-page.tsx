@@ -221,6 +221,9 @@ export function BoardsPage() {
                 <Button onClick={() => void askCopilot()} disabled={busy !== "off"}>
                   <Sparkles />
                   {busy === "copilot" ? "Seating lines…" : "Ask Copilot"}
+                  <span className="ml-1 text-[10px] tracking-wide uppercase opacity-80">
+                    Beta
+                  </span>
                 </Button>
               ) : (
                 <Link
@@ -229,6 +232,9 @@ export function BoardsPage() {
                 >
                   <Sparkles />
                   Register to use Copilot
+                  <span className="ml-1 text-[10px] tracking-wide uppercase opacity-80">
+                    Beta
+                  </span>
                 </Link>
               )}
               <Button
@@ -260,7 +266,7 @@ export function BoardsPage() {
           title={user ? "Ask Copilot for lines" : "Reviews stay public"}
           description={
             user
-              ? `Copilot will seat multiple ${troopShort[troop]} ${modeShort[mode]} teams around ${dragon.name} at ★${stars}.`
+              ? `Copilot (beta) will seat multiple ${troopShort[troop]} ${modeShort[mode]} teams around ${dragon.name} at ★${stars}.`
               : "Register to generate new suggestions. You can still open existing reviews for this dragon."
           }
         />

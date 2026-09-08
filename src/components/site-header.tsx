@@ -3,15 +3,26 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { Egg, Flame, Sparkles, Star, Swords, UserRound, Wrench } from "lucide-react";
+import {
+  Egg,
+  Flame,
+  MessagesSquare,
+  Sparkles,
+  Star,
+  Swords,
+  UserRound,
+  Wrench,
+} from "lucide-react";
+import { BetaBadge } from "@/components/beta-badge";
 import { useAuth } from "@/lib/auth";
 import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Boards", icon: Star },
+  { href: "/talk", label: "Talk", icon: MessagesSquare },
   { href: "/team", label: "Team", icon: Swords },
-  { href: "/coach", label: "Copilot", icon: Sparkles },
+  { href: "/coach", label: "Copilot", icon: Sparkles, beta: true },
   { href: "/pit", label: "Pit", icon: Flame },
   { href: "/hatchery", label: "Hatchery", icon: Egg },
 ] as const;
@@ -102,17 +113,18 @@ export function SiteHeader() {
               </span>
             </span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
+                  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
                   isActive(pathname, link.href) && "bg-muted text-foreground",
                 )}
               >
                 {link.label}
+                {"beta" in link && link.beta ? <BetaBadge /> : null}
               </Link>
             ))}
             <Link
@@ -129,7 +141,7 @@ export function SiteHeader() {
             </Suspense>
             <AccountLink />
           </nav>
-          <div className="flex items-center gap-1 md:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
             <Suspense fallback={null}>
               <DevLinks compact />
             </Suspense>
@@ -139,9 +151,9 @@ export function SiteHeader() {
       </header>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-5">
+        <ul className="mx-auto grid max-w-6xl grid-cols-6">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);
@@ -150,11 +162,18 @@ export function SiteHeader() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] text-muted-foreground",
+                    "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] text-muted-foreground",
                     active && "text-amber-100",
                   )}
                 >
-                  <Icon className="size-5" />
+                  <span className="relative">
+                    <Icon className="size-5" />
+                    {"beta" in link && link.beta ? (
+                      <span className="absolute -top-1 -right-5">
+                        <BetaBadge className="h-3.5 px-1 text-[7px]" />
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="max-w-full truncate">{link.label}</span>
                 </Link>
               </li>
