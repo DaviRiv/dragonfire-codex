@@ -101,7 +101,7 @@ export function dragonToCard(
   };
 }
 
-/** Pit = every owned dragon. Hatchery = full catalog. Never drop names for skip-used. */
+/** Owned = every owned dragon. All = full catalog. Never drop names for skip-used. */
 export function collectRoster(
   state: PitState,
   lineup: Lineup,

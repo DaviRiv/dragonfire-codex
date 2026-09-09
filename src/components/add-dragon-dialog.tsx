@@ -34,7 +34,7 @@ export function AddDragonDialog({
             Unlisted dragon
           </DialogTitle>
           <DialogDescription>
-            Catalog names are marked owned in Hatchery. Use this only for a
+            Catalog names are marked owned in the pit. Use this only for a
             dragon Hub does not list yet.
           </DialogDescription>
         </DialogHeader>

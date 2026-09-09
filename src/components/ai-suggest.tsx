@@ -40,7 +40,7 @@ export function ChatGptAsk({
     <Disclosure
       title="ChatGPT"
       badge={
-        pool === "pit" ? `Pit · ${roster.length}` : `Hatchery · ${roster.length}`
+        pool === "pit" ? `Owned · ${roster.length}` : `All · ${roster.length}`
       }
     >
       <p className="text-[13px] leading-snug text-muted-foreground">
@@ -59,13 +59,13 @@ export function ChatGptAsk({
       ) : null}
       <div className="mt-2 flex flex-wrap gap-1">
         <MiniChip active={pool === "pit"} onClick={() => setPool("pit")}>
-          Pit
+          Owned
         </MiniChip>
         <MiniChip
           active={pool === "hatchery"}
           onClick={() => setPool("hatchery")}
         >
-          Hatchery
+          All
         </MiniChip>
       </div>
       <Textarea
@@ -85,8 +85,8 @@ export function ChatGptAsk({
       {roster.length < 3 ? (
         <p className="mt-2 text-[13px] text-muted-foreground">
           {pool === "pit"
-            ? "Log at least three dragons in the pit, or switch to Hatchery."
-            : "Hatchery did not load three dragons."}
+            ? "Log at least three owned dragons, or switch to All."
+            : "The full roster did not load three dragons."}
         </p>
       ) : null}
     </Disclosure>

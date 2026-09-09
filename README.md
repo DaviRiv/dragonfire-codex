@@ -18,7 +18,7 @@ here is affiliated with HBO, Warner Bros., or the game.
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
 - **Team** (`/team`) — pick **one** released dragon and the 1–10★ rank you
-  have. The page does not list the hatchery as a pick column. It builds
+  have. The page does not list the pit as a pick column. It builds
   several complete three-dragon lines around that name. It still prefers a
   healer, a soak, and a damage seat, but it also keeps healer-and-finisher
   lines that skip a Taunt tank — so a march like Rhysarion / Malachite /
@@ -39,7 +39,7 @@ here is affiliated with HBO, Warner Bros., or the game.
   put. **Use this team** saves it. **Tweak seats** opens the saved lineup
   editor. Copilot does not run here.
 - **Counter** (`/counter`) — tap **Left**, **Vanguard**, and **Right** to seat
-  the three dragons you have to beat from one hatchery list (it fills the
+  the three dragons you have to beat from one pit list (it fills the
   page, not a dropdown on each seat). After Left it asks for Vanguard, then
   Right. Set 1–10★ on each name. Troop chips are their march. The page then
   lists complete threes. Tile triangle stays in-game (Cavalry beat Shields,
@@ -55,7 +55,7 @@ here is affiliated with HBO, Warner Bros., or the game.
   name tile advantage, or **Community answer** when the kit is popular but
   loses the tile. When their line has live Recovery, lines that apply Stun,
   Overwhelm, or Prey (glossary text, Hub provides) are ranked up. Dragons
-  in your Hatchery keep their stars; everyone else is a goal. Load **DPS
+  in your pit keep their stars; everyone else is a goal. Load **DPS
   core**, **Moon line**, **Spear core**, or **Cav core**, or a saved lineup.
   Tap a seated name to change it. **Use this team** saves the counter march.
   Copilot does not run here.
@@ -65,10 +65,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   sit beside the thread. **Seat on Team** saves that line. **Copy for
   ChatGPT** includes the current online meta: Left Malachite, Vanguard
   Vhagar, Right Venator as the best PvP DPS lineup.
-- **Pit** — notes and which teams they sit on. Stars live in
-  Hatchery (0★ means you do not have them). Slotting a team never changes
-  stars.
-- **Hatchery** — the full roster. Official portraits from
+- **Pit** (`/pit`) — the full roster. 0★ means you do not own them; slotting
+  a team never changes stars. `/hatchery` redirects here. Official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
   site has them. Kit text, base stats, and star scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
@@ -114,8 +112,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: six bottom tabs (Team, Counter,
-Talk, Copilot, Pit, Hatchery). Copilot is marked **beta**. After you pick a dragon,
+The layout is built for a phone in one hand: five bottom tabs (Team, Counter,
+Talk, Copilot, Pit). Copilot is marked **beta**. After you pick a dragon,
 Team keeps the picker fixed, scrolls only the list of threes, and pins Pros
 and Cons on the right (under the list on a phone).
 

@@ -1,361 +1,296 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
-import { Disclosure } from "@/components/disclosure";
 import { DragonIcon } from "@/components/dragon-icon";
-import { DragonPortrait } from "@/components/dragon-portrait";
-import { DragonProfile } from "@/components/dragon-profile";
-import { EmptyState } from "@/components/empty-state";
-import { ListFilterBar } from "@/components/list-filter-bar";
-import { StarRank } from "@/components/star-rank";
+import { DragonSheet } from "@/components/dragon-sheet";
+import { HabitPickerDialog, HabitSearchButton } from "@/components/habit-picker";
+import { StarRank, StarStepper } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { findDragon, lineupsUsingDragon } from "@/lib/dragons";
-import { breedLabels } from "@/lib/labels";
+import { DRAGONS } from "@/data/dragons";
+import { lineupsUsingDragon } from "@/lib/dragons";
 import { exportPit, isPitState, usePit } from "@/lib/store";
-import type { Breed, OwnedDragon, Rarity, TroopType } from "@/lib/types";
+import type { Dragon } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { Download, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 export function PitPage() {
-  const { ready, state, updateOwned, removeOwned, loadSample, resetPit, importState } =
-    usePit();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [breed, setBreed] = useState<Breed | "all">("all");
-  const [rarity, setRarity] = useState<Rarity | "all">("all");
-  const [troop, setTroop] = useState<TroopType | "all">("all");
-  const [editing, setEditing] = useState<OwnedDragon | null>(null);
+  const {
+    ready,
+    state,
+    setCatalogOwned,
+    setDragonHabits,
+    setDragonHabitRank,
+    updateOwned,
+    loadSample,
+    resetPit,
+    importState,
+  } = usePit();
+  const [inspecting, setInspecting] = useState<Dragon | null>(null);
+  const [habitDragon, setHabitDragon] = useState<Dragon | null>(null);
+  const [unlistedOpen, setUnlistedOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const dragons = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return state.owned
-      .flatMap((owned) => {
-        const d = findDragon(owned.dragonId, state.customDragons);
-        if (!d) return [];
-        if (q && !`${d.name} ${d.epithet} ${d.breed} ${d.affinities.join(" ")}`
-          .toLowerCase()
-          .includes(q)) {
-          return [];
-        }
-        if (breed !== "all" && d.breed !== breed) return [];
-        if (rarity !== "all" && d.rarity !== rarity) return [];
-        if (troop !== "all" && !d.affinities.includes(troop)) return [];
-        return [{ owned, dragon: d }];
-      })
-      .sort(
-        (a, b) =>
-          b.owned.starRank - a.owned.starRank ||
-          a.dragon.name.localeCompare(b.dragon.name),
-      );
-  }, [query, breed, rarity, troop, state.owned, state.customDragons]);
+  const ownedById = useMemo(
+    () => new Map(state.owned.map((row) => [row.dragonId, row] as const)),
+    [state.owned],
+  );
 
   if (!ready) {
     return <p className="text-sm text-muted-foreground">Opening the pit…</p>;
   }
 
+  const inspectingOwned = inspecting
+    ? (ownedById.get(inspecting.id) ?? null)
+    : null;
+  const habitOwned = habitDragon
+    ? (ownedById.get(habitDragon.id) ?? null)
+    : null;
+  const inspectingTeams = inspectingOwned
+    ? lineupsUsingDragon(state, inspectingOwned.id)
+    : [];
+
+  function setStars(dragon: Dragon, starRank: number) {
+    const next = Math.max(0, Math.min(10, Math.round(starRank) || 0));
+    if (next <= 0) {
+      const row = ownedById.get(dragon.id);
+      if (row) {
+        const used = lineupsUsingDragon(state, row.id);
+        if (
+          used.length > 0 &&
+          !window.confirm(
+            `${dragon.name} sits on ${used.length} saved team${used.length === 1 ? "" : "s"}. Clear stars anyway?`,
+          )
+        ) {
+          return;
+        }
+      }
+      setCatalogOwned(dragon.id, { owned: false });
+      return;
+    }
+    setCatalogOwned(dragon.id, { owned: true, starRank: next });
+  }
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h1 className="font-heading text-xl tracking-wide sm:text-3xl">
-            Your pit
-          </h1>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {state.owned.length} owned · notes and teams
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {state.owned.length === 0 ? (
-            <Button variant="secondary" onClick={loadSample}>
-              Sample
-            </Button>
-          ) : null}
-          <Button variant="outline" onClick={() => router.push("/hatchery")}>
-            Hatchery
-          </Button>
-          <Button onClick={() => setOpen(true)}>
-            <Plus data-icon="inline-start" />
-            Unlisted
-          </Button>
-        </div>
-      </div>
-
-      {state.owned.length === 0 ? (
-        <EmptyState
-          title="Nobody in the collection"
-          description="Open Hatchery and set stars on the dragons you hatched. 0★ means you do not have them. Pit is for notes and which teams they sit on."
-          action={
-            <Button onClick={() => router.push("/hatchery")}>
-              Set stars in Hatchery
-            </Button>
-          }
-        />
-      ) : (
-        <div className="rounded-2xl bg-card/70 ring-1 ring-foreground/10">
-          <ListFilterBar
-            query={query}
-            onQueryChange={setQuery}
-            placeholder="Search your pit…"
-            breed={breed}
-            onBreedChange={setBreed}
-            rarity={rarity}
-            onRarityChange={setRarity}
-            troop={troop}
-            onTroopChange={setTroop}
-          />
-          {dragons.length === 0 ? (
-            <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Nothing in your pit matches those filters.
-            </p>
-          ) : (
-            <div className="divide-y divide-border/50">
-              {dragons.map(({ owned, dragon }) => {
-                const used = lineupsUsingDragon(state, owned.id);
-                return (
-                  <button
-                    key={owned.id}
-                    type="button"
-                    onClick={() => setEditing(owned)}
-                    className="flex min-h-14 w-full items-center gap-2.5 overflow-visible px-3 py-2 text-left select-none active:bg-amber-500/15"
-                  >
-                    <DragonIcon
-                      dragonId={dragon.id}
-                      name={dragon.name}
-                      rarity={dragon.rarity}
-                      custom={dragon.custom}
-                      size="md"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="font-heading block truncate text-sm">
-                        {dragon.name}
-                      </span>
-                      <span className="block truncate text-[13px] text-muted-foreground">
-                        ★{owned.starRank}
-                        {used.length
-                          ? ` · ${used.length} team${used.length === 1 ? "" : "s"}`
-                          : ""}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      <Disclosure title="Your data" badge="This browser">
-        <p className="text-sm text-muted-foreground">
-          Export a JSON backup before you clear storage. Nothing is uploaded.
+    <div className="-mx-3 -mt-3 min-h-[calc(100dvh-3rem-env(safe-area-inset-top))] sm:-mx-4 sm:-mt-6 md:min-h-[calc(100dvh-3.5rem)]">
+      <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5">
+        <p className="text-label mr-auto">
+          {state.owned.length} owned
         </p>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
-          <Button variant="outline" onClick={() => exportPit(state)}>
-            <Download data-icon="inline-start" />
-            Export pit
+        {state.owned.length === 0 ? (
+          <Button size="sm" variant="secondary" onClick={loadSample}>
+            Sample
           </Button>
-          <Button variant="outline" onClick={() => fileRef.current?.click()}>
-            <Upload data-icon="inline-start" />
-            Import
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Clear this browser’s pit, lineups, and teams?",
-                )
-              ) {
-                resetPit();
+        ) : null}
+        <Button size="sm" variant="outline" onClick={() => setUnlistedOpen(true)}>
+          <Plus data-icon="inline-start" />
+          Unlisted
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => exportPit(state)}
+        >
+          <Download data-icon="inline-start" />
+          Export
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload data-icon="inline-start" />
+          Import
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => {
+            if (
+              window.confirm("Clear this browser’s pit, lineups, and teams?")
+            ) {
+              resetPit();
+            }
+          }}
+        >
+          Clear
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            try {
+              const parsed: unknown = JSON.parse(await file.text());
+              if (!isPitState(parsed)) {
+                toast.error("That file is not a Dragonfire pit export.");
+                return;
               }
-            }}
-          >
-            Clear pit
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              try {
-                const parsed: unknown = JSON.parse(await file.text());
-                if (!isPitState(parsed)) {
-                  toast.error("That file is not a Dragonfire pit export.");
-                  return;
-                }
-                importState(parsed);
-              } catch {
-                toast.error("Could not read that file.");
-              }
-            }}
-          />
-        </div>
-      </Disclosure>
-
-      <AddDragonDialog open={open} onOpenChange={setOpen} />
-      <EditDragonSheet
-        owned={editing}
+              importState(parsed);
+            } catch {
+              toast.error("Could not read that file.");
+            }
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-x-1 gap-y-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+        {DRAGONS.map((dragon) => {
+          const owned = ownedById.get(dragon.id);
+          const stars = owned?.starRank ?? 0;
+          return (
+            <div
+              key={dragon.id}
+              className="flex flex-col items-center px-0.5 py-1"
+            >
+              <div className="relative mb-1 flex h-5 w-full items-center">
+                <p
+                  className={cn(
+                    "font-heading line-clamp-1 w-full px-6 text-center text-[11px] tracking-wide uppercase sm:text-xs",
+                    stars > 0 ? "text-amber-50" : "text-muted-foreground",
+                  )}
+                >
+                  {dragon.name}
+                </p>
+                <span className="absolute top-1/2 right-0 -translate-y-1/2">
+                  <HabitSearchButton
+                    name={dragon.name}
+                    onClick={() => setHabitDragon(dragon)}
+                  />
+                </span>
+              </div>
+              <DragonIcon
+                dragonId={dragon.id}
+                name={dragon.name}
+                rarity={dragon.rarity}
+                size="2xl"
+                dimmed={stars <= 0}
+                onClick={() => setInspecting(dragon)}
+              />
+              <div className="mt-0.5">
+                <StarStepper
+                  value={stars}
+                  onDelta={(delta) => setStars(dragon, stars + delta)}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <DragonSheet
+        dragon={inspecting}
+        open={!!inspecting}
         onOpenChange={(next) => {
-          if (!next) setEditing(null);
+          if (!next) setInspecting(null);
         }}
-        onSave={(id, patch) => {
-          updateOwned(id, patch);
-          setEditing(null);
+        starRank={inspectingOwned?.starRank}
+        ownedStars={inspectingOwned?.starRank ?? null}
+        ownedHabits={inspectingOwned?.habits}
+        ownedHabitRanks={inspectingOwned?.habitRanks}
+        onHabitRankChange={
+          inspecting
+            ? (habit, rank) => setDragonHabitRank(inspecting.id, habit, rank)
+            : undefined
+        }
+        extra={
+          inspecting ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-label mb-1">Star rank</p>
+                <StarRank
+                  value={inspectingOwned?.starRank ?? 0}
+                  onChange={(starRank) => setStars(inspecting, starRank)}
+                />
+              </div>
+              {inspectingOwned ? (
+                <OwnedNotes
+                  key={inspectingOwned.id}
+                  notes={inspectingOwned.notes}
+                  onSave={(notes) =>
+                    updateOwned(inspectingOwned.id, { notes })
+                  }
+                />
+              ) : null}
+              {inspectingTeams.length > 0 ? (
+                <div>
+                  <p className="text-label mb-1">Teams</p>
+                  <ul className="space-y-1 text-sm">
+                    {inspectingTeams.map((lineup) => (
+                      <li key={lineup.id}>
+                        <Link
+                          href={`/lineups/${lineup.id}`}
+                          className="text-amber-200 underline-offset-2 hover:underline"
+                        >
+                          {lineup.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null
+        }
+      />
+      <HabitPickerDialog
+        dragon={habitDragon}
+        open={!!habitDragon}
+        onOpenChange={(next) => {
+          if (!next) setHabitDragon(null);
         }}
-        onRemove={(id) => {
-          removeOwned(id);
-          setEditing(null);
+        starRank={habitOwned?.starRank ?? 0}
+        selected={habitOwned?.habits ?? []}
+        ranks={habitOwned?.habitRanks}
+        onChange={(habits) => {
+          if (habitDragon) setDragonHabits(habitDragon.id, habits);
+        }}
+        onRankChange={(habit, rank) => {
+          if (habitDragon) setDragonHabitRank(habitDragon.id, habit, rank);
+        }}
+        onStarChange={(next) => {
+          if (habitDragon) setStars(habitDragon, next);
         }}
       />
+      <AddDragonDialog open={unlistedOpen} onOpenChange={setUnlistedOpen} />
     </div>
   );
 }
 
-function EditDragonSheet({
-  owned,
-  onOpenChange,
+function OwnedNotes({
+  notes,
   onSave,
-  onRemove,
 }: {
-  owned: OwnedDragon | null;
-  onOpenChange: (open: boolean) => void;
-  onSave: (
-    id: string,
-    patch: { starRank: number; notes: string },
-  ) => void;
-  onRemove: (id: string) => void;
+  notes: string;
+  onSave: (notes: string) => void;
 }) {
+  const [draft, setDraft] = useState(notes);
   return (
-    <Sheet open={!!owned} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto sm:max-w-md">
-        {owned ? (
-          <EditDragonForm
-            key={owned.id}
-            owned={owned}
-            onSave={onSave}
-            onRemove={onRemove}
-          />
-        ) : null}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function EditDragonForm({
-  owned,
-  onSave,
-  onRemove,
-}: {
-  owned: OwnedDragon;
-  onSave: (
-    id: string,
-    patch: { starRank: number; notes: string },
-  ) => void;
-  onRemove: (id: string) => void;
-}) {
-  const { state, setDragonHabitRank } = usePit();
-  const router = useRouter();
-  const live = state.owned.find((row) => row.id === owned.id) ?? owned;
-  const dragon = findDragon(owned.dragonId, state.customDragons);
-  const [starRank, setStarRank] = useState(owned.starRank);
-  const [notes, setNotes] = useState(owned.notes);
-  const used = lineupsUsingDragon(state, owned.id);
-
-  if (!dragon) return null;
-
-  return (
-    <>
-      <SheetHeader>
-        <SheetTitle className="font-heading tracking-wide">
-          {dragon.name}
-        </SheetTitle>
-        <SheetDescription>{dragon.epithet}</SheetDescription>
-      </SheetHeader>
-      <DragonPortrait
-        dragonId={dragon.id}
-        name={dragon.name}
-        breed={dragon.breed}
-        custom={dragon.custom}
-        className="mx-4 aspect-[4/3] rounded-lg"
-        sizes="400px"
+    <div className="space-y-1.5">
+      <Label htmlFor="pit-notes">Notes</Label>
+      <Textarea
+        id="pit-notes"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        placeholder="Habits you skip, who it pairs with…"
+        className="min-h-20 text-sm"
       />
-      <div className="space-y-4 px-4">
-        <DragonProfile
-          dragon={dragon}
-          starRank={starRank}
-          ownedStars={starRank}
-          ownedHabits={live.habits}
-          ownedHabitRanks={live.habitRanks}
-          onHabitRankChange={(habit, rank) =>
-            setDragonHabitRank(live.dragonId, habit, rank)
-          }
-        />
-        <div className="grid gap-1.5">
-          <Label>Star rank</Label>
-          <StarRank value={starRank} onChange={setStarRank} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Habit priority, relic count, who rides them…"
-          />
-        </div>
-        {used.length > 0 ? (
-          <div className="text-sm">
-            <p className="text-xs tracking-widest text-muted-foreground">
-              TEAMS
-            </p>
-            <ul className="mt-1 space-y-1">
-              {used.map((lineup) => (
-                <li key={lineup.id}>
-                  <button
-                    type="button"
-                    className="text-amber-200 underline-offset-2 hover:underline"
-                    onClick={() => router.push(`/lineups/${lineup.id}`)}
-                  >
-                    {lineup.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-      <SheetFooter className="gap-2">
-        <Button
-          className="w-full"
-          onClick={() => onSave(owned.id, { starRank, notes })}
-        >
-          Save
-        </Button>
-        <Button
-          variant="destructive"
-          className="w-full"
-          onClick={() => onRemove(owned.id)}
-        >
-          Remove from pit
-        </Button>
-      </SheetFooter>
-    </>
+      <Button
+        size="sm"
+        disabled={draft === notes}
+        onClick={() => {
+          onSave(draft);
+          toast.success("Notes saved.");
+        }}
+      >
+        Save notes
+      </Button>
+    </div>
   );
 }

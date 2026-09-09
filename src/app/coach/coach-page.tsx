@@ -139,7 +139,7 @@ export function CoachPage() {
     );
     if (missing && pool === "pit") {
       toast.error(
-        "That combination includes a dragon not in your pit. Switch to Hatchery for theory goals.",
+        "That combination includes a dragon you do not own. Switch to All for theory goals.",
       );
       return;
     }
@@ -189,13 +189,13 @@ export function CoachPage() {
       <MetaCard />
       <div className="flex flex-wrap gap-1">
         <MiniChip active={pool === "pit"} onClick={() => setPool("pit")}>
-          Pit · {state.owned.length}
+          Owned · {state.owned.length}
         </MiniChip>
         <MiniChip
           active={pool === "hatchery"}
           onClick={() => setPool("hatchery")}
         >
-          Hatchery
+          All
         </MiniChip>
       </div>
       <ChatGptExportBar
@@ -207,12 +207,12 @@ export function CoachPage() {
       {pitTooSmall ? (
         <EmptyState
           title="Mark owned dragons first"
-          description="Copilot needs at least three owned names, or switch the pool to Hatchery."
+          description="Copilot needs at least three owned names, or switch the pool to All."
           action={
             <div className="grid w-full max-w-sm gap-2">
               <Button onClick={loadSample}>Load sample pit</Button>
               <Button variant="outline" onClick={() => setPool("hatchery")}>
-                Use Hatchery
+                Use All
               </Button>
             </div>
           }

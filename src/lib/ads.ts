@@ -33,8 +33,8 @@ export const AD_SLOT_META: Record<
   "sidebar-lower": {
     label: "Half page",
     sizes: [[300, 250]],
-    house: "Log stars in Hatchery so Suggest and Copilot (beta) can seat what you actually own.",
-    href: "/hatchery",
+    house: "Log stars in the pit so Suggest and Copilot (beta) can seat what you actually own.",
+    href: "/pit",
   },
   feed: {
     label: "In-content",

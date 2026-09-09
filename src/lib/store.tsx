@@ -568,7 +568,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       const dragon = findDragon(dragonId, current.customDragons);
       if (lineup?.kind === "pit" && !current.owned.some((o) => o.dragonId === dragonId)) {
         toast.error(
-          `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in Hatchery, or switch to Theory.`,
+          `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in the pit, or switch to Theory.`,
         );
         return;
       }
@@ -593,7 +593,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
         if (missing) {
           const dragon = findDragon(missing.dragonId, current.customDragons);
           toast.error(
-            `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in Hatchery, or switch to Theory.`,
+            `${dragon?.name ?? "That dragon"} is not marked owned. Mark them in the pit, or switch to Theory.`,
           );
           return;
         }

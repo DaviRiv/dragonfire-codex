@@ -544,7 +544,7 @@ export function pairingReport(
           detail: withNeedWhy(
             why,
             first.cause === "habit"
-              ? `${row.dragon.name} wants ${need.ability} on this line. Open ${first.dragon.name} in Hatchery and check that habit.`
+              ? `${row.dragon.name} wants ${need.ability} on this line. Open ${first.dragon.name} in the pit and check that habit.`
               : first.ownedStars == null
                 ? `${row.dragon.name} wants ${need.ability}, but ${first.dragon.name} is not in your pit yet.`
                 : `${row.dragon.name} wants ${need.ability} on this line. ${first.dragon.name} brings it at ${first.needStars}★ — you have ${first.ownedStars}★.`,

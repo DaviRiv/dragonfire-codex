@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import {
-  Egg,
   Flame,
   MessagesSquare,
   Sparkles,
@@ -24,7 +23,6 @@ const links = [
   { href: "/talk", label: "Talk", icon: MessagesSquare },
   { href: "/coach", label: "Copilot", icon: Sparkles, beta: true },
   { href: "/pit", label: "Pit", icon: Flame },
-  { href: "/hatchery", label: "Hatchery", icon: Egg },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -153,7 +151,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-6">
+        <ul className="mx-auto grid max-w-6xl grid-cols-5">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);

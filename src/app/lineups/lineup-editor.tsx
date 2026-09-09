@@ -355,7 +355,7 @@ export function LineupEditor({
             </div>
             <p className="text-[13px] leading-snug text-muted-foreground">
               {pitEmpty
-                ? "Mark owned dragons in Hatchery to rank a team."
+                ? "Mark owned dragons in the pit to rank a team."
                 : isTheory
                   ? roleFilter === "all"
                     ? `${suggestions.length} for ${slotShort[selectedSlot].toLowerCase()}. Already slotted are hidden. Unowned rows are goals, not a march.`
@@ -408,7 +408,7 @@ export function LineupEditor({
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={
-                    isTheory ? "Search hatchery…" : "Search your pit…"
+                    isTheory ? "Search the pit…" : "Search your pit…"
                   }
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -449,7 +449,7 @@ export function LineupEditor({
               <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
                 {(
                   [
-                    ["all", "Hatchery"],
+                    ["all", "All dragons"],
                     ["unowned", "Not owned"],
                     ["owned", "Owned"],
                   ] as const
@@ -499,7 +499,7 @@ export function LineupEditor({
               <p className="px-4 py-8 text-center text-sm text-muted-foreground">
                 {isTheory
                   ? roleFilter === "all"
-                    ? "Nothing matches. Try Hatchery, or clear the search."
+                    ? "Nothing matches. Try All dragons, or clear the search."
                     : `No ${roleLabels[roleFilter].toLowerCase()} matches. Try All, or clear the search.`
                   : query.trim() || roleFilter !== "all"
                     ? roleFilter === "all"

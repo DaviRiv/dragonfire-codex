@@ -731,7 +731,7 @@ function CounterPickList({
           <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="h-8 pl-7 text-sm"
-            placeholder="Search hatchery…"
+            placeholder="Search the pit…"
             value={query}
             onChange={(event) => onQuery(event.target.value)}
             onKeyDown={onKey}
@@ -751,7 +751,7 @@ function CounterPickList({
       <ul className="grid min-h-0 flex-1 grid-cols-1 content-start gap-0 overflow-y-auto overscroll-contain sm:grid-cols-2 lg:grid-cols-3">
         {rows.length === 0 ? (
           <li className="px-3 py-4 text-sm text-muted-foreground">
-            No hatchery match.
+            No pit match.
           </li>
         ) : (
           rows.map((row) => {

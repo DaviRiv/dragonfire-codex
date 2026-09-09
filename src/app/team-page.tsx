@@ -212,7 +212,7 @@ export function TeamPage() {
               <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl bg-popover py-1 shadow-lg ring-1 ring-foreground/15">
                 {filtered.length === 0 ? (
                   <li className="px-3 py-2 text-sm text-muted-foreground">
-                    No hatchery match.
+                    No pit match.
                   </li>
                 ) : (
                   filtered.map((row) => (

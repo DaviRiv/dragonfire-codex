@@ -148,7 +148,7 @@ export function DragonProfile({
   starRank?: number;
   /** Pit rank used to warn on star gates. `null` means not owned. */
   ownedStars?: number | null;
-  /** Habits marked bought in Hatchery. Omit to show the full kit. */
+  /** Habits marked bought in the pit. Omit to show the full kit. */
   ownedHabits?: number[];
   /** Upgrade rank 1–5 per habit slot. Omit to show rank 1 percents. */
   ownedHabitRanks?: number[];
@@ -331,7 +331,7 @@ export function DragonProfile({
           Hub power is from star rank — not the in-game Army Power number.
           Heirlooms, stronghold upgrades, and riders are left out; we are not
           going to reverse-engineer those. Stats use Dragonfire-Hub’s catalog
-          plus star multipliers. Stars auto-select habits in Hatchery. Uncheck
+          plus star multipliers. Stars auto-select habits in the pit. Uncheck
           one on the search icon if you have not bought it. Rank diamonds pick
           the habit upgrade so kit percents match what you have. Tap or click a
           named buff for its card; hover works on a computer. Habit upgrade

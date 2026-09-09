@@ -1,5 +1,5 @@
-import { HatcheryPage } from "./hatchery-page";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <HatcheryPage />;
+  redirect("/pit");
 }
