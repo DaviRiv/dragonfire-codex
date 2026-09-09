@@ -1,4 +1,4 @@
-import { ONLINE_DPS_CORE } from "@/data/meta";
+import { CURRENT_META_LINES } from "@/data/meta";
 import { DRAGONS } from "@/data/dragons";
 import { emptyPit, findDragon } from "@/lib/dragons";
 import { isFinisher, isHealer, isTank } from "@/lib/roles";
@@ -342,20 +342,30 @@ function fillKitPairs(opts: {
     .map((row) => row.line);
 }
 
-function metaLine(stars: number, dragonId: string): BoardLine | null {
-  const core = ONLINE_DPS_CORE;
-  const ids = [core.left.id, core.vanguard.id, core.right.id];
-  if (!ids.includes(dragonId)) return null;
-  if (ids.some((id) => !findDragon(id))) return null;
-  return lineFromIds({
-    troop: core.troop,
-    mode: core.mode,
-    pinnedId: dragonId,
-    stars,
-    left: core.left.id,
-    vanguard: core.vanguard.id,
-    right: core.right.id,
-  });
+function metaLines(
+  stars: number,
+  dragonId: string,
+  troop: TroopType,
+  mode: LineupMode,
+): BoardLine[] {
+  const out: BoardLine[] = [];
+  for (const core of CURRENT_META_LINES) {
+    if (core.troop !== troop || core.mode !== mode) continue;
+    const ids = [core.left.id, core.vanguard.id, core.right.id];
+    if (!ids.includes(dragonId)) continue;
+    if (ids.some((id) => !findDragon(id))) continue;
+    const line = lineFromIds({
+      troop: core.troop,
+      mode: core.mode,
+      pinnedId: dragonId,
+      stars,
+      left: core.left.id,
+      vanguard: core.vanguard.id,
+      right: core.right.id,
+    });
+    if (line) out.push(line);
+  }
+  return out;
 }
 
 export function kitTeamsAround(opts: {
@@ -432,8 +442,8 @@ export function suggestTeamsAround(opts: {
     found.push(line);
   }
 
-  if (opts.troop === ONLINE_DPS_CORE.troop) {
-    take(metaLine(stars, opts.dragonId), compCap);
+  for (const line of metaLines(stars, opts.dragonId, opts.troop, opts.mode)) {
+    take(line, compCap);
   }
 
   for (const slot of slotOrder) {

@@ -42,16 +42,23 @@ here is affiliated with HBO, Warner Bros., or the game.
   the three dragons you have to beat from one hatchery list (it fills the
   page, not a dropdown on each seat). After Left it asks for Vanguard, then
   Right. Set 1–10★ on each name. Troop chips are their march. The page then
-  lists complete threes on the troop that wins the tile triangle (Cavalry
-  beat Shields, Shields beat Archers, Archers beat Spears, Spears beat
-  Cavalry; Siege loses to every troop). The list starts from a saved line
-  book (ChatGPT export rules plus Current meta) and never reseats a dragon
-  already on their march. Pros name tile advantage. When their line has
-  live Recovery, lines that apply Stun, Overwhelm, or Prey (glossary text,
-  Hub provides) are ranked up. Dragons in your Hatchery keep their stars;
-  everyone else is a goal. Load the online DPS core (Malachite / Vhagar /
-  Venator on Shields) or a saved lineup. Tap a seated name to change it.
-  **Use this team** saves the counter march. Copilot does not run here.
+  lists complete threes. Tile triangle stays in-game (Cavalry beat Shields,
+  Shields beat Archers, Archers beat Spears, Spears beat Cavalry; Siege
+  loses to every troop) — Archers sit in that triangle. Against a named
+  September 2026 community core, **You** opens on the community answer
+  troop, which is not always the tile winner: Shields (Malachite / Vhagar /
+  Venator **or Moondancer**) into the Syrax / Vaeldra / Caraxes Spearmen
+  core; Cavalry **Seasmoke / Thunderstrike / Sheepstealer** into the
+  Shieldbearer cores; Spearmen into Seasmoke Cavalry. Intel names that
+  community seating and still prints the tile matchup. The list starts from
+  a saved line book and never reseats a dragon already on their march. Pros
+  name tile advantage, or **Community answer** when the kit is popular but
+  loses the tile. When their line has live Recovery, lines that apply Stun,
+  Overwhelm, or Prey (glossary text, Hub provides) are ranked up. Dragons
+  in your Hatchery keep their stars; everyone else is a goal. Load **DPS
+  core**, **Moon line**, **Spear core**, or **Cav core**, or a saved lineup.
+  Tap a seated name to change it. **Use this team** saves the counter march.
+  Copilot does not run here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
   core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
@@ -107,8 +114,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: five bottom tabs (Team, Talk,
-Copilot, Pit, Hatchery). Copilot is marked **beta**. After you pick a dragon,
+The layout is built for a phone in one hand: six bottom tabs (Team, Counter,
+Talk, Copilot, Pit, Hatchery). Copilot is marked **beta**. After you pick a dragon,
 Team keeps the picker fixed, scrolls only the list of threes, and pins Pros
 and Cons on the right (under the list on a phone).
 
@@ -161,9 +168,11 @@ with `npm run sync-hub`.
 Register an account to open **Copilot (beta)**. On a saved lineup, open
 **ChatGPT** to copy a filled prompt (dragon names, not JSON) and paste it
 at chatgpt.com. The prompt includes **current meta**: online PvP DPS is
-Left Malachite, Vanguard Vhagar, Right Venator. Copilot on `/coach` ranks
-locally with the same rules as Suggest, and seats that core when those
-names are free. Team and Counter also list a saved line book
+Left Malachite, Vanguard Vhagar, Right Venator. Popular Shield thirds are
+Moondancer and Rhysarion. Spearmen core is Syrax / Vaeldra / Caraxes.
+Cavalry vs Shields is Seasmoke / Thunderstrike / Sheepstealer. Copilot on
+`/coach` ranks locally with the same rules as Suggest, and seats that DPS
+core when those names are free. Team and Counter also list a saved line book
 (`src/data/line-book.ts`) seated with those same rules. Counter never
 reseats a dragon already on their march. Team is where you pick one dragon
 and choose among the lines built around that name. Treat Copilot seats as

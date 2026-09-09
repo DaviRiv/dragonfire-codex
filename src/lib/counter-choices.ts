@@ -22,7 +22,14 @@ import {
   troopMatchup,
   troopMatchupCopy,
 } from "@/lib/labels";
-import { boardFromBook, bookAgainst } from "@/lib/line-book";
+import {
+  boardFromBook,
+  bookAgainst,
+  communityAnswerNote,
+  communityCounterTroop,
+  communityEnemyTroop,
+  isCommunityCounterSeating,
+} from "@/lib/line-book";
 import { isCrowdControl, isHealer, isTank } from "@/lib/roles";
 import type { Dragon, PitState, TroopType } from "@/lib/types";
 
@@ -110,12 +117,28 @@ function counterNotes(
   line: BoardLine,
   enemy: EnemyLine,
   profile: EnemyProfile,
-): { pros: ChoiceNote[]; cons: ChoiceNote[]; bonus: number } {
+): { pros: ChoiceNote[]; cons: ChoiceNote[]; bonus: number; community: boolean } {
   const pros: ChoiceNote[] = [];
   const cons: ChoiceNote[] = [];
   let bonus = 0;
   const match = troopMatchup(line.troop, enemy.troop);
   const troopTitle = troopMatchupCopy(line.troop, enemy.troop);
+  const community = isCommunityCounterSeating(
+    [line.left, line.vanguard, line.right],
+    [enemy.left, enemy.vanguard, enemy.right],
+  );
+  if (community) {
+    bonus += 100;
+    const detail =
+      communityAnswerNote(
+        [enemy.left, enemy.vanguard, enemy.right],
+        enemy.troop,
+      ) ?? "September 2026 community formation vs this core.";
+    pros.push({
+      title: "Community answer",
+      detail,
+    });
+  }
   if (match === "beats") {
     bonus += 90;
     pros.push({
@@ -127,6 +150,12 @@ function counterNotes(
     cons.push({
       title: troopTitle,
       detail: "Same troop type — kits have to win the fight, not the tile.",
+    });
+  } else if (community) {
+    cons.push({
+      title: troopTitle,
+      detail:
+        "They hold the tile triangle. This line is the community kit answer, not a tile win.",
     });
   } else {
     bonus -= 70;
@@ -167,7 +196,7 @@ function counterNotes(
     }
   }
 
-  return { pros, cons, bonus };
+  return { pros, cons, bonus, community };
 }
 
 function scoreAnchor(dragon: Dragon, troop: TroopType, state: PitState): number {
@@ -247,18 +276,21 @@ function decorate(
     cons.push(note);
     if (cons.length >= 6) break;
   }
+  const matchup = troopMatchup(choice.line.troop, enemy.troop);
   return {
     ...choice,
     score,
     pros,
     cons,
-    matchup: troopMatchup(choice.line.troop, enemy.troop),
+    matchup,
     label:
-      extra.bonus >= 90
-        ? "Troop advantage"
-        : extra.bonus < 0
-          ? "Troop disadvantage"
-          : choice.label,
+      extra.community && matchup !== "beats"
+        ? "Community answer"
+        : matchup === "beats"
+          ? "Troop advantage"
+          : extra.bonus < 0
+            ? "Troop disadvantage"
+            : choice.label,
   };
 }
 
@@ -273,7 +305,12 @@ export function choicesAgainstEnemy(opts: {
     return [];
   }
   if (new Set([enemy.left, enemy.vanguard, enemy.right]).size !== 3) return [];
-  const troop = opts.troop ?? defaultCounterTroop(enemy.troop);
+  const troop =
+    opts.troop ??
+    communityCounterTroop(
+      [enemy.left, enemy.vanguard, enemy.right],
+      enemy.troop,
+    );
   const limit = opts.limit ?? 12;
   const state = opts.state ?? emptyPit();
   const profile = analyzeEnemy(enemy);
@@ -328,9 +365,25 @@ export function choicesAgainstEnemy(opts: {
     const prev = best.get(key);
     if (!prev || choice.score > prev.score) best.set(key, choice);
   }
-  return [...best.values()]
-    .sort((a, b) => b.score - a.score || a.line.name.localeCompare(b.line.name))
-    .slice(0, limit);
+  const ranked = [...best.values()].sort(
+    (a, b) => b.score - a.score || a.line.name.localeCompare(b.line.name),
+  );
+  const enemyIds = [enemy.left, enemy.vanguard, enemy.right];
+  const answers: CounterChoice[] = [];
+  const rest: CounterChoice[] = [];
+  for (const choice of ranked) {
+    if (
+      isCommunityCounterSeating(
+        [choice.line.left, choice.line.vanguard, choice.line.right],
+        enemyIds,
+      )
+    ) {
+      answers.push(choice);
+    } else {
+      rest.push(choice);
+    }
+  }
+  return [...answers, ...rest].slice(0, limit);
 }
 
 export function enemyTroopGuess(ids: (string | null)[]): TroopType | null {
@@ -357,4 +410,17 @@ export function enemyTroopGuess(ids: (string | null)[]): TroopType | null {
     if (dragon?.affinities[0]) return dragon.affinities[0];
   }
   return null;
+}
+
+export function defaultTroopsForEnemy(
+  ids: (string | null)[],
+  fallback: TroopType = "shieldbearers",
+): { theirs: TroopType; ours: TroopType } {
+  const guessed = enemyTroopGuess(ids) ?? fallback;
+  const filled = ids.filter((id): id is string => Boolean(id));
+  if (filled.length === 3 && new Set(filled).size === 3) {
+    const theirs = communityEnemyTroop(filled) ?? guessed;
+    return { theirs, ours: communityCounterTroop(filled, theirs) };
+  }
+  return { theirs: guessed, ours: defaultCounterTroop(guessed) };
 }

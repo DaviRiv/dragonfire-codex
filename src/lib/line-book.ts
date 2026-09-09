@@ -1,7 +1,9 @@
-import { LINE_BOOK, NAMED_CORES, type BookEntry } from "@/data/line-book";
+import { CORE_COUNTER_TROOP, LINE_BOOK, NAMED_CORES, type BookEntry } from "@/data/line-book";
+import { CURRENT_META_LINES } from "@/data/meta";
 import { getCatalogDragon } from "@/data/dragons";
 import type { BoardLine } from "@/lib/boards";
 import type { EnemyLine } from "@/lib/counter";
+import { defaultCounterTroop } from "@/lib/labels";
 import type { LineupMode, TroopType } from "@/lib/types";
 
 export function trioKeyOf(ids: readonly string[]): string {
@@ -9,9 +11,71 @@ export function trioKeyOf(ids: readonly string[]): string {
 }
 
 export function namedCoreOf(ids: readonly string[]): string | null {
+  return namedCoresOf(ids)[0] ?? null;
+}
+
+export function namedCoresOf(ids: readonly string[]): string[] {
   const key = trioKeyOf(ids);
+  const hits: string[] = [];
   for (const [name, seats] of Object.entries(NAMED_CORES)) {
-    if (trioKeyOf(seats) === key) return name;
+    if (trioKeyOf(seats) === key) hits.push(name);
+  }
+  return hits;
+}
+
+export function communityEnemyTroop(ids: readonly string[]): TroopType | null {
+  for (const core of namedCoresOf(ids)) {
+    const line = CURRENT_META_LINES.find((row) => row.id === core);
+    if (line) return line.troop;
+  }
+  return null;
+}
+
+export function communityCounterTroop(
+  ids: readonly string[],
+  enemyTroop: TroopType,
+): TroopType {
+  for (const core of namedCoresOf(ids)) {
+    const troop = CORE_COUNTER_TROOP[core];
+    if (troop) return troop;
+  }
+  return defaultCounterTroop(enemyTroop);
+}
+
+export function isCommunityCounterSeating(
+  seats: readonly [string, string, string],
+  enemyIds: readonly string[],
+): boolean {
+  const cores = namedCoresOf(enemyIds);
+  if (cores.length === 0) return false;
+  return LINE_BOOK.some(
+    (entry) =>
+      entry.left === seats[0] &&
+      entry.vanguard === seats[1] &&
+      entry.right === seats[2] &&
+      cores.some((core) => entry.answers?.includes(core)),
+  );
+}
+
+export function communityAnswerNote(
+  ids: readonly string[],
+  enemyTroop: TroopType,
+): string | null {
+  const cores = namedCoresOf(ids);
+  if (cores.includes("spear-syrax")) {
+    return "Community seats Shields (Malachite / Vhagar / Venator or Moondancer). Archers beat Spearmen on tiles.";
+  }
+  if (cores.some((id) => id.startsWith("shield-") || id === "online-dps")) {
+    return "Community seats Cavalry (Seasmoke / Thunderstrike / Sheepstealer). Cavalry beat Shieldbearers on tiles.";
+  }
+  if (cores.some((id) => id.startsWith("cav-"))) {
+    return "Community seats Spearmen (Syrax / Vaeldra / Caraxes). Spearmen beat Cavalry on tiles.";
+  }
+  if (cores.some((id) => id.startsWith("archer-"))) {
+    return "Community seats Shields into Archers. Shieldbearers beat Archers on tiles.";
+  }
+  if (enemyTroop === "spearmen") {
+    return "Archers beat Spearmen on tiles.";
   }
   return null;
 }
@@ -74,7 +138,7 @@ export function bookAgainst(
   troop: TroopType,
 ): BookEntry[] {
   const enemyIds = [enemy.left, enemy.vanguard, enemy.right];
-  const core = namedCoreOf(enemyIds);
+  const coreHits = namedCoresOf(enemyIds);
   const seen = new Set<string>();
   const out: BookEntry[] = [];
   for (const entry of LINE_BOOK) {
@@ -82,7 +146,7 @@ export function bookAgainst(
     if (sharesAny(entry, enemyIds)) continue;
     const seating = `${entry.left}|${entry.vanguard}|${entry.right}`;
     if (seen.has(seating)) continue;
-    const answersCore = Boolean(core && entry.answers?.includes(core));
+    const answersCore = coreHits.some((core) => entry.answers?.includes(core));
     const beatsTroop = Boolean(entry.beats?.includes(enemy.troop));
     const general =
       entry.kind !== "counter" &&
@@ -93,9 +157,11 @@ export function bookAgainst(
     out.push(entry);
   }
   out.sort((a, b) => {
-    const aHit = Number(Boolean(core && a.answers?.includes(core))) * 2 +
+    const aHit =
+      Number(coreHits.some((core) => a.answers?.includes(core))) * 2 +
       Number(Boolean(a.beats?.includes(enemy.troop)));
-    const bHit = Number(Boolean(core && b.answers?.includes(core))) * 2 +
+    const bHit =
+      Number(coreHits.some((core) => b.answers?.includes(core))) * 2 +
       Number(Boolean(b.beats?.includes(enemy.troop)));
     return bHit - aHit || a.name.localeCompare(b.name);
   });

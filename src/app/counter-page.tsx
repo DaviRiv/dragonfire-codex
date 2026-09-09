@@ -18,10 +18,13 @@ import {
 } from "@/components/team-choice-card";
 import { Input } from "@/components/ui/input";
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
-import { ONLINE_DPS_CORE } from "@/data/meta";
+import { CURRENT_META_LINES } from "@/data/meta";
 import { rememberBuild } from "@/lib/build-session";
 import { boardLineFromLineup } from "@/lib/boards";
-import { choicesAgainstEnemy, enemyTroopGuess } from "@/lib/counter-choices";
+import {
+  choicesAgainstEnemy,
+  defaultTroopsForEnemy,
+} from "@/lib/counter-choices";
 import { analyzeEnemy, enemyLineComplete } from "@/lib/counter";
 import { newId, nowIso } from "@/lib/dragons";
 import {
@@ -32,6 +35,11 @@ import {
   troopShort,
   troopsThatBeat,
 } from "@/lib/labels";
+import {
+  communityAnswerNote,
+  communityCounterTroop,
+  communityEnemyTroop,
+} from "@/lib/line-book";
 import { SLOT_IDS } from "@/lib/lineup";
 import { usePit } from "@/lib/store";
 import type { Dragon, SlotId, TroopType } from "@/lib/types";
@@ -78,27 +86,20 @@ export function CounterPage() {
   const [enemyTroop, setEnemyTroop] = useState<TroopType>(() => {
     const raw = search.get("troop");
     if (raw && TROOP_TYPES.includes(raw as TroopType)) return raw as TroopType;
-    return (
-      enemyTroopGuess([
-        readId(search.get("l")),
-        readId(search.get("v")),
-        readId(search.get("r")),
-      ]) ?? "shieldbearers"
-    );
+    return defaultTroopsForEnemy([
+      readId(search.get("l")),
+      readId(search.get("v")),
+      readId(search.get("r")),
+    ]).theirs;
   });
   const [ourTroop, setOurTroop] = useState<TroopType>(() => {
     const raw = search.get("ours");
     if (raw && TROOP_TYPES.includes(raw as TroopType)) return raw as TroopType;
-    const theirs = search.get("troop");
-    const enemy =
-      theirs && TROOP_TYPES.includes(theirs as TroopType)
-        ? (theirs as TroopType)
-        : (enemyTroopGuess([
-            readId(search.get("l")),
-            readId(search.get("v")),
-            readId(search.get("r")),
-          ]) ?? "shieldbearers");
-    return defaultCounterTroop(enemy);
+    return defaultTroopsForEnemy([
+      readId(search.get("l")),
+      readId(search.get("v")),
+      readId(search.get("r")),
+    ]).ours;
   });
   const [openSlot, setOpenSlot] = useState<SlotId | null>(() => {
     if (!readId(search.get("l"))) return "left";
@@ -251,13 +252,18 @@ export function CounterPage() {
     theirs: TroopType;
     ours: TroopType;
   } {
-    const guessed = enemyTroopGuess([
-      next.left.dragonId,
-      next.vanguard.dragonId,
-      next.right.dragonId,
-    ]);
-    const theirs = guessed ?? enemyTroop;
-    return { theirs, ours: defaultCounterTroop(theirs) };
+    const guessed = defaultTroopsForEnemy(
+      [next.left.dragonId, next.vanguard.dragonId, next.right.dragonId],
+      enemyTroop,
+    );
+    const completeSeats =
+      Boolean(next.left.dragonId) &&
+      Boolean(next.vanguard.dragonId) &&
+      Boolean(next.right.dragonId);
+    if (!completeSeats) {
+      return { theirs: guessed.theirs, ours: ourTroop };
+    }
+    return guessed;
   }
 
   function setSeatStars(slot: SlotId, stars: number) {
@@ -335,19 +341,21 @@ export function CounterPage() {
       vanguard: { dragonId: vanguard, stars: clampStars(stars.vanguard) },
       right: { dragonId: right, stars: clampStars(stars.right) },
     };
-    const ours = defaultCounterTroop(troop);
+    const theirs = communityEnemyTroop([left, vanguard, right]) ?? troop;
+    const ours = communityCounterTroop([left, vanguard, right], theirs);
     setSeats(next);
-    setEnemyTroop(troop);
+    setEnemyTroop(theirs);
     setOurTroop(ours);
     setQuery("");
     setOpenSlot(null);
     setPickedId(null);
     setSeatedId(null);
-    writeQuery(next, troop, ours);
+    writeQuery(next, theirs, ours);
   }
 
-  function loadCore() {
-    const core = ONLINE_DPS_CORE;
+  function loadCore(id: string) {
+    const core = CURRENT_META_LINES.find((line) => line.id === id);
+    if (!core) return;
     loadBoard(core.left.id, core.vanguard.id, core.right.id, core.troop, {
       left: 6,
       vanguard: 6,
@@ -403,6 +411,13 @@ export function CounterPage() {
   const beaters = troopsThatBeat(enemyTroop);
   const recommended = defaultCounterTroop(enemyTroop);
   const compactChip = "min-h-7 px-2 py-0 text-[11px]";
+  const enemyIds = enemy
+    ? [enemy.left, enemy.vanguard, enemy.right]
+    : [];
+  const communityNote =
+    enemy && complete
+      ? communityAnswerNote(enemyIds, enemy.troop)
+      : null;
   const intel = profile
     ? [
         profile.healers.length
@@ -418,6 +433,7 @@ export function CounterPage() {
         .filter(Boolean)
         .join(" · ")
     : "";
+  const intelLine = [intel, communityNote].filter(Boolean).join(". ");
 
   const picker = (
     <section
@@ -425,8 +441,17 @@ export function CounterPage() {
       className="shrink-0 rounded-xl bg-card/60 px-2 py-1.5 ring-1 ring-foreground/10"
     >
       <div className="flex flex-wrap items-center gap-1">
-        <MiniChip className={compactChip} onClick={loadCore}>
+        <MiniChip className={compactChip} onClick={() => loadCore("online-dps")}>
           DPS core
+        </MiniChip>
+        <MiniChip className={compactChip} onClick={() => loadCore("shield-moon")}>
+          Moon line
+        </MiniChip>
+        <MiniChip className={compactChip} onClick={() => loadCore("spear-syrax")}>
+          Spear core
+        </MiniChip>
+        <MiniChip className={compactChip} onClick={() => loadCore("cav-sea")}>
+          Cav core
         </MiniChip>
         <span className="hidden sm:contents">
           {saved.slice(0, 3).map(({ lineup, board }) =>
@@ -574,7 +599,7 @@ export function CounterPage() {
         <p
           className="mt-1 truncate text-[11px] text-muted-foreground"
           data-enemy-intel
-          title={`${intel}. ${troopMatchupCopy(ourTroop, enemyTroop)}${
+          title={`${intelLine}. ${troopMatchupCopy(ourTroop, enemyTroop)}${
             beaters.length > 1 && ourTroop === recommended
               ? ` Also: ${beaters
                   .filter((item) => item !== recommended)
@@ -583,7 +608,7 @@ export function CounterPage() {
               : ""
           }`}
         >
-          {intel}. {troopMatchupCopy(ourTroop, enemyTroop)}
+          {intelLine}. {troopMatchupCopy(ourTroop, enemyTroop)}
         </p>
       ) : null}
     </section>
@@ -650,6 +675,7 @@ export function CounterPage() {
             <TeamNotesPanel
               choice={active}
               seated={pickedId === active?.id}
+              hint={communityNote ?? undefined}
               tweakHref={
                 pickedId === active?.id && seatedId ? `/lineups/${seatedId}` : null
               }

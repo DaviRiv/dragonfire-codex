@@ -2,7 +2,7 @@
  * Counter tab: troop triangle + Recovery answers.
  * Run: npx tsx --tsconfig tsconfig.json scripts/check-counter.ts
  */
-import { choicesAgainstEnemy } from "@/lib/counter-choices";
+import { choicesAgainstEnemy, defaultTroopsForEnemy } from "@/lib/counter-choices";
 import { analyzeEnemy } from "@/lib/counter";
 import { emptyPit } from "@/lib/dragons";
 import {
@@ -10,10 +10,30 @@ import {
   troopMatchup,
   troopsThatBeat,
 } from "@/lib/labels";
-import { assertLineBook } from "@/lib/line-book";
+import {
+  assertLineBook,
+  communityCounterTroop,
+  communityEnemyTroop,
+} from "@/lib/line-book";
 
 function assert(ok: unknown, message: string): asserts ok {
   if (!ok) throw new Error(message);
+}
+
+function seatsOf(line: {
+  left: string;
+  vanguard: string;
+  right: string;
+}): string[] {
+  return [line.left, line.vanguard, line.right];
+}
+
+function hasIds(
+  line: { left: string; vanguard: string; right: string },
+  ids: string[],
+): boolean {
+  const seats = seatsOf(line);
+  return ids.every((id) => seats.includes(id));
 }
 
 assert(
@@ -49,6 +69,39 @@ assert(troopMatchup("siege", "cavalry") === "siege", "siege is always down");
 const bookErrors = assertLineBook();
 assert(bookErrors.length === 0, bookErrors.join("; "));
 
+assert(
+  communityEnemyTroop(["malachite", "venator", "vhagar"]) === "shieldbearers",
+  "online DPS core is Shieldbearers regardless of seat order",
+);
+assert(
+  communityCounterTroop(["malachite", "vhagar", "venator"], "shieldbearers") ===
+    "cavalry",
+  "community answer to the DPS core is Cavalry",
+);
+assert(
+  communityCounterTroop(["malachite", "vhagar", "moondancer"], "shieldbearers") ===
+    "cavalry",
+  "community answer to the Moon line is Cavalry",
+);
+assert(
+  communityCounterTroop(["syrax", "vaeldra", "caraxes"], "spearmen") ===
+    "shieldbearers",
+  "community answer to the Spear core is Shields, not the tile Archers",
+);
+assert(
+  communityCounterTroop(["seasmoke", "thunderstrike", "sheepstealer"], "cavalry") ===
+    "spearmen",
+  "community answer to Seasmoke Cavalry is Spears",
+);
+assert(
+  defaultTroopsForEnemy(["syrax", "vaeldra", "caraxes"]).ours === "shieldbearers",
+  "seating the Spear core opens You on Shields",
+);
+assert(
+  defaultTroopsForEnemy(["malachite", "vhagar", "venator"]).ours === "cavalry",
+  "seating the DPS core opens You on Cavalry",
+);
+
 const shieldsCore = {
   left: "malachite",
   vanguard: "vhagar",
@@ -82,16 +135,20 @@ assert(
 );
 assert(
   cav.every((choice) => {
-    const ids = [choice.line.left, choice.line.vanguard, choice.line.right];
-    return !ids.some((id) =>
-      ["malachite", "vhagar", "venator"].includes(id),
-    );
+    const ids = seatsOf(choice.line);
+    return !ids.some((id) => ["malachite", "vhagar", "venator"].includes(id));
   }),
   "do not seat their dragons on the counter march",
 );
 assert(
+  cav[0].line.left === "seasmoke" &&
+    cav[0].line.vanguard === "thunderstrike" &&
+    cav[0].line.right === "sheepstealer",
+  "Seasmoke / Thunderstrike / Sheepstealer must be first vs the online DPS core",
+);
+assert(
   cav.some((choice) => {
-    const ids = [choice.line.left, choice.line.vanguard, choice.line.right];
+    const ids = seatsOf(choice.line);
     return ids.includes("shimmer") && ids.includes("arulix");
   }),
   "saved Cavalry Overwhelm (Shimmer / Arulix) must be listed vs the online DPS core",
@@ -109,20 +166,90 @@ assert(
   "counter lines must be unique",
 );
 for (const choice of cav) {
-  const ids = [choice.line.left, choice.line.vanguard, choice.line.right];
+  const ids = seatsOf(choice.line);
   assert(new Set(ids).size === 3, `${choice.line.name} must be three names`);
 }
 
+const moonEnemy = {
+  left: "malachite",
+  vanguard: "vhagar",
+  right: "moondancer",
+  leftStars: 6,
+  vanguardStars: 6,
+  rightStars: 6,
+  troop: "shieldbearers" as const,
+};
+const vsMoon = choicesAgainstEnemy({
+  enemy: moonEnemy,
+  troop: "cavalry",
+  state: emptyPit(),
+  limit: 8,
+});
+assert(
+  vsMoon[0].line.left === "seasmoke" &&
+    vsMoon[0].line.vanguard === "thunderstrike" &&
+    vsMoon[0].line.right === "sheepstealer",
+  "Seasmoke core also leads vs Malachite / Vhagar / Moondancer",
+);
+
+const spearCore = {
+  left: "syrax",
+  vanguard: "vaeldra",
+  right: "caraxes",
+  leftStars: 6,
+  vanguardStars: 6,
+  rightStars: 6,
+  troop: "spearmen" as const,
+};
+const shields = choicesAgainstEnemy({
+  enemy: spearCore,
+  troop: "shieldbearers",
+  state: emptyPit(),
+  limit: 12,
+});
+assert(shields.length >= 3, `expected shield counters, got ${shields.length}`);
+assert(
+  shields.every((choice) => choice.line.troop === "shieldbearers"),
+  "community Shields vs Spears stays on Shields",
+);
+assert(
+  shields.every((choice) => !hasIds(choice.line, ["syrax", "vaeldra", "caraxes"])),
+  "do not reseat the Spear core on the counter march",
+);
+assert(
+  shields.some(
+    (choice) =>
+      choice.line.left === "malachite" &&
+      choice.line.vanguard === "vhagar" &&
+      choice.line.right === "venator",
+  ),
+  "Malachite / Vhagar / Venator must be listed vs the Spear core",
+);
+assert(
+  shields.some(
+    (choice) =>
+      choice.line.left === "malachite" &&
+      choice.line.vanguard === "vhagar" &&
+      choice.line.right === "moondancer",
+  ),
+  "Malachite / Vhagar / Moondancer must be listed vs the Spear core",
+);
+assert(
+  shields.some((choice) => choice.label === "Community answer"),
+  "Shields into Spears is a community kit answer, not a tile win",
+);
+
+const cavCore = {
+  left: "seasmoke",
+  vanguard: "thunderstrike",
+  right: "sheepstealer",
+  leftStars: 6,
+  vanguardStars: 6,
+  rightStars: 6,
+  troop: "cavalry" as const,
+};
 const spears = choicesAgainstEnemy({
-  enemy: {
-    left: "syrax",
-    vanguard: "caraxes",
-    right: "vaeldra",
-    leftStars: 5,
-    vanguardStars: 4,
-    rightStars: 4,
-    troop: "cavalry",
-  },
+  enemy: cavCore,
   troop: "spearmen",
   state: emptyPit(),
   limit: 8,
@@ -131,6 +258,24 @@ assert(spears.length >= 4, `expected spear counters, got ${spears.length}`);
 assert(
   spears.every((choice) => choice.line.troop === "spearmen"),
   "counter to Cavalry stays on Spears",
+);
+assert(
+  spears.every((choice) => {
+    const ids = seatsOf(choice.line);
+    return !ids.some((id) =>
+      ["seasmoke", "thunderstrike", "sheepstealer"].includes(id),
+    );
+  }),
+  "do not reseat the Cavalry core on the counter march",
+);
+assert(
+  spears.some(
+    (choice) =>
+      choice.line.left === "syrax" &&
+      choice.line.vanguard === "vaeldra" &&
+      choice.line.right === "caraxes",
+  ),
+  "Syrax / Vaeldra / Caraxes must be listed vs Seasmoke Cavalry",
 );
 assert(
   spears.some((choice) =>

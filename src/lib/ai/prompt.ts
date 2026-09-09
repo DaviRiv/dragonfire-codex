@@ -63,7 +63,7 @@ export function buildRosterBlock(request: SuggestRequest): string {
 Default troop: ${troop} (${request.troop})
 Default mode: ${mode} (${request.mode})
 ${skip}
-Rows tagged meta:online-dps are the current PvP DPS core (Malachite Left, Vhagar Vanguard, Venator Right).
+Rows tagged meta:online-dps are the current PvP Shieldbearer DPS core (Malachite Left, Vhagar Vanguard, Venator Right). Other meta:* tags are September 2026 community cores.
 
 Roster (id | name | jobs | rank | affinities | needs | gives):
 ${request.roster.map((card) => formatRosterLine(card, { compact: true })).join("\n")}`;
