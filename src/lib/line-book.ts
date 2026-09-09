@@ -66,13 +66,13 @@ export function communityAnswerNote(
     return "Community seats Shields (Malachite / Vhagar / Venator or Moondancer). Archers beat Spearmen on tiles.";
   }
   if (cores.some((id) => id.startsWith("shield-") || id === "online-dps")) {
-    return "Community seats Cavalry (Seasmoke / Thunderstrike / Sheepstealer). Cavalry beat Shieldbearers on tiles.";
+    return "Community seats Cavalry (Seasmoke / Thunderstrike / Sheepstealer).";
   }
   if (cores.some((id) => id.startsWith("cav-"))) {
-    return "Community seats Spearmen (Syrax / Vaeldra / Caraxes). Spearmen beat Cavalry on tiles.";
+    return "Community seats Spearmen (Syrax / Vaeldra / Caraxes).";
   }
   if (cores.some((id) => id.startsWith("archer-"))) {
-    return "Community seats Shields into Archers. Shieldbearers beat Archers on tiles.";
+    return "Community seats Shields into Archers.";
   }
   if (enemyTroop === "spearmen") {
     return "Archers beat Spearmen on tiles.";
