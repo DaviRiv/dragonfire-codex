@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function Chip({
@@ -74,12 +74,13 @@ export function MiniChip({
   onClick,
   children,
   className,
+  ...props
 }: {
   active?: boolean;
   onClick?: () => void;
   children: ReactNode;
   className?: string;
-}) {
+} & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="button"
@@ -92,6 +93,7 @@ export function MiniChip({
           : "text-foreground/75 ring-foreground/20 hover:bg-muted",
         className,
       )}
+      {...props}
     >
       {children}
     </button>

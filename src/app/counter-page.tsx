@@ -895,6 +895,7 @@ function CounterPickList({
           <MiniChip
             className={compactChip}
             active={ownedOnly}
+            data-pick-owned
             onClick={() => setOwnedOnly((value) => !value)}
           >
             Owned
@@ -904,6 +905,7 @@ function CounterPickList({
               key={item}
               className={compactChip}
               active={troop === item}
+              data-pick-troop={item}
               onClick={() => setTroop(item)}
             >
               {item === "all" ? "All" : troopShort[item]}
@@ -996,6 +998,7 @@ function PickGrid({
             <button
               type="button"
               data-pick-dragon={row.id}
+              data-pick-troops={row.affinities.join(",")}
               disabled={taken}
               title={
                 taken && takenSlot
