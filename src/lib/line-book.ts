@@ -63,19 +63,19 @@ export function communityAnswerNote(
 ): string | null {
   const cores = namedCoresOf(ids);
   if (cores.includes("spear-syrax")) {
-    return "Community seats Shields (Malachite / Vhagar / Venator or Moondancer). Archers beat Spearmen on tiles.";
+    return "Community seats Shields (Malachite / Vhagar / Venator or Moondancer). Archers beat Spearmen on tiles";
   }
   if (cores.some((id) => id.startsWith("shield-") || id === "online-dps")) {
-    return "Community seats Cavalry (Seasmoke / Thunderstrike / Sheepstealer).";
+    return "Community seats Cavalry (Seasmoke / Thunderstrike / Sheepstealer)";
   }
   if (cores.some((id) => id.startsWith("cav-"))) {
-    return "Community seats Spearmen (Syrax / Vaeldra / Caraxes).";
+    return "Community seats Spearmen (Syrax / Vaeldra / Caraxes)";
   }
   if (cores.some((id) => id.startsWith("archer-"))) {
-    return "Community seats Shields into Archers.";
+    return "Community seats Shields into Archers";
   }
   if (enemyTroop === "spearmen") {
-    return "Archers beat Spearmen on tiles.";
+    return "Archers beat Spearmen on tiles";
   }
   return null;
 }
