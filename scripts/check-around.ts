@@ -43,7 +43,14 @@ function checkKalspire(): void {
     }
   }
   const keys = new Set(six.map((choice) => choice.id));
-  assert(keys.size === six.length, "Kalspire lines must be unique");
+  assert(
+    six.some((choice) =>
+      [choice.line.left, choice.line.vanguard, choice.line.right].includes(
+        "arulix",
+      ),
+    ),
+    "Kalspire cavalry book/kit must still seat Arulix",
+  );
   const panic = six.filter((choice) =>
     choice.pros.some(
       (note) =>

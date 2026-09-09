@@ -1,7 +1,12 @@
 import { DRAGONS, getCatalogDragon } from "@/data/dragons";
 import { STATUS_GLOSSARY } from "@/data/status-glossary";
 import { joinNames } from "@/lib/abilities";
-import { choicesAroundDragon, type AroundChoice, type ChoiceNote } from "@/lib/around-choices";
+import {
+  choicesAroundDragon,
+  evaluateAroundLine,
+  type AroundChoice,
+  type ChoiceNote,
+} from "@/lib/around-choices";
 import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards";
 import {
   CUT_HEAL,
@@ -17,6 +22,7 @@ import {
   troopMatchup,
   troopMatchupCopy,
 } from "@/lib/labels";
+import { boardFromBook, bookAgainst } from "@/lib/line-book";
 import { isCrowdControl, isHealer, isTank } from "@/lib/roles";
 import type { Dragon, PitState, TroopType } from "@/lib/types";
 
@@ -50,7 +56,7 @@ function applySeatStars(
   anchorStars: number,
 ): BoardLine {
   const star = (id: string) =>
-    id === anchorId ? anchorStars : (pitStars(state, id) ?? 1);
+    id === anchorId ? anchorStars : (pitStars(state, id) ?? 6);
   const next: BoardLine = {
     ...line,
     leftStars: star(line.left),
@@ -58,6 +64,36 @@ function applySeatStars(
     rightStars: star(line.right),
   };
   return next;
+}
+
+function stampPitStars(line: BoardLine, state: PitState): BoardLine {
+  const star = (id: string) => pitStars(state, id) ?? 6;
+  return {
+    ...line,
+    leftStars: star(line.left),
+    vanguardStars: star(line.vanguard),
+    rightStars: star(line.right),
+  };
+}
+
+function usesEnemy(line: BoardLine, enemy: EnemyLine): boolean {
+  const taken = new Set([enemy.left, enemy.vanguard, enemy.right]);
+  return [line.left, line.vanguard, line.right].some((id) => taken.has(id));
+}
+
+function pinId(line: BoardLine): string {
+  const ids = [line.right, line.left, line.vanguard];
+  for (const ability of [...CUT_HEAL, ...INTERRUPT_HEAL]) {
+    for (const id of ids) {
+      const dragon = getCatalogDragon(id);
+      if (dragon?.provides?.some((gate) => gate.ability === ability)) return id;
+    }
+  }
+  for (const id of ids) {
+    const dragon = getCatalogDragon(id);
+    if (dragon && isHealer(dragon)) return id;
+  }
+  return line.left;
 }
 
 function ownedCount(line: BoardLine, state: PitState): number {
@@ -151,14 +187,26 @@ function scoreAnchor(dragon: Dragon, troop: TroopType, state: PitState): number 
 function pickAnchors(
   troop: TroopType,
   state: PitState,
-  limit = 4,
+  exclude: Set<string>,
+  limit = 6,
 ): { id: string; stars: number }[] {
-  const ranked = DRAGONS.map((dragon) => ({
-    dragon,
-    score: scoreAnchor(dragon, troop, state),
-    stars: pitStars(state, dragon.id) ?? 6,
-  }))
-    .filter((row) => row.score > 0)
+  const interrupt = new Set(["Stun", "Overwhelm", "Prey"]);
+  const ranked = DRAGONS.map((dragon) => {
+    if (exclude.has(dragon.id)) return null;
+    let score = scoreAnchor(dragon, troop, state);
+    if (dragon.provides?.some((gate) => interrupt.has(gate.ability))) {
+      score += 20;
+    }
+    if (score <= 0) return null;
+    return {
+      dragon,
+      score,
+      stars: pitStars(state, dragon.id) ?? 6,
+    };
+  })
+    .filter((row): row is { dragon: Dragon; score: number; stars: number } =>
+      Boolean(row),
+    )
     .sort(
       (a, b) =>
         b.score - a.score || a.dragon.name.localeCompare(b.dragon.name),
@@ -229,31 +277,47 @@ export function choicesAgainstEnemy(opts: {
   const limit = opts.limit ?? 12;
   const state = opts.state ?? emptyPit();
   const profile = analyzeEnemy(enemy);
+  const exclude = new Set([enemy.left, enemy.vanguard, enemy.right]);
   const found: CounterChoice[] = [];
   const seen = new Set<string>();
 
-  for (const anchor of pickAnchors(troop, state)) {
+  function take(choice: AroundChoice, line: BoardLine, fromBook = false) {
+    if (usesEnemy(line, enemy)) return;
+    const key = seatingKey(line);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const next: AroundChoice = {
+      ...choice,
+      line,
+      id: boardFingerprint(line),
+      lineup: lineupFromBoard({ ...line, id: `counter-${boardFingerprint(line)}` }),
+    };
+    const decorated = decorate(next, enemy, profile, state);
+    if (fromBook) decorated.score += 120;
+    found.push(decorated);
+  }
+
+  for (const entry of bookAgainst(enemy, troop)) {
+    const raw = boardFromBook(entry);
+    if (!raw) continue;
+    const line = stampPitStars(raw, state);
+    const pin = pinId(line);
+    take(evaluateAroundLine(line, pin, starsOn(line, pin), state), line, true);
+  }
+
+  for (const anchor of pickAnchors(troop, state, exclude)) {
     const raw = choicesAroundDragon({
       dragonId: anchor.id,
       stars: anchor.stars,
       troop,
       mode: "pvp",
-      limit: 8,
+      limit: 10,
       state,
       lockTroop: true,
     });
     for (const choice of raw) {
       const line = applySeatStars(choice.line, state, anchor.id, anchor.stars);
-      const key = seatingKey(line);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const next: AroundChoice = {
-        ...choice,
-        line,
-        id: boardFingerprint(line),
-        lineup: lineupFromBoard({ ...line, id: `counter-${boardFingerprint(line)}` }),
-      };
-      found.push(decorate(next, enemy, profile, state));
+      take(choice, line);
     }
   }
 

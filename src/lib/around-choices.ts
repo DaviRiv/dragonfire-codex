@@ -11,6 +11,7 @@ import { boardFingerprint, lineupFromBoard, type BoardLine } from "@/lib/boards"
 import { emptyPit, newOwnedDragon } from "@/lib/dragons";
 import { defaultHabits, dragonKit } from "@/lib/habits";
 import { TROOP_TYPES, breedLabels } from "@/lib/labels";
+import { boardFromBook, bookAround } from "@/lib/line-book";
 import { isTank } from "@/lib/roles";
 import { partnerRules, pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
@@ -276,6 +277,15 @@ function evaluateLine(
   };
 }
 
+export function evaluateAroundLine(
+  line: BoardLine,
+  pinnedId: string,
+  stars: number,
+  state: PitState,
+): AroundChoice {
+  return evaluateLine(line, pinnedId, stars, state);
+}
+
 export function choicesAroundDragon(opts: {
   dragonId: string;
   stars: number;
@@ -294,6 +304,15 @@ export function choicesAroundDragon(opts: {
   const state = opts.state ?? emptyPit();
   const found: AroundChoice[] = [];
   const seen = new Set<string>();
+
+  for (const entry of bookAround(opts.dragonId, opts.troop, mode)) {
+    const line = boardFromBook(entry, { id: opts.dragonId, stars });
+    if (!line) continue;
+    const key = boardFingerprint(line);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    found.push(evaluateLine(line, opts.dragonId, stars, state));
+  }
 
   const affinities = new Set(dragon.affinities);
   const troops = opts.lockTroop
@@ -374,6 +393,10 @@ export function choicesAroundDragon(opts: {
   }
 
   const selectedRoom = Math.max(8, kitRoom - 2);
+  for (const entry of bookAround(opts.dragonId, opts.troop, mode)) {
+    const line = boardFromBook(entry, { id: opts.dragonId, stars });
+    if (line) pinTrio(trioKey(line), selectedRoom);
+  }
   for (const trio of kitTriosFor(opts.troop)) pinTrio(trio, selectedRoom);
   for (const troop of troops) {
     if (troop === opts.troop || !affinities.has(troop)) continue;

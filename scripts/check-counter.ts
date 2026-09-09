@@ -10,6 +10,7 @@ import {
   troopMatchup,
   troopsThatBeat,
 } from "@/lib/labels";
+import { assertLineBook } from "@/lib/line-book";
 
 function assert(ok: unknown, message: string): asserts ok {
   if (!ok) throw new Error(message);
@@ -45,6 +46,9 @@ assert(troopMatchup("cavalry", "cavalry") === "even", "even cav");
 assert(troopMatchup("cavalry", "siege") === "beats", "any troop beats siege");
 assert(troopMatchup("siege", "cavalry") === "siege", "siege is always down");
 
+const bookErrors = assertLineBook();
+assert(bookErrors.length === 0, bookErrors.join("; "));
+
 const shieldsCore = {
   left: "malachite",
   vanguard: "vhagar",
@@ -75,6 +79,22 @@ assert(cav.length >= 6, `expected 6+ cavalry counters, got ${cav.length}`);
 assert(
   cav.every((choice) => choice.line.troop === "cavalry"),
   "lockTroop must keep every counter on Cavalry",
+);
+assert(
+  cav.every((choice) => {
+    const ids = [choice.line.left, choice.line.vanguard, choice.line.right];
+    return !ids.some((id) =>
+      ["malachite", "vhagar", "venator"].includes(id),
+    );
+  }),
+  "do not seat their dragons on the counter march",
+);
+assert(
+  cav.some((choice) => {
+    const ids = [choice.line.left, choice.line.vanguard, choice.line.right];
+    return ids.includes("shimmer") && ids.includes("arulix");
+  }),
+  "saved Cavalry Overwhelm (Shimmer / Arulix) must be listed vs the online DPS core",
 );
 assert(
   cav.some((choice) =>
