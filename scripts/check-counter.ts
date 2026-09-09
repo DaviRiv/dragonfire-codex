@@ -3,8 +3,14 @@
  * Run: npx tsx --tsconfig tsconfig.json scripts/check-counter.ts
  */
 import { choicesAgainstEnemy, defaultTroopsForEnemy } from "@/lib/counter-choices";
+import {
+  dragonPickScore,
+  filterDragonPicks,
+  starsForCounterPick,
+} from "@/lib/counter-pick";
 import { analyzeEnemy } from "@/lib/counter";
 import { emptyPit } from "@/lib/dragons";
+import { DRAGONS } from "@/data/dragons";
 import {
   defaultCounterTroop,
   troopMatchup,
@@ -282,6 +288,61 @@ assert(
     choice.pros.some((note) => note.title.includes("Spearmen beat Cavalry")),
   ),
   "Spears beat Cavalry on tiles",
+);
+
+const malHits = filterDragonPicks(DRAGONS, { query: "mal" });
+assert(malHits[0]?.id === "malachite", `mal should rank Malachite first, got ${malHits[0]?.id}`);
+
+const jadeHits = filterDragonPicks(DRAGONS, { query: "jade" });
+assert(jadeHits[0]?.id === "malachite", "epithet Jade Ward ranks Malachite");
+
+const moonHits = filterDragonPicks(DRAGONS, { query: "moon" });
+assert(moonHits[0]?.id === "moondancer", "moon ranks Moondancer first");
+
+const cavHits = filterDragonPicks(DRAGONS, { query: "cav" });
+assert(cavHits.length > 0, "cav query returns cavalry dragons");
+assert(
+  cavHits.every((row) => row.affinities.includes("cavalry")),
+  "cav query is only cavalry affinities",
+);
+assert(dragonPickScore(cavHits[0], "cav") === 5, "troop query scores below name hits");
+
+const ownedHits = filterDragonPicks(DRAGONS, {
+  query: "",
+  ownedIds: ["syrax", "malachite"],
+});
+assert(
+  ownedHits[0]?.id === "malachite" && ownedHits[1]?.id === "syrax",
+  "empty query lists owned names first, alphabetically",
+);
+
+const ownedOnlyHits = filterDragonPicks(DRAGONS, {
+  query: "v",
+  ownedOnly: true,
+  ownedIds: ["vhagar", "syrax"],
+});
+assert(
+  ownedOnlyHits.length === 1 && ownedOnlyHits[0]?.id === "vhagar",
+  "Owned chip keeps the query inside the pit",
+);
+
+const shieldHits = filterDragonPicks(DRAGONS, {
+  query: "",
+  troop: "shieldbearers",
+});
+assert(
+  shieldHits.length > 0 &&
+    shieldHits.every((row) => row.affinities.includes("shieldbearers")),
+  "Shields chip is only Shieldbearer dragons",
+);
+
+assert(
+  starsForCounterPick("malachite", new Map([["malachite", 5]]), 6) === 5,
+  "picking an owned dragon copies pit stars",
+);
+assert(
+  starsForCounterPick("caraxes", new Map([["malachite", 5]]), 6) === 6,
+  "unowned picks keep the seat fallback stars",
 );
 
 console.log("check-counter ok");

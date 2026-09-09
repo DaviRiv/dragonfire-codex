@@ -41,6 +41,11 @@ import {
   communityEnemyTroop,
 } from "@/lib/line-book";
 import { SLOT_IDS } from "@/lib/lineup";
+import {
+  PICK_TROOP_FILTERS,
+  filterDragonPicks,
+  starsForCounterPick,
+} from "@/lib/counter-pick";
 import { usePit } from "@/lib/store";
 import type { Dragon, SlotId, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -165,23 +170,23 @@ export function CounterPage() {
     () => new Set(state.owned.map((row) => row.dragonId)),
     [state.owned],
   );
+  const ownedStars = useMemo(
+    () => new Map(state.owned.map((row) => [row.dragonId, row.starRank] as const)),
+    [state.owned],
+  );
   const saved = state.lineups
     .map((lineup) => ({ lineup, board: boardLineFromLineup(lineup) }))
     .filter((row) => row.board);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const taken = new Set(
-      SLOT_IDS.filter((slot) => slot !== openSlot)
-        .map((slot) => seats[slot].dragonId)
-        .filter(Boolean),
-    );
-    const pool = DRAGONS.filter((row) => !taken.has(row.id));
-    if (!q) return pool;
-    return pool.filter((row) =>
-      `${row.name} ${row.epithet} ${row.breed}`.toLowerCase().includes(q),
-    );
-  }, [query, seats, openSlot]);
+  const takenBy = useMemo(() => {
+    const map = new Map<string, SlotId>();
+    for (const slot of SLOT_IDS) {
+      if (slot === openSlot) continue;
+      const id = seats[slot].dragonId;
+      if (id) map.set(id, slot);
+    }
+    return map;
+  }, [seats, openSlot]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -280,7 +285,10 @@ export function CounterPage() {
   function pickEnemy(slot: SlotId, dragonId: string) {
     const next = {
       ...seats,
-      [slot]: { ...seats[slot], dragonId },
+      [slot]: {
+        dragonId,
+        stars: starsForCounterPick(dragonId, ownedStars, seats[slot].stars),
+      },
     };
     const { theirs, ours } = troopsFor(next);
     commitSeats(next, theirs, ours);
@@ -513,8 +521,8 @@ export function CounterPage() {
                     name={dragon?.name}
                     rarity={dragon?.rarity}
                     empty={!dragon}
-                    size="xs"
-                    selected={open || Boolean(dragon)}
+                    size="sm"
+                    selected={open}
                   />
                   <span
                     className={cn(
@@ -637,8 +645,14 @@ export function CounterPage() {
           slot={openSlot}
           currentId={seats[openSlot].dragonId}
           query={query}
-          rows={filtered}
+          takenBy={takenBy}
+          ownedStars={ownedStars}
           canCancel={complete}
+          followUp={SLOT_IDS.filter(
+            (item) => item !== openSlot && !seats[item].dragonId,
+          )
+            .map((item) => slotShort[item])
+            .join(", then ")}
           onQuery={setQuery}
           onPick={(id) => pickEnemy(openSlot, id)}
           onCancel={closePicker}
@@ -688,12 +702,41 @@ export function CounterPage() {
   );
 }
 
+const SLOT_MARK: Record<SlotId, string> = {
+  left: "L",
+  vanguard: "V",
+  right: "R",
+};
+
+function pickGridColumns(): number {
+  const el = document.querySelector<HTMLElement>("[data-pick-grid]");
+  if (!el) return 3;
+  const cols = getComputedStyle(el).gridTemplateColumns;
+  const n = cols.split(" ").filter((part) => part.trim()).length;
+  return n > 0 ? n : 3;
+}
+
+function firstOpenIndex(
+  rows: Dragon[],
+  takenBy: Map<string, SlotId>,
+  currentId: string | null,
+): number {
+  const current = currentId
+    ? rows.findIndex((row) => row.id === currentId)
+    : -1;
+  if (current >= 0) return current;
+  const open = rows.findIndex((row) => !takenBy.has(row.id));
+  return open >= 0 ? open : 0;
+}
+
 function CounterPickList({
   slot,
   currentId,
   query,
-  rows,
+  takenBy,
+  ownedStars,
   canCancel,
+  followUp,
   onQuery,
   onPick,
   onCancel,
@@ -701,89 +744,300 @@ function CounterPickList({
   slot: SlotId;
   currentId: string | null;
   query: string;
-  rows: Dragon[];
+  takenBy: Map<string, SlotId>;
+  ownedStars: Map<string, number>;
   canCancel: boolean;
+  followUp: string;
   onQuery: (value: string) => void;
   onPick: (id: string) => void;
   onCancel: () => void;
 }) {
+  const [hi, setHi] = useState(0);
+  const [ownedOnly, setOwnedOnly] = useState(false);
+  const [troop, setTroop] = useState<TroopType | "all">("all");
+  const compactChip = "min-h-7 px-2 py-0 text-[11px]";
+
+  const rows = useMemo(
+    () =>
+      filterDragonPicks(DRAGONS, {
+        query,
+        troop,
+        ownedOnly,
+        ownedIds: ownedStars.keys(),
+      }),
+    [query, troop, ownedOnly, ownedStars],
+  );
+
+  const searching = query.trim().length > 0;
+  const ownedRows =
+    !searching && !ownedOnly
+      ? rows.filter((row) => ownedStars.has(row.id))
+      : [];
+  const restRows = ownedRows.length
+    ? rows.filter((row) => !ownedStars.has(row.id))
+    : rows;
+
+  useEffect(() => {
+    const el = document.getElementById(
+      "counter-pick-search",
+    ) as HTMLInputElement | null;
+    el?.focus();
+    el?.select();
+  }, [slot]);
+
+  useEffect(() => {
+    setHi(
+      firstOpenIndex(rows, takenBy, query.trim() ? null : currentId),
+    );
+  }, [query, troop, ownedOnly, slot, rows, takenBy, currentId]);
+
+  useEffect(() => {
+    if (hi >= rows.length) setHi(0);
+  }, [hi, rows.length]);
+
+  useEffect(() => {
+    const id = rows[hi]?.id;
+    if (!id) return;
+    const el = document.querySelector(`[data-pick-dragon="${id}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [hi, rows]);
+
+  function move(delta: number) {
+    if (rows.length === 0) return;
+    setHi((current) => {
+      let next = current;
+      for (let step = 0; step < rows.length; step++) {
+        next = (next + delta + rows.length) % rows.length;
+        const row = rows[next];
+        if (!row) return current;
+        if (!takenBy.has(row.id) || row.id === currentId) return next;
+      }
+      return current;
+    });
+  }
+
   function onKey(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter" && rows[0]) {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
-      onPick(rows[0].id);
+      move(pickGridColumns());
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      move(-pickGridColumns());
+    } else if (event.key === "Enter" && rows[hi]) {
+      event.preventDefault();
+      const row = rows[hi];
+      if (takenBy.has(row.id) && row.id !== currentId) return;
+      onPick(row.id);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setHi(firstOpenIndex(rows, takenBy, currentId));
+    } else if (event.key === "End") {
+      event.preventDefault();
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const row = rows[i];
+        if (row && (!takenBy.has(row.id) || row.id === currentId)) {
+          setHi(i);
+          return;
+        }
+      }
     } else if (event.key === "Escape" && canCancel) {
       event.preventDefault();
       onCancel();
     }
   }
 
+  const hiId = rows[hi]?.id ?? null;
+  const emptyCopy =
+    ownedOnly && ownedStars.size === 0
+      ? "Nothing in your pit yet. Add stars on Pit, or turn Owned off."
+      : "No dragon matches that search.";
+
   return (
     <section
       data-counter-pick={slot}
       className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10"
     >
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-foreground/10 px-2 py-1.5">
-        <p className="text-label">
-          Enemy {slotShort[slot]}
-          {currentId ? " · change" : ""}
-        </p>
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-8 pl-7 text-sm"
-            placeholder="Search the pit…"
-            value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            onKeyDown={onKey}
-            enterKeyHint="search"
-          />
+      <div className="shrink-0 border-b border-foreground/10 px-2 py-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-label">
+            Pick enemy {slotShort[slot]}
+            {currentId ? " · change" : ""}
+            {followUp ? ` · then ${followUp}` : canCancel ? "" : " · then counters"}
+          </p>
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="counter-pick-search"
+              className="h-9 pl-7 text-sm md:h-8"
+              placeholder="Name, epithet, or troop…"
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
+              onKeyDown={onKey}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              autoFocus
+              enterKeyHint="search"
+              aria-label={`Search dragons for enemy ${slotShort[slot]}`}
+            />
+          </div>
+          {canCancel ? (
+            <button
+              type="button"
+              className="text-[13px] text-amber-200 hover:underline"
+              onClick={onCancel}
+            >
+              Counters
+            </button>
+          ) : null}
         </div>
-        {canCancel ? (
-          <button
-            type="button"
-            className="text-[13px] text-amber-200 hover:underline"
-            onClick={onCancel}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          <MiniChip
+            className={compactChip}
+            active={ownedOnly}
+            onClick={() => setOwnedOnly((value) => !value)}
           >
-            Counters
-          </button>
-        ) : null}
+            Owned
+          </MiniChip>
+          {PICK_TROOP_FILTERS.map((item) => (
+            <MiniChip
+              key={item}
+              className={compactChip}
+              active={troop === item}
+              onClick={() => setTroop(item)}
+            >
+              {item === "all" ? "All" : troopShort[item]}
+            </MiniChip>
+          ))}
+        </div>
       </div>
-      <ul className="grid min-h-0 flex-1 grid-cols-1 content-start gap-0 overflow-y-auto overscroll-contain sm:grid-cols-2 lg:grid-cols-3">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {rows.length === 0 ? (
-          <li className="px-3 py-4 text-sm text-muted-foreground">
-            No pit match.
-          </li>
+          <p className="px-3 py-4 text-sm text-muted-foreground">{emptyCopy}</p>
+        ) : ownedRows.length > 0 ? (
+          <>
+            <p className="text-label px-2 pt-2">In your pit</p>
+            <PickGrid
+              rows={ownedRows}
+              currentId={currentId}
+              takenBy={takenBy}
+              ownedStars={ownedStars}
+              hiId={hiId}
+              onHover={(id) =>
+                setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
+              }
+              onPick={onPick}
+            />
+            {restRows.length > 0 ? (
+              <>
+                <p className="text-label px-2 pt-1">Everyone else</p>
+                <PickGrid
+                  rows={restRows}
+                  currentId={currentId}
+                  takenBy={takenBy}
+                  ownedStars={ownedStars}
+                  hiId={hiId}
+                  onHover={(id) =>
+                    setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
+                  }
+                  onPick={onPick}
+                />
+              </>
+            ) : null}
+          </>
         ) : (
-          rows.map((row) => {
-            const current = row.id === currentId;
-            return (
-              <li key={row.id} className="min-w-0">
-                <button
-                  type="button"
-                  data-pick-dragon={row.id}
-                  onClick={() => onPick(row.id)}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-muted",
-                    current && "bg-amber-500/15",
-                  )}
-                >
-                  <DragonIcon
-                    dragonId={row.id}
-                    name={row.name}
-                    rarity={row.rarity}
-                    size="xs"
-                    selected={current}
-                  />
-                  <span className="min-w-0 truncate text-sm">{row.name}</span>
-                  <span className="ml-auto hidden truncate pl-2 text-[11px] text-muted-foreground sm:block">
-                    {row.epithet}
-                  </span>
-                </button>
-              </li>
-            );
-          })
+          <PickGrid
+            rows={rows}
+            currentId={currentId}
+            takenBy={takenBy}
+            ownedStars={ownedStars}
+            hiId={hiId}
+            onHover={(id) =>
+              setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
+            }
+            onPick={onPick}
+          />
         )}
-      </ul>
+      </div>
     </section>
+  );
+}
+
+function PickGrid({
+  rows,
+  currentId,
+  takenBy,
+  ownedStars,
+  hiId,
+  onHover,
+  onPick,
+}: {
+  rows: Dragon[];
+  currentId: string | null;
+  takenBy: Map<string, SlotId>;
+  ownedStars: Map<string, number>;
+  hiId: string | null;
+  onHover: (id: string) => void;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <ul
+      data-pick-grid
+      className="grid grid-cols-3 content-start gap-1 p-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8"
+    >
+      {rows.map((row) => {
+        const takenSlot = takenBy.get(row.id);
+        const taken = Boolean(takenSlot) && row.id !== currentId;
+        const current = row.id === currentId;
+        const hi = row.id === hiId;
+        const stars = ownedStars.get(row.id);
+        return (
+          <li key={row.id} className="min-w-0">
+            <button
+              type="button"
+              data-pick-dragon={row.id}
+              disabled={taken}
+              title={
+                taken && takenSlot
+                  ? `${row.name} is already ${slotShort[takenSlot]}`
+                  : `${row.name} — ${row.epithet}`
+              }
+              aria-current={current ? "true" : undefined}
+              onMouseEnter={() => onHover(row.id)}
+              onClick={() => onPick(row.id)}
+              className={cn(
+                "relative flex w-full flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center",
+                current && "bg-amber-500/15 ring-1 ring-amber-300",
+                hi && !current && "bg-muted ring-1 ring-foreground/15",
+                taken && "cursor-not-allowed opacity-35",
+                !taken && !current && "hover:bg-muted",
+              )}
+            >
+              {taken && takenSlot ? (
+                <span className="absolute top-1 right-1 rounded bg-background/80 px-1 text-[9px] font-medium tracking-wide text-muted-foreground">
+                  {SLOT_MARK[takenSlot]}
+                </span>
+              ) : null}
+              <DragonIcon
+                dragonId={row.id}
+                name={row.name}
+                rarity={row.rarity}
+                size="md"
+                selected={current}
+                dimmed={taken}
+              />
+              <span className="w-full truncate text-[11px] leading-tight">
+                {row.name}
+              </span>
+              <span className="text-[10px] tabular-nums text-muted-foreground">
+                {stars != null
+                  ? `★${stars}`
+                  : troopShort[row.affinities[0] ?? "cavalry"]}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -39,10 +39,13 @@ here is affiliated with HBO, Warner Bros., or the game.
   put. **Use this team** saves it. **Tweak seats** opens the saved lineup
   editor. Copilot does not run here.
 - **Counter** (`/counter`) — tap **Left**, **Vanguard**, and **Right** to seat
-  the three dragons you have to beat from one pit list (it fills the
-  page, not a dropdown on each seat). After Left it asks for Vanguard, then
-  Right. Set 1–10★ on each name. Troop chips are their march. The page then
-  lists complete threes. Tile triangle stays in-game (Cavalry beat Shields,
+  the three dragons you have to beat. The picker is a portrait grid (not a
+  dropdown): search by name, epithet, or troop, with **Owned** first and
+  troop chips to narrow the list. After Left it asks for Vanguard, then
+  Right. Dragons already on the other seats stay visible but greyed. Owned
+  names copy their pit stars. Set 1–10★ on each name. Troop chips under the
+  seats are their march. The page then lists complete threes. Tile triangle
+  stays in-game (Cavalry beat Shields,
   Shields beat Archers, Archers beat Spears, Spears beat Cavalry; Siege
   loses to every troop) — Archers sit in that triangle. Against a named
   September 2026 community core, **You** opens on the community answer
