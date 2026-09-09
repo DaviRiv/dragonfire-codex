@@ -868,7 +868,7 @@ function CounterPickList({
             <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="counter-pick-search"
-              className="h-9 pl-7 text-sm md:h-8"
+              className="h-9 pl-8 text-sm md:h-8 md:pl-8"
               placeholder="Name, epithet, or troop…"
               value={query}
               onChange={(event) => onQuery(event.target.value)}
@@ -1017,7 +1017,7 @@ function PickGrid({
               )}
             >
               {taken && takenSlot ? (
-                <span className="absolute top-1 right-1 rounded bg-background/80 px-1 text-[9px] font-medium tracking-wide text-muted-foreground">
+                <span className="absolute top-0.5 right-0.5 rounded-sm bg-background px-1 text-[9px] font-semibold tracking-wide text-muted-foreground ring-1 ring-foreground/15">
                   {SLOT_MARK[takenSlot]}
                 </span>
               ) : null}
