@@ -38,16 +38,19 @@ here is affiliated with HBO, Warner Bros., or the game.
   to read **Pros** and **Cons** on the right; the rest of the page stays
   put. **Use this team** saves it. **Tweak seats** opens the saved lineup
   editor. Copilot does not run here.
-- **Counter** (`/counter`) — seat the **three** dragons you have to beat and
-  the 1–10★ rank on each. Troop chips are their march. The page then lists
-  complete threes on the troop that wins the tile triangle (Cavalry beat
-  Shields, Shields beat Archers, Archers beat Spears, Spears beat Cavalry;
-  Siege loses to every troop). Pros name that advantage. When their line has
-  live Recovery, lines that apply Stun, Overwhelm, or Prey (glossary text,
-  Hub provides) are ranked up. Dragons in your Hatchery keep their stars;
-  everyone else is a goal. Load the online DPS core (Malachite / Vhagar /
-  Venator on Shields) or a saved lineup. **Use this team** saves the counter
-  march. Copilot does not run here.
+- **Counter** (`/counter`) — tap **Left**, **Vanguard**, and **Right** to seat
+  the three dragons you have to beat from one hatchery list (it fills the
+  page, not a dropdown on each seat). After Left it asks for Vanguard, then
+  Right. Set 1–10★ on each name. Troop chips are their march. The page then
+  lists complete threes on the troop that wins the tile triangle (Cavalry
+  beat Shields, Shields beat Archers, Archers beat Spears, Spears beat
+  Cavalry; Siege loses to every troop). Pros name that advantage. When their
+  line has live Recovery, lines that apply Stun, Overwhelm, or Prey
+  (glossary text, Hub provides) are ranked up. Dragons in your Hatchery keep
+  their stars; everyone else is a goal. Load the online DPS core (Malachite /
+  Vhagar / Venator on Shields) or a saved lineup. Tap a seated name to
+  change it. **Use this team** saves the counter march. Copilot does not run
+  here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
   core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
