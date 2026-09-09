@@ -26,7 +26,7 @@ import { ArrowDown, ArrowUp, Lock, Share2 } from "lucide-react";
 import { RankPip } from "@/components/rank-pips";
 
 const PERSIST_NOTE =
-  "Habit upgrades, Breedmarks, and Rarity Cores persist between Reigns.";
+  "Habit upgrades, Breedmarks, and Rarity Cores persist when a campaign resets.";
 
 export function StatusName({
   name,

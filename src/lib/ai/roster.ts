@@ -155,7 +155,7 @@ export function formatRosterLine(
   const theory = card.owned ? "" : " | not-owned";
   const meta = metaTagFor(card.id);
   if (opts?.compact) {
-    return `${card.id} | ${card.name} | ${jobs} | ${card.stars}★/R${card.reign} | aff:${card.aff} | needs:${card.needs} | gives:${card.gives}${on}${theory}${meta}`;
+    return `${card.id} | ${card.name} | ${jobs} | ${card.stars}★ | aff:${card.aff} | needs:${card.needs} | gives:${card.gives}${on}${theory}${meta}`;
   }
-  return `${card.id} | ${card.name} | ${card.breed} | ${jobs} | ${card.stars}★/R${card.reign} | aff:${card.aff} | flank:${card.flank} | needs:${card.needs} | gives:${card.gives} | ${card.kit}${on}${theory}${meta}`;
+  return `${card.id} | ${card.name} | ${card.breed} | ${jobs} | ${card.stars}★ | aff:${card.aff} | flank:${card.flank} | needs:${card.needs} | gives:${card.gives} | ${card.kit}${on}${theory}${meta}`;
 }

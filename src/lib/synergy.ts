@@ -201,10 +201,7 @@ export function summarizeLineup(lineup: Lineup, state: PitState): string {
       const p = placed.find((x) => x.slot === slot);
       const letter = slot === "left" ? "L" : slot === "right" ? "R" : "V";
       if (!p) return `${letter}: empty`;
-      const lvl =
-        lineup.kind === "theory" || lineup.ignoreLevel
-          ? `★${p.starRank}`
-          : `★${p.starRank} R${p.reignLevel}`;
+      const lvl = `★${p.starRank}`;
       return `${letter}: ${p.dragon.name} ${lvl}`;
     })
     .join(" · ");

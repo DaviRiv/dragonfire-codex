@@ -517,7 +517,6 @@ export function LineupEditor({
                         slottedHere(suggestion.dragon.id) === selectedSlot
                       }
                       kind={active.kind}
-                      ignoreLevel={active.ignoreLevel}
                       rank={index + 1}
                       onPick={() => pick(suggestion.dragon.id)}
                       onInspect={() => setInspecting(suggestion.dragon)}
@@ -566,15 +565,6 @@ export function LineupEditor({
                 ? active.craftStars
                 : (state.owned.find((row) => row.dragonId === inspecting.id)
                     ?.starRank ?? 1))
-            : 1
-        }
-        reignLevel={
-          inspecting
-            ? (["left", "vanguard", "right"] as SlotId[])
-                .map((slot) => resolveSlot(active, state, slot))
-                .find((row) => row?.dragon.id === inspecting.id)?.reignLevel ??
-              (state.owned.find((row) => row.dragonId === inspecting.id)
-                ?.reignLevel ?? 1)
             : 1
         }
         ownedStars={

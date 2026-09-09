@@ -31,7 +31,6 @@ import {
 import {
   dragonPower,
   formatPower,
-  hubLevel,
   scaledStats,
   troopCount,
 } from "@/lib/scale-stats";
@@ -138,7 +137,6 @@ export function DragonProfile({
   dragon,
   highlightTroop,
   starRank = 1,
-  reignLevel = 1,
   ownedStars,
   ownedHabits,
   ownedHabitRanks,
@@ -148,7 +146,6 @@ export function DragonProfile({
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
   starRank?: number;
-  reignLevel?: number;
   /** Pit rank used to warn on star gates. `null` means not owned. */
   ownedStars?: number | null;
   /** Habits marked bought in Hatchery. Omit to show the full kit. */
@@ -160,12 +157,11 @@ export function DragonProfile({
 }) {
   const kit = dragonKit(dragon, ownedHabitRanks);
   const heals = healingAbilities(dragon, ownedHabitRanks);
-  const stats = scaledStats(dragon, starRank, reignLevel);
+  const stats = scaledStats(dragon, starRank);
   const liveMods = coreStatMods(synergyBuffs);
-  const troops = troopCount(dragon.rarity, starRank, reignLevel);
-  const power = dragonPower(dragon.rarity, starRank, reignLevel);
+  const troops = troopCount(dragon.rarity, starRank);
+  const power = dragonPower(dragon.rarity, starRank);
   const qualifyStars = ownedStars === undefined ? starRank : ownedStars;
-  const level = hubLevel(reignLevel);
   const vanguard = kit.extras.find((extra) => extra.title === "Vanguard");
   const habitExtras = kit.extras.filter((extra) => extra.unlockStars != null);
   return (
@@ -313,7 +309,7 @@ export function DragonProfile({
       })}
       <div>
         <p className="text-label mb-2">
-          Stats · ★{starRank} · Reign {reignLevel}
+          Stats · ★{starRank}
         </p>
         <StatGrid stats={stats} mods={liveMods} />
         {synergyBuffs.length > 0 ? (
@@ -332,16 +328,14 @@ export function DragonProfile({
           <p className="text-right tabular-nums">{formatPower(power)}</p>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Hub power is stars + reign only — not the in-game Army Power number.
+          Hub power is from star rank — not the in-game Army Power number.
           Heirlooms, stronghold upgrades, and riders are left out; we are not
-          going to reverse-engineer those. Stats use Dragonfire-Hub’s level
-          table
-          {level < reignLevel ? ` (capped at ${level})` : ""} plus star
-          multipliers.           Stars auto-select habits in Hatchery. Uncheck one on
-          the search icon if you have not bought it. Rank diamonds pick the
-          habit upgrade so kit percents match what you have. Tap or click a named
-          buff for its card; hover works on a computer. Habit upgrade Power is
-          not in the catalog.
+          going to reverse-engineer those. Stats use Dragonfire-Hub’s catalog
+          plus star multipliers. Stars auto-select habits in Hatchery. Uncheck
+          one on the search icon if you have not bought it. Rank diamonds pick
+          the habit upgrade so kit percents match what you have. Tap or click a
+          named buff for its card; hover works on a computer. Habit upgrade
+          Power is not in the catalog.
         </p>
       </div>
     </div>

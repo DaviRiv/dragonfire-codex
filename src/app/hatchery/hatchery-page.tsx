@@ -108,7 +108,6 @@ export function HatcheryPage() {
           if (!next) setInspecting(null);
         }}
         starRank={inspectingOwned?.starRank}
-        reignLevel={inspectingOwned?.reignLevel}
         ownedStars={inspectingOwned?.starRank ?? null}
         ownedHabits={inspectingOwned?.habits}
         ownedHabitRanks={inspectingOwned?.habitRanks}

@@ -76,9 +76,6 @@ export function DragonCard({
           </p>
           <div className="mt-3 flex items-center justify-between gap-2">
             <StarRank value={owned.starRank} size="sm" />
-            <span className="text-xs text-muted-foreground">
-              Reign {owned.reignLevel}
-            </span>
           </div>
           <AffinityBadges
             affinities={dragon.affinities}

@@ -166,11 +166,6 @@ function SlotButton({
         {dragon?.name ?? (pickable ? "Tap to pick" : "—")}
         {resolved ? ` · ★${resolved.starRank}` : ""}
       </span>
-      {resolved && lineup.kind === "pit" && !lineup.ignoreLevel ? (
-        <span className="text-xs text-amber-100/85">
-          Reign {resolved.reignLevel}
-        </span>
-      ) : null}
       {live[0] ? (
         <span className="max-w-full truncate rounded-full px-1.5 py-px text-[10px] tracking-wide text-emerald-100 ring-1 ring-emerald-400/45">
           {live[0].ability}

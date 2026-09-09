@@ -59,7 +59,6 @@ function CustomDragonForm({
     breed: Breed;
     affinities: TroopType[];
     starRank: number;
-    reignLevel: number;
   }) => void;
 }) {
   const [name, setName] = useState("");
@@ -68,7 +67,6 @@ function CustomDragonForm({
   const [breed, setBreed] = useState<Breed>("champion");
   const [affinities, setAffinities] = useState<TroopType[]>([]);
   const [starRank, setStarRank] = useState(1);
-  const [reignLevel, setReignLevel] = useState(1);
 
   function toggleTroop(troop: TroopType) {
     setAffinities((prev) =>
@@ -88,7 +86,6 @@ function CustomDragonForm({
           breed,
           affinities,
           starRank,
-          reignLevel,
         });
       }}
     >
@@ -155,29 +152,16 @@ function CustomDragonForm({
           ))}
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-1.5">
-          <Label htmlFor="stars">Star rank (1–10)</Label>
-          <Input
-            id="stars"
-            type="number"
-            min={1}
-            max={10}
-            value={starRank}
-            onChange={(event) => setStarRank(Number(event.target.value))}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="reign">Reign level</Label>
-          <Input
-            id="reign"
-            type="number"
-            min={1}
-            max={80}
-            value={reignLevel}
-            onChange={(event) => setReignLevel(Number(event.target.value))}
-          />
-        </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="stars">Star rank (1–10)</Label>
+        <Input
+          id="stars"
+          type="number"
+          min={1}
+          max={10}
+          value={starRank}
+          onChange={(event) => setStarRank(Number(event.target.value))}
+        />
       </div>
       <DialogFooter>
         <Button type="submit">Save unlisted</Button>

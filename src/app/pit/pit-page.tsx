@@ -11,7 +11,6 @@ import { EmptyState } from "@/components/empty-state";
 import { ListFilterBar } from "@/components/list-filter-bar";
 import { StarRank } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -60,7 +59,6 @@ export function PitPage() {
       .sort(
         (a, b) =>
           b.owned.starRank - a.owned.starRank ||
-          b.owned.reignLevel - a.owned.reignLevel ||
           a.dragon.name.localeCompare(b.dragon.name),
       );
   }, [query, breed, rarity, troop, state.owned, state.customDragons]);
@@ -77,7 +75,7 @@ export function PitPage() {
             Your pit
           </h1>
           <p className="mt-0.5 text-[13px] text-muted-foreground">
-            {state.owned.length} owned · reign, notes, and teams
+            {state.owned.length} owned · notes and teams
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -99,7 +97,7 @@ export function PitPage() {
       {state.owned.length === 0 ? (
         <EmptyState
           title="Nobody in the collection"
-          description="Open Hatchery and set stars on the dragons you hatched. 0★ means you do not have them. Pit is for reign, notes, and which teams they sit on."
+          description="Open Hatchery and set stars on the dragons you hatched. 0★ means you do not have them. Pit is for notes and which teams they sit on."
           action={
             <Button onClick={() => router.push("/hatchery")}>
               Set stars in Hatchery
@@ -146,7 +144,7 @@ export function PitPage() {
                         {dragon.name}
                       </span>
                       <span className="block truncate text-[13px] text-muted-foreground">
-                        ★{owned.starRank} · Reign {owned.reignLevel}
+                        ★{owned.starRank}
                         {used.length
                           ? ` · ${used.length} team${used.length === 1 ? "" : "s"}`
                           : ""}
@@ -240,7 +238,7 @@ function EditDragonSheet({
   onOpenChange: (open: boolean) => void;
   onSave: (
     id: string,
-    patch: { starRank: number; reignLevel: number; notes: string },
+    patch: { starRank: number; notes: string },
   ) => void;
   onRemove: (id: string) => void;
 }) {
@@ -268,7 +266,7 @@ function EditDragonForm({
   owned: OwnedDragon;
   onSave: (
     id: string,
-    patch: { starRank: number; reignLevel: number; notes: string },
+    patch: { starRank: number; notes: string },
   ) => void;
   onRemove: (id: string) => void;
 }) {
@@ -277,7 +275,6 @@ function EditDragonForm({
   const live = state.owned.find((row) => row.id === owned.id) ?? owned;
   const dragon = findDragon(owned.dragonId, state.customDragons);
   const [starRank, setStarRank] = useState(owned.starRank);
-  const [reignLevel, setReignLevel] = useState(owned.reignLevel);
   const [notes, setNotes] = useState(owned.notes);
   const used = lineupsUsingDragon(state, owned.id);
 
@@ -303,7 +300,6 @@ function EditDragonForm({
         <DragonProfile
           dragon={dragon}
           starRank={starRank}
-          reignLevel={reignLevel}
           ownedStars={starRank}
           ownedHabits={live.habits}
           ownedHabitRanks={live.habitRanks}
@@ -314,17 +310,6 @@ function EditDragonForm({
         <div className="grid gap-1.5">
           <Label>Star rank</Label>
           <StarRank value={starRank} onChange={setStarRank} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="reign-edit">Reign level</Label>
-          <Input
-            id="reign-edit"
-            type="number"
-            min={1}
-            max={80}
-            value={reignLevel}
-            onChange={(e) => setReignLevel(Number(e.target.value))}
-          />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="notes">Notes</Label>
@@ -359,7 +344,7 @@ function EditDragonForm({
       <SheetFooter className="gap-2">
         <Button
           className="w-full"
-          onClick={() => onSave(owned.id, { starRank, reignLevel, notes })}
+          onClick={() => onSave(owned.id, { starRank, notes })}
         >
           Save
         </Button>

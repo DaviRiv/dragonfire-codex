@@ -65,12 +65,12 @@ here is affiliated with HBO, Warner Bros., or the game.
   sit beside the thread. **Seat on Team** saves that line. **Copy for
   ChatGPT** includes the current online meta: Left Malachite, Vanguard
   Vhagar, Right Venator as the best PvP DPS lineup.
-- **Pit** — reign, notes, and which teams they sit on. Stars live in
+- **Pit** — notes and which teams they sit on. Stars live in
   Hatchery (0★ means you do not have them). Slotting a team never changes
   stars.
 - **Hatchery** — the full roster. Official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
-  site has them. Kit text, base stats, and star/reign scaling are pulled
+  site has them. Kit text, base stats, and star scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
   stars: yellow (1★ each), then red from the left (2★ each). 10★ is five
   red. 0★ means you do not own them. Use − / + to set rank. The
@@ -105,8 +105,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   dragons you own. **Next army** opens a new pit team from leftovers.
   Theory can still slot unowned dragons — those rows are goals, not a
   march. Ability text, stats-by-level, troop counts, and Hub power come
-  from [Dragonfire-Hub](https://dragonfire-hub.com/). Hub power is stars
-  + reign only. **Why this team** splits pros (green) and cons (red).
+  from [Dragonfire-Hub](https://dragonfire-hub.com/). Hub power is from
+  star rank. **Why this team** splits pros (green) and cons (red).
   **ChatGPT** copies a filled prompt. Paste it at chatgpt.com — this app
   never calls an API.
 - **Dev** — personal metadata catalog, hidden unless you open

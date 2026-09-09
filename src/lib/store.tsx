@@ -70,7 +70,7 @@ type PitContextValue = {
     breed: Breed;
     affinities: TroopType[];
     starRank: number;
-    reignLevel: number;
+    reignLevel?: number;
   }) => OwnedDragon | null;
   updateOwned: (
     id: string,
@@ -304,7 +304,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       breed: Breed;
       affinities: TroopType[];
       starRank: number;
-      reignLevel: number;
+      reignLevel?: number;
     }): OwnedDragon | null => {
       const name = input.name.trim();
       if (!name) {
@@ -345,7 +345,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
         released: true,
         custom: true,
       };
-      const owned = newOwnedDragon(id, input.starRank, input.reignLevel);
+      const owned = newOwnedDragon(id, input.starRank, input.reignLevel ?? 1);
       commit((prev) => ({
         ...prev,
         customDragons: [...prev.customDragons, dragon],

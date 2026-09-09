@@ -26,7 +26,6 @@ export function SuggestTile({
   onInspect,
   onSaveNotes,
   kind,
-  ignoreLevel,
   rank,
   slot,
   showAbilities,
@@ -37,12 +36,11 @@ export function SuggestTile({
   onInspect: () => void;
   onSaveNotes?: (ownedId: string, notes: string) => void;
   kind?: "pit" | "theory";
-  ignoreLevel?: boolean;
   rank?: number;
   slot?: SlotId;
   showAbilities?: boolean;
 }) {
-  const { dragon, owned, reasons, starRank, reignLevel } = suggestion;
+  const { dragon, owned, reasons, starRank } = suggestion;
   const notesId = owned?.id ?? dragon.id;
   const storedNotes = owned?.notes ?? "";
   const [draft, setDraft] = useState({ id: notesId, notes: storedNotes });
@@ -57,9 +55,7 @@ export function SuggestTile({
       ? owned
         ? `Aim ★${starRank}`
         : `★${starRank}`
-      : ignoreLevel
-        ? `★${starRank}`
-        : `★${starRank} · R${reignLevel}`;
+      : `★${starRank}`;
 
   const ownedStars = owned?.starRank ?? null;
   const notesDirty = owned ? notes !== storedNotes : false;
@@ -309,7 +305,7 @@ export function SuggestTile({
           <div>
             <p className="text-label">Stats</p>
             <StatGrid
-              stats={scaledStats(dragon, starRank, reignLevel)}
+              stats={scaledStats(dragon, starRank)}
               compact
               className="mt-2"
             />

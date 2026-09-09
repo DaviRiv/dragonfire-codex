@@ -157,13 +157,8 @@ export function clearDragonFromSlots(
   return next;
 }
 
-export function formatInvestment(
-  starRank: number,
-  reignLevel: number,
-  opts?: { ignoreLevel?: boolean; kind?: LineupKind },
-): string {
-  if (opts?.kind === "theory" || opts?.ignoreLevel) return `★${starRank}`;
-  return `★${starRank} · R${reignLevel}`;
+export function formatInvestment(starRank: number): string {
+  return `★${starRank}`;
 }
 
 export function skipsUsedDragons(lineup: Lineup): boolean {
