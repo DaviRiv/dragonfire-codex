@@ -3,11 +3,14 @@ import { cn } from "@/lib/utils";
 
 export function EmptyState({
   title,
+  titleAs: Title = "p",
   description,
   action,
   className,
 }: {
   title: string;
+  /** Use a heading when this empty state stands in for the whole page. */
+  titleAs?: "p" | "h1" | "h2";
   description: string;
   action?: ReactNode;
   className?: string;
@@ -19,7 +22,9 @@ export function EmptyState({
         className,
       )}
     >
-      <p className="font-heading text-lg tracking-wide text-foreground">{title}</p>
+      <Title className="font-heading text-lg tracking-wide text-foreground">
+        {title}
+      </Title>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>

@@ -86,6 +86,7 @@ export function PitPage() {
 
   return (
     <div className="-mx-3 -mt-3 min-h-[calc(100dvh-3rem-env(safe-area-inset-top))] sm:-mx-4 sm:-mt-6 md:min-h-[calc(100dvh-3.5rem)]">
+      <h1 className="sr-only">Your pit</h1>
       <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5">
         <p className="text-label mr-auto">
           {state.owned.length} owned

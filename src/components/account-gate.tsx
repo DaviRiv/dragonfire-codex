@@ -29,6 +29,7 @@ export function AccountGate({
     return (
       <EmptyState
         title={title}
+        titleAs="h1"
         description={description}
         action={
           <div className="grid w-full max-w-sm gap-2">

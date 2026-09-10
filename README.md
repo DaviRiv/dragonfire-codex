@@ -75,12 +75,26 @@ here is affiliated with HBO, Warner Bros., or the game.
   Copilot does not run here.
 - **Copilot (beta)** (`/coach`) — a local ranker for three-dragon lines
   (account required), separate from Team. Ask for the online DPS meta
-  core, a shield PvP line, or who soaks if Vhagar is busy. Ranked seats
-  sit beside the thread. **Seat on Team** saves that line. **Copy for
-  ChatGPT** includes the current online meta: Left Malachite, Vanguard
-  Vhagar, Right Venator as the best PvP DPS lineup.
-- **Pit** (`/pit`) — the full roster. 0★ means you do not own them; slotting
-  a team never changes stars. `/hatchery` redirects here. Official portraits from
+  core, a shield PvP line, or who soaks if Vhagar is busy. It is a
+  **conversation**, not one question at a time: it carries the troop, the
+  mode, and everyone you asked it to leave out from turn to turn, so
+  “what if I use cavalry?”, “replace Vhagar”, “give me another one
+  without Malachite”, “which of those is strongest?”, “why?”, and “now
+  build one for PvE” each build on the last answer. Every question keeps
+  its own answer slot, so sending several in a row cannot cross the wires.
+  Each answer prints the line as a board — **Left**, **Vanguard** (the
+  seat that soaks), **Right**, then **Why** — and **Seat on Team** saves it.
+  The thread survives a reload; **New chat** clears it. A failed answer
+  says so in plain words and offers **Retry** rather than spinning. Copilot
+  reads your pit at the moment it answers, so a star you just changed
+  counts. **Copy for ChatGPT** includes the current online meta: Left
+  Malachite, Vanguard Vhagar, Right Venator as the best PvP DPS lineup.
+- **Pit** (`/pit`) — the full roster, including any **Unlisted** dragon you
+  added. 0★ means you do not own them; slotting
+  a team never changes stars. Tap a portrait to open the kit; owned dragons
+  also get an **In your pit** block with the star rank, troop affinities,
+  and jobs the ranker reads, an editable **reign level** (1–80), and the
+  saved teams that dragon already sits on. `/hatchery` redirects here. Official portraits from
   [gotdragonfire.com/dragons](https://gotdragonfire.com/dragons/) when the
   site has them. Kit text, base stats, and star scaling are pulled
   from [dragonfire-hub.com](https://dragonfire-hub.com/). One row of five
@@ -192,3 +206,19 @@ a starting point, not a guarantee.
 
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.
+
+There is **no AI API key anywhere in this project**, and nothing to put in
+one. Copilot ranks on your own machine with the same rules as Suggest, so
+no roster ever leaves the browser. The only secret the app uses is
+`AUTH_SECRET`, which signs session cookies; it is read server-side only
+(`src/lib/server/secret.ts`), is never prefixed `NEXT_PUBLIC_`, and falls
+back to a generated `data/.auth-secret` written with mode 600.
+
+## Checks
+
+```bash
+npm run check      # every rules and conversation check
+npm run check:coach # Copilot thread memory, context window, persistence
+npx tsc --noEmit
+npm run build
+```

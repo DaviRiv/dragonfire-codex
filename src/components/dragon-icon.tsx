@@ -90,6 +90,7 @@ export function DragonIcon({
         <button
           type="button"
           onClick={onClick}
+          aria-label={name ?? "Dragon"}
           className={cn(faceClass, "border-0 p-0 select-none")}
         >
           {face}

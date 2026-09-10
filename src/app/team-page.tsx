@@ -503,6 +503,9 @@ export function TeamPage() {
       data-team-page
       className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden"
     >
+      {/* The workspace shows its state instead of a title, but the page
+          still needs one heading for screen readers and search. */}
+      <h1 className="sr-only">Team builder</h1>
       {pickerBar}
 
       {picking && openSlot ? (
