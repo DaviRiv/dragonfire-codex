@@ -635,7 +635,7 @@ export function CounterPage() {
           className="inline-flex items-center gap-1 text-[13px] text-amber-200 hover:underline"
         >
           <Swords className="size-3.5" />
-          Around one dragon
+          Team
         </Link>
       </div>
 

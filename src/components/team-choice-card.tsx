@@ -12,6 +12,7 @@ import { CheckCircle2, TriangleAlert } from "lucide-react";
 export function TeamLineList({
   choices,
   pinnedId,
+  pinnedIds,
   ownedIds,
   activeId,
   seated,
@@ -20,6 +21,7 @@ export function TeamLineList({
 }: {
   choices: AroundChoice[];
   pinnedId?: string | null;
+  pinnedIds?: Set<string>;
   ownedIds?: Set<string>;
   activeId: string | null;
   seated?: boolean;
@@ -56,7 +58,10 @@ export function TeamLineList({
                 {SLOT_IDS.map((slot) => {
                   const dragonId = choice.line[slot];
                   const dragon = getCatalogDragon(dragonId);
-                  const pinned = Boolean(pinnedId && dragonId === pinnedId);
+                  const pinned = Boolean(
+                    pinnedIds?.has(dragonId) ||
+                      (pinnedId && dragonId === pinnedId),
+                  );
                   const owned = Boolean(ownedIds?.has(dragonId));
                   const seatStars =
                     slot === "left"

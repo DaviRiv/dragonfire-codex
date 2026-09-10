@@ -15,7 +15,7 @@ import { boardFromBook, bookAround } from "@/lib/line-book";
 import { isTank } from "@/lib/roles";
 import { partnerRules, pairingReport, type PairingNote } from "@/lib/pairing";
 import { analyzeLineup, type SynergyNote, type SynergyReport } from "@/lib/synergy";
-import type { Dragon, Lineup, LineupMode, PitState, TroopType } from "@/lib/types";
+import type { Dragon, Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/types";
 
 export type ChoiceNote = {
   title: string;
@@ -201,52 +201,60 @@ function dedupeNotes(notes: ChoiceNote[]): ChoiceNote[] {
   return next;
 }
 
-function overlayPinned(
-  pinnedId: string,
-  stars: number,
+export type SeatLock = { dragonId: string; stars: number };
+
+function overlayPins(
+  pins: { id: string; stars: number }[],
   state: PitState,
 ): PitState {
-  const prev = state.owned.find((row) => row.dragonId === pinnedId);
-  const owned = state.owned.filter((row) => row.dragonId !== pinnedId);
-  owned.push(
-    newOwnedDragon(
-      pinnedId,
-      stars,
-      prev?.reignLevel ?? 1,
-      defaultHabits(stars),
-      prev?.habitRanks,
-    ),
-  );
+  let owned = state.owned;
+  for (const pin of pins) {
+    const prev = owned.find((row) => row.dragonId === pin.id);
+    owned = owned.filter((row) => row.dragonId !== pin.id);
+    owned.push(
+      newOwnedDragon(
+        pin.id,
+        pin.stars,
+        prev?.reignLevel ?? 1,
+        defaultHabits(pin.stars),
+        prev?.habitRanks,
+      ),
+    );
+  }
   return { ...state, owned };
 }
 
-function evaluateLine(
+function evaluatePinnedLine(
   line: BoardLine,
-  pinnedId: string,
-  stars: number,
+  pins: { id: string; stars: number }[],
   state: PitState,
 ): AroundChoice {
-  const pinned = getCatalogDragon(pinnedId);
+  const pinIds = new Set(pins.map((pin) => pin.id));
   const lineup = lineupFromBoard({
     ...line,
     id: `around-${boardFingerprint(line)}`,
   });
-  const ranked = overlayPinned(pinnedId, stars, state);
+  const ranked = overlayPins(pins, state);
   const pairing = pairingReport(lineup, ranked);
   const synergy = analyzeLineup(lineup, ranked);
-  const kit = pinned ? kitNotesFor(pinnedId, stars) : [];
+  const kit = pins.flatMap((pin) => kitNotesFor(pin.id, pin.stars));
   const goals = seatsOf(line)
-    .filter((id) => id !== pinnedId)
+    .filter((id) => !pinIds.has(id))
     .flatMap((id) =>
-      pinned ? partnerGoalNotes(id, pinned, stars, ranked) : [],
+      pins.flatMap((pin) => {
+        const pinned = getCatalogDragon(pin.id);
+        return pinned ? partnerGoalNotes(id, pinned, pin.stars, ranked) : [];
+      }),
     );
+  const pinNames = pins
+    .map((pin) => getCatalogDragon(pin.id)?.name)
+    .filter((name): name is string => Boolean(name));
   const pairingPros = fromPairing(pairing.pros);
   const pairingCons = fromPairing(pairing.cons).filter((note) => {
-    if (!pinned) return true;
-    if (note.title.startsWith(`${pinned.name} has `) && note.title.includes(" at ")) {
-      return false;
-    }
-    return true;
+    return !pinNames.some(
+      (name) =>
+        note.title.startsWith(`${name} has `) && note.title.includes(" at "),
+    );
   });
   const pros = dedupeNotes([
     ...kit,
@@ -274,6 +282,67 @@ function evaluateLine(
     synergy,
     pros,
     cons,
+  };
+}
+
+function evaluateLine(
+  line: BoardLine,
+  pinnedId: string,
+  stars: number,
+  state: PitState,
+): AroundChoice {
+  return evaluatePinnedLine(line, [{ id: pinnedId, stars }], state);
+}
+
+function lineMatchesLocks(
+  line: BoardLine,
+  locks: { slot: SlotId; id: string; stars: number }[],
+): boolean {
+  return locks.every((lock) => line[lock.slot] === lock.id);
+}
+
+function withLockStars(
+  line: BoardLine,
+  locks: { slot: SlotId; id: string; stars: number }[],
+  state: PitState,
+): BoardLine {
+  const bySlot = new Map(locks.map((lock) => [lock.slot, lock] as const));
+  function star(slot: SlotId, id: string): number {
+    const lock = bySlot.get(slot);
+    if (lock) return lock.stars;
+    return pitRank(state, id) ?? 1;
+  }
+  return {
+    ...line,
+    leftStars: star("left", line.left),
+    vanguardStars: star("vanguard", line.vanguard),
+    rightStars: star("right", line.right),
+  };
+}
+
+function boardFromLocks(
+  locks: { slot: SlotId; id: string; stars: number }[],
+  troop: TroopType,
+): BoardLine | null {
+  const bySlot = new Map(locks.map((lock) => [lock.slot, lock] as const));
+  const left = bySlot.get("left");
+  const vanguard = bySlot.get("vanguard");
+  const right = bySlot.get("right");
+  if (!left || !vanguard || !right) return null;
+  const ids = [left.id, vanguard.id, right.id];
+  if (new Set(ids).size !== 3) return null;
+  const names = ids.map((id) => getCatalogDragon(id)?.name ?? id);
+  return {
+    name: names.join(" · "),
+    why: "",
+    troop,
+    mode: "pvp",
+    left: left.id,
+    vanguard: vanguard.id,
+    right: right.id,
+    leftStars: left.stars,
+    vanguardStars: vanguard.stars,
+    rightStars: right.stars,
   };
 }
 
@@ -437,6 +506,64 @@ export function choicesAroundDragon(opts: {
     if (mixed.length >= limit) break;
   }
   return mixed.sort((a, b) => b.score - a.score);
+}
+
+export function choicesAroundSeats(opts: {
+  seats: Partial<Record<SlotId, SeatLock | null | undefined>>;
+  troop: TroopType;
+  mode?: LineupMode;
+  limit?: number;
+  state?: PitState;
+}): AroundChoice[] {
+  const locks = (["left", "vanguard", "right"] as const)
+    .map((slot) => {
+      const seat = opts.seats[slot];
+      if (!seat?.dragonId) return null;
+      return {
+        slot,
+        id: seat.dragonId,
+        stars: Math.min(10, Math.max(1, Math.round(seat.stars) || 1)),
+      };
+    })
+    .filter((row): row is { slot: SlotId; id: string; stars: number } =>
+      Boolean(row),
+    );
+  if (locks.length === 0) return [];
+  const limit = opts.limit ?? 16;
+  const mode = opts.mode ?? "pvp";
+  const state = opts.state ?? emptyPit();
+  const pins = locks.map((lock) => ({ id: lock.id, stars: lock.stars }));
+  const seen = new Set<string>();
+  const found: AroundChoice[] = [];
+
+  function take(line: BoardLine, bonus = 0) {
+    if (!lineMatchesLocks(line, locks)) return;
+    const next = withLockStars(line, locks, state);
+    const key = seatingKey(next);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const choice = evaluatePinnedLine(next, pins, state);
+    found.push(bonus ? { ...choice, score: choice.score + bonus } : choice);
+  }
+
+  for (const lock of locks) {
+    for (const choice of choicesAroundDragon({
+      dragonId: lock.id,
+      stars: lock.stars,
+      troop: opts.troop,
+      mode,
+      state,
+      limit,
+    })) {
+      take(choice.line);
+    }
+  }
+
+  const exact = boardFromLocks(locks, opts.troop);
+  if (exact) take(exact, 80);
+
+  found.sort((a, b) => b.score - a.score);
+  return found.slice(0, limit);
 }
 
 export function seatStars(line: BoardLine, dragonId: string): number | null {

@@ -1,9 +1,9 @@
 # Dragonfire Pit
 
 Unofficial fan tool for **Game of Thrones: Dragonfire**. Log the dragons you
-hatched, then pick a three-dragon team. **Team** is the main table: pick the
-one dragon you want to build around, then choose among complete lines the
-builder seats for that name. **Copilot** is a separate beta chat. Nothing
+hatched, then pick a three-dragon team. **Team** seats Left, Vanguard, and
+Right one name at a time; the list of complete lines updates as you add
+them. **Copilot** is a separate beta chat. Nothing
 here is affiliated with HBO, Warner Bros., or the game.
 
 ## What you can do
@@ -17,11 +17,14 @@ here is affiliated with HBO, Warner Bros., or the game.
   read. Register to start a thread or reply. Attach a reviewed line from
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
-- **Team** (`/team`) — pick **one** released dragon from the same portrait
-  grid as Counter (owned first; search by name, epithet, or troop). Tap the
-  seated name to change it. The 1–10★ stepper applies only to that dragon.
-  Owned picks copy their pit stars. The page then lists complete
-  three-dragon lines around that name. It still prefers a healer, a soak,
+- **Team** (`/team`) — tap **Left**, **Vanguard**, or **Right** and pick from
+  the same portrait grid as Counter (owned first; search by name, epithet,
+  or troop). You can start on any seat. After each name the page lists
+  complete threes that keep those dragons in those seats. Tap an empty seat
+  to lock the next one; the list narrows. Dragons already on the other
+  seats stay visible but greyed. Owned picks copy their pit stars. The
+  1–10★ stepper on a seat applies only to that dragon; other names are
+  hypothetical goals unless they are in your pit. It still prefers a healer, a soak,
   and a damage seat, but it also keeps healer-and-finisher
   lines that skip a Taunt tank — so a march like Rhysarion / Malachite /
   Venator is listed when you build around any of those three. Champion Recovery

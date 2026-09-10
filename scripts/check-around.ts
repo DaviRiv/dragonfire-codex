@@ -2,7 +2,7 @@
  * Team builder: several complete lines around one dragon.
  * Run: npx tsx --tsconfig tsconfig.json scripts/check-around.ts
  */
-import { choicesAroundDragon, seatStars } from "@/lib/around-choices";
+import { choicesAroundDragon, choicesAroundSeats, seatStars } from "@/lib/around-choices";
 import { boardHasDragon } from "@/lib/boards";
 import { STATUS_GLOSSARY } from "@/data/status-glossary";
 
@@ -178,4 +178,58 @@ function checkRhysarionMalachiteVenator(): void {
 checkKalspire();
 checkMalachite();
 checkRhysarionMalachiteVenator();
+
+function checkSeatLocks(): void {
+  const leftMal = choicesAroundSeats({
+    seats: { left: { dragonId: "malachite", stars: 6 } },
+    troop: "shieldbearers",
+  });
+  assert(leftMal.length >= 3, `Malachite Left should list lines, got ${leftMal.length}`);
+  assert(
+    leftMal.every((choice) => choice.line.left === "malachite"),
+    "locking Left keeps Malachite on Left",
+  );
+  assert(
+    leftMal.every((choice) => choice.line.leftStars === 6),
+    "locked Left keeps the stepper rank",
+  );
+
+  const two = choicesAroundSeats({
+    seats: {
+      left: { dragonId: "malachite", stars: 6 },
+      vanguard: { dragonId: "vhagar", stars: 4 },
+    },
+    troop: "shieldbearers",
+  });
+  assert(two.length >= 1, "Malachite Left + Vhagar Vanguard should still list a line");
+  assert(
+    two.every(
+      (choice) =>
+        choice.line.left === "malachite" && choice.line.vanguard === "vhagar",
+    ),
+    "two locked seats stay locked",
+  );
+  assert(
+    two.every((choice) => choice.line.vanguardStars === 4),
+    "locked Vanguard keeps Vhagar’s stars",
+  );
+
+  const three = choicesAroundSeats({
+    seats: {
+      left: { dragonId: "malachite", stars: 6 },
+      vanguard: { dragonId: "vhagar", stars: 6 },
+      right: { dragonId: "venator", stars: 6 },
+    },
+    troop: "shieldbearers",
+  });
+  assert(three.length >= 1, "full DPS core seating must list");
+  assert(
+    three[0]?.line.left === "malachite" &&
+      three[0]?.line.vanguard === "vhagar" &&
+      three[0]?.line.right === "venator",
+    "exact three-seat lock sits first",
+  );
+}
+
+checkSeatLocks();
 console.log("check-around ok");
