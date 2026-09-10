@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Search } from "lucide-react";
-import { useEffect } from "react";
 import { AbilityHover, NamedAbilities } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { StarStepper } from "@/components/star-rank";
@@ -15,7 +14,6 @@ import {
 import { RankPips } from "@/components/rank-pips";
 import {
   defaultHabitRanks,
-  defaultHabits,
   kitProgress,
   sanitizeHabits,
   type KitHabitRow,
@@ -197,17 +195,6 @@ export function HabitPickerDialog({
     ? kitProgress(dragon, starRank, selected, ranks ?? defaultHabitRanks())
     : null;
   const hatched = starRank > 0;
-
-  useEffect(() => {
-    if (!open || starRank <= 0) return;
-    const unlocked = defaultHabits(starRank);
-    if (unlocked.length === 0) return;
-    const missing = unlocked.filter((habit) => !selected.includes(habit));
-    if (missing.length === 0) return;
-    onChange(sanitizeHabits([...selected, ...unlocked]));
-    // Only when the dialog opens or stars change — not on every uncheck.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, dragon?.id, starRank]);
 
   function toggle(habit: number) {
     const habits = sanitizeHabits(selected);

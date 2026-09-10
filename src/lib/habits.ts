@@ -101,11 +101,19 @@ export function liveOwnedHabitRanks(
 
 /** Starring sets habits to whatever those stars unlock. */
 export function habitsAfterStarChange(
-  _prevHabits: number[],
-  _prevStars: number,
+  prevHabits: number[],
+  prevStars: number,
   nextStars: number,
 ): number[] {
-  return defaultHabits(nextStars);
+  const unlocked = defaultHabits(nextStars);
+  const alreadyOffered = defaultHabits(prevStars);
+  const kept = sanitizeHabits(prevHabits);
+  // A habit the player has already answered for keeps their answer, so
+  // unchecking one they have not bought survives a star change. Habits the
+  // new rank unlocks for the first time arrive selected.
+  return unlocked.filter(
+    (habit) => !alreadyOffered.includes(habit) || kept.includes(habit),
+  );
 }
 
 export function maxStarsForHabits(habits: number[]): number {
