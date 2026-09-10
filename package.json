@@ -11,7 +11,8 @@
     "check:boards": "npx tsx --tsconfig tsconfig.json scripts/check-boards.ts",
     "check:around": "npx tsx --tsconfig tsconfig.json scripts/check-around.ts",
     "check:counter": "npx tsx --tsconfig tsconfig.json scripts/check-counter.ts",
-    "check:talk": "npx tsx --tsconfig tsconfig.json scripts/check-talk.ts"
+    "check:talk": "npx tsx --tsconfig tsconfig.json scripts/check-talk.ts",
+    "check:tutorial": "npx tsx --tsconfig tsconfig.json scripts/check-tutorial.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

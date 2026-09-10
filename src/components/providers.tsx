@@ -1,5 +1,6 @@
 "use client";
 
+import { IntroTutorial } from "@/components/intro-tutorial";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <PitProvider>
           {children}
+          <IntroTutorial />
           <Toaster theme="dark" position="top-center" />
         </PitProvider>
       </AuthProvider>

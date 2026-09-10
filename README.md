@@ -8,6 +8,11 @@ here is affiliated with HBO, Warner Bros., or the game.
 
 ## What you can do
 
+- **First visit** — a short overlay explains the three seats, then optionally
+  the pit roster (tap + on dragons you own; 0★ stays unowned). **Skip for now**
+  is always available. The intro is stored separately from your pit
+  (`dragonfire-pit.tutorial.v1`) and does not show again after Skip or Done.
+  Returning browsers that already have a pit or saved lineups skip it.
 - **Account** — register a username on this server (no email). That unlocks
   **Copilot** and lets you start Talk threads or reply. Passwords are stored
   as scrypt hashes in `data/` on the machine running the app. Set
