@@ -96,7 +96,7 @@ export function IntroTutorial() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background/95 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex min-h-0 flex-col overflow-hidden bg-background/95 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
@@ -205,7 +205,7 @@ function PitStep({
   onDone: () => void;
 }) {
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-[92rem] flex-col">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[92rem] flex-col overflow-hidden">
       <header className="shrink-0 px-4 pt-4 pb-2 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -236,7 +236,7 @@ function PitStep({
             onChange={(event) => onQuery(event.target.value)}
             placeholder="Search a name"
             aria-label="Search dragons"
-            className="h-11 pl-9 md:h-11"
+            className="h-11 pl-10 md:h-11"
             data-intro-search=""
           />
         </div>
@@ -285,7 +285,7 @@ function PitStep({
           </div>
         )}
       </div>
-      <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-amber-500/20 bg-background/90 px-4 py-3 sm:px-6">
+      <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-amber-500/20 bg-background px-4 py-3 sm:px-6">
         <p className="text-label mr-auto">
           {ownedCount} owned
         </p>
