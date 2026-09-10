@@ -17,10 +17,12 @@ here is affiliated with HBO, Warner Bros., or the game.
   read. Register to start a thread or reply. Attach a reviewed line from
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
-- **Team** (`/team`) — pick **one** released dragon and the 1–10★ rank you
-  have. The page does not list the pit as a pick column. It builds
-  several complete three-dragon lines around that name. It still prefers a
-  healer, a soak, and a damage seat, but it also keeps healer-and-finisher
+- **Team** (`/team`) — pick **one** released dragon from the same portrait
+  grid as Counter (owned first; search by name, epithet, or troop). Tap the
+  seated name to change it. The 1–10★ stepper applies only to that dragon.
+  Owned picks copy their pit stars. The page then lists complete
+  three-dragon lines around that name. It still prefers a healer, a soak,
+  and a damage seat, but it also keeps healer-and-finisher
   lines that skip a Taunt tank — so a march like Rhysarion / Malachite /
   Venator is listed when you build around any of those three. Champion Recovery
   kits that buff the Right Flank (Rhysarion) prefer Vanguard so that habit
@@ -29,8 +31,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   the army the line marches with. Dragons are not tagged PvP or PvE —
   kit pairing is the same in either fight. Kalspire at ★6 lists **Panic**
   from Hub habit 3 plus the Star Progression glossary (“Deals Tactical
-  Damage to the target each round.”). The star stepper applies only to
-  that dragon. The other two seats are hypothetical goals — a ★6 Malachite
+  Damage to the target each round.”). The other two seats are hypothetical
+  goals — a ★6 Malachite
   line still seats Moondancer, and Pros/Cons name Hub gates such as
   Command “At 6+ Stars” rather than copying Malachite’s rank onto
   Moondancer. Other seats add their live Hub provides when those names
