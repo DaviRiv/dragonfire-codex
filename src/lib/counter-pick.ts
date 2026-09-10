@@ -1,4 +1,4 @@
-import { TROOP_TYPES, troopLabels, troopShort } from "@/lib/labels";
+import { troopLabels, troopShort } from "@/lib/labels";
 import type { Dragon, TroopType } from "@/lib/types";
 
 function troopQueryHit(dragon: Dragon, q: string): boolean {
@@ -100,8 +100,3 @@ export function starsForCounterPick(
 ): number {
   return ownedStars.get(dragonId) ?? fallback;
 }
-
-export const PICK_TROOP_FILTERS: readonly (TroopType | "all")[] = [
-  "all",
-  ...TROOP_TYPES,
-];

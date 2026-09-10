@@ -45,8 +45,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   editor. Copilot does not run here.
 - **Counter** (`/counter`) — tap **Left**, **Vanguard**, and **Right** to seat
   the three dragons you have to beat. The picker is a portrait grid (not a
-  dropdown): search by name, epithet, or troop, with **Owned** first and
-  troop chips to narrow the list. After Left it asks for Vanguard, then
+  dropdown): search by name, epithet, or troop, with owned dragons first.
+  After Left it asks for Vanguard, then
   Right. Dragons already on the other seats stay visible but greyed. Owned
   names copy their pit stars. Set 1–10★ on each name. Troop chips under the
   seats are their march. The page then lists complete threes. Tile triangle

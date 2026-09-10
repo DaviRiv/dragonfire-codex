@@ -8,15 +8,11 @@ import {
   type ComponentProps,
 } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
-import { MiniChip } from "@/components/chip";
 import { Input } from "@/components/ui/input";
 import { DRAGONS } from "@/data/dragons";
-import {
-  PICK_TROOP_FILTERS,
-  filterDragonPicks,
-} from "@/lib/counter-pick";
+import { filterDragonPicks } from "@/lib/counter-pick";
 import { slotShort, troopShort } from "@/lib/labels";
-import type { Dragon, SlotId, TroopType } from "@/lib/types";
+import type { Dragon, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 
@@ -26,7 +22,6 @@ const SLOT_MARK: Record<SlotId, string> = {
   vanguard: "V",
   right: "R",
 };
-const compactChip = "min-h-7 px-2 py-0 text-[11px]";
 
 function pickGridColumns(): number {
   const el = document.querySelector<HTMLElement>("[data-pick-grid]");
@@ -84,25 +79,20 @@ export function DragonPickList({
 }: DragonPickListProps) {
   const takenBy = takenByProp ?? EMPTY_TAKEN;
   const [hi, setHi] = useState(0);
-  const [ownedOnly, setOwnedOnly] = useState(false);
-  const [troop, setTroop] = useState<TroopType | "all">("all");
 
   const rows = useMemo(
     () =>
       filterDragonPicks(DRAGONS, {
         query,
-        troop,
-        ownedOnly,
         ownedIds: ownedStars.keys(),
       }),
-    [query, troop, ownedOnly, ownedStars],
+    [query, ownedStars],
   );
 
   const searching = query.trim().length > 0;
-  const ownedRows =
-    !searching && !ownedOnly
-      ? rows.filter((row) => ownedStars.has(row.id))
-      : [];
+  const ownedRows = !searching
+    ? rows.filter((row) => ownedStars.has(row.id))
+    : [];
   const restRows = ownedRows.length
     ? rows.filter((row) => !ownedStars.has(row.id))
     : rows;
@@ -115,7 +105,7 @@ export function DragonPickList({
 
   useEffect(() => {
     setHi(firstOpenIndex(rows, takenBy, query.trim() ? null : currentId));
-  }, [query, troop, ownedOnly, rows, takenBy, currentId]);
+  }, [query, rows, takenBy, currentId]);
 
   useEffect(() => {
     if (hi >= rows.length) setHi(0);
@@ -173,10 +163,7 @@ export function DragonPickList({
   }
 
   const hiId = rows[hi]?.id ?? null;
-  const emptyCopy =
-    ownedOnly && ownedStars.size === 0
-      ? "Nothing in your pit yet. Add stars on Pit, or turn Owned off."
-      : "No dragon matches that search.";
+  const emptyCopy = "No dragon matches that search.";
 
   return (
     <section
@@ -215,27 +202,6 @@ export function DragonPickList({
               {cancelLabel}
             </button>
           ) : null}
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1">
-          <MiniChip
-            className={compactChip}
-            active={ownedOnly}
-            data-pick-owned
-            onClick={() => setOwnedOnly((value) => !value)}
-          >
-            Owned
-          </MiniChip>
-          {PICK_TROOP_FILTERS.map((item) => (
-            <MiniChip
-              key={item}
-              className={compactChip}
-              active={troop === item}
-              data-pick-troop={item}
-              onClick={() => setTroop(item)}
-            >
-              {item === "all" ? "All" : troopShort[item]}
-            </MiniChip>
-          ))}
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
