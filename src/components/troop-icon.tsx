@@ -1,18 +1,75 @@
+import type { ReactNode } from "react";
 import { MiniChip } from "@/components/chip";
 import { troopLabels } from "@/lib/labels";
 import type { TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const PATHS: Record<TroopType, string> = {
-  cavalry:
-    "M4.5 16.5c1.2-2.2 2.8-3.2 5-3.2 1.1 0 1.6.6 2.6.6 1.8 0 2.6-1.5 4.4-1.5 1.7 0 3 .9 3.5 2.4M9.2 13.2c-.2-1.6.4-3.4 1.8-4.4 1.2-.8 2.8-.7 3.5.6.4.7.3 1.4-.2 2M7.2 10.2c.3-1.8-.2-3.2-1.4-4.2",
-  shieldbearers:
-    "M12 3.4 19 7v5.2c0 4-2.7 7-7 8.4-4.3-1.4-7-4.4-7-8.4V7l7-3.6Z",
-  archers:
-    "M5 12c2.8-5 6.2-7.5 7-7.5S16.2 7 19 12c-2.8 5-6.2 7.5-7 7.5S7.8 17 5 12Zm7-7.5v15M12 12h7",
-  spearmen: "M5 19 18.5 5.5M16.2 5.2l2.6.3.3 2.6M7.2 16.8l-2 .2.2-2",
-  siege:
-    "M6 19V9.5L12 5l6 4.5V19M6 19h12M9.5 19v-4.5h5V19M12 5v5.5",
+function ShieldMark() {
+  return (
+    <path
+      fill="currentColor"
+      d="M12 2.2 20.5 6v6.1c0 4.7-3.2 8.4-8.5 10.1C6.7 20.5 3.5 16.8 3.5 12.1V6L12 2.2Z"
+    />
+  );
+}
+
+function SpearMark() {
+  return (
+    <>
+      <path
+        fill="currentColor"
+        d="M13.2 4.4 19.6 10.8 8.4 22 2 15.6 13.2 4.4Z"
+      />
+      <path fill="currentColor" d="M16.8 2 22 6.4l-2.6 3.2-5.2-5.2L16.8 2Z" />
+    </>
+  );
+}
+
+function BowMark() {
+  return (
+    <>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        d="M7 3.8c6.6 2.6 9.8 6 9.8 8.2s-3.2 5.6-9.8 8.2"
+      />
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        d="M7 12h13M17.6 9.4 21 12l-3.4 2.6"
+      />
+    </>
+  );
+}
+
+function HorseMark() {
+  return (
+    <path
+      fill="currentColor"
+      d="M8.2 20.5H18v-1.8c0-1.7-.9-2.7-2.6-3.5 1.7-.6 3.4-1.9 3.4-4.2 0-1.7-1.1-3-2.8-3.4-.3-1.6-1.6-3.1-3.5-3.1-1.7 0-2.9 1-3.4 2.4H8.4c-1.6 0-2.9 1.4-2.9 3.2 0 1.4.7 2.4 1.8 3-.9.5-2.1 1.5-2.1 3.1 0 .8.3 1.5.8 2.1-.9.4-1.8 1.3-1.8 2.6v1.6h3.2c.2 0 .4-.2.4-.4v-1.2c0-.7.4-1.2 1-.1.4.7 1.1 1.1 1.9 1.1Z"
+    />
+  );
+}
+
+function SiegeMark() {
+  return (
+    <path
+      fill="currentColor"
+      d="M5 20.5h14v-2.2H5v2.2Zm2.2-3.8h9.6V11L12 6.2 7.2 11v5.7ZM10.4 20.5V14h3.2v6.5M8.2 4.2h7.6v2.2h-2.2V8h-3.2V6.4H8.2V4.2Z"
+    />
+  );
+}
+
+const MARK: Record<TroopType, () => ReactNode> = {
+  shieldbearers: ShieldMark,
+  spearmen: SpearMark,
+  archers: BowMark,
+  cavalry: HorseMark,
+  siege: SiegeMark,
 };
 
 export function TroopIcon({
@@ -23,6 +80,7 @@ export function TroopIcon({
   className?: string;
 }) {
   const label = troopLabels[troop];
+  const Mark = MARK[troop];
   return (
     <svg
       viewBox="0 0 24 24"
@@ -32,13 +90,7 @@ export function TroopIcon({
       role="img"
       data-troop-icon={troop}
     >
-      <path
-        d={PATHS[troop]}
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <Mark />
     </svg>
   );
 }

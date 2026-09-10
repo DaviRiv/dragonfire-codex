@@ -317,7 +317,7 @@ function PickGrid({
               <span className="flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground">
                 <TroopIcons
                   troops={row.affinities}
-                  iconClassName="size-3.5"
+                  iconClassName="size-4"
                 />
                 {stars != null ? `★${stars}` : null}
               </span>
