@@ -8,13 +8,13 @@ import {
   type ComponentProps,
 } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/search-field";
+import { TroopIcons } from "@/components/troop-icon";
 import { DRAGONS } from "@/data/dragons";
 import { filterDragonPicks } from "@/lib/counter-pick";
-import { slotShort, troopShort } from "@/lib/labels";
+import { slotShort, troopLabels } from "@/lib/labels";
 import type { Dragon, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
 
 const EMPTY_TAKEN = new Map<string, SlotId>();
 const SLOT_MARK: Record<SlotId, string> = {
@@ -176,23 +176,14 @@ export function DragonPickList({
       <div className="shrink-0 border-b border-foreground/10 px-2 py-1.5">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-label">{title}</p>
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id={searchId}
-              className="h-9 pl-8 text-sm md:h-8 md:pl-8"
-              placeholder="Name, epithet, or troop…"
-              value={query}
-              onChange={(event) => onQuery(event.target.value)}
-              onKeyDown={onKey}
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              autoFocus
-              enterKeyHint="search"
-              aria-label={searchLabel}
-            />
-          </div>
+          <SearchField
+            id={searchId}
+            value={query}
+            onChange={onQuery}
+            onKeyDown={onKey}
+            label={searchLabel}
+            autoFocus
+          />
           {canCancel ? (
             <button
               type="button"
@@ -294,7 +285,7 @@ function PickGrid({
               title={
                 taken && takenSlot
                   ? `${row.name} is already ${slotShort[takenSlot]}`
-                  : `${row.name} — ${row.epithet}`
+                  : `${row.name} · ${row.affinities.map((troop) => troopLabels[troop]).join(", ")}`
               }
               aria-current={current ? "true" : undefined}
               onMouseEnter={() => onHover(row.id)}
@@ -323,10 +314,12 @@ function PickGrid({
               <span className="w-full truncate text-[11px] leading-tight">
                 {row.name}
               </span>
-              <span className="text-[10px] tabular-nums text-muted-foreground">
-                {stars != null
-                  ? `★${stars}`
-                  : troopShort[row.affinities[0] ?? "cavalry"]}
+              <span className="flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground">
+                <TroopIcons
+                  troops={row.affinities}
+                  iconClassName="size-3.5"
+                />
+                {stars != null ? `★${stars}` : null}
               </span>
             </button>
           </li>

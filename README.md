@@ -23,8 +23,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   **Discuss in Talk**. Categories: General, PvP, Rally, Defense, PvE,
   Gathering.
 - **Team** (`/team`) — tap **Left**, **Vanguard**, or **Right** and pick from
-  the same portrait grid as Counter (owned first; search by name, epithet,
-  or troop). You can start on any seat. After each name the page lists
+  the same portrait grid as Counter (owned first; search is a blank field with
+  a magnifying glass). You can start on any seat. After each name the page lists
   complete threes that keep those dragons in those seats. Tap an empty seat
   to lock the next one; the list narrows. Dragons already on the other
   seats stay visible but greyed. Owned picks copy their pit stars. The
@@ -50,8 +50,9 @@ here is affiliated with HBO, Warner Bros., or the game.
   editor. Copilot does not run here.
 - **Counter** (`/counter`) — tap **Left**, **Vanguard**, and **Right** to seat
   the three dragons you have to beat. The picker is a portrait grid (not a
-  dropdown): search by name, epithet, or troop, with owned dragons first.
-  After Left it asks for Vanguard, then
+  dropdown): search is a blank field with a magnifying glass, owned dragons first.
+  Troop affinity under each portrait is an icon (shields, spears, cavalry,
+  archers, siege), not Cav/Shields text. After Left it asks for Vanguard, then
   Right. Dragons already on the other seats stay visible but greyed. Owned
   names copy their pit stars. Set 1–10★ on each name. Troop chips under the
   seats are their march. The page then lists complete threes. Tile triangle

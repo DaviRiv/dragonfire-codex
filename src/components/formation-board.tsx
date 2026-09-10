@@ -9,13 +9,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MiniChip } from "@/components/chip";
+import { TroopChip, TroopIcon } from "@/components/troop-icon";
 import { lineupKindLabel, resolveSlot, SLOT_IDS } from "@/lib/lineup";
 import {
   MODES,
   TROOP_TYPES,
   modeShort,
   slotShort,
-  troopShort,
 } from "@/lib/labels";
 import { vanguardBonus } from "@/lib/habits";
 import { buffsOnDragon, type SynergyBuff } from "@/lib/synergy-buffs";
@@ -72,13 +72,12 @@ export function FormationBoard({
         <div className="mb-2 space-y-1.5 sm:mb-3">
           <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
             {TROOP_TYPES.map((troop) => (
-              <MiniChip
+              <TroopChip
                 key={troop}
+                troop={troop}
                 active={lineup.troop === troop}
                 onClick={() => onTroopChange?.(troop)}
-              >
-                {troopShort[troop]}
-              </MiniChip>
+              />
             ))}
           </div>
           <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
@@ -94,8 +93,9 @@ export function FormationBoard({
           </div>
         </div>
       ) : (
-        <p className="mb-2 text-xs text-amber-100/75 sm:mb-3">
-          {troopShort[lineup.troop]} · {modeShort[lineup.mode]}
+        <p className="mb-2 flex items-center gap-1.5 text-xs text-amber-100/75 sm:mb-3">
+          <TroopIcon troop={lineup.troop} className="size-3.5" />
+          <span>{modeShort[lineup.mode]}</span>
         </p>
       )}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">

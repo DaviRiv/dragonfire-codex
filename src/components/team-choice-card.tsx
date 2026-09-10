@@ -1,10 +1,11 @@
 "use client";
 
 import { DragonIcon } from "@/components/dragon-icon";
+import { TroopIcon } from "@/components/troop-icon";
 import { Button } from "@/components/ui/button";
 import { getCatalogDragon } from "@/data/dragons";
 import type { AroundChoice, ChoiceNote } from "@/lib/around-choices";
-import { troopShort } from "@/lib/labels";
+import { troopLabels } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
@@ -97,10 +98,12 @@ export function TeamLineList({
                   );
                 })}
               </div>
-              <span className="w-11 shrink-0 text-right text-[10px] leading-tight tracking-wide text-amber-100/80 uppercase">
-                {troopShort[choice.line.troop]}
+              <span className="flex w-10 shrink-0 flex-col items-end gap-0.5 text-amber-100/80">
+                <span title={troopLabels[choice.line.troop]}>
+                  <TroopIcon troop={choice.line.troop} className="size-4" />
+                </span>
                 {seated && active ? (
-                  <span className="mt-0.5 block font-normal normal-case text-emerald-200">
+                  <span className="text-[10px] font-normal text-emerald-200">
                     Seated
                   </span>
                 ) : null}
@@ -148,8 +151,9 @@ export function TeamNotesPanel({
         <p className="font-heading truncate text-sm tracking-wide text-amber-50">
           {choice.line.name}
         </p>
-        <p className="text-[11px] tracking-wide text-amber-100/80 uppercase">
-          {troopShort[choice.line.troop]} · {choice.label}
+        <p className="flex items-center gap-1.5 text-[11px] tracking-wide text-amber-100/80">
+          <TroopIcon troop={choice.line.troop} className="size-3.5" />
+          <span>{choice.label}</span>
         </p>
         {hint ? (
           <p className="mt-1 text-[11px] leading-snug text-muted-foreground">

@@ -1,17 +1,17 @@
 "use client";
 
 import { MiniChip } from "@/components/chip";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/search-field";
+import { TroopIcon } from "@/components/troop-icon";
 import {
   BREEDS,
   RARITIES,
   TROOP_TYPES,
   breedLabels,
   rarityLabels,
-  troopShort,
+  troopLabels,
 } from "@/lib/labels";
 import type { Breed, Rarity, TroopType } from "@/lib/types";
-import { Search } from "lucide-react";
 
 export function ListFilterBar({
   query,
@@ -26,7 +26,7 @@ export function ListFilterBar({
 }: {
   query: string;
   onQueryChange: (value: string) => void;
-  placeholder: string;
+  placeholder?: string;
   breed: Breed | "all";
   onBreedChange: (value: Breed | "all") => void;
   rarity: Rarity | "all";
@@ -36,16 +36,12 @@ export function ListFilterBar({
 }) {
   return (
     <div className="space-y-2 border-b border-border/50 bg-card/90 p-2.5">
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          placeholder={placeholder}
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          enterKeyHint="search"
-        />
-      </div>
+      <SearchField
+        value={query}
+        onChange={onQueryChange}
+        label={placeholder || "Search"}
+        inputClassName="h-11 md:h-8"
+      />
       <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
         <MiniChip active={breed === "all"} onClick={() => onBreedChange("all")}>
           All breeds
@@ -90,8 +86,10 @@ export function ListFilterBar({
               key={t}
               active={troop === t}
               onClick={() => onTroopChange(t)}
+              title={troopLabels[t]}
+              aria-label={troopLabels[t]}
             >
-              {troopShort[t]}
+              <TroopIcon troop={t} className="size-4" />
             </MiniChip>
           ))}
         </div>

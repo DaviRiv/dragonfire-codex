@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { TroopIcon } from "@/components/troop-icon";
 import { troopLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import type { TroopType } from "@/lib/types";
@@ -26,13 +27,15 @@ export function AffinityBadges({
         <Badge
           key={troop}
           variant="outline"
+          title={troopLabels[troop]}
           className={cn(
-            "rounded-md font-normal",
+            "rounded-md px-1.5 py-0.5 font-normal",
             troopTone[troop],
             highlight === troop && "ring-1 ring-amber-300/70",
           )}
         >
-          {troopLabels[troop]}
+          <TroopIcon troop={troop} className="size-3.5" />
+          <span className="sr-only">{troopLabels[troop]}</span>
         </Badge>
       ))}
     </div>
@@ -47,8 +50,13 @@ export function TroopBadge({
   className?: string;
 }) {
   return (
-    <Badge variant="outline" className={cn("rounded-md font-normal", troopTone[troop], className)}>
-      {troopLabels[troop]}
+    <Badge
+      variant="outline"
+      title={troopLabels[troop]}
+      className={cn("rounded-md px-1.5 py-0.5 font-normal", troopTone[troop], className)}
+    >
+      <TroopIcon troop={troop} className="size-3.5" />
+      <span className="sr-only">{troopLabels[troop]}</span>
     </Badge>
   );
 }

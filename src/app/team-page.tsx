@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
-import { MiniChip } from "@/components/chip";
+import { TroopChip } from "@/components/troop-icon";
 import {
   TeamLineList,
   TeamNotesPanel,
@@ -16,7 +16,7 @@ import { choicesAroundSeats } from "@/lib/around-choices";
 import { rememberBuild } from "@/lib/build-session";
 import { starsForCounterPick } from "@/lib/counter-pick";
 import { newId, nowIso } from "@/lib/dragons";
-import { TROOP_TYPES, slotShort, troopShort } from "@/lib/labels";
+import { TROOP_TYPES, slotShort } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
 import { usePit } from "@/lib/store";
 import type { SlotId, TroopType } from "@/lib/types";
@@ -481,8 +481,9 @@ export function TeamPage() {
       {seatedCount > 0 ? (
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
           {TROOP_TYPES.map((item) => (
-            <MiniChip
+            <TroopChip
               key={item}
+              troop={item}
               className={compactChip}
               active={troop === item}
               onClick={() => {
@@ -490,9 +491,7 @@ export function TeamPage() {
                 setPickedId(null);
                 writeQuery(seats, item);
               }}
-            >
-              {troopShort[item]}
-            </MiniChip>
+            />
           ))}
         </div>
       ) : null}

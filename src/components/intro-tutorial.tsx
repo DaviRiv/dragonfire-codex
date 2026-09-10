@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { DragonIcon } from "@/components/dragon-icon";
+import { SearchField } from "@/components/search-field";
 import { StarStepper } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DRAGONS } from "@/data/dragons";
 import { filterDragonPicks } from "@/lib/counter-pick";
 import { usePit } from "@/lib/store";
@@ -16,7 +16,6 @@ import {
 } from "@/lib/tutorial";
 import type { Dragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
 
 type Step = "welcome" | "pit";
 
@@ -229,17 +228,13 @@ function PitStep({
             Skip
           </Button>
         </div>
-        <div className="relative mt-3">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            placeholder="Search a name"
-            aria-label="Search dragons"
-            className="h-11 pl-10 md:h-11"
-            data-intro-search=""
-          />
-        </div>
+        <SearchField
+          value={query}
+          onChange={onQuery}
+          label="Search dragons"
+          data-intro-search=""
+          inputClassName="h-11 md:h-11"
+        />
       </header>
       <div
         className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 sm:px-4"

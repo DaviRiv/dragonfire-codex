@@ -13,6 +13,7 @@ import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
+import { TroopChip } from "@/components/troop-icon";
 import {
   TeamLineList,
   TeamNotesPanel,
@@ -32,7 +33,7 @@ import {
   defaultCounterTroop,
   slotShort,
   troopMatchupCopy,
-  troopShort,
+  troopLabels,
   troopsThatBeat,
 } from "@/lib/labels";
 import {
@@ -575,14 +576,13 @@ export function CounterPage() {
           Enemy
         </p>
         {TROOP_TYPES.map((item) => (
-          <MiniChip
+          <TroopChip
             key={`enemy-${item}`}
+            troop={item}
             className={compactChip}
             active={enemyTroop === item}
             onClick={() => pickEnemyTroop(item)}
-          >
-            {troopShort[item]}
-          </MiniChip>
+          />
         ))}
         {complete ? (
           <>
@@ -591,15 +591,14 @@ export function CounterPage() {
               You
             </p>
             {TROOP_TYPES.map((item) => (
-              <MiniChip
+              <TroopChip
                 key={`ours-${item}`}
+                troop={item}
                 className={compactChip}
                 active={ourTroop === item}
+                hint={item === recommended ? "tile winner" : undefined}
                 onClick={() => pickOurTroop(item)}
-              >
-                {troopShort[item]}
-                {item === recommended ? " · beats" : ""}
-              </MiniChip>
+              />
             ))}
           </>
         ) : null}
@@ -612,7 +611,7 @@ export function CounterPage() {
             beaters.length > 1 && ourTroop === recommended
               ? ` Also: ${beaters
                   .filter((item) => item !== recommended)
-                  .map((item) => troopShort[item])
+                  .map((item) => troopLabels[item])
                   .join(", ")}.`
               : ""
           }`}
