@@ -1,5 +1,4 @@
 import { getCatalogDragon } from "@/data/dragons";
-import { STATUS_GLOSSARY } from "@/data/status-glossary";
 import { dragonProvides } from "@/lib/abilities";
 import { defaultHabits } from "@/lib/habits";
 import { healUnlocked, healingAbilities } from "@/lib/healing";

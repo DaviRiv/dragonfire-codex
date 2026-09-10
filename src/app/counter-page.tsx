@@ -368,7 +368,7 @@ export function CounterPage() {
     });
   }
 
-  function useActive() {
+  function seatActive() {
     if (!active) return;
     const ids = [active.line.left, active.line.vanguard, active.line.right];
     const owned = ids.every((id) =>
@@ -409,7 +409,7 @@ export function CounterPage() {
       if (next) setActiveId(next.id);
     } else if (event.key === "Enter" && active) {
       event.preventDefault();
-      useActive();
+      seatActive();
     }
   }
 
@@ -701,7 +701,7 @@ export function CounterPage() {
               tweakHref={
                 pickedId === active?.id && seatedId ? `/lineups/${seatedId}` : null
               }
-              onUse={useActive}
+              onUse={seatActive}
             />
           </div>
         </div>

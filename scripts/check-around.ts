@@ -42,7 +42,6 @@ function checkKalspire(): void {
       }
     }
   }
-  const keys = new Set(six.map((choice) => choice.id));
   assert(
     six.some((choice) =>
       [choice.line.left, choice.line.vanguard, choice.line.right].includes(
