@@ -286,8 +286,11 @@ export function TeamPage() {
     setQuery("");
   }
 
-  function useActive() {
+  function seatActive() {
     if (!active) return;
+    // Enter on the list reaches this without the button, so the guard lives
+    // here too: seating the same choice twice would save a duplicate team.
+    if (pickedId === active.id && seatedId) return;
     const next: Record<SlotId, SeatState> = {
       left: {
         dragonId: active.line.left,
@@ -366,7 +369,7 @@ export function TeamPage() {
       if (next) setActiveId(next.id);
     } else if (event.key === "Enter" && active) {
       event.preventDefault();
-      useActive();
+      seatActive();
     }
   }
 
@@ -579,7 +582,7 @@ export function TeamPage() {
                   ? `/lineups/${seatedId}`
                   : null
               }
-              onUse={useActive}
+              onUse={seatActive}
             />
           </div>
         </div>

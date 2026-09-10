@@ -370,6 +370,9 @@ export function CounterPage() {
 
   function seatActive() {
     if (!active) return;
+    // Enter on the list reaches this without the button, so the guard lives
+    // here too: seating the same choice twice would save a duplicate team.
+    if (pickedId === active.id && seatedId) return;
     const ids = [active.line.left, active.line.vanguard, active.line.right];
     const owned = ids.every((id) =>
       state.owned.some((row) => row.dragonId === id),

@@ -176,7 +176,9 @@ export function TeamNotesPanel({
         />
       </div>
       <div className="shrink-0 space-y-1.5 border-t border-foreground/10 p-2.5">
-        <Button className="w-full" onClick={onUse}>
+        {/* Seating again would save a second copy of the same team. Any seat
+            edit clears `seated`, so there is no state where a re-click helps. */}
+        <Button className="w-full" onClick={onUse} disabled={seated}>
           {seated ? "This is your team" : "Use this team"}
         </Button>
         {tweakHref ? (
