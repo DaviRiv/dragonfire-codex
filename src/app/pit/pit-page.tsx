@@ -224,7 +224,7 @@ export function PitPage() {
               {inspectingOwned ? (
                 <>
                   <OwnedFacts
-                    key={inspectingOwned.id}
+                    key={`facts-${inspectingOwned.id}`}
                     dragon={inspecting}
                     owned={inspectingOwned}
                     onReign={(reignLevel) =>
@@ -232,7 +232,7 @@ export function PitPage() {
                     }
                   />
                   <OwnedNotes
-                    key={inspectingOwned.id}
+                    key={`notes-${inspectingOwned.id}`}
                     notes={inspectingOwned.notes}
                     onSave={(notes) =>
                       updateOwned(inspectingOwned.id, { notes })
