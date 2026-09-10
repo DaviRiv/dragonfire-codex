@@ -163,9 +163,18 @@ function subscribeReady() {
 }
 
 function write(next: PitState) {
+  const raw = JSON.stringify(next);
+  try {
+    localStorage.setItem(STORAGE_KEY, raw);
+  } catch {
+    // Storage is full or blocked. Leaving the cache alone keeps what is on
+    // screen equal to what is on disk, so the edit visibly does not take
+    // rather than surviving until the next reload and then vanishing.
+    toast.error("Could not save that change. Your browser storage is full or blocked.");
+    return;
+  }
   cachedState = next;
-  cachedRaw = JSON.stringify(next);
-  localStorage.setItem(STORAGE_KEY, cachedRaw);
+  cachedRaw = raw;
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
