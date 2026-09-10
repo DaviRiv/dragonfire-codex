@@ -96,7 +96,7 @@ export function IntroTutorial() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex min-h-0 flex-col overflow-hidden bg-background/95 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex h-dvh min-h-0 flex-col overflow-hidden bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="intro-title"
@@ -133,7 +133,7 @@ function WelcomeStep({
   onSkip: () => void;
 }) {
   return (
-    <div className="mx-auto flex h-full w-full max-w-lg flex-col justify-center px-5 py-8">
+    <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col justify-center overflow-y-auto px-5 py-8">
       <p className="text-label mb-3">Unofficial fan tool</p>
       <h1
         id="intro-title"
@@ -205,7 +205,7 @@ function PitStep({
   onDone: () => void;
 }) {
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-[92rem] flex-col overflow-hidden">
+    <div className="mx-auto flex min-h-0 w-full max-w-[92rem] flex-1 flex-col overflow-hidden">
       <header className="shrink-0 px-4 pt-4 pb-2 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -241,7 +241,10 @@ function PitStep({
           />
         </div>
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 sm:px-4">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-2 pb-2 sm:px-4"
+        data-intro-scroll=""
+      >
         {catalog.length === 0 ? (
           <p className="px-3 py-8 text-sm text-muted-foreground">
             No dragons match “{query.trim()}”.
@@ -285,7 +288,7 @@ function PitStep({
           </div>
         )}
       </div>
-      <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-amber-500/20 bg-background px-4 py-3 sm:px-6">
+      <footer className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 border-t border-amber-500/20 bg-background px-4 py-3 sm:px-6">
         <p className="text-label mr-auto">
           {ownedCount} owned
         </p>
