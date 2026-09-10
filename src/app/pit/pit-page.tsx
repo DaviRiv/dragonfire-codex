@@ -202,6 +202,7 @@ export function PitPage() {
           if (!next) setInspecting(null);
         }}
         starRank={inspectingOwned?.starRank}
+        reignLevel={inspectingOwned?.reignLevel}
         ownedStars={inspectingOwned?.starRank ?? null}
         ownedHabits={inspectingOwned?.habits}
         ownedHabitRanks={inspectingOwned?.habitRanks}

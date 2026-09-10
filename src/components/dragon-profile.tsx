@@ -137,6 +137,7 @@ export function DragonProfile({
   dragon,
   highlightTroop,
   starRank = 1,
+  reignLevel = 1,
   ownedStars,
   ownedHabits,
   ownedHabitRanks,
@@ -146,6 +147,8 @@ export function DragonProfile({
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
   starRank?: number;
+  /** Reign level the stat rows are read at. Stats are level-keyed, not just star-keyed. */
+  reignLevel?: number;
   /** Pit rank used to warn on star gates. `null` means not owned. */
   ownedStars?: number | null;
   /** Habits marked bought in the pit. Omit to show the full kit. */
@@ -157,10 +160,10 @@ export function DragonProfile({
 }) {
   const kit = dragonKit(dragon, ownedHabitRanks);
   const heals = healingAbilities(dragon, ownedHabitRanks);
-  const stats = scaledStats(dragon, starRank);
+  const stats = scaledStats(dragon, starRank, reignLevel);
   const liveMods = coreStatMods(synergyBuffs);
-  const troops = troopCount(dragon.rarity, starRank);
-  const power = dragonPower(dragon.rarity, starRank);
+  const troops = troopCount(dragon.rarity, starRank, reignLevel);
+  const power = dragonPower(dragon.rarity, starRank, reignLevel);
   const qualifyStars = ownedStars === undefined ? starRank : ownedStars;
   const vanguard = kit.extras.find((extra) => extra.title === "Vanguard");
   const habitExtras = kit.extras.filter((extra) => extra.unlockStars != null);
@@ -328,10 +331,11 @@ export function DragonProfile({
           <p className="text-right tabular-nums">{formatPower(power)}</p>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Hub power is from star rank — not the in-game Army Power number.
-          Heirlooms, stronghold upgrades, and riders are left out; we are not
-          going to reverse-engineer those. Stats use Dragonfire-Hub’s catalog
-          plus star multipliers. Stars auto-select habits in the pit. Uncheck
+          Hub power is from star rank and reign level — not the in-game Army
+          Power number. Heirlooms, stronghold upgrades, and riders are left
+          out; we are not going to reverse-engineer those. Stats read
+          Dragonfire-Hub’s catalog at your reign level, then apply star
+          multipliers. Stars auto-select habits in the pit. Uncheck
           one on the search icon if you have not bought it. Rank diamonds pick
           the habit upgrade so kit percents match what you have. Tap or click a
           named buff for its card; hover works on a computer. Habit upgrade

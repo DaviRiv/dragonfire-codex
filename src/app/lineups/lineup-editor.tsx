@@ -567,6 +567,13 @@ export function LineupEditor({
                     ?.starRank ?? 1))
             : 1
         }
+        reignLevel={
+          // Theory lines are wish-lists, so they stay at the base level.
+          inspecting && !isTheory
+            ? state.owned.find((row) => row.dragonId === inspecting.id)
+                ?.reignLevel
+            : undefined
+        }
         ownedStars={
           inspecting
             ? (state.owned.find((row) => row.dragonId === inspecting.id)

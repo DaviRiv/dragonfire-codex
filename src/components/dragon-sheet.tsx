@@ -21,6 +21,7 @@ export function DragonSheet({
   onOpenChange,
   highlightTroop,
   starRank,
+  reignLevel,
   actionLabel,
   onAction,
   actionDisabled,
@@ -36,6 +37,7 @@ export function DragonSheet({
   onOpenChange: (open: boolean) => void;
   highlightTroop?: TroopType;
   starRank?: number;
+  reignLevel?: number;
   actionLabel?: string;
   onAction?: () => void;
   actionDisabled?: boolean;
@@ -74,6 +76,7 @@ export function DragonSheet({
                 dragon={dragon}
                 highlightTroop={highlightTroop}
                 starRank={starRank}
+                reignLevel={reignLevel}
                 ownedStars={ownedStars}
                 ownedHabits={ownedHabits}
                 ownedHabitRanks={ownedHabitRanks}
