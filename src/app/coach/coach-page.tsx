@@ -244,7 +244,10 @@ export function CoachPage() {
             ref={scrollRef}
             onScroll={onScroll}
             data-coach-scroll
-            className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pe-0.5"
+            role="log"
+            tabIndex={0}
+            aria-label="Conversation with Copilot"
+            className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pe-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             {chat.turns.length === 0 ? (
               <Starters onPick={submit} />
@@ -274,12 +277,9 @@ export function CoachPage() {
           )}
         </div>
 
+        {/* The transcript itself is a log region, so this only reports state. */}
         <p aria-live="polite" className="sr-only">
-          {chat.busy
-            ? "Copilot is working on your answer."
-            : lastAnswer
-              ? `Copilot answered: ${lastAnswer.text}`
-              : ""}
+          {chat.busy ? "Copilot is working on your answer." : ""}
         </p>
 
         <form
@@ -510,7 +510,7 @@ function Turn({
 function Dot({ delay }: { delay: string }) {
   return (
     <span
-      className="size-1.5 animate-bounce rounded-full bg-amber-300/80"
+      className="size-1.5 animate-bounce rounded-full bg-amber-300/80 motion-reduce:animate-none"
       style={{ animationDelay: delay }}
     />
   );

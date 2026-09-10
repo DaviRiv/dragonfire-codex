@@ -8,12 +8,15 @@ import { DragonSheet } from "@/components/dragon-sheet";
 import { HabitPickerDialog, HabitSearchButton } from "@/components/habit-picker";
 import { StarRank, StarStepper } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DRAGONS } from "@/data/dragons";
-import { lineupsUsingDragon } from "@/lib/dragons";
+import { TroopIcons } from "@/components/troop-icon";
+import { allDragons, lineupsUsingDragon } from "@/lib/dragons";
+import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
+import { clampReign } from "@/lib/lineup";
 import { exportPit, isPitState, usePit } from "@/lib/store";
-import type { Dragon } from "@/lib/types";
+import type { Dragon, OwnedDragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Download, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -38,6 +41,12 @@ export function PitPage() {
   const ownedById = useMemo(
     () => new Map(state.owned.map((row) => [row.dragonId, row] as const)),
     [state.owned],
+  );
+  // Unlisted dragons the player added are owned too, so they belong in the
+  // grid — otherwise there is no way to re-rank or release them.
+  const catalog = useMemo(
+    () => allDragons(state.customDragons),
+    [state.customDragons],
   );
 
   if (!ready) {
@@ -142,7 +151,7 @@ export function PitPage() {
         />
       </div>
       <div className="grid grid-cols-3 gap-x-1 gap-y-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
-        {DRAGONS.map((dragon) => {
+        {catalog.map((dragon) => {
           const owned = ownedById.get(dragon.id);
           const stars = owned?.starRank ?? 0;
           return (
@@ -170,6 +179,7 @@ export function PitPage() {
                 dragonId={dragon.id}
                 name={dragon.name}
                 rarity={dragon.rarity}
+                custom={dragon.custom}
                 size="2xl"
                 dimmed={stars <= 0}
                 onClick={() => setInspecting(dragon)}
@@ -210,17 +220,30 @@ export function PitPage() {
                 />
               </div>
               {inspectingOwned ? (
-                <OwnedNotes
-                  key={inspectingOwned.id}
-                  notes={inspectingOwned.notes}
-                  onSave={(notes) =>
-                    updateOwned(inspectingOwned.id, { notes })
-                  }
-                />
+                <>
+                  <OwnedFacts
+                    key={inspectingOwned.id}
+                    dragon={inspecting}
+                    owned={inspectingOwned}
+                    onReign={(reignLevel) =>
+                      updateOwned(inspectingOwned.id, { reignLevel })
+                    }
+                  />
+                  <OwnedNotes
+                    key={inspectingOwned.id}
+                    notes={inspectingOwned.notes}
+                    onSave={(notes) =>
+                      updateOwned(inspectingOwned.id, { notes })
+                    }
+                  />
+                </>
               ) : null}
               {inspectingTeams.length > 0 ? (
                 <div>
-                  <p className="text-label mb-1">Teams</p>
+                  <p className="text-label mb-1">
+                    Already seated on {inspectingTeams.length} saved team
+                    {inspectingTeams.length === 1 ? "" : "s"}
+                  </p>
                   <ul className="space-y-1 text-sm">
                     {inspectingTeams.map((lineup) => (
                       <li key={lineup.id}>
@@ -259,6 +282,100 @@ export function PitPage() {
         }}
       />
       <AddDragonDialog open={unlistedOpen} onOpenChange={setUnlistedOpen} />
+    </div>
+  );
+}
+
+const ROLE_CLASS: Record<string, string> = {
+  Heal: roleChipClass.healing,
+  Tank: roleChipClass.tanking,
+  DPS: roleChipClass.damage,
+  CC: roleChipClass.control,
+};
+
+const REIGN_MIN = 1;
+const REIGN_MAX = 80;
+
+/**
+ * What Copilot and Suggest actually read off this dragon: jobs, affinities,
+ * and reign. Reign only lived in the save file before, so a player could not
+ * see or fix it.
+ */
+function OwnedFacts({
+  dragon,
+  owned,
+  onReign,
+}: {
+  dragon: Dragon;
+  owned: OwnedDragon;
+  onReign: (reignLevel: number) => void;
+}) {
+  const roles = dragonRoles(dragon).map((role) => roleShort[role]);
+  const [draft, setDraft] = useState(String(owned.reignLevel));
+
+  function commitReign(raw: string) {
+    const parsed = Number.parseInt(raw, 10);
+    const next = Number.isFinite(parsed)
+      ? clampReign(parsed)
+      : owned.reignLevel;
+    setDraft(String(next));
+    if (next !== owned.reignLevel) onReign(next);
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl bg-card/50 p-3 ring-1 ring-foreground/10">
+      <p className="text-label">In your pit</p>
+      <div className="flex flex-wrap items-center gap-1.5 text-sm">
+        <span className="text-amber-200">★{owned.starRank}</span>
+        <span aria-hidden className="text-muted-foreground">
+          ·
+        </span>
+        <TroopIcons troops={dragon.affinities} iconClassName="size-4" />
+        {roles.length > 0 ? (
+          <>
+            <span aria-hidden className="text-muted-foreground">
+              ·
+            </span>
+            {roles.map((role) => (
+              <span
+                key={role}
+                className={cn(
+                  "rounded-full px-1.5 py-px text-[11px] ring-1",
+                  ROLE_CLASS[role] ?? "ring-foreground/20",
+                )}
+              >
+                {role}
+              </span>
+            ))}
+          </>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2">
+        <Label htmlFor="pit-reign" className="shrink-0 text-[13px]">
+          Reign level
+        </Label>
+        <Input
+          id="pit-reign"
+          type="number"
+          inputMode="numeric"
+          min={REIGN_MIN}
+          max={REIGN_MAX}
+          step={1}
+          value={draft}
+          className="h-10 w-24 md:h-8"
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={(event) => commitReign(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commitReign(event.currentTarget.value);
+            }
+          }}
+        />
+        <span className="text-xs text-muted-foreground">
+          {REIGN_MIN}–{REIGN_MAX}
+        </span>
+      </div>
     </div>
   );
 }
