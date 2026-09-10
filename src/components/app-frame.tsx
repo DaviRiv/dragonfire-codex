@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
 import { isWideRoute, isWorkspaceRoute } from "@/lib/routes";
@@ -9,6 +10,18 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const wide = isWideRoute(pathname);
   const team = isWorkspaceRoute(pathname);
+
+  // Percentage heights need a document that is actually the viewport tall.
+  // Without this the workspace pages grow the page instead of scrolling
+  // inside themselves, and anything pinned to their bottom edge is lost.
+  useEffect(() => {
+    if (!team) return;
+    const nodes = [document.documentElement, document.body];
+    for (const node of nodes) node.classList.add("app-locked");
+    return () => {
+      for (const node of nodes) node.classList.remove("app-locked");
+    };
+  }, [team]);
 
   return (
     <div

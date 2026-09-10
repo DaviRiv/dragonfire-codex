@@ -1,17 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { isWorkspaceRoute } from "@/lib/routes";
 
 export function SiteFooter() {
   const pathname = usePathname();
-  if (
-    pathname === "/team" ||
-    pathname.startsWith("/team/") ||
-    pathname === "/counter" ||
-    pathname.startsWith("/counter/")
-  ) {
-    return null;
-  }
+  if (isWorkspaceRoute(pathname)) return null;
   return (
     <footer className="hidden border-t border-border/60 px-4 py-6 text-center text-xs text-muted-foreground md:block">
       Fan-made. Not affiliated with HBO, Warner Bros., or Game of Thrones:

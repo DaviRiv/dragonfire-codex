@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 /** What each seat is for, in the player's words. */
 const SEAT_JOB: Record<SlotId, string> = {
   left: "Flank",
-  vanguard: "Tank · soaks the hit",
+  vanguard: "Soaks the hits",
   right: "Flank",
 };
 

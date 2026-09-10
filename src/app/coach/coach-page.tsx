@@ -136,7 +136,8 @@ export function CoachPage() {
       title="Copilot (beta) is for registered accounts"
       description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team and Talk stay readable without signing in."
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-2">
+      {/* A chat column reads better than the full workspace width. */}
+      <div className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col gap-2">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="font-heading inline-flex items-center gap-2 text-xl tracking-wide sm:text-2xl">
             Copilot

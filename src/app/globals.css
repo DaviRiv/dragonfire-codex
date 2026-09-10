@@ -166,6 +166,17 @@
   }
 }
 
+/*
+ * Workspace pages (Team, Counter, Copilot) scroll inside their own panes.
+ * Without this the document grows instead, and the pinned footer of those
+ * pages ends up below the fold.
+ */
+html.app-locked,
+body.app-locked {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* One-line list rows: nested ability spans cannot wrap these. */
 .compact-line {
   display: block;
