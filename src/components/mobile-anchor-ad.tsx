@@ -2,17 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
+import { isWorkspaceRoute } from "@/lib/routes";
 
 export function MobileAnchorAd() {
   const pathname = usePathname();
-  if (
-    pathname === "/team" ||
-    pathname.startsWith("/team/") ||
-    pathname === "/counter" ||
-    pathname.startsWith("/counter/")
-  ) {
-    return null;
-  }
+  if (isWorkspaceRoute(pathname)) return null;
   return (
     <div className="fixed inset-x-0 z-30 lg:hidden bottom-[calc(3.5rem+env(safe-area-inset-bottom))]">
       <div className="border-t border-border/40 bg-background/90 px-2 py-1">

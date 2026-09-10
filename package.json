@@ -12,7 +12,9 @@
     "check:around": "npx tsx --tsconfig tsconfig.json scripts/check-around.ts",
     "check:counter": "npx tsx --tsconfig tsconfig.json scripts/check-counter.ts",
     "check:talk": "npx tsx --tsconfig tsconfig.json scripts/check-talk.ts",
-    "check:tutorial": "npx tsx --tsconfig tsconfig.json scripts/check-tutorial.ts"
+    "check:tutorial": "npx tsx --tsconfig tsconfig.json scripts/check-tutorial.ts",
+    "check:coach": "npx tsx --tsconfig tsconfig.json scripts/check-coach-chat.ts",
+    "check": "npm run check:boards && npm run check:around && npm run check:counter && npm run check:talk && npm run check:tutorial && npm run check:coach"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

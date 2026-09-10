@@ -190,21 +190,19 @@ function SlotButton({
     selected && "bg-amber-500/20 ring-2 ring-amber-300",
   );
 
+  // A board with no picker is a display. Rendering a button there gives the
+  // player something to tap that can never do anything.
+  const shell = pickable ? (
+    <button type="button" onClick={() => onSelect?.(slot)} className={slotClass} />
+  ) : (
+    <div className={slotClass} />
+  );
+
   return (
     <div className="relative">
       {live.length > 0 ? (
         <Tooltip>
-          <TooltipTrigger
-            delay={160}
-            closeOnClick={false}
-            render={
-              <button
-                type="button"
-                onClick={() => onSelect?.(slot)}
-                className={slotClass}
-              />
-            }
-          >
+          <TooltipTrigger delay={160} closeOnClick={false} render={shell}>
             {face}
           </TooltipTrigger>
           <TooltipContent
@@ -215,7 +213,7 @@ function SlotButton({
             <SynergyBuffList buffs={live} />
           </TooltipContent>
         </Tooltip>
-      ) : (
+      ) : pickable ? (
         <button
           type="button"
           onClick={() => onSelect?.(slot)}
@@ -223,6 +221,8 @@ function SlotButton({
         >
           {face}
         </button>
+      ) : (
+        <div className={slotClass}>{face}</div>
       )}
       {dragon && onClear ? (
         <button

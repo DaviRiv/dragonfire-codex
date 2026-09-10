@@ -782,6 +782,16 @@ export function usePit() {
   return ctx;
 }
 
+/**
+ * The pit exactly as saved right now. Deferred work should read this instead
+ * of a `state` captured when the handler was created, so an edit made a
+ * moment ago still counts.
+ */
+export function readPitSnapshot(): PitState {
+  if (typeof window === "undefined") return EMPTY;
+  return getClientSnapshot();
+}
+
 function applySlotDragon(
   prev: PitState,
   lineupId: string,

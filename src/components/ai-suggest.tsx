@@ -34,7 +34,6 @@ export function ChatGptAsk({
     () => makeSuggestRequest(lineup, state, pool, roster, note),
     [lineup, state, pool, roster, note],
   );
-  const chatgptText = useMemo(() => chatgptSuggestExport(request), [request]);
 
   return (
     <Disclosure
@@ -77,7 +76,7 @@ export function ChatGptAsk({
       />
       <div className="mt-2">
         <ChatGptExportBar
-          text={chatgptText}
+          build={() => chatgptSuggestExport(request)}
           filename={chatgptExportFilename("suggest", pool)}
           disabled={roster.length === 0}
         />

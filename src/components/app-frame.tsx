@@ -2,32 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
+import { isWideRoute, isWorkspaceRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-
-function usesWideLayout(pathname: string): boolean {
-  return (
-    pathname === "/team" ||
-    pathname.startsWith("/team/") ||
-    pathname === "/counter" ||
-    pathname.startsWith("/counter/") ||
-    pathname === "/lineups" ||
-    pathname.startsWith("/lineups/")
-  );
-}
-
-function isWorkspace(pathname: string): boolean {
-  return (
-    pathname === "/team" ||
-    pathname.startsWith("/team/") ||
-    pathname === "/counter" ||
-    pathname.startsWith("/counter/")
-  );
-}
 
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const wide = usesWideLayout(pathname);
-  const team = isWorkspace(pathname);
+  const wide = isWideRoute(pathname);
+  const team = isWorkspaceRoute(pathname);
 
   return (
     <div
