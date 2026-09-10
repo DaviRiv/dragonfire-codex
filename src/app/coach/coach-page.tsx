@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
@@ -531,12 +530,10 @@ const FAIL_KINDS: ChatErrorKind[] = [
 ];
 
 function useDevFailureSeam(failNext: (kind: ChatErrorKind) => void) {
-  const params = useSearchParams();
-  const requested = params.get("fail");
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    if (!requested) return;
+    const requested = new URLSearchParams(window.location.search).get("fail");
     const kind = FAIL_KINDS.find((item) => item === requested);
     if (kind) failNext(kind);
-  }, [requested, failNext]);
+  }, [failNext]);
 }
