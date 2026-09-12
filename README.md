@@ -117,6 +117,19 @@ here is affiliated with HBO, Warner Bros., or the game.
   Debuffs such as Overwhelm
   use a red down arrow. Habit upgrade Power is not in the Hub dump, so
   it is not shown.
+- **Guide** (`/guide`) — a beginner's guide in fourteen sections, also offered
+  on the first-visit intro screen. Covers the three seats, what the four stats
+  do (including that “enhanced by *Stat*” means a stat sets ability
+  magnitudes, not just the plain combat number), why cutting **Damage
+  Received** beats another damage buff, all eighteen in-game keyword lines,
+  star rank versus reign level, habit slots and ranks, the four composition
+  jobs, the tile triangle, modes, rarity and breed, and a closing list of what
+  this site does *not* know. Every figure is derived from the Hub tables at
+  build time and every ability is quoted out of the catalog by dragon and
+  slot — see `src/lib/guide.ts`. `npm run check:guide` asserts those figures
+  still match the raw tables and that each quoted ability still says what the
+  prose claims, so a `sync-hub` run fails loudly instead of leaving the page
+  confidently wrong.
 - **Saved** (desktop nav, or Team → Tweak seats) — named formations and
   optional teams that bundle several lines (PvP, rally, defense). The
   editor is formation on the left (or on top on a phone) and a ranked
@@ -140,8 +153,8 @@ here is affiliated with HBO, Warner Bros., or the game.
   screenshots live here (Moondancer, Venator, Malachite, Rhysarion,
   Sunfyre, Kalspire, Caraxes, Syrax, Vhagar, Vermax, Seasmoke, Crimson, Sheepstealer, Daemoros, Shadowsong, Tessarion, Tairax, Velar, Feskar, Zivern, Vaeldra, Tashix, Antares, Arrax, Arulix, Dawnseeker, Jagadrix, Nyrena, Bevlorin, Shimmer, Shadowrend, Solstryker, Thunderstrike, and Vesper are complete). `?dev=0` hides the tab.
 
-The layout is built for a phone in one hand: five bottom tabs (Team, Counter,
-Talk, Copilot, Pit). Copilot is marked **beta**. After you pick a dragon,
+The layout is built for a phone in one hand: six bottom tabs (Team, Counter,
+Talk, Copilot, Pit, Guide). Copilot is marked **beta**. After you pick a dragon,
 Team keeps the picker fixed, scrolls only the list of threes, and pins Pros
 and Cons on the right (under the list on a phone).
 
@@ -219,6 +232,7 @@ back to a generated `data/.auth-secret` written with mode 600.
 ```bash
 npm run check      # every rules and conversation check
 npm run check:coach # Copilot thread memory, context window, persistence
+npm run check:guide # guide figures and quotes still match the catalog
 npx tsc --noEmit
 npm run build
 ```
