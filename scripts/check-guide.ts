@@ -16,7 +16,7 @@ import {
 } from "@/lib/guide";
 import type { KitSlot } from "@/lib/guide";
 import { STATUS_GLOSSARY } from "@/data/status-glossary";
-import { troopCount } from "@/lib/scale-stats";
+import { dragonPower, troopCount } from "@/lib/scale-stats";
 
 /**
  * The guide quotes real numbers. This asserts the helpers it reads them
@@ -66,6 +66,21 @@ for (const row of RARITY_SCALING) {
   );
 }
 
+// The guide sets the two star tables side by side and says they differ. If a
+// resync made them equal, that whole panel would be pointless noise.
+for (const row of RARITY_SCALING) {
+  check(
+    `${row.rarity} troop bonus differs from its stat bonus`,
+    row.maxTroopBonusPct !== row.maxStatBonusPct,
+    row,
+  );
+  check(
+    `${row.rarity} troop bonus is smaller than its stat bonus`,
+    row.maxTroopBonusPct < row.maxStatBonusPct,
+    row,
+  );
+}
+
 // The guide claims high stars reach the troop cap before the level cap.
 const capAtMax = levelThatCapsTroops("legendary", MAX_STARS);
 const capAtOne = levelThatCapsTroops("legendary", 1);
@@ -85,6 +100,25 @@ if (example) {
   check("example reaches the troop cap", example.troopsAfter === TROOPS_MAX, example.troopsAfter);
   check("example stat multiple is meaningful", example.statMultiple >= 2, example.statMultiple);
 }
+
+// The guide now says habit power exists in the catalog but is left out of the
+// power this site shows. Both halves have to stay true: the table has to be
+// there, and dragonPower has to keep ignoring it.
+const habitPower = HUB_SCALING.power?.habits;
+check("catalog publishes habit power", Boolean(habitPower), Object.keys(habitPower ?? {}));
+if (habitPower) {
+  const slots = Object.values(habitPower).flatMap((byRarity) =>
+    Object.values(byRarity as Record<string, number[]>),
+  );
+  check("habit power tables are populated", slots.length > 0 && slots.every((row) => Array.isArray(row) && row.some((v) => v > 0)), slots.length);
+}
+check(
+  "Hub power ignores habit ranks",
+  dragonPower("legendary", MAX_STARS, LEVEL_CAP) ===
+    HUB_SCALING.power.stars.legend[String(MAX_STARS)] +
+      HUB_SCALING.power.levels.legend[String(LEVEL_CAP)],
+  dragonPower("legendary", MAX_STARS, LEVEL_CAP),
+);
 
 check("habit slots match unlock gates", HABIT_SLOTS === HABIT_GATES.length, HABIT_SLOTS);
 check("habit gates are within star range", HABIT_GATES.every((s) => s >= 1 && s <= MAX_STARS), HABIT_GATES);

@@ -545,6 +545,36 @@ export function GuidePage() {
           <AbilityText text="Advantage" /> roll that targets{" "}
           <em>the Ally with the most troops</em>.
         </P>
+        <Panel>
+          <p className="text-label mb-1.5">
+            Troops use a different star table from stats
+          </p>
+          <ul className="space-y-1 text-sm leading-relaxed">
+            {RARITY_SCALING.map((row) => (
+              <li key={row.rarity} className="flex flex-wrap gap-x-2">
+                <span className="min-w-24">{row.label}</span>
+                <span className="text-muted-foreground">
+                  stats <strong className="text-amber-100">
+                    +{row.maxStatBonusPct}%
+                  </strong>{" "}
+                  · troops{" "}
+                  <strong className="text-amber-100">
+                    +{row.maxTroopBonusPct}%
+                  </strong>{" "}
+                  at {MAX_STARS}★
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Worth reading twice, because it is an easy thing to get wrong.
+            {legendary
+              ? ` A Legendary at ${MAX_STARS}★ triples its stats but only adds ${legendary.maxTroopBonusPct}% to troops`
+              : " The two bonuses are not the same size"}
+            , and troops still stop dead at {num(TROOPS_MAX)} either way. Stars
+            are a stat play far more than a troop play.
+          </p>
+        </Panel>
         <Panel className="border-l-2 border-muted-foreground/40">
           <p className="text-sm leading-relaxed text-muted-foreground">
             Be aware of a seam here. The game lets a reign level run to{" "}
@@ -889,8 +919,8 @@ export function GuidePage() {
             <>
               <strong>Hub power is not Army Power.</strong> The power number
               here comes from star rank and reign level only. Heirlooms,
-              stronghold upgrades and riders are left out — we are not going to
-              reverse-engineer those.
+              stronghold upgrades and riders are all left out, so do not expect
+              this figure to match what the game shows you.
             </>,
             <>
               <strong>Stat and troop tables stop at level {LEVEL_CAP}.</strong>{" "}
@@ -899,8 +929,11 @@ export function GuidePage() {
             </>,
             <>
               <strong>Habit upgrade ranks are not in the power number.</strong>{" "}
-              Ranks change the percentages inside a habit&rsquo;s text; the
-              catalog has no power figures for them.
+              Ranks change the percentages inside a habit&rsquo;s text. The
+              catalog does publish a power figure per habit slot and rank, but
+              this site does not add it in, so two dragons at the same stars and
+              level read the same power here even if one has five ranked habits
+              and the other has none.
             </>,
             <>
               <strong>
