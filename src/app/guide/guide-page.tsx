@@ -828,8 +828,8 @@ export function GuidePage() {
                 body: "Recovery that lands on allies, and then raise the stat that enhances it. A healer with low stats is a low heal.",
               },
               {
-                head: "Then a finisher, on the flank its Vanguard feeds",
-                body: "Check which flank your Vanguard's skill buffs, and put the damage dealer there. Vhagar's habit prefers the Right, so the physical DPS goes Right.",
+                head: "Then a finisher, on the flank your Vanguard feeds",
+                body: "Read every flank your Vanguard names, because they need not agree. Vhagar's Vanguard skill sends Tactical damage Left, while its second habit prioritises the Right Flank for Physical damage — so a tactical dealer belongs Left and a physical one Right.",
               },
               {
                 head: "Match troop type, and check the triangle",

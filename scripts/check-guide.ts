@@ -139,6 +139,24 @@ for (const { dragon, slot, expect } of QUOTES) {
   }
 }
 
+// "What to do first" tells you a tactical dealer belongs Left and a physical
+// one Right because Vhagar's two abilities genuinely name opposite flanks.
+// If a resync aligned them, that advice would become nonsense.
+const vanguard = kitLine("vhagar", { kind: "vanguard" });
+const flankHabit = kitLine("vhagar", { kind: "habit", habit: 2, rank: 1 });
+check(
+  "Vhagar's Vanguard skill still feeds Tactical damage Left",
+  /Tactical Damage Dealt/i.test(vanguard?.text ?? "") &&
+    /Left Flank/i.test(vanguard?.text ?? ""),
+  vanguard?.text,
+);
+check(
+  "Vhagar's habit 2 still prioritises Physical damage Right",
+  /Physical Damage Dealt/i.test(flankHabit?.text ?? "") &&
+    /Right Flank/i.test(flankHabit?.text ?? ""),
+  flankHabit?.text,
+);
+
 // The rank-1 versus rank-max comparison only teaches anything if they differ.
 const rank1 = kitLine("vhagar", { kind: "habit", habit: 5, rank: 1 });
 const rankMax = kitLine("vhagar", { kind: "habit", habit: 5, rank: HABIT_RANKS });
