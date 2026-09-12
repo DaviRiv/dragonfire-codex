@@ -52,6 +52,7 @@ function DevLinks({ compact }: { compact?: boolean }) {
       <Link
         href="/dev"
         aria-label="Dev catalog"
+        aria-current={active ? "page" : undefined}
         className={cn(
           "flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
           active && "bg-muted text-amber-100",
@@ -64,6 +65,7 @@ function DevLinks({ compact }: { compact?: boolean }) {
   return (
     <Link
       href="/dev"
+      aria-current={active ? "page" : undefined}
       className={cn(
         "rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
         active && "bg-muted text-foreground",
@@ -82,6 +84,7 @@ function AccountLink() {
   return (
     <Link
       href="/account"
+      aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex max-w-36 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
         active && "bg-muted text-foreground",
@@ -118,6 +121,7 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive(pathname, link.href) ? "page" : undefined}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
                   isActive(pathname, link.href) && "bg-muted text-foreground",
@@ -129,6 +133,7 @@ export function SiteHeader() {
             ))}
             <Link
               href="/lineups"
+              aria-current={isSaved(pathname) ? "page" : undefined}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
                 isSaved(pathname) && "bg-muted text-foreground",
@@ -161,6 +166,7 @@ export function SiteHeader() {
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 px-0 text-[9px] text-muted-foreground sm:text-[10px]",
                     active && "text-amber-100",
