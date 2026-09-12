@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { SearchField } from "@/components/search-field";
 import { StarStepper } from "@/components/star-rank";
@@ -41,11 +42,18 @@ export function IntroTutorial() {
     });
   }, [query, ownedById]);
 
-  const finish = useCallback(() => {
-    markTutorialSeen();
-    setOpen(false);
-    if (pathname !== "/team") router.replace("/team");
-  }, [pathname, router]);
+  // The overlay is mounted globally, so leaving it for another page has to
+  // close it too or it would sit on top of wherever the reader lands.
+  const leave = useCallback(
+    (href: string) => {
+      markTutorialSeen();
+      setOpen(false);
+      if (pathname !== href) router.replace(href);
+    },
+    [pathname, router],
+  );
+
+  const finish = useCallback(() => leave("/team"), [leave]);
 
   useEffect(() => {
     if (!ready || decided.current) return;
@@ -106,6 +114,7 @@ export function IntroTutorial() {
         <WelcomeStep
           onAddPit={() => setStep("pit")}
           onSkip={finish}
+          onGuide={() => leave("/guide")}
         />
       ) : (
         <PitStep
@@ -127,9 +136,11 @@ export function IntroTutorial() {
 function WelcomeStep({
   onAddPit,
   onSkip,
+  onGuide,
 }: {
   onAddPit: () => void;
   onSkip: () => void;
+  onGuide: () => void;
 }) {
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col justify-center overflow-y-auto px-5 py-8">
@@ -178,6 +189,16 @@ function WelcomeStep({
           Skip for now
         </Button>
       </div>
+      {/* Both buttons above assume you already know what a Vanguard is. */}
+      <button
+        type="button"
+        className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 self-center rounded-lg px-3 text-sm text-amber-200 underline-offset-2 hover:underline"
+        data-intro-guide=""
+        onClick={onGuide}
+      >
+        New to Dragonfire? Read the beginner&rsquo;s guide
+        <ArrowRight className="size-4" />
+      </button>
     </div>
   );
 }
