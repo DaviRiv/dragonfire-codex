@@ -57,10 +57,20 @@ export interface HubScaling {
     maxLevel: number;
     maxTroops: number;
     starBonus: Record<Rarity, NumberTable>;
+    /** Extra armies a stronghold fields. Not part of `troopCount()`. */
+    dragonArmy: Record<string, { perLevel: number; maxLevel: number }>;
+    /** Per-level troop growth from heirlooms. Not part of `troopCount()`. */
+    heirloomGrowth: NumberTable;
   };
   starStatMultipliers: { description: string } & Record<Rarity, NumberTable>;
   power: {
     stars: Record<"rare" | "epic" | "legend", NumberTable>;
+    /**
+     * Power per habit slot and rank, indexed 0 (unowned) to 5. Declared so the
+     * shape of the file is not a surprise, but `dragonPower()` sums stars and
+     * level only, so this stays out of every power figure the app shows.
+     */
+    habits: Record<"rare" | "epic" | "legend", Record<string, number[]>>;
     levels: Record<"rare" | "epic" | "legend", NumberTable>;
   };
 }

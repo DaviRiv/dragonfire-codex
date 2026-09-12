@@ -115,8 +115,9 @@ here is affiliated with HBO, Warner Bros., or the game.
   such as Crescent Blade (granted onto an ally Sentinel) use a green
   share mark so they are not confused with Moondancer’s Command.
   Debuffs such as Overwhelm
-  use a red down arrow. Habit upgrade Power is not in the Hub dump, so
-  it is not shown.
+  use a red down arrow. Habit upgrade Power *is* in the Hub dump
+  (`power.habits`, by rarity, habit slot, and rank), but `dragonPower()` sums
+  stars and reign level only, so it is not shown.
 - **Guide** (`/guide`) — a beginner's guide in fourteen sections, also offered
   on the first-visit intro screen. Covers the three seats, what the four stats
   do (including that “enhanced by *Stat*” means a stat sets ability

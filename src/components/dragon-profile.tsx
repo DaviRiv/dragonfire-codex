@@ -333,13 +333,13 @@ export function DragonProfile({
         <p className="mt-2 text-[11px] text-muted-foreground">
           Hub power is from star rank and reign level — not the in-game Army
           Power number. Heirlooms, stronghold upgrades, and riders are left
-          out; we are not going to reverse-engineer those. Stats read
+          out. Stats read
           Dragonfire-Hub’s catalog at your reign level, then apply star
           multipliers. Stars auto-select habits in the pit. Uncheck
           one on the search icon if you have not bought it. Rank diamonds pick
           the habit upgrade so kit percents match what you have. Tap or click a
           named buff for its card; hover works on a computer. Habit upgrade
-          Power is not in the catalog.
+          Power is in the catalog but is not added into this number.
         </p>
       </div>
     </div>

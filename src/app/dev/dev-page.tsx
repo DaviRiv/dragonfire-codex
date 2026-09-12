@@ -382,7 +382,8 @@ export function DevPage() {
 
       <p className="rounded-xl bg-card/70 px-3 py-2 text-[13px] ring-1 ring-foreground/10">
         Habit names {coverage.named}/{coverage.slots} · {coverage.complete} of{" "}
-        {coverage.dragons} dragons complete. Power is not in the Hub dump.
+        {coverage.dragons} dragons complete. Habit Power is in the dump but is
+        not added into Hub power.
       </p>
 
       <div className="relative">

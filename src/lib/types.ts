@@ -71,7 +71,8 @@ export interface OwnedDragon {
   /**
    * Upgrade rank 1–5 for each habit slot (index 0 = Habit 1). Percents in
    * kit text follow this rank. Missing on old saves is rank 1 for every slot.
-   * Not Hub Power — the catalog has no habit-upgrade Power numbers.
+   * Does not move Hub power: the catalog ships `power.habits` per rarity, slot
+   * and rank, but `dragonPower()` deliberately sums stars and level only.
    */
   habitRanks: number[];
 }
