@@ -1,8 +1,9 @@
+import { STAR_MAX } from "@/lib/lineup";
 import { cn } from "@/lib/utils";
 
 /** Five slots. Yellow = 1★, red = 2★. 1★ is one yellow; 10★ is five red. */
 export const STAR_ROW = 5;
-export const STAR_MAX = 10;
+export { STAR_MAX };
 
 const sizeClass = {
   xs: "size-2",

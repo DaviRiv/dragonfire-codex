@@ -16,12 +16,17 @@ export function emptySlots(): LineupSlots {
   return { left: null, vanguard: null, right: null };
 }
 
+export const STAR_MIN = 1;
+export const STAR_MAX = 10;
+export const REIGN_MIN = 1;
+export const REIGN_MAX = 80;
+
 export function clampStar(n: number): number {
-  return Math.min(10, Math.max(1, Math.round(n) || 1));
+  return Math.min(STAR_MAX, Math.max(STAR_MIN, Math.round(n) || STAR_MIN));
 }
 
 export function clampReign(n: number): number {
-  return Math.min(80, Math.max(1, Math.round(n) || 1));
+  return Math.min(REIGN_MAX, Math.max(REIGN_MIN, Math.round(n) || REIGN_MIN));
 }
 
 export function makePick(

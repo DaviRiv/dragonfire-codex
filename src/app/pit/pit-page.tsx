@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TroopIcons } from "@/components/troop-icon";
 import { allDragons, lineupsUsingDragon } from "@/lib/dragons";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
-import { clampReign } from "@/lib/lineup";
+import { REIGN_MAX, REIGN_MIN, clampReign } from "@/lib/lineup";
 import { exportPit, isPitState, usePit } from "@/lib/store";
 import type { Dragon, OwnedDragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -294,9 +294,6 @@ const ROLE_CLASS: Record<string, string> = {
   DPS: roleChipClass.damage,
   CC: roleChipClass.control,
 };
-
-const REIGN_MIN = 1;
-const REIGN_MAX = 80;
 
 /**
  * What Copilot and Suggest actually read off this dragon: jobs, affinities,
