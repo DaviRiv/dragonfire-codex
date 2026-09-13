@@ -1,5 +1,7 @@
 import { HUB_DRAGONS, HUB_SCALING } from "@/data/hub-source";
+import { STATUS_GLOSSARY } from "@/data/status-glossary";
 import { getCatalogDragon } from "@/data/dragons";
+import { KNOWN_STATUS_NAMES, keyName } from "@/lib/status-polarity";
 import { HABIT_RANK_MAX, HABIT_UNLOCK_STARS } from "@/lib/habits";
 import { RARITIES, rarityLabels, statLabels, statShort } from "@/lib/labels";
 import {
@@ -181,6 +183,18 @@ export function kitLine(dragonId: string, slot: KitSlot): KitLine | null {
     text,
   };
 }
+
+/**
+ * Statuses this app knows by name but the glossary never defines. Kit text uses
+ * them, so the guide has to admit they exist rather than present the glossary
+ * as the complete list.
+ */
+export const STATUSES_WITHOUT_GLOSSARY: string[] = (() => {
+  const defined = new Set(Object.keys(STATUS_GLOSSARY).map(keyName));
+  return KNOWN_STATUS_NAMES.filter((name) => !defined.has(keyName(name))).sort(
+    (a, b) => a.localeCompare(b),
+  );
+})();
 
 export const HABIT_GATES = [...HABIT_UNLOCK_STARS];
 export const HABIT_SLOTS = HABIT_UNLOCK_STARS.length;

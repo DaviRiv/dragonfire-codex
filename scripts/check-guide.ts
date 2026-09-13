@@ -1,4 +1,4 @@
-import { HUB_SCALING } from "@/data/hub-source";
+import { HUB_DRAGONS, HUB_SCALING } from "@/data/hub-source";
 import {
   GUIDE_SECTIONS,
   HABIT_GATES,
@@ -7,6 +7,7 @@ import {
   LEVEL_CAP,
   MAX_STARS,
   RARITY_SCALING,
+  STATUSES_WITHOUT_GLOSSARY,
   TROOPS_MAX,
   TROOPS_PER_LEVEL,
   kitLine,
@@ -127,6 +128,29 @@ check("habit ranks are positive", HABIT_RANKS > 0, HABIT_RANKS);
 // Section ids drive in-page anchors, so duplicates would break navigation.
 const ids = GUIDE_SECTIONS.map((s) => s.id);
 check("section ids are unique", new Set(ids).size === ids.length, ids);
+
+// The keyword section says the glossary is not the whole story and names the
+// gap. Each of those has to be absent from the glossary but present in real kit
+// text, or the guide is pointing at a gap that is not there.
+const releasedKit = HUB_DRAGONS.filter((d) => d.released).flatMap((d) =>
+  [d.vanguardSkill, d.commandSkill, ...(d.habitsData ?? []).flatMap((h) => Object.values(h))].filter(
+    Boolean,
+  ),
+);
+check("undocumented status list is non-empty", STATUSES_WITHOUT_GLOSSARY.length > 0);
+for (const name of STATUSES_WITHOUT_GLOSSARY) {
+  check(
+    `${name} is genuinely absent from the glossary`,
+    !Object.keys(STATUS_GLOSSARY).some(
+      (term) => term.toLowerCase() === name.toLowerCase(),
+    ),
+  );
+  check(
+    `${name} actually appears in released kit text`,
+    releasedKit.some((text) => new RegExp(`\\b${name.replace(/[-\s]/g, "[-\\s]")}`, "i").test(text)),
+    name,
+  );
+}
 const keywords = Object.keys(STATUS_GLOSSARY);
 check("glossary has entries", keywords.length > 0, keywords.length);
 

@@ -1,45 +1,56 @@
 export type StatusPolarity = "buff" | "debuff" | "spread";
 
-const BUFF_NAMES = new Set(
-  [
-    "First-Strike",
-    "Double-Strike",
-    "Advantage",
-    "Resistance",
-    "Protect",
-    "Evade",
-    "Cleanse",
-    "Bulwark",
-    "Taunt",
-    "Stolen Flock",
-    "Resilient Bond",
-    "Mirage",
-    "Immunity",
-    "Fire Ward",
-  ].map(keyName),
-);
+const BUFF_LIST = [
+  "First-Strike",
+  "Double-Strike",
+  "Advantage",
+  "Resistance",
+  "Protect",
+  "Evade",
+  "Cleanse",
+  "Bulwark",
+  "Taunt",
+  "Stolen Flock",
+  "Resilient Bond",
+  "Mirage",
+  "Immunity",
+  "Fire Ward",
+] as const;
 
-const DEBUFF_NAMES = new Set(
-  [
-    "Overwhelm",
-    "Burn",
-    "Bleed",
-    "Panic",
-    "Stun",
-    "Slow",
-    "Weakened",
-    "Confusion",
-    "Stagger",
-    "Vulnerable",
-    "Prey",
-    "Control",
-    "Nullify Recovery",
-    "Steady Erosion",
-  ].map(keyName),
-);
+const DEBUFF_LIST = [
+  "Overwhelm",
+  "Burn",
+  "Bleed",
+  "Panic",
+  "Stun",
+  "Slow",
+  "Weakened",
+  "Confusion",
+  "Stagger",
+  "Vulnerable",
+  "Prey",
+  "Control",
+  "Nullify Recovery",
+  "Steady Erosion",
+] as const;
 
 /** Named abilities granted onto an ally — spreading buffs, not the dragon's Command. */
-const SPREAD_NAMES = new Set(["Crescent Blade"].map(keyName));
+const SPREAD_LIST = ["Crescent Blade"] as const;
+
+/**
+ * Every status this app recognises by name. Not all of them have a
+ * STATUS_GLOSSARY line: the glossary only covers what the Star Progression
+ * screens spell out, while kit text names more than that.
+ */
+export const KNOWN_STATUS_NAMES: string[] = [
+  ...BUFF_LIST,
+  ...DEBUFF_LIST,
+  ...SPREAD_LIST,
+];
+
+const BUFF_NAMES = new Set(BUFF_LIST.map(keyName));
+const DEBUFF_NAMES = new Set(DEBUFF_LIST.map(keyName));
+const SPREAD_NAMES = new Set(SPREAD_LIST.map(keyName));
 
 export function keyName(value: string): string {
   return value.replace(/[’']/g, "'").trim().toLowerCase();

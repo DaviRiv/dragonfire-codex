@@ -45,6 +45,7 @@ import {
   MAX_STARS,
   RARITY_SCALING,
   STAR_STEPS,
+  STATUSES_WITHOUT_GLOSSARY,
   TROOPS_MAX,
   TROOPS_PER_LEVEL,
   kitLine,
@@ -420,7 +421,7 @@ export function GuidePage() {
 
       <Section
         id="keywords"
-        title="Every keyword, in plain words"
+        title="The keyword glossary, in plain words"
         lede="These are the in-game keyword lines, straight from the Star Progression screens. If a habit mentions one of these, this is exactly what it does."
       >
         <Panel className="p-0">
@@ -440,6 +441,28 @@ export function GuidePage() {
             ))}
           </dl>
         </Panel>
+        {STATUSES_WITHOUT_GLOSSARY.length ? (
+          <Panel className="border-l-2 border-muted-foreground/40">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              That list is not everything the game names. Kit text also uses{" "}
+              {STATUSES_WITHOUT_GLOSSARY.map((name, i) => (
+                <span key={name}>
+                  {i > 0
+                    ? i === STATUSES_WITHOUT_GLOSSARY.length - 1
+                      ? " and "
+                      : ", "
+                    : ""}
+                  <AbilityText text={name} />
+                </span>
+              ))}
+              , none of which appear on the Star Progression screens. For those
+              you have to read the ability text itself, which usually spells the
+              effect out in place — Bulwark is defined inside the habit that
+              grants it, for example. We would rather point at the gap than
+              write a definition the game never gave us.
+            </p>
+          </Panel>
+        ) : null}
       </Section>
 
       <Section
