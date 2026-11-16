@@ -16,7 +16,7 @@ export function Disclosure({
   return (
     <details
       className={cn(
-        "group rounded-2xl bg-card/70 ring-1 ring-foreground/10",
+        "group rounded-2xl surface ring-1 ring-foreground/10",
         className,
       )}
     >

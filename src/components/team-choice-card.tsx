@@ -133,7 +133,7 @@ export function TeamNotesPanel({
     return (
       <aside
         data-team-notes
-        className="flex h-full min-h-0 flex-col rounded-xl bg-card/70 p-2.5 ring-1 ring-foreground/10"
+        className="flex h-full min-h-0 flex-col rounded-xl surface p-2.5 ring-1 ring-foreground/10"
       >
         <p className="text-sm text-muted-foreground">
           Highlight a line to read kit payoffs and gaps.
@@ -145,7 +145,7 @@ export function TeamNotesPanel({
   return (
     <aside
       data-team-notes
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl surface ring-1 ring-foreground/10"
     >
       <div className="shrink-0 border-b border-foreground/10 px-2.5 py-1.5">
         <p className="font-heading truncate text-sm tracking-wide text-amber-50">

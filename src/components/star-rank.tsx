@@ -23,6 +23,14 @@ export function StarStepper({
   size?: "sm" | "md";
 }) {
   const compact = size === "sm";
+  /*
+   * A 44px triple does not fit a three-up grid cell on a 390px phone, so the
+   * compact pair draws at 36px and borrows the rest of its hit area from the
+   * gap with `.tap`. Full size keeps the 44px box it already had.
+   */
+  const stepClass = compact
+    ? "tap size-9 min-h-9 min-w-9"
+    : "min-h-11 min-w-11";
   return (
     <div
       className="flex items-center justify-center gap-0.5"
@@ -34,7 +42,7 @@ export function StarStepper({
         variant="outline"
         aria-label="One less star"
         disabled={value <= 0}
-        className={compact ? "size-8 min-h-8 min-w-8" : "min-h-11 min-w-11"}
+        className={stepClass}
         onClick={(event) => {
           event.stopPropagation();
           onDelta(-1);
@@ -45,7 +53,7 @@ export function StarStepper({
       <span
         className={cn(
           "text-center tabular-nums",
-          compact ? "min-w-8 text-[12px]" : "min-w-10 text-[13px]",
+          compact ? "min-w-7 text-[12px]" : "min-w-10 text-[13px]",
           value > STAR_ROW ? "text-red-400" : "text-amber-200",
         )}
       >
@@ -57,7 +65,7 @@ export function StarStepper({
         variant="outline"
         aria-label="One more star"
         disabled={value >= STAR_MAX}
-        className={compact ? "size-8 min-h-8 min-w-8" : "min-h-11 min-w-11"}
+        className={stepClass}
         onClick={(event) => {
           event.stopPropagation();
           onDelta(1);

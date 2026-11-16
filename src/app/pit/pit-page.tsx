@@ -436,47 +436,54 @@ export function PitPage() {
         </div>
       ) : null}
       <SectionLabel className="sr-only">Dragon catalog</SectionLabel>
-      <div className="grid grid-cols-3 gap-x-1 gap-y-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+      {/* Each dragon gets a card. Loose in the grid, one dragon's + sat flush
+          against the next dragon's −, with nothing to say which was which. */}
+      <div className="grid grid-cols-3 gap-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
         {visible.map((dragon) => {
           const owned = ownedById.get(dragon.id);
           const stars = owned?.starRank ?? 0;
           return (
             <div
               key={dragon.id}
-              className="flex flex-col items-center px-0.5 py-1"
+              className={cn(
+                "surface surface-interactive flex flex-col items-center gap-1 rounded-xl px-1 pt-1 pb-1.5 ring-1",
+                stars > 0 ? "ring-amber-400/25" : "ring-foreground/10",
+              )}
             >
-              {/* Flex row, not an overlaid button: the name used to run under
-                  the kit icon and get cut mid-letter on every longer name. */}
-              <div className="mb-1 flex h-8 w-full items-center gap-0.5">
-                <p
-                  className={cn(
-                    "font-heading min-w-0 flex-1 truncate text-center text-[11px] tracking-wide uppercase sm:text-xs",
-                    stars > 0 ? "text-amber-50" : "text-muted-foreground",
-                  )}
-                  title={dragon.name}
-                >
-                  {dragon.name}
-                </p>
+              {/* The name owns the full card width. Sharing the line with the
+                  kit button cost it a third of the card and truncated most
+                  names at eight columns; the button is a badge on the portrait
+                  now, which is empty space either way. */}
+              <p
+                className={cn(
+                  "font-heading w-full truncate text-center text-[11px] tracking-wide uppercase sm:text-xs",
+                  stars > 0 ? "text-amber-50" : "text-muted-foreground",
+                )}
+                title={dragon.name}
+              >
+                {dragon.name}
+              </p>
+              <div className="relative">
+                <DragonIcon
+                  dragonId={dragon.id}
+                  name={dragon.name}
+                  rarity={dragon.rarity}
+                  custom={dragon.custom}
+                  size="xl"
+                  dimmed={stars <= 0}
+                  onClick={() => setInspecting(dragon)}
+                />
                 <HabitSearchButton
                   name={dragon.name}
                   onClick={() => setHabitDragon(dragon)}
+                  className="absolute -right-1 bottom-0 bg-background/85 backdrop-blur-sm"
                 />
               </div>
-              <DragonIcon
-                dragonId={dragon.id}
-                name={dragon.name}
-                rarity={dragon.rarity}
-                custom={dragon.custom}
-                size="2xl"
-                dimmed={stars <= 0}
-                onClick={() => setInspecting(dragon)}
+              <StarStepper
+                size="sm"
+                value={stars}
+                onDelta={(delta) => setStars(dragon, stars + delta)}
               />
-              <div className="mt-0.5">
-                <StarStepper
-                  value={stars}
-                  onDelta={(delta) => setStars(dragon, stars + delta)}
-                />
-              </div>
             </div>
           );
         })}
@@ -629,7 +636,7 @@ function OwnedFacts({
   }
 
   return (
-    <div className="space-y-2 rounded-xl bg-card/50 p-3 ring-1 ring-foreground/10">
+    <div className="surface-sunken space-y-2 rounded-xl p-3 ring-1 ring-foreground/10">
       <p className="text-label">In your pit</p>
       <div className="flex flex-wrap items-center gap-1.5 text-sm">
         <span className="text-amber-200">★{owned.starRank}</span>

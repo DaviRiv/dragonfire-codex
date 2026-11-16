@@ -69,14 +69,19 @@ async function horizontalOverflow(page) {
     let clipped = 0;
     let measured = 0;
     for (const button of buttons) {
-      const row = button.parentElement;
-      const name = row?.querySelector("p");
+      const card = button.closest(".surface");
+      const name = card?.querySelector("p");
       if (!name) continue;
       measured += 1;
       const a = name.getBoundingClientRect();
       const b = button.getBoundingClientRect();
-      // Any horizontal intersection means the name is drawn under the icon.
-      if (a.right > b.left + 0.5 && a.left < b.right) overlapping += 1;
+      // The badge may sit over the portrait, never over the name.
+      const intersects =
+        a.right > b.left + 0.5 &&
+        a.left < b.right - 0.5 &&
+        a.bottom > b.top + 0.5 &&
+        a.top < b.bottom - 0.5;
+      if (intersects) overlapping += 1;
       if (name.scrollWidth > name.clientWidth + 1) {
         const style = getComputedStyle(name);
         if (style.textOverflow !== "ellipsis") clipped += 1;
@@ -86,7 +91,12 @@ async function horizontalOverflow(page) {
   });
   check("/pit kit buttons found", grid.count > 20, `${grid.count} cards`);
   check(
-    "/pit name never overlaps the kit icon",
+    "/pit name is measurable on every card",
+    grid.measured === grid.count,
+    `${grid.measured} of ${grid.count}`,
+  );
+  check(
+    "/pit kit button never covers the name",
     grid.overlapping === 0,
     `${grid.overlapping} of ${grid.measured} overlap`,
   );
@@ -94,37 +104,6 @@ async function horizontalOverflow(page) {
     "/pit truncated names get an ellipsis, not a hard cut",
     grid.clipped === 0,
     `${grid.clipped} hard-cut`,
-  );
-
-  const taps = await page.evaluate(() => {
-    const selector =
-      'button, a[href], [role="button"], input:not([type="hidden"]), select, summary';
-    const small = [];
-    for (const el of document.querySelectorAll(selector)) {
-      const box = el.getBoundingClientRect();
-      if (box.width === 0 || box.height === 0) continue;
-      if (getComputedStyle(el).visibility === "hidden") continue;
-      // sr-only controls (the skip link) are 1x1 on purpose.
-      if (box.width <= 2 && box.height <= 2) continue;
-      // `.tap` grows the hit area with an ::after overlay; measure that instead.
-      const after = getComputedStyle(el, "::after");
-      const grown =
-        after.content !== "none" &&
-        (parseFloat(after.minHeight) >= 44 || parseFloat(after.minWidth) >= 44);
-      const h = grown ? Math.max(box.height, 44) : box.height;
-      const w = grown ? Math.max(box.width, 44) : box.width;
-      if (h < 40 || w < 24) {
-        small.push(
-          `${el.tagName.toLowerCase()}[${el.getAttribute("aria-label") ?? el.textContent?.trim().slice(0, 18) ?? ""}] ${Math.round(w)}x${Math.round(h)}`,
-        );
-      }
-    }
-    return small;
-  });
-  check(
-    "/pit mobile controls are at least 40px tall",
-    taps.length === 0,
-    taps.length ? `${taps.length} small: ${taps.slice(0, 5).join(", ")}` : "",
   );
 
   const overflow = await horizontalOverflow(page);
@@ -235,8 +214,44 @@ async function horizontalOverflow(page) {
   await page.close();
 }
 
-// ------------------------------------------------------- mobile overflow pass
-for (const path of ["/team", "/teams", "/lineups", "/counter", "/guide", "/talk"]) {
+// ------------------------------------- mobile overflow and tap-target sweep
+/**
+ * Anything you are meant to tap should be at least 40px on its short edge.
+ * `.tap` grows a small control's hit area with an ::after overlay without
+ * changing its drawn size, so that counts too.
+ */
+async function smallTargets(page) {
+  return page.evaluate(() => {
+    const selector =
+      'button, a[href], [role="button"], input:not([type="hidden"]), select, summary';
+    const small = [];
+    for (const el of document.querySelectorAll(selector)) {
+      const box = el.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0) continue;
+      const style = getComputedStyle(el);
+      if (style.visibility === "hidden") continue;
+      // sr-only controls such as the skip link are 1x1 on purpose.
+      if (box.width <= 2 && box.height <= 2) continue;
+      // A link inside a sentence is sized by its line box. WCAG 2.5.8 exempts
+      // these, and padding one out to 44px would wreck the paragraph.
+      if (el.tagName === "A" && style.display === "inline") continue;
+      const after = getComputedStyle(el, "::after");
+      const grown =
+        after.content !== "none" &&
+        (parseFloat(after.minHeight) >= 44 || parseFloat(after.minWidth) >= 44);
+      const h = grown ? Math.max(box.height, 44) : box.height;
+      const w = grown ? Math.max(box.width, 44) : box.width;
+      if (h < 40 || w < 28) {
+        small.push(
+          `${el.tagName.toLowerCase()}[${(el.getAttribute("aria-label") ?? el.textContent?.trim() ?? "").slice(0, 20)}] ${Math.round(w)}x${Math.round(h)}`,
+        );
+      }
+    }
+    return small;
+  });
+}
+
+for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/guide", "/talk"]) {
   const page = await open(path, PHONE);
   const overflow = await horizontalOverflow(page);
   check(
@@ -245,6 +260,12 @@ for (const path of ["/team", "/teams", "/lineups", "/counter", "/guide", "/talk"
     overflow
       ? `${overflow.docWidth} > ${overflow.viewWidth}; ${overflow.offenders.join(" | ")}`
       : "",
+  );
+  const small = await smallTargets(page);
+  check(
+    `${path} mobile tap targets are at least 40px`,
+    small.length === 0,
+    small.length ? `${small.length}: ${small.slice(0, 5).join(", ")}` : "",
   );
   await page.close();
 }

@@ -96,7 +96,7 @@ function Panel({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10",
+        "rounded-2xl surface p-3 ring-1 ring-foreground/10",
         className,
       )}
     >

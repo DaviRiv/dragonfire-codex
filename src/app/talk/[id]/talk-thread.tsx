@@ -101,11 +101,11 @@ export function TalkThreadPage({ id }: { id: string }) {
         {thread.title}
       </h1>
       {thread.line ? (
-        <div className="rounded-2xl bg-card/70 px-3 py-2 ring-1 ring-foreground/10">
+        <div className="rounded-2xl surface px-3 py-2 ring-1 ring-foreground/10">
           <TalkLineChip line={thread.line} />
         </div>
       ) : null}
-      <article className="rounded-2xl bg-card/70 px-3 py-3 ring-1 ring-foreground/10 sm:px-4">
+      <article className="rounded-2xl surface px-3 py-3 ring-1 ring-foreground/10 sm:px-4">
         <p className="text-[11px] tracking-wide text-amber-100/80 uppercase">
           {thread.author}
           <span className="ml-2 font-sans font-normal tracking-normal text-muted-foreground normal-case">

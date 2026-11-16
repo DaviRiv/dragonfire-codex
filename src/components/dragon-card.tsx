@@ -35,7 +35,7 @@ export function DragonCard({
   return (
     <article
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl bg-card/80 ring-1 ring-foreground/10 transition",
+        "flex flex-col overflow-hidden rounded-xl surface ring-1 ring-foreground/10 transition",
         selected && "ring-2 ring-amber-400/80",
         onClick && "cursor-pointer hover:ring-amber-400/50",
       )}
@@ -111,7 +111,7 @@ export function CatalogTile({
   onAdd?: () => void;
 }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10">
+    <article className="flex flex-col overflow-hidden rounded-xl surface ring-1 ring-foreground/10">
       <DragonPortrait
         dragonId={id}
         name={name}

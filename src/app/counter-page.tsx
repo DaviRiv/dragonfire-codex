@@ -9,9 +9,9 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
+import { SeatControl } from "@/components/seat-control";
 import { SectionLabel } from "@/components/section-label";
 import { MiniChip } from "@/components/chip";
 import { TroopChip } from "@/components/troop-icon";
@@ -46,8 +46,7 @@ import { SLOT_IDS } from "@/lib/lineup";
 import { starsForCounterPick } from "@/lib/counter-pick";
 import { usePit } from "@/lib/store";
 import type { SlotId, TroopType } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { Swords, X } from "lucide-react";
+import { Swords } from "lucide-react";
 import { toast } from "sonner";
 
 function clampStars(value: number): number {
@@ -419,7 +418,8 @@ export function CounterPage() {
 
   const beaters = troopsThatBeat(enemyTroop);
   const recommended = defaultCounterTroop(enemyTroop);
-  const compactChip = "min-h-7 px-2 py-0 text-[11px]";
+  // 28px was below any usable tap target; 36px drawn, 44px of hit area.
+  const compactChip = "tap min-h-9 px-2 py-0 text-[11px]";
   const pickFollowUp = openSlot
     ? SLOT_IDS.filter((item) => item !== openSlot && !seats[item].dragonId)
         .map((item) => slotShort[item])
@@ -452,7 +452,7 @@ export function CounterPage() {
   const picker = (
     <section
       data-counter-enemy
-      className="shrink-0 rounded-xl bg-card/60 px-2 py-1.5 ring-1 ring-foreground/10"
+      className="shrink-0 rounded-xl surface px-2 py-1.5 ring-1 ring-foreground/10"
     >
       <div className="flex flex-wrap items-center gap-1">
         <MiniChip className={compactChip} onClick={() => loadCore("online-dps")}>
@@ -499,79 +499,17 @@ export function CounterPage() {
           const dragon = seat.dragonId ? getCatalogDragon(seat.dragonId) : null;
           const open = openSlot === slot;
           return (
-            <div
+            <SeatControl
               key={slot}
               data-enemy-seat={slot}
-              className={cn(
-                "min-w-0 rounded-lg px-1 py-1 ring-1",
-                open
-                  ? "bg-amber-500/15 ring-amber-300"
-                  : "ring-foreground/10",
-              )}
-            >
-              <p className="text-label">{slotShort[slot]}</p>
-              <div className="mt-0.5 flex min-w-0 items-center gap-1">
-                <button
-                  type="button"
-                  aria-pressed={open}
-                  aria-label={
-                    dragon
-                      ? `Change ${slotShort[slot]}, ${dragon.name}`
-                      : `Pick ${slotShort[slot]}`
-                  }
-                  className="flex min-w-0 flex-1 items-center gap-1 rounded-md text-left hover:bg-muted/60"
-                  onClick={() => toggleSlot(slot)}
-                >
-                  <DragonIcon
-                    dragonId={dragon?.id}
-                    name={dragon?.name}
-                    rarity={dragon?.rarity}
-                    empty={!dragon}
-                    size="sm"
-                    selected={open}
-                  />
-                  <span
-                    className={cn(
-                      "min-w-0 truncate text-[12px] leading-tight",
-                      dragon ? "text-amber-50" : "text-muted-foreground",
-                    )}
-                  >
-                    {dragon?.name ?? "Pick"}
-                  </span>
-                </button>
-                {dragon ? (
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      type="button"
-                      aria-label={`One less star on ${dragon.name}`}
-                      className="flex size-6 items-center justify-center rounded text-[12px] ring-1 ring-foreground/20 hover:bg-muted"
-                      onClick={() => setSeatStars(slot, seat.stars - 1)}
-                    >
-                      −
-                    </button>
-                    <span className="min-w-6 text-center text-[11px] tabular-nums text-amber-200">
-                      ★{seat.stars}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`One more star on ${dragon.name}`}
-                      className="flex size-6 items-center justify-center rounded text-[12px] ring-1 ring-foreground/20 hover:bg-muted"
-                      onClick={() => setSeatStars(slot, seat.stars + 1)}
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Clear ${slotShort[slot]}`}
-                      className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      onClick={() => clearSeat(slot)}
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+              slot={slot}
+              dragon={dragon}
+              stars={seat.stars}
+              open={open}
+              onToggle={() => toggleSlot(slot)}
+              onStars={(next) => setSeatStars(slot, next)}
+              onClear={() => clearSeat(slot)}
+            />
           );
         })}
       </div>
@@ -635,9 +573,9 @@ export function CounterPage() {
         <h1 className="font-heading text-base tracking-wide">Counter</h1>
         <Link
           href="/team"
-          className="inline-flex items-center gap-1 text-[13px] text-amber-200 hover:underline"
+          className="text-ui-sm inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-amber-200 hover:bg-muted hover:underline"
         >
-          <Swords className="size-3.5" />
+          <Swords className="size-3.5" aria-hidden />
           Team
         </Link>
       </div>
@@ -682,7 +620,7 @@ export function CounterPage() {
               ref={listRef}
               tabIndex={0}
               onKeyDown={onListKey}
-              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-1"
+              className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl surface ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-1"
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-2 py-1.5">
                 <SectionLabel>

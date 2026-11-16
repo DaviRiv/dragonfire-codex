@@ -207,7 +207,7 @@ export function CoachPage() {
         </Disclosure>
 
         {thin ? (
-          <div className="rounded-2xl bg-card/60 px-3 py-2 ring-1 ring-amber-400/30">
+          <div className="rounded-2xl surface px-3 py-2 ring-1 ring-amber-400/30">
             <p className="text-[13px] leading-snug">
               {pool === "pit"
                 ? "Copilot needs at least three owned dragons before it can seat a line."
@@ -441,7 +441,7 @@ function Turn({
     return (
       <div
         data-turn="pending"
-        className="flex w-fit items-center gap-2 rounded-2xl bg-card/70 px-3 py-2 text-[13px] text-muted-foreground ring-1 ring-foreground/10"
+        className="flex w-fit items-center gap-2 rounded-2xl surface px-3 py-2 text-[13px] text-muted-foreground ring-1 ring-foreground/10"
       >
         <span className="flex gap-1" aria-hidden>
           <Dot delay="0ms" />
@@ -462,7 +462,7 @@ function Turn({
           "w-fit max-w-[min(40rem,90%)] rounded-2xl px-3 py-2 text-[13px] leading-snug ring-1",
           failed
             ? "bg-red-500/10 text-red-100 ring-red-400/40"
-            : "bg-card/60 text-muted-foreground ring-foreground/10",
+            : "surface text-muted-foreground ring-foreground/10",
         )}
         role={failed ? "alert" : undefined}
       >
@@ -486,7 +486,7 @@ function Turn({
 
   return (
     <div data-turn="assistant" className="space-y-2">
-      <div className="w-fit max-w-[min(44rem,95%)] rounded-2xl bg-card/70 px-3 py-2 text-[13px] leading-snug break-words whitespace-pre-wrap ring-1 ring-foreground/10">
+      <div className="w-fit max-w-[min(44rem,95%)] rounded-2xl surface px-3 py-2 text-[13px] leading-snug break-words whitespace-pre-wrap ring-1 ring-foreground/10">
         {turn.text}
       </div>
       {turn.lines?.length ? (

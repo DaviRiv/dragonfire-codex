@@ -19,7 +19,7 @@ export function SynergyPanel({
       className={cn(
         compact
           ? "space-y-2"
-          : "space-y-4 rounded-2xl bg-card/70 p-3 ring-1 ring-foreground/10 sm:p-4",
+          : "space-y-4 rounded-2xl surface p-3 ring-1 ring-foreground/10 sm:p-4",
       )}
     >
       {compact ? null : (

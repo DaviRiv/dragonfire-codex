@@ -28,9 +28,11 @@ import { cn } from "@/lib/utils";
 export function HabitSearchButton({
   name,
   onClick,
+  className,
 }: {
   name: string;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
@@ -40,7 +42,10 @@ export function HabitSearchButton({
         onClick();
       }}
       aria-label={`${name} kit`}
-      className="tap inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground ring-1 ring-foreground/20 transition-colors select-none hover:bg-muted hover:text-foreground"
+      className={cn(
+        "tap inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground ring-1 ring-foreground/20 transition-colors select-none hover:bg-muted hover:text-foreground",
+        className,
+      )}
     >
       <Search className="size-3.5" aria-hidden />
     </button>

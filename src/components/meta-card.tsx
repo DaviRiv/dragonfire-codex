@@ -5,7 +5,7 @@ import { modeShort, troopShort } from "@/lib/labels";
 
 export function MetaCard() {
   return (
-    <div className="rounded-2xl bg-card/70 px-3 py-2.5 ring-1 ring-foreground/10">
+    <div className="rounded-2xl surface px-3 py-2.5 ring-1 ring-foreground/10">
       <p className="font-heading text-[15px] tracking-wide">Current meta</p>
       <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
         September 2026 community cores · online PvP. Tile triangle is still

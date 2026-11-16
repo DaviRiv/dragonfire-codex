@@ -90,7 +90,7 @@ export function TeamsPage() {
                   "min-h-11 min-w-40 shrink-0 rounded-xl p-3 text-left ring-1 ring-foreground/10 lg:w-full lg:min-w-0",
                   selected?.id === team.id
                     ? "bg-amber-500/15 ring-amber-400/40"
-                    : "bg-card/60 hover:ring-amber-400/30",
+                    : "surface hover:ring-amber-400/30",
                 )}
               >
                 <p className="font-heading tracking-wide">{team.name}</p>
@@ -142,7 +142,7 @@ function TeamEditor({
   }
 
   return (
-    <div className="space-y-5 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/10 sm:p-6">
+    <div className="space-y-5 rounded-2xl surface p-4 ring-1 ring-foreground/10 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1 space-y-3">
           <div className="grid gap-1.5">

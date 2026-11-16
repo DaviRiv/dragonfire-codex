@@ -25,7 +25,7 @@ export function TalkThreadCard({
     <Link
       href={`/talk/${thread.id}`}
       className={cn(
-        "block rounded-2xl bg-card/70 px-3 py-3 ring-1 ring-foreground/10 hover:bg-muted/50 sm:px-4",
+        "block rounded-2xl surface px-3 py-3 ring-1 ring-foreground/10 hover:bg-muted/50 sm:px-4",
         className,
       )}
     >

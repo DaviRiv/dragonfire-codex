@@ -266,7 +266,7 @@ export function LineupEditor({
         />
 
         {isTheory && selectedResolved ? (
-          <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
+          <div className="rounded-xl surface p-2 ring-1 ring-foreground/10">
             <p className="text-label mb-1">
               Stars · {selectedDragon?.name}
             </p>
@@ -278,7 +278,7 @@ export function LineupEditor({
             />
           </div>
         ) : isTheory ? (
-          <div className="rounded-xl bg-card/70 p-2 ring-1 ring-foreground/10">
+          <div className="rounded-xl surface p-2 ring-1 ring-foreground/10">
             <p className="text-label mb-1">Aim for stars</p>
             <StarRank
               value={lineup.craftStars}
@@ -315,7 +315,7 @@ export function LineupEditor({
         ref={pickRef}
         className="mt-3 min-w-0 scroll-mt-[4.25rem] lg:sticky lg:top-[calc(3.5rem+env(safe-area-inset-top))] lg:mt-0 lg:flex lg:max-h-[calc(100dvh-5.25rem)] lg:flex-col"
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-card/80 ring-1 ring-amber-400/25">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl surface ring-1 ring-amber-400/25">
           <div className="space-y-2 border-b border-border/50 p-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-heading min-w-0 flex-1 truncate text-base tracking-wide sm:text-lg">

@@ -161,7 +161,7 @@ function WelcomeStep({
         {(["Left", "Vanguard", "Right"] as const).map((seat) => (
           <li
             key={seat}
-            className="rounded-xl border border-amber-500/20 bg-card/80 px-2 py-3"
+            className="rounded-xl border border-amber-500/20 surface px-2 py-3"
           >
             <span className="mx-auto mb-2 block size-10 rounded-full ring-2 ring-dashed ring-amber-200/30" />
             <span className="text-label">{seat}</span>

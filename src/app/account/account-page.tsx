@@ -106,7 +106,7 @@ export function AccountPage() {
         </MiniChip>
       </div>
       <form
-        className="space-y-3 rounded-2xl bg-card/70 p-4 ring-1 ring-foreground/10"
+        className="space-y-3 rounded-2xl surface p-4 ring-1 ring-foreground/10"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();

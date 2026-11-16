@@ -380,7 +380,7 @@ export function DevPage() {
         </Button>
       </div>
 
-      <p className="rounded-xl bg-card/70 px-3 py-2 text-[13px] ring-1 ring-foreground/10">
+      <p className="rounded-xl surface px-3 py-2 text-[13px] ring-1 ring-foreground/10">
         Habit names {coverage.named}/{coverage.slots} · {coverage.complete} of{" "}
         {coverage.dragons} dragons complete. Habit Power is in the dump but is
         not added into Hub power.
@@ -415,7 +415,7 @@ export function DevPage() {
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-[16.5rem_minmax(0,1fr)] md:items-start">
-        <ul className="max-h-[40vh] space-y-1 overflow-y-auto rounded-xl bg-card/60 p-1.5 ring-1 ring-foreground/10 md:sticky md:top-16 md:max-h-[calc(100dvh-8rem)]">
+        <ul className="max-h-[40vh] space-y-1 overflow-y-auto rounded-xl surface p-1.5 ring-1 ring-foreground/10 md:sticky md:top-16 md:max-h-[calc(100dvh-8rem)]">
           {visible.length === 0 ? (
             <li className="px-2 py-3 text-[13px] text-muted-foreground">
               No dragons match.

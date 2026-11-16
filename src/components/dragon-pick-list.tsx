@@ -170,13 +170,26 @@ export function DragonPickList({
     <section
       {...sectionProps}
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10",
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl surface ring-1 ring-foreground/10",
         className,
       )}
     >
       <div className="shrink-0 border-b border-foreground/10 px-2 py-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <SectionLabel>{title}</SectionLabel>
+        {/* The title runs to 316px, so sharing a line with a flex-1 search
+            squeezed the field to 50px on a phone — a magnifier and nowhere to
+            read what you typed. min-w-full forces it onto its own line until
+            there is room for both. */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <SectionLabel className="min-w-0 flex-1">{title}</SectionLabel>
+          {canCancel ? (
+            <button
+              type="button"
+              className="text-ui-sm min-h-10 shrink-0 px-1 text-amber-200 hover:underline"
+              onClick={onCancel}
+            >
+              {cancelLabel}
+            </button>
+          ) : null}
           <SearchField
             id={searchId}
             value={query}
@@ -184,16 +197,9 @@ export function DragonPickList({
             onKeyDown={onKey}
             label={searchLabel}
             autoFocus
+            className="min-w-full lg:min-w-0"
+            inputClassName="h-10 md:h-9"
           />
-          {canCancel ? (
-            <button
-              type="button"
-              className="text-[13px] text-amber-200 hover:underline"
-              onClick={onCancel}
-            >
-              {cancelLabel}
-            </button>
-          ) : null}
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

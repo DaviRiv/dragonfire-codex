@@ -17,7 +17,7 @@ export function LineupCard({
   return (
     <Link
       href={`/lineups/${lineup.id}`}
-      className="block rounded-2xl bg-card/80 p-4 ring-1 ring-foreground/10 transition hover:ring-amber-400/40"
+      className="block rounded-2xl surface p-4 ring-1 ring-foreground/10 transition hover:ring-amber-400/40"
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0">

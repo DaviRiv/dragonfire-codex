@@ -116,7 +116,7 @@ export function TalkNewPage() {
         </p>
       </div>
       {line ? (
-        <div className="rounded-2xl bg-card/70 px-3 py-2 ring-1 ring-foreground/10">
+        <div className="rounded-2xl surface px-3 py-2 ring-1 ring-foreground/10">
           <p className="text-label">Attached line</p>
           <TalkLineChip line={line} />
         </div>

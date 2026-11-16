@@ -60,6 +60,8 @@
   --color-df-dealt: #f5d76e;
   --color-df-received: #94a3b8;
   --color-df-status: #e8d48b;
+  /* Bronze, for the second-tier accent that is not primary gold. */
+  --color-df-bronze: #b4855c;
 }
 
 /*
@@ -90,23 +92,23 @@
 }
 
 :root {
-  --background: oklch(0.16 0.02 50);
+  --background: oklch(0.145 0.008 55);
   --foreground: oklch(0.93 0.02 80);
-  --card: oklch(0.21 0.025 50);
+  --card: oklch(0.206 0.009 55);
   --card-foreground: oklch(0.93 0.02 80);
-  --popover: oklch(0.2 0.025 48);
+  --popover: oklch(0.196 0.009 55);
   --popover-foreground: oklch(0.93 0.02 80);
   --primary: oklch(0.78 0.13 75);
   --primary-foreground: oklch(0.2 0.04 55);
-  --secondary: oklch(0.28 0.03 48);
+  --secondary: oklch(0.265 0.013 55);
   --secondary-foreground: oklch(0.93 0.02 80);
-  --muted: oklch(0.26 0.02 50);
+  --muted: oklch(0.247 0.01 55);
   --muted-foreground: oklch(0.82 0.025 75);
-  --accent: oklch(0.32 0.05 50);
+  --accent: oklch(0.3 0.022 55);
   --accent-foreground: oklch(0.95 0.03 80);
   --destructive: oklch(0.65 0.18 25);
-  --border: oklch(0.35 0.03 50);
-  --input: oklch(0.35 0.03 50);
+  --border: oklch(0.325 0.013 55);
+  --input: oklch(0.325 0.013 55);
   --ring: oklch(0.72 0.13 70);
   --chart-1: oklch(0.78 0.13 75);
   --chart-2: oklch(0.65 0.14 45);
@@ -114,47 +116,47 @@
   --chart-4: oklch(0.45 0.05 50);
   --chart-5: oklch(0.32 0.04 50);
   --radius: 0.7rem;
-  --sidebar: oklch(0.2 0.025 50);
+  --sidebar: oklch(0.196 0.009 55);
   --sidebar-foreground: oklch(0.93 0.02 80);
   --sidebar-primary: oklch(0.78 0.13 75);
   --sidebar-primary-foreground: oklch(0.2 0.04 55);
-  --sidebar-accent: oklch(0.28 0.03 48);
+  --sidebar-accent: oklch(0.265 0.013 55);
   --sidebar-accent-foreground: oklch(0.93 0.02 80);
-  --sidebar-border: oklch(0.35 0.03 50);
+  --sidebar-border: oklch(0.325 0.013 55);
   --sidebar-ring: oklch(0.72 0.13 70);
 }
 
 .dark {
-  --background: oklch(0.16 0.02 50);
+  --background: oklch(0.145 0.008 55);
   --foreground: oklch(0.93 0.02 80);
-  --card: oklch(0.21 0.025 50);
+  --card: oklch(0.206 0.009 55);
   --card-foreground: oklch(0.93 0.02 80);
-  --popover: oklch(0.2 0.025 48);
+  --popover: oklch(0.196 0.009 55);
   --popover-foreground: oklch(0.93 0.02 80);
   --primary: oklch(0.78 0.13 75);
   --primary-foreground: oklch(0.2 0.04 55);
-  --secondary: oklch(0.28 0.03 48);
+  --secondary: oklch(0.265 0.013 55);
   --secondary-foreground: oklch(0.93 0.02 80);
-  --muted: oklch(0.26 0.02 50);
+  --muted: oklch(0.247 0.01 55);
   --muted-foreground: oklch(0.82 0.025 75);
-  --accent: oklch(0.32 0.05 50);
+  --accent: oklch(0.3 0.022 55);
   --accent-foreground: oklch(0.95 0.03 80);
   --destructive: oklch(0.65 0.18 25);
-  --border: oklch(0.35 0.03 50);
-  --input: oklch(0.35 0.03 50);
+  --border: oklch(0.325 0.013 55);
+  --input: oklch(0.325 0.013 55);
   --ring: oklch(0.72 0.13 70);
   --chart-1: oklch(0.78 0.13 75);
   --chart-2: oklch(0.65 0.14 45);
   --chart-3: oklch(0.55 0.08 50);
   --chart-4: oklch(0.45 0.05 50);
   --chart-5: oklch(0.32 0.04 50);
-  --sidebar: oklch(0.2 0.025 50);
+  --sidebar: oklch(0.196 0.009 55);
   --sidebar-foreground: oklch(0.93 0.02 80);
   --sidebar-primary: oklch(0.78 0.13 75);
   --sidebar-primary-foreground: oklch(0.2 0.04 55);
-  --sidebar-accent: oklch(0.28 0.03 48);
+  --sidebar-accent: oklch(0.265 0.013 55);
   --sidebar-accent-foreground: oklch(0.93 0.02 80);
-  --sidebar-border: oklch(0.35 0.03 50);
+  --sidebar-border: oklch(0.325 0.013 55);
   --sidebar-ring: oklch(0.72 0.13 70);
 }
 
@@ -179,9 +181,22 @@
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+    /*
+     * Two faint warm washes, not a brown field. At the old 18%/22% they
+     * tinted the whole page and left cards with nothing to stand out from.
+     */
     background-image:
-      radial-gradient(1200px 600px at 10% -10%, oklch(0.45 0.12 50 / 0.18), transparent 50%),
-      radial-gradient(900px 500px at 100% 0%, oklch(0.3 0.08 30 / 0.22), transparent 45%);
+      radial-gradient(
+        1100px 520px at 12% -12%,
+        oklch(0.5 0.1 60 / 0.08),
+        transparent 55%
+      ),
+      radial-gradient(
+        800px 440px at 100% 0%,
+        oklch(0.42 0.1 30 / 0.07),
+        transparent 50%
+      );
+    background-attachment: fixed;
   }
   button,
   a,
@@ -239,48 +254,73 @@ body.app-locked {
  * icon buttons can stay visually compact in a dense grid and still be tappable.
  * The element needs its own stacking context for the overlay to receive taps.
  */
-.tap {
-  position: relative;
-}
-.tap::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
+/*
+ * In @layer components, not unlayered: `position: relative` here has to lose
+ * to an `absolute` utility on the same element, or any `.tap` button that is
+ * also positioned silently falls back into the flow.
+ */
+@layer components {
+  .tap,
+  .tap-y {
+    position: relative;
+  }
+  .tap::after,
+  .tap-y::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+  }
+  .tap::after {
+    min-width: 44px;
+  }
+  /*
+   * Height only. For a row of small buttons with close horizontal neighbours,
+   * growing the width would make taps near the seam ambiguous.
+   */
+  .tap-y::after {
+    min-width: 100%;
+  }
 }
 
 /*
- * Card surfaces. `surface` is the default panel; `surface-sunken` recedes for
- * nested groups so a card inside a card does not read as two equal boxes.
+ * Card surfaces. Panels were drawn at six different card opacities across the
+ * app — 40, 50, 60, 70, 80, 90 — so no two screens agreed on what a card looks
+ * like. `surface` is the one panel; `surface-sunken` recedes for nested groups
+ * so a card inside a card does not read as two equal boxes.
+ *
+ * These live in @layer components, not unlayered, so a `bg-*` utility in a
+ * selected or hovered state still wins.
  */
-.surface {
-  background: color-mix(in oklab, var(--card) 72%, transparent);
-  box-shadow:
-    inset 0 1px 0 0 oklch(1 0 0 / 0.04),
-    0 1px 2px 0 oklch(0 0 0 / 0.3);
-  --tw-ring-color: oklch(0.93 0.02 80 / 0.1);
-}
-.surface-sunken {
-  background: color-mix(in oklab, var(--background) 60%, transparent);
-}
-
-/* Lifts an interactive card on hover without shifting neighbours. */
-.surface-interactive {
-  transition:
-    background-color 150ms ease,
-    box-shadow 150ms ease;
-}
-@media (hover: hover) {
-  .surface-interactive:hover {
-    background: color-mix(in oklab, var(--card) 92%, transparent);
+@layer components {
+  .surface {
+    background: color-mix(in oklab, var(--card) 80%, transparent);
+    /* A lit top edge and a cast shadow, which is what reads as "raised". */
     box-shadow:
-      inset 0 1px 0 0 oklch(1 0 0 / 0.06),
-      0 4px 12px -2px oklch(0 0 0 / 0.45);
+      inset 0 1px 0 0 oklch(1 0 0 / 0.055),
+      0 1px 2px 0 oklch(0 0 0 / 0.4),
+      0 10px 26px -14px oklch(0 0 0 / 0.55);
+  }
+  .surface-sunken {
+    background: color-mix(in oklab, var(--background) 60%, transparent);
+  }
+  /* Lifts an interactive card on hover without shifting its neighbours. */
+  .surface-interactive {
+    transition:
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  @media (hover: hover) {
+    .surface-interactive:hover {
+      background: color-mix(in oklab, var(--card) 92%, transparent);
+      box-shadow:
+        inset 0 1px 0 0 oklch(1 0 0 / 0.06),
+        0 4px 12px -2px oklch(0 0 0 / 0.45);
+    }
   }
 }
 

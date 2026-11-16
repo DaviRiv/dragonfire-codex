@@ -28,7 +28,7 @@ export function PairingPanel({ report }: { report: PairingReport }) {
       : (cons[0]?.title ?? pros[0]?.title ?? "");
 
   return (
-    <details className="group rounded-2xl bg-card/70 ring-1 ring-foreground/10">
+    <details className="group rounded-2xl surface ring-1 ring-foreground/10">
       <summary className="flex min-h-12 cursor-pointer list-none items-start gap-2 px-3 py-2.5 select-none [&::-webkit-details-marker]:hidden">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
