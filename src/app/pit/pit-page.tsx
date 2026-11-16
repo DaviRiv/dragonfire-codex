@@ -3,23 +3,60 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
+import { MiniChip } from "@/components/chip";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonSheet } from "@/components/dragon-sheet";
-import { HabitPickerDialog, HabitSearchButton } from "@/components/habit-picker";
+import { ChipRow, NoMatches } from "@/components/filter-bar";
+import { SearchField } from "@/components/search-field";
+import { SectionLabel } from "@/components/section-label";
+import {
+  HabitPickerDialog,
+  HabitSearchButton,
+} from "@/components/habit-picker";
 import { StarRank, StarStepper } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TroopIcons } from "@/components/troop-icon";
+import { TroopIcon, TroopIcons } from "@/components/troop-icon";
+import { DRAGON_HABITS } from "@/data/dragon-habits";
 import { allDragons, lineupsUsingDragon } from "@/lib/dragons";
-import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
+import {
+  BREEDS,
+  RARITIES,
+  TROOP_TYPES,
+  breedLabels,
+  rarityLabels,
+  troopLabels,
+} from "@/lib/labels";
+import {
+  COMP_ROLES,
+  type CompRole,
+  dragonRoles,
+  hasCompRole,
+  roleChipClass,
+  roleShort,
+} from "@/lib/roles";
 import { REIGN_MAX, REIGN_MIN, clampReign } from "@/lib/lineup";
 import { exportPit, isPitState, usePit } from "@/lib/store";
-import type { Dragon, OwnedDragon } from "@/lib/types";
+import type {
+  Breed,
+  Dragon,
+  OwnedDragon,
+  Rarity,
+  TroopType,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Download, Plus, Upload } from "lucide-react";
+import {
+  Download,
+  Plus,
+  SlidersHorizontal,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
+
+type Ownership = "all" | "owned" | "missing";
 
 export function PitPage() {
   const {
@@ -36,6 +73,13 @@ export function PitPage() {
   const [inspecting, setInspecting] = useState<Dragon | null>(null);
   const [habitDragon, setHabitDragon] = useState<Dragon | null>(null);
   const [unlistedOpen, setUnlistedOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [ownership, setOwnership] = useState<Ownership>("all");
+  const [rarity, setRarity] = useState<Rarity | "all">("all");
+  const [breed, setBreed] = useState<Breed | "all">("all");
+  const [troop, setTroop] = useState<TroopType | "all">("all");
+  const [role, setRole] = useState<CompRole | "all">("all");
+  const [facetsOpen, setFacetsOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ownedById = useMemo(
@@ -49,8 +93,83 @@ export function PitPage() {
     [state.customDragons],
   );
 
+  /*
+   * Search covers the kit, not just the name, so "bulwark" or "archers" finds
+   * the dragons that actually do that — the question a player is usually
+   * asking. Every term is read off the catalog, so the index cannot claim an
+   * ability a dragon does not have.
+   */
+  const haystacks = useMemo(() => {
+    const index = new Map<string, string>();
+    for (const dragon of catalog) {
+      index.set(
+        dragon.id,
+        [
+          dragon.name,
+          dragon.epithet,
+          breedLabels[dragon.breed],
+          rarityLabels[dragon.rarity],
+          ...dragon.affinities.map((type) => troopLabels[type]),
+          ...dragon.tags,
+          ...(dragon.provides ?? []).map((entry) => entry.ability),
+          ...dragonRoles(dragon).map((comp) => roleShort[comp]),
+          dragon.command,
+          dragon.habit,
+          ...(DRAGON_HABITS[dragon.id] ?? []).map((row) => row.level1),
+        ]
+          .join(" ")
+          .toLowerCase(),
+      );
+    }
+    return index;
+  }, [catalog]);
+
+  const facetCount =
+    (rarity === "all" ? 0 : 1) +
+    (breed === "all" ? 0 : 1) +
+    (troop === "all" ? 0 : 1) +
+    (role === "all" ? 0 : 1);
+  const filtering =
+    facetCount > 0 || ownership !== "all" || query.trim() !== "";
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return catalog.filter((dragon) => {
+      if (needle && !(haystacks.get(dragon.id) ?? "").includes(needle)) {
+        return false;
+      }
+      const stars = ownedById.get(dragon.id)?.starRank ?? 0;
+      if (ownership === "owned" && stars <= 0) return false;
+      if (ownership === "missing" && stars > 0) return false;
+      if (rarity !== "all" && dragon.rarity !== rarity) return false;
+      if (breed !== "all" && dragon.breed !== breed) return false;
+      if (troop !== "all" && !dragon.affinities.includes(troop)) return false;
+      if (role !== "all" && !hasCompRole(dragon, role)) return false;
+      return true;
+    });
+  }, [
+    catalog,
+    haystacks,
+    ownedById,
+    query,
+    ownership,
+    rarity,
+    breed,
+    troop,
+    role,
+  ]);
+
+  function clearFilters() {
+    setQuery("");
+    setOwnership("all");
+    setRarity("all");
+    setBreed("all");
+    setTroop("all");
+    setRole("all");
+  }
+
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Opening the pit…</p>;
+    return <p className="text-ui text-muted-foreground">Opening the pit…</p>;
   }
 
   const inspectingOwned = inspecting
@@ -87,16 +206,22 @@ export function PitPage() {
   return (
     <div className="-mx-3 -mt-3 min-h-[calc(100dvh-3rem-env(safe-area-inset-top))] sm:-mx-4 sm:-mt-6 md:min-h-[calc(100dvh-3.5rem)]">
       <h1 className="sr-only">Your pit</h1>
+      {/* Export / Import / Clear are maintenance, so they shrink to icons on a
+          phone instead of wrapping the row three deep above the grid. */}
       <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5">
-        <p className="text-label mr-auto">
-          {state.owned.length} owned
+        <p className="text-label text-num mr-auto">
+          {state.owned.length} of {catalog.length} owned
         </p>
         {state.owned.length === 0 ? (
           <Button size="sm" variant="secondary" onClick={loadSample}>
             Sample
           </Button>
         ) : null}
-        <Button size="sm" variant="outline" onClick={() => setUnlistedOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setUnlistedOpen(true)}
+        >
           <Plus data-icon="inline-start" />
           Unlisted
         </Button>
@@ -104,21 +229,24 @@ export function PitPage() {
           size="sm"
           variant="outline"
           onClick={() => exportPit(state)}
+          title="Export your pit to a file"
         >
           <Download data-icon="inline-start" />
-          Export
+          <span className="sr-only sm:not-sr-only">Export</span>
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={() => fileRef.current?.click()}
+          title="Import a pit export file"
         >
           <Upload data-icon="inline-start" />
-          Import
+          <span className="sr-only sm:not-sr-only">Import</span>
         </Button>
         <Button
           size="sm"
           variant="destructive"
+          title="Clear this browser’s saved pit"
           onClick={() => {
             if (
               window.confirm("Clear this browser’s pit, lineups, and teams?")
@@ -127,7 +255,8 @@ export function PitPage() {
             }
           }}
         >
-          Clear
+          <Trash2 data-icon="inline-start" />
+          <span className="sr-only sm:not-sr-only">Clear</span>
         </Button>
         <input
           ref={fileRef}
@@ -151,8 +280,164 @@ export function PitPage() {
           }}
         />
       </div>
+
+      {/* Sticky, but offset by the site header: at top-0 it parks underneath
+          the header and both the search and the chips become unclickable. */}
+      <section
+        aria-labelledby="pit-filters"
+        className="sticky top-[calc(3rem+env(safe-area-inset-top))] z-20 space-y-1.5 border-b border-border/60 bg-background/95 px-2 pt-1 pb-2 backdrop-blur sm:top-[calc(3.5rem+env(safe-area-inset-top))] supports-[backdrop-filter]:bg-background/80"
+      >
+        <SectionLabel id="pit-filters" className="sr-only">
+          Find a dragon
+        </SectionLabel>
+        <div className="flex items-center gap-1.5">
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            label="Search dragons by name, troop, or ability"
+            inputClassName="h-11 md:h-9"
+          />
+          <MiniChip
+            active={facetsOpen || facetCount > 0}
+            onClick={() => setFacetsOpen((open) => !open)}
+            aria-expanded={facetsOpen}
+            className="shrink-0 gap-1"
+          >
+            <SlidersHorizontal className="size-3.5" aria-hidden />
+            <span className="sr-only sm:not-sr-only">Filters</span>
+            {facetCount > 0 ? (
+              <span className="text-num">{facetCount}</span>
+            ) : null}
+          </MiniChip>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ChipRow label="Ownership" className="flex-1">
+            {(
+              [
+                ["all", "All"],
+                ["owned", "Owned"],
+                ["missing", "Missing"],
+              ] as const
+            ).map(([id, label]) => (
+              <MiniChip
+                key={id}
+                active={ownership === id}
+                onClick={() => setOwnership(id)}
+              >
+                {label}
+              </MiniChip>
+            ))}
+          </ChipRow>
+          <p className="text-label text-num shrink-0" aria-live="polite">
+            {filtering
+              ? `${visible.length} shown`
+              : `${catalog.length} dragons`}
+          </p>
+        </div>
+        {facetsOpen ? (
+          <div className="space-y-1.5 pt-0.5">
+            <FacetRow label="Rarity">
+              <MiniChip
+                active={rarity === "all"}
+                onClick={() => setRarity("all")}
+              >
+                Any
+              </MiniChip>
+              {RARITIES.map((value) => (
+                <MiniChip
+                  key={value}
+                  active={rarity === value}
+                  onClick={() =>
+                    setRarity((current) => (current === value ? "all" : value))
+                  }
+                >
+                  {rarityLabels[value]}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Job">
+              <MiniChip active={role === "all"} onClick={() => setRole("all")}>
+                Any
+              </MiniChip>
+              {COMP_ROLES.map((value) => (
+                <MiniChip
+                  key={value}
+                  active={role === value}
+                  onClick={() =>
+                    setRole((current) => (current === value ? "all" : value))
+                  }
+                >
+                  {roleShort[value]}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Troop affinity">
+              <MiniChip
+                active={troop === "all"}
+                onClick={() => setTroop("all")}
+              >
+                Any
+              </MiniChip>
+              {TROOP_TYPES.map((value) => (
+                <MiniChip
+                  key={value}
+                  active={troop === value}
+                  onClick={() =>
+                    setTroop((current) => (current === value ? "all" : value))
+                  }
+                  className="gap-1"
+                  title={troopLabels[value]}
+                >
+                  <TroopIcon troop={value} className="size-3.5" />
+                  <span className="sr-only md:not-sr-only">
+                    {troopLabels[value]}
+                  </span>
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Breed">
+              <MiniChip
+                active={breed === "all"}
+                onClick={() => setBreed("all")}
+              >
+                Any
+              </MiniChip>
+              {BREEDS.map((value) => (
+                <MiniChip
+                  key={value}
+                  active={breed === value}
+                  onClick={() =>
+                    setBreed((current) => (current === value ? "all" : value))
+                  }
+                >
+                  {breedLabels[value]}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            {filtering ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="min-h-10 text-ui-sm text-amber-200 underline-offset-2 hover:underline"
+              >
+                Clear all filters
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+      {visible.length === 0 ? (
+        <div className="p-3">
+          <NoMatches onClear={clearFilters}>
+            {ownership === "missing"
+              ? "You already own every dragon that matches."
+              : "No dragons match this search."}
+          </NoMatches>
+        </div>
+      ) : null}
+      <SectionLabel className="sr-only">Dragon catalog</SectionLabel>
       <div className="grid grid-cols-3 gap-x-1 gap-y-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
-        {catalog.map((dragon) => {
+        {visible.map((dragon) => {
           const owned = ownedById.get(dragon.id);
           const stars = owned?.starRank ?? 0;
           return (
@@ -160,21 +445,22 @@ export function PitPage() {
               key={dragon.id}
               className="flex flex-col items-center px-0.5 py-1"
             >
-              <div className="relative mb-1 flex h-5 w-full items-center">
+              {/* Flex row, not an overlaid button: the name used to run under
+                  the kit icon and get cut mid-letter on every longer name. */}
+              <div className="mb-1 flex h-8 w-full items-center gap-0.5">
                 <p
                   className={cn(
-                    "font-heading line-clamp-1 w-full px-6 text-center text-[11px] tracking-wide uppercase sm:text-xs",
+                    "font-heading min-w-0 flex-1 truncate text-center text-[11px] tracking-wide uppercase sm:text-xs",
                     stars > 0 ? "text-amber-50" : "text-muted-foreground",
                   )}
+                  title={dragon.name}
                 >
                   {dragon.name}
                 </p>
-                <span className="absolute top-1/2 right-0 -translate-y-1/2">
-                  <HabitSearchButton
-                    name={dragon.name}
-                    onClick={() => setHabitDragon(dragon)}
-                  />
-                </span>
+                <HabitSearchButton
+                  name={dragon.name}
+                  onClick={() => setHabitDragon(dragon)}
+                />
               </div>
               <DragonIcon
                 dragonId={dragon.id}
@@ -284,6 +570,27 @@ export function PitPage() {
         }}
       />
       <AddDragonDialog open={unlistedOpen} onOpenChange={setUnlistedOpen} />
+    </div>
+  );
+}
+
+/**
+ * A facet is a label plus its chips. The label is visible rather than only an
+ * aria-label so a sighted reader can tell four near-identical chip rows apart.
+ */
+function FacetRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <p className="text-label w-16 shrink-0 sm:w-20">{label}</p>
+      <ChipRow label={label} className="min-w-0 flex-1">
+        {children}
+      </ChipRow>
     </div>
   );
 }

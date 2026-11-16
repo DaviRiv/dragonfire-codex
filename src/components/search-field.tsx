@@ -3,7 +3,7 @@
 import type { ComponentProps, KeyboardEventHandler } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 export function SearchField({
   id,
@@ -35,6 +35,7 @@ export function SearchField({
       <Input
         {...inputProps}
         id={id}
+        type="search"
         value={value}
         placeholder=""
         aria-label={label}
@@ -44,8 +45,26 @@ export function SearchField({
         enterKeyHint="search"
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={onKeyDown}
-        className={cn("h-9 pl-9 md:h-8 md:pl-9", inputClassName)}
+        className={cn(
+          // The native cancel button would sit beside our own clear button.
+          "h-9 pl-9 md:h-8 md:pl-9 [&::-webkit-search-cancel-button]:hidden",
+          value && "pr-9",
+          inputClassName,
+        )}
       />
+      {/* Clearing a filter by selecting the text and deleting it is a chore on
+          a phone, and leaving a stale query is the usual cause of an
+          inexplicably empty list. */}
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Clear search"
+          className="tap absolute top-1/2 right-1 z-[1] inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <X className="size-3.5" aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }

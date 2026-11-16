@@ -8,15 +8,16 @@ import { ChatGptAsk } from "@/components/ai-suggest";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
 import { DragonSheet } from "@/components/dragon-sheet";
+import { ChipRow } from "@/components/filter-bar";
 import { FormationBoard } from "@/components/formation-board";
 import { GameFacts } from "@/components/game-facts";
 import { PairingPanel } from "@/components/pairing-panel";
 import { EmptyState } from "@/components/empty-state";
+import { SearchField } from "@/components/search-field";
 import { StarRank } from "@/components/star-rank";
 import { SuggestTile } from "@/components/suggest-tile";
 import { SynergyPanel } from "@/components/synergy-panel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   dragonsUsedOnOtherPitTeams,
   filledCount,
@@ -38,7 +39,7 @@ import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, PitState, SlotId } from "@/lib/types";
 import { pairingReport } from "@/lib/pairing";
 import { analyzeLineup, summarizeLineup, type SynergyReport } from "@/lib/synergy";
-import { Copy, Search, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Sparkles, Trash2 } from "lucide-react";
 
 type TheoryPool = "all" | "owned" | "unowned";
 type RoleFilter = CompRole | "all";
@@ -404,18 +405,12 @@ export function LineupEditor({
               </p>
             ) : null}
             <div className="flex min-w-0 items-center gap-1.5">
-              <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder={
-                    isTheory ? "Search the pit…" : "Search your pit…"
-                  }
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  enterKeyHint="search"
-                  className="pl-9"
-                />
-              </div>
+              <SearchField
+                value={query}
+                onChange={setQuery}
+                label={isTheory ? "Search the pit" : "Search your pit"}
+                inputClassName="h-11 md:h-9"
+              />
               <MiniChip
                 active={showAbilities}
                 onClick={() => setShowAbilities((value) => !value)}
@@ -424,7 +419,7 @@ export function LineupEditor({
                 Abilities
               </MiniChip>
             </div>
-            <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+            <ChipRow label="Job">
               <MiniChip
                 active={roleFilter === "all"}
                 onClick={() => setRoleFilter("all")}
@@ -444,9 +439,9 @@ export function LineupEditor({
                   {roleLabels[role]}
                 </MiniChip>
               ))}
-            </div>
+            </ChipRow>
             {isTheory ? (
-              <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+              <ChipRow label="Ownership">
                 {(
                   [
                     ["all", "All dragons"],
@@ -462,7 +457,7 @@ export function LineupEditor({
                     {label}
                   </MiniChip>
                 ))}
-              </div>
+              </ChipRow>
             ) : null}
             <p className="text-[13px] leading-snug text-muted-foreground">
               {roleFilter === "all"

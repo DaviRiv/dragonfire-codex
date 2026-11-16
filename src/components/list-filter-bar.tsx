@@ -1,6 +1,7 @@
 "use client";
 
 import { MiniChip } from "@/components/chip";
+import { ChipRow } from "@/components/filter-bar";
 import { SearchField } from "@/components/search-field";
 import { TroopIcon } from "@/components/troop-icon";
 import {
@@ -42,7 +43,7 @@ export function ListFilterBar({
         label={placeholder || "Search"}
         inputClassName="h-11 md:h-8"
       />
-      <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+      <ChipRow label="Breed">
         <MiniChip active={breed === "all"} onClick={() => onBreedChange("all")}>
           All breeds
         </MiniChip>
@@ -55,8 +56,8 @@ export function ListFilterBar({
             {breedLabels[b]}
           </MiniChip>
         ))}
-      </div>
-      <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+      </ChipRow>
+      <ChipRow label="Rarity">
         <MiniChip
           active={rarity === "all"}
           onClick={() => onRarityChange("all")}
@@ -72,9 +73,9 @@ export function ListFilterBar({
             {rarityLabels[r]}
           </MiniChip>
         ))}
-      </div>
+      </ChipRow>
       {onTroopChange && troop !== undefined ? (
-        <div className="flex gap-1 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+        <ChipRow label="Troop affinity">
           <MiniChip
             active={troop === "all"}
             onClick={() => onTroopChange("all")}
@@ -92,7 +93,7 @@ export function ListFilterBar({
               <TroopIcon troop={t} className="size-4" />
             </MiniChip>
           ))}
-        </div>
+        </ChipRow>
       ) : null}
     </div>
   );

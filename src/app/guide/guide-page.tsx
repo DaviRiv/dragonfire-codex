@@ -429,7 +429,7 @@ export function GuidePage() {
             {Object.entries(STATUS_GLOSSARY).map(([name, meaning]) => (
               <div
                 key={name}
-                className="grid gap-0.5 px-3 py-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-3"
+                className="grid grid-cols-[minmax(0,1fr)] gap-0.5 px-3 py-2 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-3"
               >
                 <dt className="text-sm font-medium text-amber-100">
                   <AbilityText text={name} />

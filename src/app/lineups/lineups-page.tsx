@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
+import { ChipRow } from "@/components/filter-bar";
 import { LineupCard } from "@/components/lineup-card";
 import { MiniChip } from "@/components/chip";
+import { SectionLabel } from "@/components/section-label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePit } from "@/lib/store";
@@ -38,11 +40,16 @@ export function LineupsPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">Saved teams</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
+            Saved teams
+          </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Pit lines use dragons you own. Theory lines are wish-lists — stars
             you set here never change the pit.{" "}
-            <Link href="/teams" className="text-amber-200 underline-offset-2 hover:underline">
+            <Link
+              href="/teams"
+              className="text-amber-200 underline-offset-2 hover:underline"
+            >
               Bundle into a war kit
             </Link>
             .
@@ -64,7 +71,7 @@ export function LineupsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <ChipRow label="Line kind">
         {(
           [
             ["all", "All"],
@@ -80,7 +87,7 @@ export function LineupsPage() {
             {label}
           </MiniChip>
         ))}
-      </div>
+      </ChipRow>
 
       {state.lineups.length === 0 ? (
         <EmptyState
@@ -101,11 +108,17 @@ export function LineupsPage() {
           description="Switch to All, or create a line of this kind."
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {visible.map((lineup) => (
-            <LineupCard key={lineup.id} lineup={lineup} state={state} />
-          ))}
-        </div>
+        <section aria-labelledby="saved-lines">
+          <SectionLabel id="saved-lines" className="mb-2">
+            {filter === "all" ? "All lines" : `${filter} lines`} ·{" "}
+            <span className="text-num">{visible.length}</span>
+          </SectionLabel>
+          <div className="grid gap-4 md:grid-cols-2">
+            {visible.map((lineup) => (
+              <LineupCard key={lineup.id} lineup={lineup} state={state} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

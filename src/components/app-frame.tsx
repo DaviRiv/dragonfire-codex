@@ -45,9 +45,14 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
             "xl:grid xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start xl:gap-4",
         )}
       >
-        <div className={cn("min-w-0", team && "flex min-h-0 flex-1 flex-col")}>
+        {/* The page content is the main landmark; the ad rail beside it is not,
+            which is what lets the skip link jump past the nav to real content. */}
+        <main
+          id="main-content"
+          className={cn("min-w-0", team && "flex min-h-0 flex-1 flex-col")}
+        >
           {children}
-        </div>
+        </main>
         {wide ? null : (
           <aside className="sticky top-[calc(3.75rem+env(safe-area-inset-top))] mt-4 hidden space-y-4 xl:block">
             <AdSlot slot="sidebar" />

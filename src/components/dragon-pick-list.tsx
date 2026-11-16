@@ -9,6 +9,7 @@ import {
 } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
 import { SearchField } from "@/components/search-field";
+import { SectionLabel } from "@/components/section-label";
 import { TroopIcons } from "@/components/troop-icon";
 import { DRAGONS } from "@/data/dragons";
 import { filterDragonPicks } from "@/lib/counter-pick";
@@ -175,7 +176,7 @@ export function DragonPickList({
     >
       <div className="shrink-0 border-b border-foreground/10 px-2 py-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-label">{title}</p>
+          <SectionLabel>{title}</SectionLabel>
           <SearchField
             id={searchId}
             value={query}

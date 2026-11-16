@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { LineupCard } from "@/components/lineup-card";
 import { MiniSlotRow } from "@/components/lineup-card";
 import { EmptyState } from "@/components/empty-state";
+import { SectionLabel } from "@/components/section-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +29,9 @@ export function TeamsPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">War kits</h1>
+          <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
+            War kits
+          </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             Bundle saved teams you swap between: a PvP wall, a rally, and a keep
             defense as one kit.
@@ -68,8 +71,16 @@ export function TeamsPage() {
           }
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <aside className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:block lg:space-y-2 lg:overflow-visible">
+        // The base column is pinned to minmax(0,1fr): left implicit it sized to
+        // the widest child's min-content and scrolled the phone sideways.
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          <aside
+            aria-labelledby="team-switcher"
+            className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:block lg:space-y-2 lg:overflow-visible"
+          >
+            <SectionLabel id="team-switcher" className="sr-only">
+              Your war kits
+            </SectionLabel>
             {state.teams.map((team) => (
               <button
                 key={team.id}
@@ -112,7 +123,9 @@ function TeamEditor({
   onDelete,
 }: {
   team: Team;
-  onChange: (patch: Partial<Pick<Team, "name" | "description" | "lineupIds">>) => void;
+  onChange: (
+    patch: Partial<Pick<Team, "name" | "description" | "lineupIds">>,
+  ) => void;
   onDelete: () => void;
 }) {
   const { state } = usePit();
@@ -151,14 +164,18 @@ function TeamEditor({
             />
           </div>
         </div>
-        <Button variant="destructive" onClick={onDelete} className="w-full sm:w-auto">
+        <Button
+          variant="destructive"
+          onClick={onDelete}
+          className="w-full sm:w-auto"
+        >
           <Trash2 data-icon="inline-start" />
           Disband
         </Button>
       </div>
 
-      <div>
-        <p className="mb-2 font-heading tracking-wide">Attached lineups</p>
+      <section>
+        <h2 className="font-heading mb-2 tracking-wide">Attached lineups</h2>
         {attached.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             None yet. Pick from the list below.
@@ -170,10 +187,10 @@ function TeamEditor({
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      <div>
-        <p className="mb-2 font-heading tracking-wide">All lineups</p>
+      <section>
+        <h2 className="font-heading mb-2 tracking-wide">All lineups</h2>
         <ul className="space-y-2">
           {state.lineups.map((lineup) => {
             const on = team.lineupIds.includes(lineup.id);
@@ -200,7 +217,7 @@ function TeamEditor({
             );
           })}
         </ul>
-      </div>
+      </section>
     </div>
   );
 }

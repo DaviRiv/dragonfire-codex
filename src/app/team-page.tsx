@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DragonIcon } from "@/components/dragon-icon";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
+import { SectionLabel } from "@/components/section-label";
 import { TroopChip } from "@/components/troop-icon";
 import {
   TeamLineList,
@@ -558,9 +559,9 @@ export function TeamPage() {
               className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl bg-card/70 ring-1 ring-foreground/10 outline-none focus-visible:ring-amber-300 lg:col-start-1 lg:row-start-1"
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-foreground/10 px-2 py-1.5">
-                <p className="text-label">
-                  {listLabel} · {choices.length}
-                </p>
+                <SectionLabel>
+                  {listLabel} · <span className="text-num">{choices.length}</span>
+                </SectionLabel>
               </div>
               <TeamLineList
                 choices={choices}

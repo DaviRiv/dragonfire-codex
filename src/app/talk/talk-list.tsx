@@ -6,6 +6,8 @@ import { AdSlot } from "@/components/ad-slot";
 import { accountHref } from "@/components/account-gate";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
+import { ChipRow } from "@/components/filter-bar";
+import { SectionLabel } from "@/components/section-label";
 import { TalkThreadCard } from "@/components/talk-thread-card";
 import { buttonVariants } from "@/components/ui/button";
 import { apiJson } from "@/lib/api";
@@ -71,7 +73,7 @@ export function TalkListPage() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <ChipRow label="Category">
         <MiniChip
           active={category === "all"}
           onClick={() => setCategory("all")}
@@ -87,7 +89,7 @@ export function TalkListPage() {
             {talkCategoryLabels[item]}
           </MiniChip>
         ))}
-      </div>
+      </ChipRow>
 
       {error ? (
         <EmptyState title="Talk is quiet" description={error} />
@@ -113,18 +115,24 @@ export function TalkListPage() {
           }
         />
       ) : (
-        <ul className="space-y-2">
-          {threads.map((thread, index) => (
-            <li key={thread.id}>
-              {index === 2 ? (
-                <div className="mb-2 flex justify-center">
-                  <AdSlot slot="feed" />
-                </div>
-              ) : null}
-              <TalkThreadCard thread={thread} />
-            </li>
-          ))}
-        </ul>
+        <section aria-labelledby="talk-threads">
+          <SectionLabel id="talk-threads" className="mb-2">
+            {category === "all" ? "All threads" : talkCategoryLabels[category]}{" "}
+            · <span className="text-num">{threads.length}</span>
+          </SectionLabel>
+          <ul className="space-y-2">
+            {threads.map((thread, index) => (
+              <li key={thread.id}>
+                {index === 2 ? (
+                  <div className="mb-2 flex justify-center">
+                    <AdSlot slot="feed" />
+                  </div>
+                ) : null}
+                <TalkThreadCard thread={thread} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

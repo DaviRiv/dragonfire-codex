@@ -86,7 +86,7 @@ function AccountLink() {
       href="/account"
       aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex max-w-36 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
+        "inline-flex max-w-36 min-h-10 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground",
         active && "bg-muted text-foreground",
       )}
     >
@@ -101,9 +101,21 @@ export function SiteHeader() {
 
   return (
     <>
+      {/* Six nav links and an account control sit before the page on every
+          route; a keyboard reader should not have to tab through them. */}
+      <a
+        href="#main-content"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-2 focus-visible:left-2 focus-visible:z-50 focus-visible:rounded-lg focus-visible:bg-card focus-visible:px-3 focus-visible:py-2 focus-visible:text-sm focus-visible:ring-1 focus-visible:ring-amber-400/50"
+      >
+        Skip to content
+      </a>
       <header className="sticky top-0 z-40 border-b border-amber-500/20 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-2 px-3 sm:h-14 sm:px-4">
-          <Link href="/team" className="flex min-w-0 items-center gap-2">
+          <Link
+            href="/team"
+            aria-label="Dragonfire Pit home"
+            className="flex min-h-10 min-w-0 items-center gap-2 rounded-lg"
+          >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30">
               <Flame className="size-4" />
             </span>

@@ -145,12 +145,14 @@ function WelcomeStep({
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col justify-center overflow-y-auto px-5 py-8">
       <p className="text-label mb-3">Unofficial fan tool</p>
-      <h1
+      {/* h2, not h1: this overlay sits on top of a page that already has one,
+          and it is the dialog's accessible name via aria-labelledby regardless. */}
+      <h2
         id="intro-title"
         className="font-heading text-3xl tracking-wide text-amber-50 sm:text-4xl"
       >
         Dragonfire Pit
-      </h1>
+      </h2>
       <p className="mt-3 text-pretty text-base leading-relaxed text-muted-foreground">
         Seat Left, Vanguard, and Right. Complete three-dragon lines appear as
         you pick. Nothing here is affiliated with the game.
@@ -170,10 +172,13 @@ function WelcomeStep({
         Your pit is optional. Stars you set keep suggestions honest. Skip and
         fill it later on Pit if you want.
       </p>
+      {/* flex-1 only once the row is horizontal. In the column it set a
+          vertical flex-basis of 0 and a short viewport crushed both buttons to
+          22px, so the first thing a new reader saw was untappable. */}
       <div className="mt-8 flex flex-col gap-2 sm:flex-row">
         <Button
           type="button"
-          className="h-12 flex-1 sm:h-11"
+          className="h-12 w-full shrink-0 sm:h-11 sm:w-auto sm:flex-1"
           data-intro-add-pit=""
           onClick={onAddPit}
         >
@@ -182,7 +187,7 @@ function WelcomeStep({
         <Button
           type="button"
           variant="outline"
-          className="h-12 flex-1 sm:h-11"
+          className="h-12 w-full shrink-0 sm:h-11 sm:w-auto sm:flex-1"
           data-intro-skip=""
           onClick={onSkip}
         >
@@ -229,12 +234,12 @@ function PitStep({
       <header className="shrink-0 px-4 pt-4 pb-2 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1
+            <h2
               id="intro-title"
               className="font-heading text-2xl tracking-wide text-amber-50"
             >
               Your pit
-            </h1>
+            </h2>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               Optional. Tap + on dragons you hatched. Leave the rest at 0★.
             </p>

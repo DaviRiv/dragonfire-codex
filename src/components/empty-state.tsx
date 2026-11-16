@@ -3,13 +3,16 @@ import { cn } from "@/lib/utils";
 
 export function EmptyState({
   title,
-  titleAs: Title = "p",
+  titleAs: Title = "h2",
   description,
   action,
   className,
 }: {
   title: string;
-  /** Use a heading when this empty state stands in for the whole page. */
+  /**
+   * An empty state stands in for a region's content, so its title is that
+   * region's heading. Override to h1 only where it replaces the whole page.
+   */
   titleAs?: "p" | "h1" | "h2";
   description: string;
   action?: ReactNode;
