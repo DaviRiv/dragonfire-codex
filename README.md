@@ -159,13 +159,12 @@ Talk, Copilot, Pit, Guide). Copilot is marked **beta**. After you pick a dragon,
 Team keeps the picker fixed, scrolls only the list of threes, and pins Pros
 and Cons on the right (under the list on a phone).
 
-Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: Google
-Publisher Tag (`gpt.js`) leaderboard under the header, 300×250 rectangles in
-the right rail (hidden on Team and saved lineups so those pages can use the
-width), an in-feed unit on Talk, and a 320×50 mobile banner above the
-tab bar. Set `NEXT_PUBLIC_GPT_AD_UNIT` (Ad Manager) or
-`NEXT_PUBLIC_ADSENSE_CLIENT` plus slot IDs. With those empty, the same slots
-show labeled house ads so the layout is visible without a publisher account.
+Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: leaderboard
+under the header, 300×250 rectangles in the right rail, in-feed units on Talk,
+and a 320×50 mobile banner above the tab bar. Configure **AdSense** via app
+secrets (`ADSENSE_CLIENT` plus five `ADSENSE_SLOT_*` ids) on the published
+host, or `GPT_AD_UNIT` for Ad Manager. `/ads.txt` is served automatically from
+`ADSENSE_CLIENT`. Until ids are set, labeled house ads fill the same slots.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** purple, **Fire** red-orange, **Recovery** green,

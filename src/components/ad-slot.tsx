@@ -2,14 +2,8 @@
 
 import { useEffect, useId, useRef } from "react";
 import Link from "next/link";
-import {
-  AD_SLOT_META,
-  adMode,
-  adsenseClient,
-  adsenseSlot,
-  gptAdUnit,
-  type AdSlotId,
-} from "@/lib/ads";
+import { useAds } from "@/components/ads-config";
+import { AD_SLOT_META, type AdSlotId } from "@/lib/ads";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -90,9 +84,10 @@ export function AdSlot({
   const reactId = useId().replace(/:/g, "");
   const elementId = `df-ad-${slot}-${reactId}`;
   const pushed = useRef(false);
-  const mode = adMode();
-  const liveAdsense = mode === "adsense" && Boolean(adsenseSlot(slot));
-  const liveGpt = mode === "gpt";
+  const ads = useAds();
+  const liveAdsense =
+    ads.ready && ads.mode === "adsense" && Boolean(ads.slot(slot));
+  const liveGpt = ads.ready && ads.mode === "gpt";
   const meta = AD_SLOT_META[slot];
 
   useEffect(() => {
@@ -114,7 +109,7 @@ export function AdSlot({
     window.googletag = g;
     g.cmd.push(() => {
       if (pushed.current) return;
-      const unit = `${gptAdUnit()}/${slot}`;
+      const unit = `${ads.gptAdUnit}/${slot}`;
       const defined = g.defineSlot(unit, meta.sizes, elementId);
       if (!defined) return;
       defined.addService(g.pubads());
@@ -124,7 +119,7 @@ export function AdSlot({
       g.display(elementId);
       pushed.current = true;
     });
-  }, [elementId, liveAdsense, liveGpt, meta.sizes, slot]);
+  }, [ads.gptAdUnit, elementId, liveAdsense, liveGpt, meta.sizes, slot]);
 
   if (!liveAdsense && !liveGpt) {
     return (
@@ -146,8 +141,8 @@ export function AdSlot({
         <ins
           className="adsbygoogle block"
           style={{ display: "block" }}
-          data-ad-client={adsenseClient()}
-          data-ad-slot={adsenseSlot(slot)}
+          data-ad-client={ads.adsenseClient}
+          data-ad-slot={ads.slot(slot)}
           data-ad-format={slot === "billboard" || slot === "anchor" ? "horizontal" : "rectangle"}
           data-full-width-responsive="true"
         />

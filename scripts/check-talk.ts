@@ -6,7 +6,8 @@ import os from "node:os";
 import path from "node:path";
 import { postError, titleError } from "@/lib/talk";
 import { isTalkCategory } from "@/lib/talk-types";
-import { adMode, AD_SLOT_META } from "@/lib/ads";
+import { AD_SLOT_META } from "@/lib/ads";
+import { serverAdsConfig } from "@/lib/server/ads-config";
 import { createThread, listThreads, replyToThread } from "@/lib/server/talk";
 import { registerUser } from "@/lib/server/users";
 
@@ -19,7 +20,7 @@ assert(titleError("Malachite soak on Shields") === null, "ok title");
 assert(postError("   ") !== null, "blank post");
 assert(isTalkCategory("pvp"), "pvp category");
 assert(!isTalkCategory("mythic"), "reject junk category");
-assert(adMode() === "house", "no ad keys means house ads");
+assert(serverAdsConfig().mode === "house", "no ad keys means house ads");
 assert(AD_SLOT_META.billboard.sizes[0][0] === 728, "wowhead leaderboard width");
 assert(AD_SLOT_META.sidebar.sizes[0][0] === 300, "wowhead rectangle width");
 assert(AD_SLOT_META.anchor.sizes[0][1] === 50, "mobile banner height");

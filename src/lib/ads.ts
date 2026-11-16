@@ -50,27 +50,21 @@ export const AD_SLOT_META: Record<
   },
 };
 
-export function adsenseClient(): string {
-  return process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim() ?? "";
-}
+export type AdsPublicConfig = {
+  mode: AdMode;
+  adsenseClient: string;
+  gptAdUnit: string;
+  slots: Record<AdSlotId, string>;
+};
 
-export function gptAdUnit(): string {
-  return process.env.NEXT_PUBLIC_GPT_AD_UNIT?.trim() ?? "";
-}
-
-export function adMode(): AdMode {
-  if (adsenseClient().startsWith("ca-pub-")) return "adsense";
-  if (gptAdUnit().startsWith("/")) return "gpt";
-  return "house";
-}
-
-export function adsenseSlot(slot: AdSlotId): string {
-  const env: Record<AdSlotId, string | undefined> = {
-    billboard: process.env.NEXT_PUBLIC_ADSENSE_SLOT_BILLBOARD,
-    sidebar: process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR,
-    "sidebar-lower": process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR_LOWER,
-    feed: process.env.NEXT_PUBLIC_ADSENSE_SLOT_FEED,
-    anchor: process.env.NEXT_PUBLIC_ADSENSE_SLOT_ANCHOR,
-  };
-  return env[slot]?.trim() ?? "";
-}
+/** Slot env names for app settings (also accepts legacy NEXT_PUBLIC_* locally). */
+export const ADSENSE_ENV_NAMES = {
+  client: "ADSENSE_CLIENT",
+  slots: {
+    billboard: "ADSENSE_SLOT_BILLBOARD",
+    sidebar: "ADSENSE_SLOT_SIDEBAR",
+    "sidebar-lower": "ADSENSE_SLOT_SIDEBAR_LOWER",
+    feed: "ADSENSE_SLOT_FEED",
+    anchor: "ADSENSE_SLOT_ANCHOR",
+  },
+} as const;
