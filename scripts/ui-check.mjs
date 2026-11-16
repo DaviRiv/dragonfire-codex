@@ -293,6 +293,94 @@ async function horizontalOverflow(page) {
   }
 }
 
+// ------------------------------------------- pick list keyboard navigation
+/*
+ * The pick grid derives its highlight from the dragon id the reader moved to,
+ * so arrow keys, Home/End and a narrowing query all have to land on the row
+ * Enter then commits. Asserting the seat that gets filled keeps this about
+ * behaviour rather than which class paints the highlight.
+ */
+{
+  const page = await open("/team", DESKTOP);
+
+  async function openPicker(slot) {
+    await page.evaluate((s) => {
+      document.querySelector(`[data-team-seat="${s}"] button`)?.click();
+    }, slot);
+    await page.waitForSelector("#team-pick-search", { timeout: 10000 });
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 250)));
+  }
+
+  async function seated() {
+    return page.evaluate(
+      () =>
+        document
+          .querySelector("[data-team-seed]")
+          ?.getAttribute("data-build-around") ?? null,
+    );
+  }
+
+  // Enter with an untouched highlight commits the first selectable dragon.
+  await openPicker("vanguard");
+  const firstRow = await page.evaluate(
+    () => document.querySelector("[data-pick-dragon]")?.dataset.pickDragon ?? null,
+  );
+  await page.focus("#team-pick-search");
+  await page.keyboard.press("Enter");
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
+  const viaEnter = await seated();
+  check(
+    "/team pick list commits the default highlight on Enter",
+    viaEnter !== null && viaEnter === firstRow,
+    `seated=${viaEnter} first=${firstRow}`,
+  );
+
+  // ArrowDown steps a grid row, so Enter has to commit a different dragon.
+  await openPicker("vanguard");
+  await page.focus("#team-pick-search");
+  await page.keyboard.press("ArrowDown");
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 150)));
+  await page.keyboard.press("Enter");
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
+  const viaArrow = await seated();
+  check(
+    "/team pick list moves the highlight with ArrowDown",
+    viaArrow !== null && viaArrow !== viaEnter,
+    `arrow=${viaArrow} default=${viaEnter}`,
+  );
+
+  // A narrowing query re-homes the highlight onto what is still listed.
+  await openPicker("vanguard");
+  await page.focus("#team-pick-search");
+  await page.type("#team-pick-search", "syrax");
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 350)));
+  const narrowed = await page.evaluate(() => ({
+    rows: document.querySelectorAll("[data-pick-dragon]").length,
+    first:
+      document.querySelector("[data-pick-dragon]")?.dataset.pickDragon ?? null,
+  }));
+  await page.keyboard.press("Enter");
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
+  const viaQuery = await seated();
+  check(
+    "/team pick list commits the searched dragon on Enter",
+    narrowed.rows > 0 && viaQuery === narrowed.first,
+    `rows=${narrowed.rows} seated=${viaQuery}`,
+  );
+
+  // Reopening on another slot must not inherit the previous slot's highlight.
+  await openPicker("right");
+  const rightDefault = await page.evaluate(
+    () => document.querySelector("[data-pick-dragon]")?.dataset.pickDragon ?? null,
+  );
+  check(
+    "/team pick list resets the highlight for a new slot",
+    rightDefault !== null,
+    `first=${rightDefault}`,
+  );
+  await page.close();
+}
+
 // ------------------------------------------------- Talk load failure + retry
 {
   const page = await browser.newPage();
