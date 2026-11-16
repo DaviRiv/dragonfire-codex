@@ -188,16 +188,6 @@ export function TeamPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!choices.length) {
-      setActiveId(null);
-      return;
-    }
-    if (!choices.some((row) => row.id === activeId)) {
-      setActiveId(choices[0].id);
-    }
-  }, [choices, activeId]);
-
   function writeQuery(next: Record<SlotId, SeatState>, nextTroop: TroopType) {
     const params = new URLSearchParams();
     if (next.left.dragonId) {

@@ -43,8 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    void apiJson<{ user: AuthUser | null }>("/api/auth/me")
+      .then((data) => {
+        if (!cancelled) setUser(data.user);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const register = useCallback(async (username: string, password: string) => {
     const data = await apiJson<{ user: AuthUser }>("/api/auth/register", {

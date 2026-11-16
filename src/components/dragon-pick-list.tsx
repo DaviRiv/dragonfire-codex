@@ -79,7 +79,10 @@ export function DragonPickList({
   ...sectionProps
 }: DragonPickListProps) {
   const takenBy = takenByProp ?? EMPTY_TAKEN;
-  const [hi, setHi] = useState(0);
+  // Highlight is stored as a dragon id tagged with the slot it was chosen in,
+  // so it survives re-filtering but falls back whenever that dragon leaves the
+  // list or the picker reopens on another slot.
+  const [picked, setPicked] = useState<{ key: string; id: string } | null>(null);
 
   const rows = useMemo(
     () =>
@@ -104,33 +107,40 @@ export function DragonPickList({
     el?.select();
   }, [searchId, focusKey]);
 
-  useEffect(() => {
-    setHi(firstOpenIndex(rows, takenBy, query.trim() ? null : currentId));
-  }, [query, rows, takenBy, currentId]);
+  const slotKey = `${searchId}:${focusKey ?? ""}`;
+  const pickedIndex =
+    picked?.key === slotKey
+      ? rows.findIndex((row) => row.id === picked.id)
+      : -1;
+  const hi =
+    pickedIndex >= 0
+      ? pickedIndex
+      : firstOpenIndex(rows, takenBy, query.trim() ? null : currentId);
+  const hiId = rows[hi]?.id ?? null;
 
   useEffect(() => {
-    if (hi >= rows.length) setHi(0);
-  }, [hi, rows.length]);
-
-  useEffect(() => {
-    const id = rows[hi]?.id;
-    if (!id) return;
-    const el = document.querySelector(`[data-pick-dragon="${id}"]`);
+    if (!hiId) return;
+    const el = document.querySelector(`[data-pick-dragon="${hiId}"]`);
     el?.scrollIntoView({ block: "nearest" });
-  }, [hi, rows]);
+  }, [hiId]);
+
+  function highlight(index: number) {
+    const id = rows[index]?.id;
+    if (id) setPicked({ key: slotKey, id });
+  }
 
   function move(delta: number) {
     if (rows.length === 0) return;
-    setHi((current) => {
-      let next = current;
-      for (let step = 0; step < rows.length; step++) {
-        next = (next + delta + rows.length) % rows.length;
-        const row = rows[next];
-        if (!row) return current;
-        if (!takenBy.has(row.id) || row.id === currentId) return next;
+    let next = hi;
+    for (let step = 0; step < rows.length; step++) {
+      next = (next + delta + rows.length) % rows.length;
+      const row = rows[next];
+      if (!row) return;
+      if (!takenBy.has(row.id) || row.id === currentId) {
+        highlight(next);
+        return;
       }
-      return current;
-    });
+    }
   }
 
   function onKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -147,13 +157,13 @@ export function DragonPickList({
       onPick(row.id);
     } else if (event.key === "Home") {
       event.preventDefault();
-      setHi(firstOpenIndex(rows, takenBy, currentId));
+      highlight(firstOpenIndex(rows, takenBy, currentId));
     } else if (event.key === "End") {
       event.preventDefault();
       for (let i = rows.length - 1; i >= 0; i--) {
         const row = rows[i];
         if (row && (!takenBy.has(row.id) || row.id === currentId)) {
-          setHi(i);
+          highlight(i);
           return;
         }
       }
@@ -163,7 +173,6 @@ export function DragonPickList({
     }
   }
 
-  const hiId = rows[hi]?.id ?? null;
   const emptyCopy = "No dragon matches that search.";
 
   return (
@@ -214,9 +223,7 @@ export function DragonPickList({
               takenBy={takenBy}
               ownedStars={ownedStars}
               hiId={hiId}
-              onHover={(id) =>
-                setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
-              }
+              onHover={(id) => setPicked({ key: slotKey, id })}
               onPick={onPick}
             />
             {restRows.length > 0 ? (
@@ -228,9 +235,7 @@ export function DragonPickList({
                   takenBy={takenBy}
                   ownedStars={ownedStars}
                   hiId={hiId}
-                  onHover={(id) =>
-                    setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
-                  }
+                  onHover={(id) => setPicked({ key: slotKey, id })}
                   onPick={onPick}
                 />
               </>
@@ -243,9 +248,7 @@ export function DragonPickList({
             takenBy={takenBy}
             ownedStars={ownedStars}
             hiId={hiId}
-            onHover={(id) =>
-              setHi(Math.max(0, rows.findIndex((row) => row.id === id)))
-            }
+            onHover={(id) => setPicked({ key: slotKey, id })}
             onPick={onPick}
           />
         )}

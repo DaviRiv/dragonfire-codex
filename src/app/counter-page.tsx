@@ -206,16 +206,6 @@ export function CounterPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!choices.length) {
-      setActiveId(null);
-      return;
-    }
-    if (!choices.some((row) => row.id === activeId)) {
-      setActiveId(choices[0].id);
-    }
-  }, [choices, activeId]);
-
   function writeQuery(next: Record<SlotId, SeatState>, theirs: TroopType, ours: TroopType) {
     const params = new URLSearchParams();
     if (next.left.dragonId) {

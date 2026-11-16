@@ -26,29 +26,40 @@ import { MessagesSquare } from "lucide-react";
 export function TalkListPage() {
   const { user } = useAuth();
   const [category, setCategory] = useState<TalkCategory | "all">("all");
-  const [threads, setThreads] = useState<TalkThreadSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   // Bumped by Try again, so a failed load is recoverable without a reload.
   const [attempt, setAttempt] = useState(0);
+  // Tagged with the request it answers, so switching category reads as loading
+  // without a second render to clear the previous category's threads.
+  const [result, setResult] = useState<{
+    key: string;
+    threads?: TalkThreadSummary[];
+    error?: string;
+  } | null>(null);
+
+  const key = `${category}:${attempt}`;
+  const current = result?.key === key ? result : null;
+  const threads = current?.threads ?? null;
+  const error = current?.error ?? null;
 
   useEffect(() => {
     let cancelled = false;
-    setThreads(null);
-    setError(null);
     const query = category === "all" ? "" : `?category=${category}`;
     void apiJson<{ threads: TalkThreadSummary[] }>(`/api/talk${query}`)
       .then((data) => {
-        if (!cancelled) setThreads(data.threads);
+        if (!cancelled) setResult({ key, threads: data.threads });
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Could not load Talk.");
+          setResult({
+            key,
+            error: err instanceof Error ? err.message : "Could not load Talk.",
+          });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [category, attempt]);
+  }, [category, key]);
 
   return (
     <div className="space-y-4">

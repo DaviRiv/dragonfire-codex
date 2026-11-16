@@ -55,6 +55,8 @@ export function IntroTutorial() {
 
   const finish = useCallback(() => leave("/team"), [leave]);
 
+  // Whether to offer the intro depends on localStorage, which is unreadable
+  // during render, so this one-shot decision has to happen after mount.
   useEffect(() => {
     if (!ready || decided.current) return;
     decided.current = true;
@@ -66,6 +68,7 @@ export function IntroTutorial() {
         lineupCount: state.lineups.length,
       })
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(true);
       return;
     }

@@ -35,20 +35,25 @@ export function TalkThreadPage({ id }: { id: string }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const data = await apiJson<{ thread: TalkThreadDetail }>(`/api/talk/${id}`);
-      setThread(data.thread);
-    } catch (err) {
-      setThread(null);
-      setError(err instanceof Error ? err.message : "Could not open thread.");
-    }
+  const load = useCallback(() => {
+    let cancelled = false;
+    void apiJson<{ thread: TalkThreadDetail }>(`/api/talk/${id}`)
+      .then((data) => {
+        if (cancelled) return;
+        setThread(data.thread);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setThread(null);
+        setError(err instanceof Error ? err.message : "Could not open thread.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(load, [load]);
 
   async function reply() {
     if (!draft.trim() || busy) return;
