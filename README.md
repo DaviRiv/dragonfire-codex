@@ -221,9 +221,10 @@ a starting point, not a guarantee.
 ChatGPT Plus is not required by this app. If you want a longer take,
 copy the text and paste it yourself.
 
-There is **no AI API key anywhere in this project**, and nothing to put in
-one. Copilot ranks on your own machine with the same rules as Suggest, so
-no roster ever leaves the browser. The only secret the app uses is
+**OPENAI_API_KEY** is server-only (Cursor app secrets or `.env.local`, never
+in the repo or `NEXT_PUBLIC_*`). When set, signed-in users can tap **Ask
+ChatGPT** on a lineup or Copilot; otherwise copy the prompt to chatgpt.com.
+Copilot’s local ranker never calls OpenAI. The only other secret the app uses is
 `AUTH_SECRET`, which signs session cookies; it is read server-side only
 (`src/lib/server/secret.ts`), is never prefixed `NEXT_PUBLIC_`, and falls
 back to a generated `data/.auth-secret` written with mode 600.

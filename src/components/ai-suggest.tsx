@@ -43,9 +43,11 @@ export function ChatGptAsk({
       }
     >
       <p className="text-[13px] leading-snug text-muted-foreground">
-        Copy a filled prompt with this roster and paste it at chatgpt.com.
-        The paste includes the current online meta (Malachite / Vhagar /
-        Venator). There is no API key and nothing is sent from this app.
+        Ask ChatGPT in-app when the server has{" "}
+        <span className="font-mono text-[11px]">OPENAI_API_KEY</span> set, or
+        copy the filled prompt to chatgpt.com. The paste includes current
+        online meta (Malachite / Vhagar / Venator). Copilot still ranks
+        locally — only Ask ChatGPT hits the API.
       </p>
       <div className="mt-2">
         <MetaCard />

@@ -185,8 +185,11 @@ export function CoachPage() {
 
         <Disclosure title="About this ranker, and the ChatGPT paste">
           <p className="text-[13px] leading-snug text-muted-foreground">
-            A local ranker for three-dragon lines — same rules as Suggest, no
-            API and no key. This is not the team builder.{" "}
+            A local ranker for three-dragon lines — same rules as Suggest, with
+            no OpenAI call in the chat itself. Optional{" "}
+            <strong className="font-medium text-foreground">Ask ChatGPT</strong>{" "}
+            below uses a server key when configured. This is not the team
+            builder.{" "}
             <Link href="/team" className="text-amber-200 hover:underline">
               Pick a dragon on Team
             </Link>{" "}

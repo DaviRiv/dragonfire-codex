@@ -1,0 +1,64 @@
+import { NextResponse } from "next/server";
+import { openaiComplete, openaiConfigured } from "@/lib/server/openai";
+import { openaiRateLimit } from "@/lib/server/openai-limit";
+import { getSession, jsonError } from "@/lib/server/session";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const MAX_PROMPT_CHARS = 120_000;
+
+export async function POST(request: Request) {
+  if (!openaiConfigured()) {
+    return jsonError(
+      "ChatGPT is not configured on this server. Copy the prompt instead.",
+      503,
+    );
+  }
+  const session = await getSession();
+  if (!session) {
+    return jsonError("Sign in to ask ChatGPT from this app.", 401);
+  }
+  const limited = openaiRateLimit(session.id);
+  if (!limited.ok) {
+    return jsonError(
+      `ChatGPT limit reached. Try again in ${limited.retryAfterSec} seconds, or copy the prompt.`,
+      429,
+    );
+  }
+
+  let body: { prompt?: string };
+  try {
+    body = (await request.json()) as { prompt?: string };
+  } catch {
+    return jsonError("Send a prompt string.", 400);
+  }
+  const prompt = body.prompt?.trim() ?? "";
+  if (!prompt) return jsonError("Prompt is empty.", 400);
+  if (prompt.length > MAX_PROMPT_CHARS) {
+    return jsonError("Prompt is too long for one request.", 413);
+  }
+
+  try {
+    const reply = await openaiComplete(prompt);
+    return NextResponse.json({ reply });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "ChatGPT failed.";
+    if (message === "OPENAI_NOT_CONFIGURED") {
+      return jsonError(
+        "ChatGPT is not configured on this server. Copy the prompt instead.",
+        503,
+      );
+    }
+    if (message === "OPENAI_AUTH") {
+      return jsonError(
+        "The server’s OpenAI key was rejected. Check OPENAI_API_KEY in secrets.",
+        502,
+      );
+    }
+    if (message.startsWith("OPENAI_RATE_LIMIT:")) {
+      return jsonError("OpenAI rate limit. Wait a moment, or copy the prompt.", 429);
+    }
+    return jsonError(message, 502);
+  }
+}
