@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MiniChip } from "@/components/chip";
 import { nextPath, passwordError, usernameError } from "@/lib/account";
 import { useAuth } from "@/lib/auth";
+import { useGoogleAuthAvailable } from "@/lib/use-google-auth";
 import { toast } from "sonner";
 
 export function AccountPage() {
@@ -20,6 +22,14 @@ export function AccountPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const googleAuth = useGoogleAuthAvailable();
+  const authError = search.get("error");
+
+  useEffect(() => {
+    if (authError) {
+      toast.error(authError);
+    }
+  }, [authError]);
 
   async function submit() {
     const nameErr = mode === "register" ? usernameError(username) : null;
@@ -91,9 +101,20 @@ export function AccountPage() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Register to unlock Copilot and to rate or post three-dragon lines on
-          Team. Passwords stay on this server; there is no email login.
+          Team. Use Google or a username and password on this server.
         </p>
       </div>
+      {googleAuth ? (
+        <Link
+          href={`/api/auth/google?next=${encodeURIComponent(next)}`}
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
+          Continue with Google
+        </Link>
+      ) : null}
+      {googleAuth ? (
+        <p className="text-center text-[12px] text-muted-foreground">or</p>
+      ) : null}
       <div className="flex gap-1">
         <MiniChip
           active={mode === "register"}

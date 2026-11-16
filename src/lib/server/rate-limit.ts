@@ -54,7 +54,7 @@ export function consumeRateLimits(
 }
 
 export const LIMITS = {
-  registerPerIpDay: { limit: 3, windowMs: DAY },
+  registerPerIpDay: { limit: 8, windowMs: DAY },
   loginPerIp15m: { limit: 24, windowMs: 15 * 60 * 1000 },
   loginPerUser15m: { limit: 8, windowMs: 15 * 60 * 1000 },
   openaiPerUserHour: { limit: 5, windowMs: HOUR },
