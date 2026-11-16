@@ -6,6 +6,8 @@ import { AdSlot } from "@/components/ad-slot";
 import { accountHref } from "@/components/account-gate";
 import { MiniChip } from "@/components/chip";
 import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { CardListSkeleton } from "@/components/skeleton";
 import { ChipRow } from "@/components/filter-bar";
 import { SectionLabel } from "@/components/section-label";
 import { TalkThreadCard } from "@/components/talk-thread-card";
@@ -26,6 +28,8 @@ export function TalkListPage() {
   const [category, setCategory] = useState<TalkCategory | "all">("all");
   const [threads, setThreads] = useState<TalkThreadSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Bumped by Try again, so a failed load is recoverable without a reload.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +48,7 @@ export function TalkListPage() {
     return () => {
       cancelled = true;
     };
-  }, [category]);
+  }, [category, attempt]);
 
   return (
     <div className="space-y-4">
@@ -92,9 +96,13 @@ export function TalkListPage() {
       </ChipRow>
 
       {error ? (
-        <EmptyState title="Talk is quiet" description={error} />
+        <ErrorState
+          title="Talk did not load"
+          detail={error}
+          onRetry={() => setAttempt((n) => n + 1)}
+        />
       ) : threads == null ? (
-        <p className="text-sm text-muted-foreground">Opening Talk…</p>
+        <CardListSkeleton rows={3} columns={1} label="Loading threads" />
       ) : threads.length === 0 ? (
         <EmptyState
           title="No threads yet"

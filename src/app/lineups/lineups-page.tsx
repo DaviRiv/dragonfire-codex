@@ -7,6 +7,7 @@ import { ChipRow } from "@/components/filter-bar";
 import { LineupCard } from "@/components/lineup-card";
 import { MiniChip } from "@/components/chip";
 import { SectionLabel } from "@/components/section-label";
+import { CardListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePit } from "@/lib/store";
@@ -19,7 +20,7 @@ export function LineupsPage() {
   const [filter, setFilter] = useState<LineupKind | "all">("all");
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Loading lineups…</p>;
+    return <CardListSkeleton rows={2} label="Loading saved lines" />;
   }
 
   function newLineup(kind: LineupKind) {

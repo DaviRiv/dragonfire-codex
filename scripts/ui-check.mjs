@@ -214,6 +214,57 @@ async function horizontalOverflow(page) {
   await page.close();
 }
 
+// ------------------------------------------------- Talk load failure + retry
+{
+  const page = await browser.newPage();
+  await page.setViewport(DESKTOP);
+  await page.evaluateOnNewDocument(() => {
+    localStorage.setItem("dragonfire-pit.tutorial.v1", "1");
+  });
+  await page.setRequestInterception(true);
+  let failNext = true;
+  page.on("request", (req) => {
+    if (failNext && req.url().includes("/api/talk")) {
+      void req.abort("failed");
+      return;
+    }
+    void req.continue();
+  });
+  await page.goto(`${BASE}/talk`, { waitUntil: "networkidle2", timeout: 60000 });
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
+
+  const failed = await page.evaluate(() => {
+    const alert = document.querySelector('[role="alert"]');
+    return {
+      shown: !!alert,
+      text: alert?.textContent?.slice(0, 90) ?? "",
+      hasRetry: [...document.querySelectorAll("button")].some(
+        (b) => b.textContent?.trim() === "Try again",
+      ),
+    };
+  });
+  check(
+    "/talk surfaces a load failure as an error, not as an empty room",
+    failed.shown && !failed.text.includes("quiet"),
+    failed.text,
+  );
+  check("/talk offers a retry", failed.hasRetry, "");
+
+  // Let the retry succeed and confirm the page recovers.
+  failNext = false;
+  await page.evaluate(() => {
+    [...document.querySelectorAll("button")]
+      .find((b) => b.textContent?.trim() === "Try again")
+      ?.click();
+  });
+  await page.evaluate(() => new Promise((r) => setTimeout(r, 1200)));
+  const recovered = await page.evaluate(
+    () => !document.querySelector('[role="alert"]'),
+  );
+  check("/talk recovers after a successful retry", recovered, "");
+  await page.close();
+}
+
 // ------------------------------------- mobile overflow and tap-target sweep
 /**
  * Anything you are meant to tap should be at least 40px on its short edge.

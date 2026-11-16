@@ -9,6 +9,7 @@ import { DragonSheet } from "@/components/dragon-sheet";
 import { ChipRow, NoMatches } from "@/components/filter-bar";
 import { SearchField } from "@/components/search-field";
 import { SectionLabel } from "@/components/section-label";
+import { GridSkeleton } from "@/components/skeleton";
 import {
   HabitPickerDialog,
   HabitSearchButton,
@@ -169,7 +170,7 @@ export function PitPage() {
   }
 
   if (!ready) {
-    return <p className="text-ui text-muted-foreground">Opening the pit…</p>;
+    return <GridSkeleton />;
   }
 
   const inspectingOwned = inspecting

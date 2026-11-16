@@ -5,6 +5,7 @@ import { LineupCard } from "@/components/lineup-card";
 import { MiniSlotRow } from "@/components/lineup-card";
 import { EmptyState } from "@/components/empty-state";
 import { SectionLabel } from "@/components/section-label";
+import { CardListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +23,7 @@ export function TeamsPage() {
     state.teams.find((t) => t.id === selectedId) ?? state.teams[0] ?? null;
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Loading teams…</p>;
+    return <CardListSkeleton rows={1} columns={1} label="Loading war kits" />;
   }
 
   return (
