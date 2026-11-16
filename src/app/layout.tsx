@@ -6,6 +6,7 @@ import { MobileAnchorAd } from "@/components/mobile-anchor-ad";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { siteOrigin } from "@/lib/server/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +25,10 @@ const cinzel = Cinzel({
   weight: ["500", "600", "700"],
 });
 
+const origin = siteOrigin();
+
 export const metadata: Metadata = {
+  ...(origin ? { metadataBase: origin } : {}),
   title: {
     default: "Dragonfire Pit — Team builder for three-dragon lines",
     template: "%s · Dragonfire Pit",

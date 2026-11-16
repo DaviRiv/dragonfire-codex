@@ -178,6 +178,20 @@ npm run dev
 
 Then open [http://localhost:43123](http://localhost:43123).
 
+### Custom domain (e.g. Cloudflare)
+
+1. In Cursor, open **dragonfire-pit** publish settings and attach
+   `dragonfirecodex.com` (and `www` if you use it). Copy the DNS target Cursor
+   shows.
+2. In Cloudflare DNS, add the record Cursor specifies (often a `CNAME` for `www`;
+   apex may use Cloudflare CNAME flattening).
+3. Set app secret **`SITE_URL`** to `https://dragonfirecodex.com` (or your
+   `www` URL) and republish.
+4. AdSense: add that same `https://…` URL; verify
+   `https://dragonfirecodex.com/ads.txt`.
+5. Google sign-in: add redirect URI
+   `https://dragonfirecodex.com/api/auth/google/callback` in Google Cloud.
+
 To bind a specific host and port:
 
 ```bash
