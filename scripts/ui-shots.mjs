@@ -2,15 +2,19 @@
  * Captures the main routes at phone and desktop widths against a seeded pit,
  * so a layout change can be looked at rather than guessed about.
  *
- *   node scripts/ui-shots.mjs [outDir] [baseUrl]
+ *   node scripts/ui-shots.mjs [baseUrl] [outDir]
  *
- * Needs a running dev server. Writes <outDir>/<route>-<width>.png.
+ * Argument order matches ui-check.mjs. Needs a running server.
+ * Writes <outDir>/<route>-<width>.png.
  */
 import puppeteer from "puppeteer-core";
 import { mkdirSync } from "node:fs";
 
-const OUT = process.argv[2] ?? "/tmp/ui-shots";
-const BASE = process.argv[3] ?? "http://127.0.0.1:43123";
+const BASE = process.argv[2] ?? "http://127.0.0.1:43123";
+const OUT = process.argv[3] ?? "/opt/cursor/artifacts/ui";
+if (/^https?:/.test(OUT)) {
+  throw new Error(`outDir looks like a URL: ${OUT} (usage: [baseUrl] [outDir])`);
+}
 mkdirSync(OUT, { recursive: true });
 
 const PHONE = { width: 390, height: 844, deviceScaleFactor: 2 };
