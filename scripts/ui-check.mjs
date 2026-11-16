@@ -214,6 +214,85 @@ async function horizontalOverflow(page) {
   await page.close();
 }
 
+// ----------------------------------------- destructive actions ask first
+/*
+ * Saved lines and kits live only in localStorage. Deleting one on the first
+ * click is silent data loss, so each destructive control must prompt, and
+ * dismissing the prompt must leave the data alone.
+ */
+{
+  const seed = {
+    version: 2,
+    owned: [],
+    customDragons: [],
+    lineups: [
+      {
+        id: "lin-x",
+        name: "Guarded line",
+        kind: "theory",
+        mode: "pvp",
+        troop: "spearmen",
+        notes: "",
+        slots: { left: null, vanguard: null, right: null },
+        ignoreLevel: false,
+        craftStars: 0,
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+    teams: [
+      {
+        id: "tm-x",
+        name: "Guarded kit",
+        description: "",
+        lineupIds: ["lin-x"],
+        updatedAt: new Date().toISOString(),
+      },
+    ],
+  };
+
+  for (const [path, label, countKey] of [
+    ["/teams", "Disband this kit", "teams"],
+    ["/lineups/lin-x", "Delete", "lineups"],
+  ]) {
+    const page = await browser.newPage();
+    await page.setViewport(DESKTOP);
+    await page.evaluateOnNewDocument((s) => {
+      localStorage.setItem("dragonfire-pit.tutorial.v1", "1");
+      localStorage.setItem("dragonfire-pit.v1", JSON.stringify(s));
+    }, seed);
+    await page.goto(`${BASE}${path}`, { waitUntil: "networkidle2", timeout: 60000 });
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 500)));
+
+    let prompted = false;
+    page.on("dialog", (d) => {
+      prompted = true;
+      void d.dismiss();
+    });
+    const clicked = await page.evaluate((text) => {
+      const btn = [...document.querySelectorAll("button")].find((b) =>
+        b.textContent?.trim().startsWith(text),
+      );
+      btn?.click();
+      return !!btn;
+    }, label);
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 500)));
+
+    const left = await page.evaluate((key) => {
+      const raw = localStorage.getItem("dragonfire-pit.v1");
+      return raw ? (JSON.parse(raw)[key]?.length ?? -1) : -1;
+    }, countKey);
+
+    check(`${path} has a ${label} control`, clicked, "");
+    check(`${path} prompts before destroying data`, prompted, "");
+    check(
+      `${path} keeps the data when the prompt is dismissed`,
+      left === 1,
+      `${countKey}=${left}`,
+    );
+    await page.close();
+  }
+}
+
 // ------------------------------------------------- Talk load failure + retry
 {
   const page = await browser.newPage();

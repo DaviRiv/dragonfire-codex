@@ -35,6 +35,7 @@ import {
 } from "@/lib/roles";
 import { vanguardBonus, liveOwnedHabits } from "@/lib/habits";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
+import { confirmDestructive } from "@/lib/confirm";
 import { usePit } from "@/lib/store";
 import type { Dragon, Lineup, PitState, SlotId } from "@/lib/types";
 import { pairingReport } from "@/lib/pairing";
@@ -240,6 +241,23 @@ export function LineupEditor({
     toast.success("Copied lineup summary.");
   }
 
+  function removeLineup() {
+    const onTeams = state.teams.filter((team) =>
+      team.lineupIds.includes(active.id),
+    );
+    const warning = onTeams.length
+      ? ` It is attached to ${onTeams.length} war kit${onTeams.length === 1 ? "" : "s"}.`
+      : "";
+    if (
+      !confirmDestructive(`Delete “${active.name}”?${warning} This cannot be undone.`)
+    ) {
+      return;
+    }
+    deleteLineup(active.id);
+    toast.success(`Deleted ${active.name}.`);
+    router.push("/lineups");
+  }
+
   const pitEmpty = !isTheory && state.owned.length === 0;
 
   return (
@@ -302,10 +320,7 @@ export function LineupEditor({
             embedded={embedded}
             report={report}
             onCopy={copySummary}
-            onDelete={() => {
-              deleteLineup(lineup.id);
-              router.push("/lineups");
-            }}
+            onDelete={removeLineup}
             onSaved={() => router.push("/lineups")}
           />
         </div>
@@ -536,10 +551,7 @@ export function LineupEditor({
           embedded={embedded}
           report={report}
           onCopy={copySummary}
-          onDelete={() => {
-            deleteLineup(lineup.id);
-            router.push("/lineups");
-          }}
+          onDelete={removeLineup}
           onSaved={() => router.push("/lineups")}
         />
       </div>

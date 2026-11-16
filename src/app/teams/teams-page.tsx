@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDestructive } from "@/lib/confirm";
 import { usePit } from "@/lib/store";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/lib/types";
 
@@ -107,8 +109,16 @@ export function TeamsPage() {
               team={selected}
               onChange={(patch) => updateTeam(selected.id, patch)}
               onDelete={() => {
+                if (
+                  !confirmDestructive(
+                    `Disband “${selected.name}”? The lineups it holds stay saved.`,
+                  )
+                ) {
+                  return;
+                }
                 deleteTeam(selected.id);
                 setSelectedId(null);
+                toast.success(`Disbanded ${selected.name}.`);
               }}
             />
           ) : null}
@@ -144,35 +154,25 @@ function TeamEditor({
 
   return (
     <div className="space-y-5 rounded-2xl surface p-4 ring-1 ring-foreground/10 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="team-name">Team name</Label>
-            <Input
-              id="team-name"
-              value={team.name}
-              onChange={(e) => onChange({ name: e.target.value })}
-              className="font-heading"
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="team-desc">When you use it</Label>
-            <Textarea
-              id="team-desc"
-              value={team.description}
-              onChange={(e) => onChange({ description: e.target.value })}
-              placeholder="Alliance war, tile push, gathering week…"
-            />
-          </div>
+      <div className="min-w-0 space-y-3">
+        <div className="grid gap-1.5">
+          <Label htmlFor="team-name">Team name</Label>
+          <Input
+            id="team-name"
+            value={team.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            className="font-heading"
+          />
         </div>
-        <Button
-          variant="destructive"
-          onClick={onDelete}
-          className="w-full sm:w-auto"
-        >
-          <Trash2 data-icon="inline-start" />
-          Disband
-        </Button>
+        <div className="grid gap-1.5">
+          <Label htmlFor="team-desc">When you use it</Label>
+          <Textarea
+            id="team-desc"
+            value={team.description}
+            onChange={(e) => onChange({ description: e.target.value })}
+            placeholder="Alliance war, tile push, gathering week…"
+          />
+        </div>
       </div>
 
       <section>
@@ -219,6 +219,20 @@ function TeamEditor({
           })}
         </ul>
       </section>
+
+      {/* Disband used to sit beside the name field, which made the most
+          destructive control the most prominent thing on the page and put it
+          above the lineups it would detach. */}
+      <div className="flex justify-end border-t border-border/50 pt-4">
+        <Button
+          variant="outline"
+          onClick={onDelete}
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 data-icon="inline-start" />
+          Disband this kit
+        </Button>
+      </div>
     </div>
   );
 }
