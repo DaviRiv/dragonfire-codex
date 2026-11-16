@@ -23,7 +23,7 @@ export async function openaiComplete(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: openaiModel(),
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 2500,
+      max_tokens: 1200,
       temperature: 0.6,
     }),
   });

@@ -7,6 +7,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import JSON5 from "json5";
 
 const HUB = "https://dragonfire-hub.com";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -67,7 +68,14 @@ function extractObjectLiteral(chunk, startToken) {
     }
   }
   if (end < 0) return null;
-  return new Function(`return (${chunk.slice(start, end)});`)();
+  const literal = chunk.slice(start, end);
+  try {
+    return JSON5.parse(literal);
+  } catch (error) {
+    throw new Error(
+      `Could not parse hub object (${startToken.slice(0, 24)}…): ${error instanceof Error ? error.message : error}`,
+    );
+  }
 }
 
 function cleanDragon(raw) {

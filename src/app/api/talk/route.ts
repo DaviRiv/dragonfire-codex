@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isTalkCategory } from "@/lib/talk-types";
 import { createThread, listThreads } from "@/lib/server/talk";
 import { getSession, jsonError } from "@/lib/server/session";
+import { guardTalkThread } from "@/lib/server/write-guard";
 import type { TalkLine } from "@/lib/talk-types";
 
 export const runtime = "nodejs";
@@ -20,6 +21,13 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
     return jsonError("Register an account to start a thread.", 401);
+  }
+  const limited = guardTalkThread(session.id);
+  if (!limited.ok) {
+    return jsonError(
+      `Thread limit reached. Try again in ${limited.retryAfterSec}s.`,
+      429,
+    );
   }
   let body: {
     title?: string;

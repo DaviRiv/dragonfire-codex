@@ -10,6 +10,7 @@ import {
 } from "@/lib/boards";
 import { mutateJsonFile, readJsonFile } from "@/lib/server/json-store";
 import { boardsFile } from "@/lib/server/paths";
+import { MAX_BOARDS } from "@/lib/server/store-limits";
 import type { SessionUser } from "@/lib/server/session";
 
 export type BoardRating = {
@@ -135,6 +136,7 @@ export async function upsertSuggestedLines(
         existing.updatedAt = now;
         continue;
       }
+      if (byId.size >= MAX_BOARDS) continue;
       byId.set(id, {
         ...line,
         id,

@@ -4,6 +4,7 @@ import { suggestTeamsAround } from "@/lib/ai/around";
 import { MODES, TROOP_TYPES } from "@/lib/labels";
 import { upsertSuggestedLines } from "@/lib/server/boards";
 import { getSession, jsonError } from "@/lib/server/session";
+import { guardBoardSuggest } from "@/lib/server/write-guard";
 import type { LineupMode, TroopType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -23,6 +24,13 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
     return jsonError("Register an account to use Copilot.", 401);
+  }
+  const limited = guardBoardSuggest(session.id);
+  if (!limited.ok) {
+    return jsonError(
+      `Suggest limit reached. Try again in ${limited.retryAfterSec}s.`,
+      429,
+    );
   }
   let body: {
     dragonId?: string;

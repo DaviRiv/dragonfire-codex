@@ -6,7 +6,7 @@ import { getSession, jsonError } from "@/lib/server/session";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_PROMPT_CHARS = 120_000;
+const MAX_PROMPT_CHARS = 48_000;
 
 export async function POST(request: Request) {
   if (!openaiConfigured()) {
@@ -19,10 +19,10 @@ export async function POST(request: Request) {
   if (!session) {
     return jsonError("Sign in to ask ChatGPT from this app.", 401);
   }
-  const limited = openaiRateLimit(session.id);
+  const limited = openaiRateLimit(request, session.id);
   if (!limited.ok) {
     return jsonError(
-      `ChatGPT limit reached. Try again in ${limited.retryAfterSec} seconds, or copy the prompt.`,
+      `${limited.message} (${limited.retryAfterSec}s). Or copy the prompt.`,
       429,
     );
   }

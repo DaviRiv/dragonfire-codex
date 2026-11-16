@@ -51,5 +51,21 @@ export function nextPath(raw: string | null | undefined): string {
   if (!value.startsWith("/")) return "/";
   if (value.startsWith("//")) return "/";
   if (value.includes("://")) return "/";
+  if (value.includes("\\") || value.includes("\0")) return "/";
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    return "/";
+  }
+  if (
+    decoded.includes("\\") ||
+    decoded.includes("://") ||
+    decoded.startsWith("//") ||
+    decoded.includes("\0")
+  ) {
+    return "/";
+  }
+  if (!/^\/[a-zA-Z0-9/_\-.?=&%+]*$/.test(value)) return "/";
   return value;
 }

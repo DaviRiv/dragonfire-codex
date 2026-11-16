@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { MAX_JSON_BYTES, StoreFullError } from "@/lib/server/store-limits";
 
 const locks = new Map<string, Promise<void>>();
 
@@ -31,8 +32,12 @@ export async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
 
 export async function writeJsonFile(file: string, value: unknown): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
+  const payload = `${JSON.stringify(value, null, 2)}\n`;
+  if (Buffer.byteLength(payload, "utf8") > MAX_JSON_BYTES) {
+    throw new StoreFullError("This board is full. Try again another day.");
+  }
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  await writeFile(tmp, payload, "utf8");
   await rename(tmp, file);
 }
 

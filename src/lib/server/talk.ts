@@ -18,6 +18,7 @@ import {
 } from "@/lib/talk-types";
 import { mutateJsonFile, readJsonFile } from "@/lib/server/json-store";
 import { talkFile } from "@/lib/server/paths";
+import { MAX_TALK_THREADS } from "@/lib/server/store-limits";
 import type { SessionUser } from "@/lib/server/session";
 
 export type TalkReplyRecord = TalkReply & { userId: string };
@@ -131,9 +132,15 @@ export async function createThread(
     line: input.line ?? null,
     replies: [],
   };
-  await mutateJsonFile(talkFile(), EMPTY, (file) => ({
-    threads: [thread, ...file.threads],
-  }));
+  let full = false;
+  await mutateJsonFile(talkFile(), EMPTY, (file) => {
+    if (file.threads.length >= MAX_TALK_THREADS) {
+      full = true;
+      return file;
+    }
+    return { threads: [thread, ...file.threads] };
+  });
+  if (full) return { error: "Talk is full for now. Try again later." };
   return toDetail(thread);
 }
 

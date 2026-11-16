@@ -8,6 +8,7 @@ import {
 import { hashPassword, verifyPassword } from "@/lib/server/password";
 import { mutateJsonFile, readJsonFile } from "@/lib/server/json-store";
 import { usersFile } from "@/lib/server/paths";
+import { MAX_USERS } from "@/lib/server/store-limits";
 import type { SessionUser } from "@/lib/server/session";
 
 export type UserRecord = {
@@ -59,13 +60,19 @@ export async function registerUser(
   };
 
   let taken = false;
+  let full = false;
   await mutateJsonFile(usersFile(), EMPTY, (file) => {
+    if (file.users.length >= MAX_USERS) {
+      full = true;
+      return file;
+    }
     if (file.users.some((row) => row.usernameKey === key)) {
       taken = true;
       return file;
     }
     return { users: [...file.users, created] };
   });
+  if (full) return { error: "Registration is closed for now." };
   if (taken) return { error: "That username is already taken." };
   return { user: publicUser(created) };
 }

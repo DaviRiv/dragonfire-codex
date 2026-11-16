@@ -3,6 +3,7 @@ import { parseBoardLine } from "@/lib/boards";
 import { MODES, TROOP_TYPES } from "@/lib/labels";
 import { queryBoards, upsertSuggestedLines } from "@/lib/server/boards";
 import { getSession, jsonError } from "@/lib/server/session";
+import { guardBoardSuggest } from "@/lib/server/write-guard";
 import type { LineupMode, TroopType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
     return jsonError("Register an account to post a line for review.", 401);
+  }
+  const limited = guardBoardSuggest(session.id);
+  if (!limited.ok) {
+    return jsonError(
+      `Board post limit reached. Try again in ${limited.retryAfterSec}s.`,
+      429,
+    );
   }
   let body: unknown;
   try {
