@@ -1,6 +1,7 @@
 /**
  * Talk message board. Run: npx tsx --tsconfig tsconfig.json scripts/check-talk.ts
  */
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -26,6 +27,11 @@ assert(ads.adsenseClient === "ca-pub-9733653923474794", "adsense client");
 assert(adsensePublisherId() === "9733653923474794", "ads.txt publisher id");
 assert(ADSENSE_PUBLISHER_ID === "pub-9733653923474794", "publisher id");
 assert(ADSENSE_CUSTOMER_ID === "7154488834", "customer id");
+const adsTxt = readFileSync(path.join(process.cwd(), "public/ads.txt"), "utf8");
+assert(
+  adsTxt.trim() === "google.com, pub-9733653923474794, DIRECT, f08c47fec0942fa0",
+  "ads.txt line",
+);
 assert(AD_SLOT_META.billboard.sizes[0][0] === 728, "wowhead leaderboard width");
 assert(AD_SLOT_META.sidebar.sizes[0][0] === 300, "wowhead rectangle width");
 assert(AD_SLOT_META.anchor.sizes[0][1] === 50, "mobile banner height");

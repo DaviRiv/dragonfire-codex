@@ -1,11 +1,17 @@
+/** Public OAuth client. The client secret stays in GOOGLE_CLIENT_SECRET only. */
+const DEFAULT_GOOGLE_CLIENT_ID =
+  "990622584413-jd48nhhssnu7mejhu9nv4491f78v5rue.apps.googleusercontent.com";
+
 export function googleOAuthConfigured(): boolean {
-  const id = process.env.GOOGLE_CLIENT_ID?.trim() ?? "";
-  const secret = process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "";
-  return id.length > 10 && secret.length > 10;
+  return googleClientId().length > 10 && googleClientSecret().length > 10;
 }
 
 export function googleClientId(): string {
-  return process.env.GOOGLE_CLIENT_ID?.trim() ?? "";
+  return process.env.GOOGLE_CLIENT_ID?.trim() || DEFAULT_GOOGLE_CLIENT_ID;
+}
+
+function googleClientSecret(): string {
+  return process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "";
 }
 
 export function googleRedirectUri(request: Request): string {
@@ -37,7 +43,7 @@ export async function exchangeGoogleCode(
   request: Request,
   code: string,
 ): Promise<GoogleProfile> {
-  const secret = process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "";
+  const secret = googleClientSecret();
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
