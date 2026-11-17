@@ -178,7 +178,13 @@ npm run dev
 
 Then open [http://localhost:43123](http://localhost:43123).
 
-### Custom domain (e.g. Cloudflare)
+### Own domain on Vercel (cheapest fix for AdSense)
+
+If `dragonfirecodex.com` shows **“The request could not be routed”**, DNS is pointed at
+Cursor, not your host. See **[docs/host-on-vercel.md](docs/host-on-vercel.md)** for
+free Vercel + Cloudflare DNS steps.
+
+### Custom domain on Cursor Apps (when available)
 
 1. In Cursor, open **dragonfire-pit** publish settings and attach
    `dragonfirecodex.com` (and `www` if you use it). Copy the DNS target Cursor
