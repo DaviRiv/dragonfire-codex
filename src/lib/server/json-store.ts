@@ -1,6 +1,8 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { blobEnabled, mutateBlobJson, readBlobJson } from "@/lib/server/blob-store";
+import { databaseEnabled } from "@/lib/server/db";
+import { mutateDbJson, readDbJson } from "@/lib/server/db-json";
 import { MAX_JSON_BYTES, StoreFullError, StoreUnavailableError } from "@/lib/server/store-limits";
 
 const locks = new Map<string, Promise<void>>();
@@ -21,6 +23,7 @@ function withLock<T>(file: string, fn: () => Promise<T>): Promise<T> {
 }
 
 export async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
+  if (databaseEnabled()) return readDbJson(file, fallback);
   if (blobEnabled()) return readBlobJson(file, fallback);
   try {
     const raw = await readFile(file, "utf8");
@@ -36,6 +39,10 @@ export async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
 }
 
 export async function writeJsonFile(file: string, value: unknown): Promise<void> {
+  if (databaseEnabled()) {
+    await mutateDbJson(file, value, () => value);
+    return;
+  }
   if (blobEnabled()) {
     await mutateBlobJson(file, value, () => value);
     return;
@@ -64,6 +71,7 @@ export function mutateJsonFile<T>(
   mutate: (current: T) => T | Promise<T>,
 ): Promise<T> {
   return withLock(file, async () => {
+    if (databaseEnabled()) return mutateDbJson(file, fallback, mutate);
     if (blobEnabled()) return mutateBlobJson(file, fallback, mutate);
     const current = await readJsonFile(file, fallback);
     const next = await mutate(current);

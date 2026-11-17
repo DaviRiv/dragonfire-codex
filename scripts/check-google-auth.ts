@@ -3,13 +3,19 @@
  * Run: npx tsx --tsconfig tsconfig.json scripts/check-google-auth.ts
  */
 import assert from "node:assert/strict";
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 process.env.VERCEL = "1";
 delete process.env.BLOB_READ_WRITE_TOKEN;
 delete process.env.BLOB_STORE_ID;
 delete process.env.VERCEL_OIDC_TOKEN;
+delete process.env.DATABASE_URL;
 
 async function main(): Promise<void> {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), "df-google-"));
+  process.env.DRAGONFIRE_DATA = dataDir;
   const { findOrCreateGoogleUser, googleAccountId, googleSessionUser } =
     await import("../src/lib/server/users");
   const { verifyGoogleIdToken } = await import("../src/lib/server/google-oauth");
@@ -34,6 +40,7 @@ async function main(): Promise<void> {
   }
 
   await assert.rejects(() => verifyGoogleIdToken("not-a-jwt", "nonce"));
+  await rm(dataDir, { recursive: true, force: true });
   console.log("check-google-auth ok");
 }
 

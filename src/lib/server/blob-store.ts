@@ -4,9 +4,16 @@ import { MAX_JSON_BYTES, StoreFullError, StoreUnavailableError } from "@/lib/ser
 
 const PREFIX = "dragonfire/";
 
-/** Vercel sets this on deployments. Local checks keep using the data directory. */
+function blobCredentials(): boolean {
+  if (process.env.BLOB_READ_WRITE_TOKEN?.trim()) return true;
+  return Boolean(
+    process.env.VERCEL_OIDC_TOKEN?.trim() && process.env.BLOB_STORE_ID?.trim(),
+  );
+}
+
+/** Use Blob only when this deployment actually has a store connected. */
 export function blobEnabled(): boolean {
-  return process.env.VERCEL === "1";
+  return process.env.VERCEL === "1" && blobCredentials();
 }
 
 function blobPath(file: string): string {
