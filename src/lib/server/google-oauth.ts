@@ -1,3 +1,6 @@
+import { timingSafeEqual } from "node:crypto";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
 /** Public OAuth client. The client secret stays in GOOGLE_CLIENT_SECRET only. */
 const DEFAULT_GOOGLE_CLIENT_ID =
   "990622584413-jd48nhhssnu7mejhu9nv4491f78v5rue.apps.googleusercontent.com";
@@ -13,6 +16,8 @@ export function googleClientId(): string {
 function googleClientSecret(): string {
   return process.env.GOOGLE_CLIENT_SECRET?.trim() ?? "";
 }
+
+export const GOOGLE_NONCE_COOKIE = "df_google_nonce";
 
 export function googleRedirectUri(request: Request): string {
   const origin = new URL(request.url).origin;
@@ -38,6 +43,43 @@ export type GoogleProfile = {
   name?: string;
   picture?: string;
 };
+
+const googleCerts = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/oauth2/v3/certs"),
+);
+
+function nonceMatches(claim: unknown, expected: string): boolean {
+  if (typeof claim !== "string" || !expected) return false;
+  const left = Buffer.from(claim);
+  const right = Buffer.from(expected);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
+}
+
+/** Verify a Google Identity Services ID token. No client secret is required. */
+export async function verifyGoogleIdToken(
+  credential: string,
+  nonce: string,
+): Promise<GoogleProfile> {
+  const { payload } = await jwtVerify(credential, googleCerts, {
+    issuer: ["https://accounts.google.com", "accounts.google.com"],
+    audience: googleClientId(),
+  });
+  if (!nonceMatches(payload.nonce, nonce)) {
+    throw new Error("Google sign-in expired. Try again.");
+  }
+  if (payload.email_verified === false) {
+    throw new Error("That Google account has not verified its email.");
+  }
+  const sub = typeof payload.sub === "string" ? payload.sub : "";
+  if (!sub) throw new Error("Google did not return a user id.");
+  return {
+    sub,
+    email: typeof payload.email === "string" ? payload.email : undefined,
+    name: typeof payload.name === "string" ? payload.name : undefined,
+    picture: typeof payload.picture === "string" ? payload.picture : undefined,
+  };
+}
 
 export async function exchangeGoogleCode(
   request: Request,

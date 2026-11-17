@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   USERNAME_MAX,
   USERNAME_MIN,
@@ -10,7 +10,7 @@ import {
 import { hashPassword, verifyPassword } from "@/lib/server/password";
 import { mutateJsonFile, readJsonFile } from "@/lib/server/json-store";
 import { usersFile } from "@/lib/server/paths";
-import { MAX_USERS } from "@/lib/server/store-limits";
+import { MAX_USERS, StoreUnavailableError } from "@/lib/server/store-limits";
 import type { SessionUser } from "@/lib/server/session";
 
 export type UserRecord = {
@@ -134,13 +134,44 @@ function pickGoogleUsername(
   return `player${randomBytes(4).toString("hex")}`;
 }
 
+/** Stable id so a Google account matches after the user store comes online. */
+export function googleAccountId(sub: string): string {
+  const hex = createHash("sha256").update(`google:${sub}`).digest("hex").slice(0, 20);
+  return `usr_${hex}`;
+}
+
+export function googleSessionUser(profile: {
+  sub: string;
+  email?: string;
+  name?: string;
+}): SessionUser {
+  return {
+    id: googleAccountId(profile.sub),
+    username: baseUsernameFromGoogle(profile),
+  };
+}
+
 export async function findOrCreateGoogleUser(profile: {
   sub: string;
   email?: string;
   name?: string;
 }): Promise<{ user: SessionUser } | { error: string }> {
   if (!profile.sub) return { error: "Google did not return a user id." };
+  try {
+    return await findOrCreateStoredGoogleUser(profile);
+  } catch (error) {
+    if (error instanceof StoreUnavailableError) {
+      return { user: googleSessionUser(profile) };
+    }
+    throw error;
+  }
+}
 
+async function findOrCreateStoredGoogleUser(profile: {
+  sub: string;
+  email?: string;
+  name?: string;
+}): Promise<{ user: SessionUser } | { error: string }> {
   const users = await listUsers();
   const existing = users.find((row) => row.googleSub === profile.sub);
   if (existing) return { user: publicUser(existing) };
@@ -150,7 +181,7 @@ export async function findOrCreateGoogleUser(profile: {
   const key = usernameKey(username);
   const noop = await hashPassword(randomBytes(32).toString("hex"));
   const created: UserRecord = {
-    id: `usr_${randomBytes(9).toString("hex")}`,
+    id: googleAccountId(profile.sub),
     username,
     usernameKey: key,
     passwordSalt: noop.salt,

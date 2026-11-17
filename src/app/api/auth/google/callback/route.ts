@@ -11,6 +11,7 @@ import {
 } from "@/lib/server/google-oauth";
 import { verifyOAuthState } from "@/lib/server/oauth-state";
 import { setSessionCookie } from "@/lib/server/session";
+import { StoreUnavailableError } from "@/lib/server/store-limits";
 import { findOrCreateGoogleUser, listUsers } from "@/lib/server/users";
 
 export const runtime = "nodejs";
@@ -41,7 +42,12 @@ export async function GET(request: Request) {
   try {
     const profile = await exchangeGoogleCode(request, code);
     const ip = clientAddress(request);
-    const known = (await listUsers()).some((row) => row.googleSub === profile.sub);
+    let known = true;
+    try {
+      known = (await listUsers()).some((row) => row.googleSub === profile.sub);
+    } catch (error) {
+      if (!(error instanceof StoreUnavailableError)) throw error;
+    }
     if (!known) {
       const limited = consumeRateLimit(
         `register:ip:${ip}`,

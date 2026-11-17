@@ -22,7 +22,9 @@ function toStoreError(error: unknown): Error {
     return new StoreUnavailableError();
   }
   if (error instanceof BlobError) {
-    console.error(error);
+    if (!error.message.includes("No blob credentials") && !error.message.includes("No read-write token")) {
+      console.error(error);
+    }
     return new StoreUnavailableError();
   }
   return error instanceof Error ? error : new StoreUnavailableError();

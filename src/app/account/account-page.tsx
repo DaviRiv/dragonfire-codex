@@ -3,18 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MiniChip } from "@/components/chip";
 import { nextPath, passwordError, usernameError } from "@/lib/account";
 import { useAuth } from "@/lib/auth";
-import { useGoogleAuthAvailable } from "@/lib/use-google-auth";
+import { GoogleSignInButton } from "@/components/google-sign-in";
 import { toast } from "sonner";
 
 export function AccountPage() {
-  const { ready, user, register, login, logout } = useAuth();
+  const { ready, user, register, login, logout, refresh } = useAuth();
   const router = useRouter();
   const search = useSearchParams();
   const next = nextPath(search.get("next"));
@@ -22,7 +21,6 @@ export function AccountPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const googleAuth = useGoogleAuthAvailable();
   const authError = search.get("error");
 
   useEffect(() => {
@@ -104,17 +102,15 @@ export function AccountPage() {
           Team. Use Google or a username and password on this server.
         </p>
       </div>
-      {googleAuth ? (
-        <Link
-          href={`/api/auth/google?next=${encodeURIComponent(next)}`}
-          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
-        >
-          Continue with Google
-        </Link>
-      ) : null}
-      {googleAuth ? (
-        <p className="text-center text-[12px] text-muted-foreground">or</p>
-      ) : null}
+      <GoogleSignInButton
+        onSuccess={async () => {
+          await refresh();
+          toast.success("Signed in with Google. Copilot is unlocked.");
+          router.push(next);
+        }}
+        onError={(message) => toast.error(message)}
+      />
+      <p className="text-center text-[12px] text-muted-foreground">or</p>
       <div className="flex gap-1">
         <MiniChip
           active={mode === "register"}
