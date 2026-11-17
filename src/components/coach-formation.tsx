@@ -97,7 +97,7 @@ export function CoachFormation({
   const blockedWhy =
     unknown.length > 0
       ? `${unknown.map((seat) => seat.id).join(", ")} is not in this build's dragon list.`
-      : unowned.length > 0
+      : pool === "pit" && unowned.length > 0
         ? `${unowned.map((seat) => seat.name).join(", ")} is not marked owned.`
         : null;
 
@@ -143,7 +143,7 @@ export function CoachFormation({
               custom={seat.custom}
               empty={!seat.known}
               size="xl"
-              dimmed={seat.known && !seat.owned}
+              dimmed={pool === "pit" && seat.known && !seat.owned}
             />
             <span className="max-w-full truncate text-sm font-medium">
               {seat.name}

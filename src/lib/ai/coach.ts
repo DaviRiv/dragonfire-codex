@@ -26,10 +26,10 @@ import type {
 } from "@/lib/types";
 
 export const COACH_STARTERS = [
-  "Seat the online DPS meta core",
-  "Build a shield PvP core from my pit",
-  "Who soaks if Vhagar is already marching?",
-  "Spear rally with a healer",
+  "Build me a team around Vhagar",
+  "Who pairs best with Malachite?",
+  "Build a rally team around Caraxes",
+  "Team with Venator without Vhagar",
 ] as const;
 
 export function guessTroopMode(text: string): {
@@ -97,6 +97,7 @@ function nameList(ids: string[], state: PitState): string {
 function anchoredComboLines(input: {
   anchorId: string;
   anchorSlot?: SlotId | null;
+  lockTroop?: boolean;
   request: SuggestRequest;
   state: PitState;
   lineup: Lineup;
@@ -110,16 +111,18 @@ function anchoredComboLines(input: {
   const stars = owned?.starRank ?? 6;
   const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
   const allowed = new Set(input.request.roster.map((card) => card.id));
+  const troop = input.lockTroop ? input.troop : (dragon.affinities[0] ?? input.troop);
   const candidates = choicesAroundDragon({
     dragonId: input.anchorId,
     stars,
-    troop: input.troop,
+    troop,
     mode: input.mode,
     state: input.state,
     limit: 16,
-    lockTroop: true,
+    lockTroop: Boolean(input.lockTroop),
   }).filter((choice) => {
     const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
+    if (!seats.includes(input.anchorId)) return false;
     if (seats.some((id) => skipSet.has(id))) return false;
     if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
       return false;
@@ -255,6 +258,7 @@ export function coachLines(input: {
   question?: string;
   anchorId?: string | null;
   anchorSlot?: SlotId | null;
+  lockTroop?: boolean;
 }): AiLine[] {
   const working: Lineup = {
     ...input.lineup,
@@ -266,6 +270,7 @@ export function coachLines(input: {
     lines = anchoredComboLines({
       anchorId: input.anchorId,
       anchorSlot: input.anchorSlot,
+      lockTroop: input.lockTroop,
       request: input.request,
       state: input.state,
       lineup: working,
@@ -421,6 +426,7 @@ export function answerPlan(
     question: plan.question,
     anchorId: plan.anchorId,
     anchorSlot: plan.anchorSlot,
+    lockTroop: plan.lockTroop,
   });
 
   if (plan.intent === "explain" || plan.intent === "compare") {

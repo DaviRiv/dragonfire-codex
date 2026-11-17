@@ -1,4 +1,5 @@
 import {
+  detectAnchor,
   detectIntent,
   detectMode,
   detectOrdinal,
@@ -66,6 +67,8 @@ export type ThreadMemory = {
   excluded: string[];
   /** Lines the last answer offered — what "those" and "another" refer to. */
   lines: AiLine[];
+  /** Dragon the thread is building around, if one was named. */
+  anchorId: string | null;
 };
 
 export type TurnPlan = {
@@ -83,6 +86,7 @@ export type TurnPlan = {
   followUp: boolean;
   anchorId?: string | null;
   anchorSlot?: SlotId | null;
+  lockTroop?: boolean;
 };
 
 export function isUserTurn(turn: ChatTurn): boolean {
@@ -109,6 +113,7 @@ export function threadMemory(
   let mode = DEFAULT_MODE;
   let excluded: string[] = [];
   let lines: AiLine[] = [];
+  let anchorId: string | null = null;
 
   for (const turn of turns) {
     if (turn.role === "assistant") {
@@ -119,6 +124,7 @@ export function threadMemory(
       excluded = [];
       troop = DEFAULT_TROOP;
       mode = DEFAULT_MODE;
+      anchorId = null;
       continue;
     }
     troop = detectTroop(turn.text) ?? troop;
@@ -126,13 +132,19 @@ export function threadMemory(
     const named = directNames(turn.text, roster);
     if (named.exclude.length > 0) {
       excluded = [...new Set([...excluded, ...named.exclude])];
+      if (anchorId && named.exclude.includes(anchorId)) anchorId = null;
     }
     if (named.include.length > 0) {
       excluded = excluded.filter((id) => !named.include.includes(id));
     }
+    const promptedAnchor = detectAnchor(turn.text, roster);
+    if (promptedAnchor) {
+      anchorId = promptedAnchor;
+      excluded = excluded.filter((id) => id !== promptedAnchor);
+    }
   }
 
-  return { troop, mode, excluded, lines };
+  return { troop, mode, excluded, lines, anchorId };
 }
 
 /**
@@ -146,7 +158,7 @@ export function planTurn(
   anchor?: {
     dragonId?: string | null;
     slot?: SlotId | null;
-    troop?: TroopType;
+    troop?: TroopType | "auto";
     mode?: LineupMode;
   },
 ): TurnPlan {
@@ -156,28 +168,39 @@ export function planTurn(
   const ordinal = detectOrdinal(text);
   const roleTarget = detectRoleTarget(text);
   const named = directNames(text, roster);
-  const anchorId = anchor?.dragonId ?? null;
-  const anchorSlot = anchor?.slot ?? null;
+  const promptAnchor = detectAnchor(text, roster);
+
+  const uiAnchorId = anchor?.dragonId ?? null;
+  const fallbackAnchor =
+    uiAnchorId ?? (memory.anchorId && !named.exclude.includes(memory.anchorId) ? memory.anchorId : null);
+  const anchorId = promptAnchor ?? fallbackAnchor;
+  const anchorSlot =
+    promptAnchor && promptAnchor !== uiAnchorId ? null : (anchor?.slot ?? null);
+
+  const explicitTroop = detectTroop(text);
+  const uiTroop = anchor?.troop && anchor.troop !== "auto" ? anchor.troop : null;
 
   if (intent === "reset") {
     return {
       question: text,
       intent,
-      troop: detectTroop(text) ?? anchor?.troop ?? DEFAULT_TROOP,
+      troop: explicitTroop ?? uiTroop ?? DEFAULT_TROOP,
       mode: detectMode(text) ?? anchor?.mode ?? DEFAULT_MODE,
       excludeIds: [],
       referenced: [],
       ordinal,
       roleTarget,
       followUp: false,
-      anchorId,
+      anchorId: promptAnchor ?? uiAnchorId,
       anchorSlot,
+      lockTroop: Boolean(explicitTroop || uiTroop),
     };
   }
 
   const hasUser = history.some(isUserTurn);
   const troop =
-    detectTroop(text) ?? (hasUser ? memory.troop : (anchor?.troop ?? memory.troop));
+    explicitTroop ??
+    (hasUser ? memory.troop : (uiTroop ?? memory.troop));
   const mode =
     detectMode(text) ?? (hasUser ? memory.mode : (anchor?.mode ?? memory.mode));
 
@@ -216,7 +239,7 @@ export function planTurn(
     hasUser &&
     (intent !== "formation" ||
       memory.excluded.length > 0 ||
-      detectTroop(text) == null ||
+      explicitTroop == null ||
       detectMode(text) == null);
 
   return {
@@ -231,6 +254,7 @@ export function planTurn(
     followUp,
     anchorId,
     anchorSlot,
+    lockTroop: Boolean(explicitTroop || uiTroop),
   };
 }
 

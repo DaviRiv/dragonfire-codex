@@ -19,7 +19,7 @@ import { emptySlots } from "@/lib/lineup";
 import { readPitSnapshot } from "@/lib/store";
 import type { Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/types";
 
-export const COACH_STORAGE_KEY = "dragonfire-pit.coach.v1";
+export const COACH_STORAGE_KEY = "dragonfire-pit.coach.v2";
 
 /** A single answer should never outrun this. Real work, no padding. */
 const TURN_TIMEOUT_MS = 15_000;
@@ -51,14 +51,14 @@ export function contextLineup(lineups: Lineup[], pool: AiPool): Lineup {
 export type CoachAnchor = {
   dragonId: string | null;
   slot: SlotId | "auto";
-  troop: TroopType;
+  troop: TroopType | "auto";
   mode: LineupMode;
 };
 
 const DEFAULT_ANCHOR: CoachAnchor = {
   dragonId: null,
   slot: "auto",
-  troop: "shieldbearers",
+  troop: "auto",
   mode: "pvp",
 };
 
@@ -274,7 +274,7 @@ export function useCoachChat() {
   const [state, dispatch] = useReducer(reducer, {
     turns: [],
     restored: false,
-    pool: "pit",
+    pool: "hatchery",
     anchor: DEFAULT_ANCHOR,
   });
 
@@ -329,12 +329,7 @@ export function useCoachChat() {
       troop: rawAnchor.troop ?? DEFAULT_ANCHOR.troop,
       mode: rawAnchor.mode ?? DEFAULT_ANCHOR.mode,
     };
-    const savedPool =
-      record.pool === "hatchery" || record.pool === "pit"
-        ? record.pool
-        : readPitSnapshot().owned.length >= 3
-          ? "pit"
-          : "hatchery";
+    const savedPool = record.pool === "pit" ? "pit" : "hatchery";
     dispatch({
       type: "restore",
       turns: parseStoredTurns(record.turns),
@@ -391,13 +386,18 @@ export function useCoachChat() {
               throw new ForcedError(forced);
             }
             const anchor = anchorRef.current;
+            const allCatalogRoster = collectRoster(
+              live.state,
+              live.lineup,
+              "hatchery",
+            );
             const history = historyForContext(
               turnsRef.current.filter((turn) => turn.requestId !== requestId),
             );
             const plan = planTurn(
               question,
               history,
-              live.roster,
+              allCatalogRoster,
               anchor.dragonId
                 ? {
                     dragonId: anchor.dragonId,
@@ -405,19 +405,30 @@ export function useCoachChat() {
                     troop: anchor.troop,
                     mode: anchor.mode,
                   }
-                : undefined,
+                : {
+                    troop: anchor.troop,
+                    mode: anchor.mode,
+                  },
             );
+            // If the prompt named a dragon to build around, use the full
+            // dragon catalog unless that dragon + partners exist in the pit.
+            const effectivePool =
+              plan.anchorId && pool === "pit" && live.roster.length < 3
+                ? "hatchery"
+                : pool;
+            const effectiveRoster =
+              effectivePool === "hatchery" ? allCatalogRoster : live.roster;
             const request = makeSuggestRequest(
               { ...live.lineup, troop: plan.troop, mode: plan.mode },
               live.state,
-              pool,
-              live.roster,
+              effectivePool,
+              effectiveRoster,
             );
             const result = answerPlan(plan, request, live.state, live.lineup);
             const meta: TurnMeta = {
               troop: plan.troop,
               mode: plan.mode,
-              pool,
+              pool: effectivePool,
               intent: plan.intent,
               skipped: plan.excludeIds.map(
                 (id) => findDragon(id, live.state.customDragons)?.name ?? id,
@@ -430,6 +441,15 @@ export function useCoachChat() {
           TURN_TIMEOUT_MS,
         );
         if (controller.signal.aborted) return;
+        if (answer.meta.anchorId && answer.meta.anchorId !== anchorRef.current.dragonId) {
+          const synced: CoachAnchor = {
+            ...anchorRef.current,
+            dragonId: answer.meta.anchorId,
+            slot: answer.meta.anchorSlot ?? "auto",
+          };
+          anchorRef.current = synced;
+          dispatch({ type: "anchor", anchor: synced });
+        }
         dispatch({
           type: "resolve",
           requestId,

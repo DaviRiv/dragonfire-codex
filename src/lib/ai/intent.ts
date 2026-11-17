@@ -163,3 +163,20 @@ export function directNames(
   }
   return { exclude, include };
 }
+
+/**
+ * First dragon named as the subject to build a team around (e.g. "build me a
+ * team around vhagar", "vhagar pvp", "who pairs with malachite"), ignoring
+ * dragons that were explicitly excluded ("without vhagar", "replace vhagar").
+ */
+export function detectAnchor(
+  text: string,
+  roster: { id: string; name: string }[],
+): string | null {
+  const dir = directNames(text, roster);
+  const excluded = new Set(dir.exclude);
+  for (const hit of findRosterNames(text, roster)) {
+    if (!excluded.has(hit.id)) return hit.id;
+  }
+  return null;
+}

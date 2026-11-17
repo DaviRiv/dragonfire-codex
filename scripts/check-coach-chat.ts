@@ -13,8 +13,8 @@ import {
   turnsForStorage,
   type ChatTurn,
 } from "@/lib/ai/conversation";
-import { detectIntent, detectOrdinal, directNames } from "@/lib/ai/intent";
-import { coachLines } from "@/lib/ai/coach";
+import { detectAnchor, detectIntent, detectOrdinal, directNames } from "@/lib/ai/intent";
+import { answerPlan, coachLines } from "@/lib/ai/coach";
 import { emptyPit } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
 import type { AiLine } from "@/lib/ai/prompt";
@@ -282,6 +282,51 @@ assert(anchoredLines.length > 0, "anchored build returns lines");
 assert(
   anchoredLines.every((item) => item.vanguard === "vhagar"),
   "every anchored line respects the selected seat",
+);
+
+// Prompting with no pre-selected dragon must detect the dragon and seat it.
+assert(
+  detectAnchor("build me a team around vhagar", roster) === "vhagar",
+  "detects anchor dragon from prompt text",
+);
+assert(
+  detectAnchor("build a team without vhagar", roster) === null,
+  "does not treat an excluded dragon as the anchor",
+);
+const promptPlan = planTurn("build me a team around vhagar", [], roster);
+assert(promptPlan.anchorId === "vhagar", "planTurn sets anchorId from prompt");
+const promptAnswer = answerPlan(
+  promptPlan,
+  {
+    lineupName: "Coach",
+    pool: "hatchery",
+    troop: promptPlan.troop,
+    mode: promptPlan.mode,
+    skipUsed: false,
+    current: { left: null, vanguard: null, right: null },
+    roster,
+  },
+  emptyPit(),
+  {
+    id: "coach-ctx",
+    name: "Coach",
+    kind: "theory",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: true,
+    craftStars: 6,
+    excludeUsed: false,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+);
+assert(promptAnswer.lines.length > 0, "prompt answer builds lines");
+assert(
+  promptAnswer.lines.every((item) =>
+    [item.left, item.vanguard, item.right].includes("vhagar"),
+  ),
+  "every returned line for 'build me a team around vhagar' contains Vhagar",
 );
 
 console.log("check-coach-chat: ok");
