@@ -30,9 +30,10 @@ git push -u github main
 ## 3. Deploy on Vercel
 
 1. [vercel.com](https://vercel.com) → sign in with GitHub.
-2. **Add New → Project** → import **dragon-forge**.
+2. **Add New → Project** → import **dragonfire-codex**.
 3. Framework: **Next.js** (auto). Build: `npm run build`. Output: default.
-4. **Environment variables** (Production):
+4. **Storage → Create → Blob**. Create a private Blob store and connect it to this project (Production). Registration writes `users.json` there. Without that store, Create account fails because Vercel cannot save files on disk.
+5. **Environment variables** (Production):
 
 | Name | Notes |
 |------|--------|
@@ -42,13 +43,13 @@ git push -u github main
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | When ready |
 | `OPENAI_API_KEY` | Optional |
 
-5. **Deploy**. Note the `*.vercel.app` URL; open `/team` to smoke-test.
+6. **Deploy** (redeploy after the Blob store is connected so the project picks up the store). Note the `*.vercel.app` URL; open `/team` to smoke-test, then create an account.
 
 ### Server data (Talk / accounts / boards)
 
-The app stores JSON under `data/` on disk. On **Vercel serverless**, that folder is **not durable** — registrations and Talk may reset after deploys or cold starts. **Pit data in the browser (localStorage) is unaffected.**
+Accounts, Talk, and boards are JSON documents. Locally they live under `data/`. On **Vercel** they live in the connected **Blob** store (`dragonfire/users.json` and the same for talk and boards). **Pit data in the browser (localStorage) is unaffected.**
 
-For persistent server data later: Railway/Render with a volume, or add a database. For AdSense + core tools, Vercel free is still enough to start.
+`AUTH_SECRET` must be set on Vercel. The server cannot write `data/.auth-secret` there.
 
 ## 4. Connect dragonfirecodex.com in Vercel
 

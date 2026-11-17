@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { secretFile } from "@/lib/server/paths";
+import { StoreUnavailableError } from "@/lib/server/store-limits";
 
 let cached: Uint8Array | null = null;
 
@@ -11,6 +12,11 @@ export function authSecret(): Uint8Array {
   if (fromEnv && fromEnv.length >= 16) {
     cached = new TextEncoder().encode(fromEnv);
     return cached;
+  }
+  if (process.env.VERCEL === "1") {
+    throw new StoreUnavailableError(
+      "Set AUTH_SECRET in Vercel (a random string, 32+ characters) and redeploy.",
+    );
   }
   const file = secretFile();
   try {

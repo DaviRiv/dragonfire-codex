@@ -10,3 +10,12 @@ export class StoreFullError extends Error {
     this.name = "StoreFullError";
   }
 }
+
+export class StoreUnavailableError extends Error {
+  constructor(
+    message = "Accounts cannot be saved on this host yet. In Vercel open Storage, create a Blob store, connect it to this project, and redeploy.",
+  ) {
+    super(message);
+    this.name = "StoreUnavailableError";
+  }
+}

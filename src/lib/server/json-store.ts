@@ -1,6 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { MAX_JSON_BYTES, StoreFullError } from "@/lib/server/store-limits";
+import { blobEnabled, mutateBlobJson, readBlobJson } from "@/lib/server/blob-store";
+import { MAX_JSON_BYTES, StoreFullError, StoreUnavailableError } from "@/lib/server/store-limits";
 
 const locks = new Map<string, Promise<void>>();
 
@@ -20,25 +21,41 @@ function withLock<T>(file: string, fn: () => Promise<T>): Promise<T> {
 }
 
 export async function readJsonFile<T>(file: string, fallback: T): Promise<T> {
+  if (blobEnabled()) return readBlobJson(file, fallback);
   try {
     const raw = await readFile(file, "utf8");
     return JSON.parse(raw) as T;
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return fallback;
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      throw new StoreUnavailableError();
+    }
     throw error;
   }
 }
 
 export async function writeJsonFile(file: string, value: unknown): Promise<void> {
-  await mkdir(path.dirname(file), { recursive: true });
+  if (blobEnabled()) {
+    await mutateBlobJson(file, value, () => value);
+    return;
+  }
   const payload = `${JSON.stringify(value, null, 2)}\n`;
   if (Buffer.byteLength(payload, "utf8") > MAX_JSON_BYTES) {
     throw new StoreFullError("This board is full. Try again another day.");
   }
-  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(tmp, payload, "utf8");
-  await rename(tmp, file);
+  try {
+    await mkdir(path.dirname(file), { recursive: true });
+    const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+    await writeFile(tmp, payload, "utf8");
+    await rename(tmp, file);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      throw new StoreUnavailableError();
+    }
+    throw error;
+  }
 }
 
 export function mutateJsonFile<T>(
@@ -47,6 +64,7 @@ export function mutateJsonFile<T>(
   mutate: (current: T) => T | Promise<T>,
 ): Promise<T> {
   return withLock(file, async () => {
+    if (blobEnabled()) return mutateBlobJson(file, fallback, mutate);
     const current = await readJsonFile(file, fallback);
     const next = await mutate(current);
     await writeJsonFile(file, next);
