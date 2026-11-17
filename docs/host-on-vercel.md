@@ -17,15 +17,15 @@ Redirects to `dragonfire-pit.apps.grok.bot` are optional later; they do **not** 
 
 Vercel imports from GitHub.
 
-1. Create a repo (e.g. `dragon-forge`).
-2. Push this project’s `main` branch:
+1. GitHub repo: **https://github.com/DaviRiv/dragonfire-codex**
+2. From a clone of this project:
 
 ```bash
-git remote add github git@github.com:YOUR_USER/dragon-forge.git
+git remote add github https://github.com/DaviRiv/dragonfire-codex.git
 git push -u github main
 ```
 
-(Or use Cursor’s **Create repo** / sync if you already have GitHub.)
+(If `github` already exists: `git push -u github main` only.)
 
 ## 3. Deploy on Vercel
 
