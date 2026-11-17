@@ -18,11 +18,12 @@
     "check:comp": "npx tsx --tsconfig tsconfig.json scripts/check-comp.ts",
     "check:ability": "npx tsx --tsconfig tsconfig.json scripts/check-ability-insight.ts",
     "check:guide": "npx tsx --tsconfig tsconfig.json scripts/check-guide.ts",
+    "check:build": "npx tsx --tsconfig tsconfig.json scripts/check-build.ts",
     "check:openai": "npx tsx --tsconfig tsconfig.json scripts/check-openai.ts",
     "check:security": "npx tsx --tsconfig tsconfig.json scripts/check-security.ts",
     "check:ui": "node scripts/ui-check.mjs",
     "ui:shots": "node scripts/ui-shots.mjs",
-    "check": "npm run check:boards && npm run check:around && npm run check:counter && npm run check:talk && npm run check:tutorial && npm run check:coach && npm run check:ai && npm run check:comp && npm run check:ability && npm run check:guide"
+    "check": "npm run check:build && npm run check:boards && npm run check:around && npm run check:counter && npm run check:talk && npm run check:tutorial && npm run check:coach && npm run check:ai && npm run check:comp && npm run check:ability && npm run check:guide"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -14,6 +14,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { BetaBadge } from "@/components/beta-badge";
+import { BuildNumber } from "@/components/build-number";
+import { buildNumberLabel, readPublicBuildInfo } from "@/lib/build-info";
 import { useAuth } from "@/lib/auth";
 import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,7 @@ function AccountLink() {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const build = readPublicBuildInfo();
 
   return (
     <>
@@ -110,10 +113,10 @@ export function SiteHeader() {
         Skip to content
       </a>
       <header className="sticky top-0 z-40 border-b border-amber-500/20 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-        <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-2 px-3 sm:h-14 sm:px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
           <Link
             href="/team"
-            aria-label="Dragonfire Pit home"
+            aria-label={`Dragonfire Pit home, ${buildNumberLabel(build)} ${build.sha}`}
             className="flex min-h-10 min-w-0 items-center gap-2 rounded-lg"
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30">
@@ -123,8 +126,9 @@ export function SiteHeader() {
               <span className="font-heading block text-base leading-none tracking-[0.16em] sm:text-lg sm:tracking-[0.18em]">
                 DRAGONFIRE
               </span>
-              <span className="mt-0.5 hidden text-[10px] tracking-[0.18em] text-amber-200/70 uppercase sm:block">
-                Pit · Team · Counter
+              <span className="mt-0.5 block truncate text-[10px] tracking-[0.14em] text-amber-200/70 uppercase">
+                <span className="hidden sm:inline">Pit · Team · Counter · </span>
+                <BuildNumber className="text-amber-200/55" />
               </span>
             </span>
           </Link>
