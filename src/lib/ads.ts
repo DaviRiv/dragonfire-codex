@@ -1,3 +1,17 @@
+/** AdSense publisher id (public; used in ads.txt and the ad script). */
+export const ADSENSE_PUBLISHER_ID = "pub-9733653923474794";
+
+/** AdSense customer id from the account page. */
+export const ADSENSE_CUSTOMER_ID = "7154488834";
+
+/** `ca-pub-…` client id the ad script expects. */
+export function adsenseClientFromPublisher(publisher = ADSENSE_PUBLISHER_ID): string {
+  const id = publisher.trim();
+  if (id.startsWith("ca-pub-")) return id;
+  if (id.startsWith("pub-")) return `ca-${id}`;
+  return `ca-pub-${id}`;
+}
+
 export const AD_SLOT_IDS = [
   "billboard",
   "sidebar",

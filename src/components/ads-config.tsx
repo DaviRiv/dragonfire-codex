@@ -39,11 +39,16 @@ function fromConfig(config: AdsPublicConfig): AdsContextValue {
   };
 }
 
-export function AdsConfigProvider({ children }: { children: ReactNode }) {
-  const [value, setValue] = useState<AdsContextValue>({
-    ...HOUSE,
-    ready: false,
-  });
+export function AdsConfigProvider({
+  initial,
+  children,
+}: {
+  initial?: AdsPublicConfig;
+  children: ReactNode;
+}) {
+  const [value, setValue] = useState<AdsContextValue>(
+    initial ? fromConfig(initial) : { ...HOUSE, ready: false },
+  );
 
   useEffect(() => {
     let cancelled = false;

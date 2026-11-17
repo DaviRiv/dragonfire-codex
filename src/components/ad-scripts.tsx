@@ -8,18 +8,6 @@ export function AdScripts() {
 
   if (!ads.ready) return null;
 
-  if (ads.mode === "adsense" && ads.adsenseClient) {
-    return (
-      <Script
-        id="adsense"
-        async
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ads.adsenseClient)}`}
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
-    );
-  }
-
   if (ads.mode === "gpt" && ads.gptAdUnit) {
     return (
       <Script

@@ -85,8 +85,9 @@ export function AdSlot({
   const elementId = `df-ad-${slot}-${reactId}`;
   const pushed = useRef(false);
   const ads = useAds();
+  const slotId = ads.slot(slot);
   const liveAdsense =
-    ads.ready && ads.mode === "adsense" && Boolean(ads.slot(slot));
+    ads.ready && ads.mode === "adsense" && Boolean(ads.adsenseClient) && Boolean(slotId);
   const liveGpt = ads.ready && ads.mode === "gpt";
   const meta = AD_SLOT_META[slot];
 
@@ -139,10 +140,10 @@ export function AdSlot({
       </p>
       {liveAdsense ? (
         <ins
-          className="adsbygoogle block"
+          className="adsbygoogle mx-auto block"
           style={{ display: "block" }}
           data-ad-client={ads.adsenseClient}
-          data-ad-slot={ads.slot(slot)}
+          data-ad-slot={slotId}
           data-ad-format={slot === "billboard" || slot === "anchor" ? "horizontal" : "rectangle"}
           data-full-width-responsive="true"
         />

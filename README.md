@@ -161,10 +161,11 @@ and Cons on the right (under the list on a phone).
 
 Ad units follow a [Wowhead](https://www.wowhead.com/)-style page: leaderboard
 under the header, 300×250 rectangles in the right rail, in-feed units on Talk,
-and a 320×50 mobile banner above the tab bar. Configure **AdSense** via app
-secrets (`ADSENSE_CLIENT` plus five `ADSENSE_SLOT_*` ids) on the published
-host, or `GPT_AD_UNIT` for Ad Manager. `/ads.txt` is served automatically from
-`ADSENSE_CLIENT`. Until ids are set, labeled house ads fill the same slots.
+and a 320×50 mobile banner above the tab bar. **AdSense** publisher
+`pub-9733653923474794` (customer `7154488834`) is loaded on every page, and
+`/ads.txt` advertises that id. Set `ADSENSE_SLOT_*` to the ad unit ids from
+AdSense to fill those placements; until then they show house ads. Set
+`GPT_AD_UNIT` instead for Ad Manager.
 
 Habit and command text uses the in-game keyword colors: **Physical**
 orange, **Tactical** purple, **Fire** red-orange, **Recovery** green,

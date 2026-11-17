@@ -39,7 +39,7 @@ git push -u github main
 |------|--------|
 | `AUTH_SECRET` | Long random string (32+ chars) |
 | `SITE_URL` | `https://www.dragonfirecodex.com` |
-| `ADSENSE_CLIENT`, `ADSENSE_SLOT_*` | When ready |
+| `ADSENSE_SLOT_*` | Ad unit ids. The publisher `pub-9733653923474794` is already in the app. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | When ready |
 | `OPENAI_API_KEY` | Optional |
 

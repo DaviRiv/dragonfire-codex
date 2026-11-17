@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Cinzel, Geist, Geist_Mono } from "next/font/google";
 import { AdScripts } from "@/components/ad-scripts";
 import { AppFrame } from "@/components/app-frame";
@@ -6,6 +7,7 @@ import { MobileAnchorAd } from "@/components/mobile-anchor-ad";
 import { Providers } from "@/components/providers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { serverAdsConfig } from "@/lib/server/ads-config";
 import { siteOrigin } from "@/lib/server/site-url";
 import "./globals.css";
 
@@ -26,6 +28,7 @@ const cinzel = Cinzel({
 });
 
 const origin = siteOrigin();
+const ads = serverAdsConfig();
 
 export const metadata: Metadata = {
   ...(origin ? { metadataBase: origin } : {}),
@@ -54,6 +57,9 @@ export const metadata: Metadata = {
     title: "Dragonfire Pit",
     statusBarStyle: "black-translucent",
   },
+  ...(ads.mode === "adsense" && ads.adsenseClient
+    ? { other: { "google-adsense-account": ads.adsenseClient } }
+    : {}),
 };
 
 export const viewport: Viewport = {
@@ -70,7 +76,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`dark ${geistSans.variable} ${geistMono.variable} ${cinzel.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <Providers>
+        <Providers ads={ads}>
+          {ads.mode === "adsense" && ads.adsenseClient ? (
+            <Script
+              id="adsense"
+              async
+              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ads.adsenseClient)}`}
+              crossOrigin="anonymous"
+              strategy="afterInteractive"
+            />
+          ) : null}
           <AdScripts />
           <SiteHeader />
           <AppFrame>{children}</AppFrame>

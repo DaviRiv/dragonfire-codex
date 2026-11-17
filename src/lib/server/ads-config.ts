@@ -1,5 +1,6 @@
 import {
   AD_SLOT_IDS,
+  adsenseClientFromPublisher,
   type AdMode,
   type AdSlotId,
   type AdsPublicConfig,
@@ -9,8 +10,17 @@ function envPair(primary: string, legacy: string): string {
   return (process.env[primary] ?? process.env[legacy] ?? "").trim();
 }
 
+function asAdsenseClient(value: string): string {
+  if (!value) return "";
+  return value.startsWith("ca-pub-") || value.startsWith("pub-")
+    ? adsenseClientFromPublisher(value)
+    : value;
+}
+
 export function serverAdsConfig(): AdsPublicConfig {
-  const adsenseClient = envPair("ADSENSE_CLIENT", "NEXT_PUBLIC_ADSENSE_CLIENT");
+  const configured = asAdsenseClient(
+    envPair("ADSENSE_CLIENT", "NEXT_PUBLIC_ADSENSE_CLIENT"),
+  );
   const gptAdUnit = envPair("GPT_AD_UNIT", "NEXT_PUBLIC_GPT_AD_UNIT");
   const slots = Object.fromEntries(
     AD_SLOT_IDS.map((slot) => {
@@ -22,8 +32,13 @@ export function serverAdsConfig(): AdsPublicConfig {
   ) as Record<AdSlotId, string>;
 
   let mode: AdMode = "house";
-  if (adsenseClient.startsWith("ca-pub-")) mode = "adsense";
+  let adsenseClient = configured;
+  if (configured.startsWith("ca-pub-")) mode = "adsense";
   else if (gptAdUnit.startsWith("/")) mode = "gpt";
+  else {
+    mode = "adsense";
+    adsenseClient = adsenseClientFromPublisher();
+  }
 
   return { mode, adsenseClient, gptAdUnit, slots };
 }
