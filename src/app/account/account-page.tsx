@@ -9,11 +9,10 @@ import { Label } from "@/components/ui/label";
 import { MiniChip } from "@/components/chip";
 import { nextPath, passwordError, usernameError } from "@/lib/account";
 import { useAuth } from "@/lib/auth";
-import { GoogleSignInButton } from "@/components/google-sign-in";
 import { toast } from "sonner";
 
 export function AccountPage() {
-  const { ready, user, register, login, logout, refresh } = useAuth();
+  const { ready, user, register, login, logout } = useAuth();
   const router = useRouter();
   const search = useSearchParams();
   const next = nextPath(search.get("next"));
@@ -99,18 +98,9 @@ export function AccountPage() {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Register to unlock Copilot and to rate or post three-dragon lines on
-          Team. Use Google or a username and password on this server.
+          Team. Create a username and password on this server.
         </p>
       </div>
-      <GoogleSignInButton
-        onSuccess={async () => {
-          await refresh();
-          toast.success("Signed in with Google. Copilot is unlocked.");
-          router.push(next);
-        }}
-        onError={(message) => toast.error(message)}
-      />
-      <p className="text-center text-[12px] text-muted-foreground">or</p>
       <div className="flex gap-1">
         <MiniChip
           active={mode === "register"}

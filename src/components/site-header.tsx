@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   Flame,
   MessagesSquare,
   Sparkles,
@@ -23,10 +22,9 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/team", label: "Team", icon: Swords },
   { href: "/counter", label: "Counter", icon: Target },
-  { href: "/talk", label: "Talk", icon: MessagesSquare },
+  { href: "/forums", label: "Forums", icon: MessagesSquare },
   { href: "/coach", label: "Copilot", icon: Sparkles, beta: true },
   { href: "/pit", label: "Pit", icon: Flame },
-  { href: "/guide", label: "Guide", icon: BookOpen },
 ] as const;
 
 function isActive(pathname: string, href: string) {
@@ -104,7 +102,7 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Six nav links and an account control sit before the page on every
+      {/* Five nav links and an account control sit before the page on every
           route; a keyboard reader should not have to tab through them. */}
       <a
         href="#main-content"
@@ -174,7 +172,7 @@ export function SiteHeader() {
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-amber-500/20 bg-background/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       >
-        <ul className="mx-auto grid max-w-6xl grid-cols-6">
+        <ul className="mx-auto grid max-w-6xl grid-cols-5">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(pathname, link.href);

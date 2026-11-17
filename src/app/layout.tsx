@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Cinzel, Geist, Geist_Mono } from "next/font/google";
 import { AdScripts } from "@/components/ad-scripts";
 import { AppFrame } from "@/components/app-frame";
@@ -75,17 +74,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} ${cinzel.variable} h-full antialiased`}
     >
+      <head>
+        {ads.mode === "adsense" && ads.adsenseClient ? (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ads.adsenseClient)}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
+      </head>
       <body className="flex min-h-full flex-col">
         <Providers ads={ads}>
-          {ads.mode === "adsense" && ads.adsenseClient ? (
-            <Script
-              id="adsense"
-              async
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ads.adsenseClient)}`}
-              crossOrigin="anonymous"
-              strategy="afterInteractive"
-            />
-          ) : null}
           <AdScripts />
           <SiteHeader />
           <AppFrame>{children}</AppFrame>

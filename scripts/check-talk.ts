@@ -20,6 +20,8 @@ assert(titleError("short") !== null, "short title");
 assert(titleError("Malachite soak on Shields") === null, "ok title");
 assert(postError("   ") !== null, "blank post");
 assert(isTalkCategory("pvp"), "pvp category");
+assert(isTalkCategory("recruitment"), "recruitment board");
+assert(isTalkCategory("lfa"), "lfa board");
 assert(!isTalkCategory("mythic"), "reject junk category");
 const ads = serverAdsConfig();
 assert(ads.mode === "adsense", "publisher id enables AdSense");

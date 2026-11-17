@@ -117,7 +117,7 @@ export function BoardCard({
           href={talkNewHref(board.id)}
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
         >
-          Discuss in Talk
+          Discuss in Forums
         </Link>
         <Button
           size="sm"

@@ -3,13 +3,25 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
+import { useAds } from "@/components/ads-config";
+import type { AdSlotId } from "@/lib/ads";
 import { isWideRoute, isWorkspaceRoute } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
+function hasActiveSlot(ads: ReturnType<typeof useAds>, ...slots: AdSlotId[]) {
+  if (!ads.ready) return false;
+  if (ads.mode === "house" || ads.mode === "gpt") return true;
+  return Boolean(ads.adsenseClient && slots.some((slot) => ads.slot(slot)));
+}
+
 export function AppFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const ads = useAds();
   const wide = isWideRoute(pathname);
   const team = isWorkspaceRoute(pathname);
+  const showBillboard = !team && hasActiveSlot(ads, "billboard");
+  const showSidebar = !wide && hasActiveSlot(ads, "sidebar", "sidebar-lower");
+  const hasAnchor = !team && hasActiveSlot(ads, "anchor");
 
   // Percentage heights need a document that is actually the viewport tall.
   // Without this the workspace pages grow the page instead of scrolling
@@ -30,18 +42,20 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         wide ? "max-w-[92rem]" : "max-w-7xl",
         team
           ? "h-full min-h-0 overflow-hidden py-2 pb-[calc(4.25rem+env(safe-area-inset-bottom))] lg:pb-3"
-          : "py-3 sm:py-6 pb-[calc(9.25rem+env(safe-area-inset-bottom))] lg:pb-8",
+          : hasAnchor
+            ? "py-3 sm:py-6 pb-[calc(9.25rem+env(safe-area-inset-bottom))] lg:pb-8"
+            : "py-3 sm:py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-8",
       )}
     >
-      {team ? null : (
+      {showBillboard ? (
         <div className="mb-3">
           <AdSlot slot="billboard" />
         </div>
-      )}
+      ) : null}
       <div
         className={cn(
           team && "flex min-h-0 flex-1 flex-col",
-          !wide &&
+          showSidebar &&
             "xl:grid xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start xl:gap-4",
         )}
       >
@@ -53,12 +67,12 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
         >
           {children}
         </main>
-        {wide ? null : (
+        {showSidebar ? (
           <aside className="sticky top-[calc(3.75rem+env(safe-area-inset-top))] mt-4 hidden space-y-4 xl:block">
             <AdSlot slot="sidebar" />
             <AdSlot slot="sidebar-lower" />
           </aside>
-        )}
+        ) : null}
       </div>
     </div>
   );

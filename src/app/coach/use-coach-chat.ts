@@ -17,7 +17,7 @@ import { collectRoster, type AiPool, type RosterCard } from "@/lib/ai/roster";
 import { findDragon } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
 import { readPitSnapshot } from "@/lib/store";
-import type { Lineup, PitState } from "@/lib/types";
+import type { Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/types";
 
 export const COACH_STORAGE_KEY = "dragonfire-pit.coach.v1";
 
@@ -48,15 +48,31 @@ export function contextLineup(lineups: Lineup[], pool: AiPool): Lineup {
   };
 }
 
+export type CoachAnchor = {
+  dragonId: string | null;
+  slot: SlotId | "auto";
+  troop: TroopType;
+  mode: LineupMode;
+};
+
+const DEFAULT_ANCHOR: CoachAnchor = {
+  dragonId: null,
+  slot: "auto",
+  troop: "shieldbearers",
+  mode: "pvp",
+};
+
 type State = {
   turns: ChatTurn[];
   restored: boolean;
   pool: AiPool;
+  anchor: CoachAnchor;
 };
 
 type Action =
-  | { type: "restore"; turns: ChatTurn[]; pool: AiPool }
+  | { type: "restore"; turns: ChatTurn[]; pool: AiPool; anchor: CoachAnchor }
   | { type: "pool"; pool: AiPool }
+  | { type: "anchor"; anchor: CoachAnchor }
   | { type: "submit"; requestId: string; question: string; at: number }
   | {
       type: "resolve";
@@ -72,9 +88,16 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "restore":
-      return { turns: action.turns, pool: action.pool, restored: true };
+      return {
+        turns: action.turns,
+        pool: action.pool,
+        anchor: action.anchor,
+        restored: true,
+      };
     case "pool":
       return { ...state, pool: action.pool };
+    case "anchor":
+      return { ...state, anchor: action.anchor };
     case "submit":
       return {
         ...state,
@@ -252,10 +275,12 @@ export function useCoachChat() {
     turns: [],
     restored: false,
     pool: "pit",
+    anchor: DEFAULT_ANCHOR,
   });
 
   const turnsRef = useRef(state.turns);
   const poolRef = useRef(state.pool);
+  const anchorRef = useRef(state.anchor);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const abortRef = useRef(new Map<string, AbortController>());
   const failOnceRef = useRef<ChatErrorKind | null>(null);
@@ -271,6 +296,10 @@ export function useCoachChat() {
   }, [state.pool]);
 
   useEffect(() => {
+    anchorRef.current = state.anchor;
+  }, [state.anchor]);
+
+  useEffect(() => {
     let stored: unknown = null;
     try {
       const raw = window.localStorage.getItem(COACH_STORAGE_KEY);
@@ -280,12 +309,37 @@ export function useCoachChat() {
     }
     const record =
       stored && typeof stored === "object"
-        ? (stored as { turns?: unknown; pool?: unknown })
+        ? (stored as { turns?: unknown; pool?: unknown; anchor?: unknown })
         : {};
+    const rawAnchor =
+      record.anchor && typeof record.anchor === "object"
+        ? (record.anchor as Partial<CoachAnchor>)
+        : {};
+    const anchor: CoachAnchor = {
+      dragonId:
+        typeof rawAnchor.dragonId === "string" && rawAnchor.dragonId
+          ? rawAnchor.dragonId
+          : null,
+      slot:
+        rawAnchor.slot === "left" ||
+        rawAnchor.slot === "vanguard" ||
+        rawAnchor.slot === "right"
+          ? rawAnchor.slot
+          : "auto",
+      troop: rawAnchor.troop ?? DEFAULT_ANCHOR.troop,
+      mode: rawAnchor.mode ?? DEFAULT_ANCHOR.mode,
+    };
+    const savedPool =
+      record.pool === "hatchery" || record.pool === "pit"
+        ? record.pool
+        : readPitSnapshot().owned.length >= 3
+          ? "pit"
+          : "hatchery";
     dispatch({
       type: "restore",
       turns: parseStoredTurns(record.turns),
-      pool: record.pool === "hatchery" ? "hatchery" : "pit",
+      pool: savedPool,
+      anchor,
     });
   }, []);
 
@@ -301,12 +355,13 @@ export function useCoachChat() {
         JSON.stringify({
           turns: turnsForStorage(state.turns),
           pool: state.pool,
+          anchor: state.anchor,
         }),
       );
     } catch {
       // Full or blocked storage must not break the conversation in memory.
     }
-  }, [state.restored, state.turns, state.pool]);
+  }, [state.restored, state.turns, state.pool, state.anchor]);
 
   useEffect(() => {
     const controllers = abortRef.current;
@@ -335,11 +390,23 @@ export function useCoachChat() {
               failOnceRef.current = null;
               throw new ForcedError(forced);
             }
-            // Everything said before, minus this request's own pair.
+            const anchor = anchorRef.current;
             const history = historyForContext(
               turnsRef.current.filter((turn) => turn.requestId !== requestId),
             );
-            const plan = planTurn(question, history, live.roster);
+            const plan = planTurn(
+              question,
+              history,
+              live.roster,
+              anchor.dragonId
+                ? {
+                    dragonId: anchor.dragonId,
+                    slot: anchor.slot === "auto" ? null : anchor.slot,
+                    troop: anchor.troop,
+                    mode: anchor.mode,
+                  }
+                : undefined,
+            );
             const request = makeSuggestRequest(
               { ...live.lineup, troop: plan.troop, mode: plan.mode },
               live.state,
@@ -355,6 +422,8 @@ export function useCoachChat() {
               skipped: plan.excludeIds.map(
                 (id) => findDragon(id, live.state.customDragons)?.name ?? id,
               ),
+              anchorId: plan.anchorId ?? null,
+              anchorSlot: plan.anchorSlot ?? null,
             };
             return { ...result, meta };
           })(),
@@ -392,7 +461,12 @@ export function useCoachChat() {
       // Keep the ref in step now, so a second question in the same tick still
       // plans against the first one.
       turnsRef.current = reducer(
-        { turns: turnsRef.current, restored: true, pool: poolRef.current },
+        {
+          turns: turnsRef.current,
+          restored: true,
+          pool: poolRef.current,
+          anchor: anchorRef.current,
+        },
         submit,
       ).turns;
       run(requestId, text);
@@ -440,6 +514,11 @@ export function useCoachChat() {
     dispatch({ type: "pool", pool });
   }, []);
 
+  const setAnchor = useCallback((anchor: CoachAnchor) => {
+    anchorRef.current = anchor;
+    dispatch({ type: "anchor", anchor });
+  }, []);
+
   /** Dev-only seam so the error and retry path can be exercised for real. */
   const failNext = useCallback((kind: ChatErrorKind) => {
     failOnceRef.current = kind;
@@ -457,6 +536,7 @@ export function useCoachChat() {
     turns: state.turns,
     restored: state.restored,
     pool: state.pool,
+    anchor: state.anchor,
     pending,
     busy: pending.length > 0,
     send,
@@ -464,6 +544,7 @@ export function useCoachChat() {
     cancel,
     reset,
     setPool,
+    setAnchor,
     failNext,
   };
 }

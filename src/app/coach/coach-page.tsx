@@ -15,25 +15,40 @@ import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
+import { DragonIcon } from "@/components/dragon-icon";
 import { MetaCard } from "@/components/meta-card";
-import { TroopIcon } from "@/components/troop-icon";
+import { SearchField } from "@/components/search-field";
+import { SectionLabel } from "@/components/section-label";
+import { TroopChip, TroopIcon } from "@/components/troop-icon";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   contextLineup,
   useCoachChat,
 } from "@/app/coach/use-coach-chat";
-import { COACH_STARTERS, lineupFromAiLine } from "@/lib/ai/coach";
+import { DRAGONS, getCatalogDragon } from "@/data/dragons";
+import { COACH_STARTERS, coachLines, lineupFromAiLine } from "@/lib/ai/coach";
 import type { ChatErrorKind, ChatTurn } from "@/lib/ai/conversation";
 import { chatgptCoachExport, chatgptExportFilename } from "@/lib/ai/export";
 import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster } from "@/lib/ai/roster";
 import { rememberBuild } from "@/lib/build-session";
+import { filterDragonPicks } from "@/lib/counter-pick";
 import { newId, nowIso } from "@/lib/dragons";
-import { modeLabels, troopLabels } from "@/lib/labels";
+import {
+  MODES,
+  TROOP_TYPES,
+  modeLabels,
+  modeShort,
+  slotShort,
+  troopLabels,
+} from "@/lib/labels";
+import { SLOT_IDS } from "@/lib/lineup";
+import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { usePit } from "@/lib/store";
+import type { SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ArrowDown, RotateCcw, Send, Square } from "lucide-react";
+import { ArrowDown, RotateCcw, Send, Sparkles, Square, X } from "lucide-react";
 import { toast } from "sonner";
 
 /** How close to the bottom still counts as "following along". */
@@ -44,9 +59,12 @@ export function CoachPage() {
   const { ready, state, loadSample, addLineup } = usePit();
   const chat = useCoachChat();
   const pool = chat.pool;
+  const anchor = chat.anchor;
 
   const [draft, setDraft] = useState("");
   const [atBottom, setAtBottom] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [dragonQuery, setDragonQuery] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -60,6 +78,46 @@ export function CoachPage() {
     () => collectRoster(state, lineup, pool),
     [state, lineup, pool],
   );
+
+  const ownedStars = useMemo(
+    () => new Map(state.owned.map((row) => [row.dragonId, row.starRank] as const)),
+    [state.owned],
+  );
+
+  const anchorDragon = anchor.dragonId
+    ? getCatalogDragon(anchor.dragonId) ?? null
+    : null;
+
+  const builtLines = useMemo(() => {
+    if (!anchorDragon) return [];
+    const request = makeSuggestRequest(
+      { ...lineup, troop: anchor.troop, mode: anchor.mode },
+      state,
+      pool,
+      roster,
+    );
+    return coachLines({
+      request,
+      state,
+      lineup,
+      troop: anchor.troop,
+      mode: anchor.mode,
+      skip: [],
+      anchorId: anchorDragon.id,
+      anchorSlot: anchor.slot === "auto" ? null : anchor.slot,
+    }).slice(0, 3);
+  }, [anchorDragon, anchor.mode, anchor.slot, anchor.troop, lineup, pool, roster, state]);
+
+  const pickerDragons = useMemo(() => {
+    const filtered = filterDragonPicks(DRAGONS, {
+      query: dragonQuery,
+      ownedIds: ownedStars.keys(),
+    });
+    if (dragonQuery.trim()) return filtered;
+    const owned = filtered.filter((dragon) => ownedStars.has(dragon.id));
+    const rest = filtered.filter((dragon) => !ownedStars.has(dragon.id));
+    return [...owned, ...rest];
+  }, [dragonQuery, ownedStars]);
 
   useDevFailureSeam(chat.failNext);
 
@@ -78,11 +136,34 @@ export function CoachPage() {
     setAtBottom(near);
   }, []);
 
-  // Follow the conversation only while the player is already at the bottom, so
-  // reading an older answer is never yanked away.
   useLayoutEffect(() => {
     if (atBottomRef.current) scrollToEnd();
   }, [chat.turns, scrollToEnd]);
+
+  function selectDragon(dragonId: string) {
+    const dragon = getCatalogDragon(dragonId);
+    if (!dragon) return;
+    if (pool === "pit" && (!ownedStars.has(dragon.id) || state.owned.length < 3)) {
+      chat.setPool("hatchery");
+    }
+    chat.setAnchor({
+      dragonId: dragon.id,
+      slot: "auto",
+      troop: dragon.affinities[0] ?? anchor.troop,
+      mode: anchor.mode,
+    });
+    setPickerOpen(false);
+    setDragonQuery("");
+  }
+
+  function clearDragon() {
+    chat.setAnchor({
+      ...anchor,
+      dragonId: null,
+      slot: "auto",
+    });
+    setPickerOpen(true);
+  }
 
   function submit(text: string) {
     if (!chat.send(text)) return;
@@ -110,13 +191,18 @@ export function CoachPage() {
   const buildExport = useCallback(
     () =>
       chatgptCoachExport({
-        request: makeSuggestRequest(lineup, state, pool, roster),
+        request: makeSuggestRequest(
+          { ...lineup, troop: anchor.troop, mode: anchor.mode },
+          state,
+          pool,
+          roster,
+        ),
         turns: chat.turns
           .filter((turn) => turn.status === "done")
           .map((turn) => ({ role: turn.role, text: turn.text })),
         draft,
       }),
-    [chat.turns, draft, lineup, state, pool, roster],
+    [anchor.mode, anchor.troop, chat.turns, draft, lineup, state, pool, roster],
   );
 
   if (!ready) {
@@ -129,35 +215,36 @@ export function CoachPage() {
     .reverse()
     .find((turn) => turn.role === "assistant" && turn.status === "done");
 
+  const dragonPrompts = anchorDragon
+    ? [
+        `Best ${troopLabels[anchor.troop]} ${modeShort[anchor.mode]} team with ${anchorDragon.name}`,
+        `Give me another option around ${anchorDragon.name}`,
+        anchorDragon.id !== "vhagar"
+          ? `Build around ${anchorDragon.name} without Vhagar`
+          : `Build around Vhagar without Malachite`,
+      ]
+    : [...COACH_STARTERS];
+
+  const showPicker = !anchorDragon || pickerOpen;
+
   return (
     <AccountGate
       next="/coach"
       title="Copilot (beta) is for registered accounts"
-      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team and Talk stay readable without signing in."
+      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team and Forums stay readable without signing in."
     >
-      {/* A chat column reads better than the full workspace width. */}
-      <div className="mx-auto flex w-full min-h-0 max-w-6xl flex-1 flex-col gap-2">
-        <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 flex-col gap-2 overflow-y-auto lg:overflow-hidden">
+        <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/50 pb-2">
           <h1 className="font-heading inline-flex items-center gap-2 text-xl tracking-wide sm:text-2xl">
             Copilot
             <BetaBadge className="h-5 px-2 text-[10px]" />
           </h1>
-          <div className="flex flex-wrap items-center gap-1">
-            <MiniChip
-              active={pool === "pit"}
-              onClick={() => chat.setPool("pit")}
-              title="Rank using only dragons you own"
-            >
-              Owned · {state.owned.length}
-            </MiniChip>
-            <MiniChip
-              active={pool === "hatchery"}
-              onClick={() => chat.setPool("hatchery")}
-              title="Rank using every dragon in the game"
-            >
-              All
-            </MiniChip>
-          </div>
+          <CopilotContextLine
+            pool={pool}
+            rosterCount={roster.length}
+            anchorName={anchorDragon?.name ?? null}
+            last={lastAnswer}
+          />
           <div className="ms-auto flex items-center gap-1">
             {chat.turns.length > 0 ? (
               <Button
@@ -177,178 +264,427 @@ export function CoachPage() {
           </div>
         </header>
 
-        <CopilotContextLine
-          pool={pool}
-          rosterCount={roster.length}
-          last={lastAnswer}
-        />
-
-        <Disclosure title="About this ranker, and the ChatGPT paste">
-          <p className="text-[13px] leading-snug text-muted-foreground">
-            A local ranker for three-dragon lines — same rules as Suggest, with
-            no OpenAI call in the chat itself. Optional{" "}
-            <strong className="font-medium text-foreground">Ask ChatGPT</strong>{" "}
-            below uses a server key when configured. This is not the team
-            builder.{" "}
-            <Link href="/team" className="text-amber-200 hover:underline">
-              Pick a dragon on Team
-            </Link>{" "}
-            to compare complete lines built around one name. Copilot remembers
-            this conversation, so you can follow up with “what about cavalry?”
-            or “give me another one”.
-          </p>
-          <div className="mt-2">
-            <MetaCard />
-          </div>
-          <div className="mt-2">
-            <ChatGptExportBar
-              build={buildExport}
-              filename={chatgptExportFilename("coach", pool)}
-              disabled={roster.length === 0}
-            />
-          </div>
-        </Disclosure>
-
-        {thin ? (
-          <div className="rounded-2xl surface px-3 py-2 ring-1 ring-amber-400/30">
-            <p className="text-[13px] leading-snug">
-              {pool === "pit"
-                ? "Copilot needs at least three owned dragons before it can seat a line."
-                : "The full dragon list did not load three names."}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button size="sm" onClick={loadSample}>
-                Load sample pit
-              </Button>
-              <Link
-                href="/pit"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                )}
-              >
-                Mark what you own
-              </Link>
-              {pool === "pit" ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => chat.setPool("hatchery")}
-                >
-                  Use All instead
-                </Button>
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[23rem_minmax(0,1fr)]">
+          {/* Left pane: select one dragon and configure the build */}
+          <aside
+            aria-label="Build around a dragon"
+            className="flex min-h-0 flex-col gap-3 rounded-2xl surface p-3 ring-1 ring-foreground/15 lg:overflow-y-auto"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <SectionLabel>1. Pick your dragon</SectionLabel>
+              {anchorDragon ? (
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setPickerOpen((open) => !open)}
+                  >
+                    {pickerOpen ? "Done" : "Change"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Clear selected dragon"
+                    onClick={clearDragon}
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
               ) : null}
             </div>
-          </div>
-        ) : null}
 
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            ref={scrollRef}
-            onScroll={onScroll}
-            data-coach-scroll
-            role="log"
-            tabIndex={0}
-            aria-label="Conversation with Copilot"
-            className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pe-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            {chat.turns.length === 0 ? (
-              <Starters onPick={submit} />
-            ) : (
-              chat.turns.map((turn) => (
-                <Turn
-                  key={turn.id}
-                  turn={turn}
-                  state={state}
-                  pool={pool}
-                  onSeat={seat}
-                  onRetry={chat.retry}
+            {anchorDragon && !pickerOpen ? (
+              <div className="flex items-center gap-3 rounded-xl bg-amber-500/10 p-2.5 ring-1 ring-amber-400/35">
+                <DragonIcon
+                  dragonId={anchorDragon.id}
+                  name={anchorDragon.name}
+                  rarity={anchorDragon.rarity}
+                  size="lg"
+                  selected
                 />
-              ))
-            )}
-          </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-heading truncate text-base tracking-wide text-amber-50">
+                    {anchorDragon.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ownedStars.has(anchorDragon.id)
+                      ? `In your pit · ★${ownedStars.get(anchorDragon.id)}`
+                      : "Not in pit · using 6★ preview"}
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {dragonRoles(anchorDragon).map((role) => (
+                      <span
+                        key={role}
+                        className={cn(
+                          "rounded-full px-1.5 py-px text-[10px] ring-1",
+                          roleChipClass[role],
+                        )}
+                      >
+                        {roleShort[role]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
-          {atBottom ? null : (
-            <button
-              type="button"
-              onClick={() => scrollToEnd("smooth")}
-              className="absolute inset-x-0 bottom-2 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 text-xs text-amber-50 ring-1 ring-amber-400/40 shadow-lg"
+            {showPicker ? (
+              <div className="flex min-h-0 flex-col gap-2">
+                <SearchField
+                  value={dragonQuery}
+                  onChange={setDragonQuery}
+                  label="Search dragon to build around"
+                  inputClassName="h-11 md:h-9"
+                />
+                <ul className="grid max-h-60 grid-cols-3 gap-1 overflow-y-auto overscroll-contain rounded-xl bg-black/25 p-1.5 ring-1 ring-foreground/10 sm:grid-cols-4 lg:grid-cols-3">
+                  {pickerDragons.map((dragon) => {
+                    const stars = ownedStars.get(dragon.id);
+                    const selected = dragon.id === anchorDragon?.id;
+                    return (
+                      <li key={dragon.id}>
+                        <button
+                          type="button"
+                          onClick={() => selectDragon(dragon.id)}
+                          data-coach-pick={dragon.id}
+                          className={cn(
+                            "flex w-full flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center transition",
+                            selected
+                              ? "bg-amber-500/20 ring-1 ring-amber-300"
+                              : "hover:bg-muted",
+                          )}
+                        >
+                          <DragonIcon
+                            dragonId={dragon.id}
+                            name={dragon.name}
+                            rarity={dragon.rarity}
+                            size="sm"
+                            selected={selected}
+                          />
+                          <span className="w-full truncate text-[11px]">
+                            {dragon.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {stars != null ? `★${stars}` : "All"}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="space-y-2.5 border-t border-border/50 pt-2.5">
+              <div className="space-y-1">
+                <SectionLabel>2. Seat preference</SectionLabel>
+                <div className="flex flex-wrap gap-1">
+                  <MiniChip
+                    active={anchor.slot === "auto"}
+                    onClick={() => chat.setAnchor({ ...anchor, slot: "auto" })}
+                  >
+                    Auto
+                  </MiniChip>
+                  {SLOT_IDS.map((slot: SlotId) => (
+                    <MiniChip
+                      key={slot}
+                      active={anchor.slot === slot}
+                      onClick={() => chat.setAnchor({ ...anchor, slot })}
+                    >
+                      {slotShort[slot]}
+                    </MiniChip>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <SectionLabel>3. Troop &amp; mode</SectionLabel>
+                <div className="flex flex-wrap gap-1">
+                  {TROOP_TYPES.map((troop) => (
+                    <TroopChip
+                      key={troop}
+                      troop={troop}
+                      active={anchor.troop === troop}
+                      className="min-h-8 px-2 py-0 text-[11px]"
+                      onClick={() => chat.setAnchor({ ...anchor, troop })}
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {MODES.map((mode) => (
+                    <MiniChip
+                      key={mode}
+                      active={anchor.mode === mode}
+                      onClick={() => chat.setAnchor({ ...anchor, mode })}
+                    >
+                      {modeShort[mode]}
+                    </MiniChip>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <SectionLabel>4. Dragon pool</SectionLabel>
+                <div className="flex flex-wrap gap-1">
+                  <MiniChip
+                    active={pool === "pit"}
+                    onClick={() => chat.setPool("pit")}
+                    title="Rank using only dragons you own"
+                  >
+                    Owned · {state.owned.length}
+                  </MiniChip>
+                  <MiniChip
+                    active={pool === "hatchery"}
+                    onClick={() => chat.setPool("hatchery")}
+                    title="Rank using every dragon in the game"
+                  >
+                    All dragons
+                  </MiniChip>
+                </div>
+              </div>
+            </div>
+
+            <Disclosure title="About ranker & ChatGPT export">
+              <p className="text-[12px] leading-snug text-muted-foreground">
+                Builds complete three-dragon lines around your selected dragon.
+                Follow up in chat to exclude dragons, switch troops, or compare
+                options.
+              </p>
+              <div className="mt-2">
+                <MetaCard />
+              </div>
+              <div className="mt-2">
+                <ChatGptExportBar
+                  build={buildExport}
+                  filename={chatgptExportFilename("coach", pool)}
+                  disabled={roster.length === 0}
+                />
+              </div>
+            </Disclosure>
+          </aside>
+
+          {/* Right pane: live built lines around the selected dragon + Copilot chat */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+            {thin ? (
+              <div className="shrink-0 rounded-2xl surface px-3 py-2.5 ring-1 ring-amber-400/30">
+                <p className="text-[13px] leading-snug">
+                  {pool === "pit"
+                    ? "Your pit needs at least three owned dragons to build owned-only teams."
+                    : "The full dragon list did not load three names."}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button size="sm" onClick={loadSample}>
+                    Load sample pit
+                  </Button>
+                  <Link
+                    href="/pit"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "sm" }),
+                    )}
+                  >
+                    Mark what you own
+                  </Link>
+                  {pool === "pit" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => chat.setPool("hatchery")}
+                    >
+                      Use All dragons
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Live teams built around the selected dragon */}
+            <section
+              aria-labelledby="copilot-built-heading"
+              className="shrink-0 rounded-2xl surface p-3 ring-1 ring-foreground/15"
             >
-              <ArrowDown className="size-3.5" />
-              Jump to latest
-            </button>
-          )}
-        </div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <SectionLabel id="copilot-built-heading">
+                  {anchorDragon
+                    ? `Teams built around ${anchorDragon.name} · ${troopLabels[anchor.troop]} ${modeShort[anchor.mode]}`
+                    : "Select a dragon on the left to build teams around it"}
+                </SectionLabel>
+                {anchorDragon && builtLines.length > 0 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      submit(
+                        `Explain the top ${troopLabels[anchor.troop]} ${modeShort[anchor.mode]} team with ${anchorDragon.name}`,
+                      )
+                    }
+                  >
+                    <Sparkles data-icon="inline-start" />
+                    Ask Copilot why
+                  </Button>
+                ) : null}
+              </div>
 
-        {/* The transcript itself is a log region, so this only reports state. */}
-        <p aria-live="polite" className="sr-only">
-          {chat.busy ? "Copilot is working on your answer." : ""}
-        </p>
+              {!anchorDragon ? (
+                <p className="text-sm text-muted-foreground">
+                  Pick any dragon in step 1 to instantly generate complete Left /
+                  Vanguard / Right lines anchored on that dragon, or use the
+                  Copilot chat below.
+                </p>
+              ) : builtLines.length === 0 ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-black/25 px-3 py-2.5 text-sm text-muted-foreground">
+                  <span>
+                    No complete {troopLabels[anchor.troop]}{" "}
+                    {modeShort[anchor.mode]} line around {anchorDragon.name}{" "}
+                    fits your {pool === "pit" ? "owned pit" : "filters"}.
+                  </span>
+                  {pool === "pit" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => chat.setPool("hatchery")}
+                    >
+                      Show All dragons
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {builtLines.map((line, index) => (
+                    <CoachFormation
+                      key={`built-${index}-${line.left}-${line.vanguard}-${line.right}`}
+                      line={line}
+                      state={state}
+                      pool={pool}
+                      onSeat={seat}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
 
-        <form
-          className="flex shrink-0 items-end gap-2 border-t border-border/50 pt-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (overLimit) return;
-            submit(draft);
-          }}
-        >
-          <div className="min-w-0 flex-1">
-            <label htmlFor="coach-input" className="sr-only">
-              Ask Copilot about a formation
-            </label>
-            <Textarea
-              id="coach-input"
-              ref={inputRef}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Ask for a formation, or follow up…"
-              className="max-h-40 min-h-12 w-full"
-              rows={2}
-              aria-describedby={overLimit ? "coach-input-limit" : undefined}
-              aria-invalid={overLimit || undefined}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
+            {/* Copilot chat transcript + composer */}
+            <section
+              aria-label="Copilot conversation"
+              className="relative flex min-h-[16rem] flex-1 flex-col overflow-hidden rounded-2xl surface p-3 ring-1 ring-foreground/15"
+            >
+              <div
+                ref={scrollRef}
+                onScroll={onScroll}
+                data-coach-scroll
+                role="log"
+                tabIndex={0}
+                aria-label="Conversation with Copilot"
+                className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pe-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                {chat.turns.length === 0 ? (
+                  <Starters
+                    prompts={dragonPrompts}
+                    anchorName={anchorDragon?.name ?? null}
+                    onPick={submit}
+                  />
+                ) : (
+                  chat.turns.map((turn) => (
+                    <Turn
+                      key={turn.id}
+                      turn={turn}
+                      state={state}
+                      pool={pool}
+                      onSeat={seat}
+                      onRetry={chat.retry}
+                    />
+                  ))
+                )}
+              </div>
+
+              {atBottom ? null : (
+                <button
+                  type="button"
+                  onClick={() => scrollToEnd("smooth")}
+                  className="absolute inset-x-0 bottom-16 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-stone-900 px-3 py-1.5 text-xs text-amber-50 ring-1 ring-amber-400/40 shadow-lg"
+                >
+                  <ArrowDown className="size-3.5" />
+                  Jump to latest
+                </button>
+              )}
+
+              <p aria-live="polite" className="sr-only">
+                {chat.busy ? "Copilot is working on your answer." : ""}
+              </p>
+
+              <form
+                className="mt-2 flex shrink-0 items-end gap-2 border-t border-border/50 pt-2"
+                onSubmit={(event) => {
                   event.preventDefault();
                   if (overLimit) return;
                   submit(draft);
-                }
-              }}
-            />
-            {draft.length > DRAFT_LIMIT - 400 ? (
-              <p
-                id="coach-input-limit"
-                className={cn(
-                  "mt-1 text-xs",
-                  overLimit ? "text-red-300" : "text-muted-foreground",
-                )}
+                }}
               >
-                {draft.length} / {DRAFT_LIMIT} characters
-                {overLimit ? " — trim it before sending." : ""}
-              </p>
-            ) : null}
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="coach-input" className="sr-only">
+                    Ask Copilot about a formation
+                  </label>
+                  <Textarea
+                    id="coach-input"
+                    ref={inputRef}
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder={
+                      anchorDragon
+                        ? `Ask Copilot about ${anchorDragon.name} (e.g. "without Vhagar", "what about rally?")…`
+                        : "Ask for a formation, or follow up…"
+                    }
+                    className="max-h-36 min-h-11 w-full"
+                    rows={2}
+                    aria-describedby={overLimit ? "coach-input-limit" : undefined}
+                    aria-invalid={overLimit || undefined}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        if (overLimit) return;
+                        submit(draft);
+                      }
+                    }}
+                  />
+                  {draft.length > DRAFT_LIMIT - 400 ? (
+                    <p
+                      id="coach-input-limit"
+                      className={cn(
+                        "mt-1 text-xs",
+                        overLimit ? "text-red-300" : "text-muted-foreground",
+                      )}
+                    >
+                      {draft.length} / {DRAFT_LIMIT} characters
+                      {overLimit ? " — trim it before sending." : ""}
+                    </p>
+                  ) : null}
+                </div>
+                {chat.busy ? (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={() => chat.cancel()}
+                    aria-label="Stop generating"
+                    data-coach-stop
+                  >
+                    <Square />
+                  </Button>
+                ) : null}
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={draft.trim().length === 0 || overLimit}
+                  aria-label="Send"
+                  data-coach-send
+                >
+                  <Send />
+                </Button>
+              </form>
+            </section>
           </div>
-          {chat.busy ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={() => chat.cancel()}
-              aria-label="Stop generating"
-              data-coach-stop
-            >
-              <Square />
-            </Button>
-          ) : null}
-          <Button
-            type="submit"
-            size="icon"
-            disabled={draft.trim().length === 0 || overLimit}
-            aria-label="Send"
-            data-coach-send
-          >
-            <Send />
-          </Button>
-        </form>
+        </div>
       </div>
     </AccountGate>
   );
@@ -357,16 +693,19 @@ export function CoachPage() {
 function CopilotContextLine({
   pool,
   rosterCount,
+  anchorName,
   last,
 }: {
   pool: "pit" | "hatchery";
   rosterCount: number;
+  anchorName: string | null;
   last?: ChatTurn;
 }) {
   const meta = last?.meta;
   return (
     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
       <span>
+        {anchorName ? `Anchor: ${anchorName} · ` : ""}
         Reading {rosterCount}{" "}
         {pool === "pit" ? "owned dragons" : "dragons (full list)"}
       </span>
@@ -393,19 +732,28 @@ function CopilotContextLine({
   );
 }
 
-function Starters({ onPick }: { onPick: (text: string) => void }) {
+function Starters({
+  prompts,
+  anchorName,
+  onPick,
+}: {
+  prompts: string[];
+  anchorName: string | null;
+  onPick: (text: string) => void;
+}) {
   return (
-    <div className="rounded-2xl bg-card/40 px-3 py-4 ring-1 ring-foreground/10">
-      <p className="text-sm text-muted-foreground">
-        Ask anything about a three-dragon line. Try one of these, then follow up
-        in your own words.
+    <div className="rounded-xl bg-black/25 px-3 py-3 ring-1 ring-foreground/10">
+      <p className="text-xs text-muted-foreground">
+        {anchorName
+          ? `Ask Copilot to tweak lines around ${anchorName}, exclude dragons, or swap troops.`
+          : "Ask anything about a three-dragon line, or pick one dragon on the left."}
       </p>
-      <div className="mt-2 flex flex-col gap-2">
-        {COACH_STARTERS.map((starter) => (
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {prompts.map((starter) => (
           <button
             key={starter}
             type="button"
-            className="rounded-xl px-3 py-2 text-left text-[13px] leading-snug ring-1 ring-foreground/15 hover:bg-muted"
+            className="rounded-lg bg-card/60 px-2.5 py-1.5 text-left text-[12px] leading-snug ring-1 ring-foreground/15 hover:bg-muted"
             onClick={() => onPick(starter)}
           >
             {starter}
@@ -489,7 +837,7 @@ function Turn({
 
   return (
     <div data-turn="assistant" className="space-y-2">
-      <div className="w-fit max-w-[min(44rem,95%)] rounded-2xl surface px-3 py-2 text-[13px] leading-snug break-words whitespace-pre-wrap ring-1 ring-foreground/10">
+      <div className="w-fit max-w-[min(44rem,95%)] rounded-2xl bg-black/30 px-3 py-2 text-[13px] leading-snug break-words whitespace-pre-wrap ring-1 ring-foreground/10">
         {turn.text}
       </div>
       {turn.lines?.length ? (
@@ -518,10 +866,6 @@ function Dot({ delay }: { delay: string }) {
   );
 }
 
-/**
- * `?fail=timeout` makes the next answer fail once, so the error and retry path
- * can be exercised end to end. Development only — never wired in a build.
- */
 const FAIL_KINDS: ChatErrorKind[] = [
   "network",
   "server",

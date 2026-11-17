@@ -21,8 +21,8 @@ export function TalkLineChip({ line }: { line: TalkLine }) {
 }
 
 export function talkNewHref(boardId?: string | null): string {
-  if (!boardId) return "/talk/new";
-  return `/talk/new?board=${encodeURIComponent(boardId)}`;
+  if (!boardId) return "/forums/new";
+  return `/forums/new?board=${encodeURIComponent(boardId)}`;
 }
 
 export function TalkThreadLink({
@@ -33,7 +33,7 @@ export function TalkThreadLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link href={`/talk/${id}`} className="text-amber-200 hover:underline">
+    <Link href={`/forums/${id}`} className="text-amber-200 hover:underline">
       {children}
     </Link>
   );

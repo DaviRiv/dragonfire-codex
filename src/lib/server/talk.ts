@@ -116,7 +116,7 @@ export async function createThread(
   const bodyErr = postError(input.body);
   if (bodyErr) return { error: bodyErr };
   if (!isTalkCategory(input.category)) {
-    return { error: "Pick a Talk category." };
+    return { error: "Pick a forum board." };
   }
   const now = new Date().toISOString();
   const thread: TalkThreadRecord = {
@@ -140,7 +140,7 @@ export async function createThread(
     }
     return { threads: [thread, ...file.threads] };
   });
-  if (full) return { error: "Talk is full for now. Try again later." };
+  if (full) return { error: "Forums are full for now. Try again later." };
   return toDetail(thread);
 }
 

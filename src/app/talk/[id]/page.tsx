@@ -1,10 +1,4 @@
-import type { Metadata } from "next";
-import { TalkThreadPage } from "./talk-thread";
-
-export const metadata: Metadata = {
-  title: "Thread",
-  description: "A Talk thread about a three-dragon line.",
-};
+import { redirect } from "next/navigation";
 
 export default async function Page({
   params,
@@ -12,5 +6,5 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <TalkThreadPage id={id} />;
+  redirect(`/forums/${encodeURIComponent(id)}`);
 }

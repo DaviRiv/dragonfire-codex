@@ -23,7 +23,7 @@ export function TalkThreadCard({
 }) {
   return (
     <Link
-      href={`/talk/${thread.id}`}
+      href={`/forums/${thread.id}`}
       className={cn(
         "block rounded-2xl surface px-3 py-3 ring-1 ring-foreground/10 hover:bg-muted/50 sm:px-4",
         className,

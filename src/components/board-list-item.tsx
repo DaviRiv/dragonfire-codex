@@ -105,7 +105,7 @@ export function BoardListItem({
               href={talkNewHref(board.id)}
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
-              Discuss in Talk
+              Discuss in Forums
             </Link>
           </div>
           {board.comments.length > 0 ? (

@@ -119,8 +119,7 @@ for (const [route, seats] of [
   ["/lineups", false],
   ["/lineups/lin-1", false],
   ["/teams", false],
-  ["/guide", false],
-  ["/talk", false],
+  ["/forums", false],
 ]) {
   for (const [sizeName, viewport] of [
     ["390", PHONE],

@@ -1,18 +1,11 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import { TalkNewPage } from "./talk-new";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "New thread",
-  description: "Start a Talk thread about a three-dragon line.",
-};
-
-export default function Page() {
-  return (
-    <Suspense
-      fallback={<p className="text-sm text-muted-foreground">Opening Talk…</p>}
-    >
-      <TalkNewPage />
-    </Suspense>
-  );
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const board = typeof sp.board === "string" ? sp.board : "";
+  redirect(board ? `/forums/new?board=${encodeURIComponent(board)}` : "/forums/new");
 }

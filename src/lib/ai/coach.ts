@@ -1,4 +1,6 @@
 import { localComboLines } from "@/lib/ai/local";
+import { preferredSlot } from "@/lib/ai/around";
+import { choicesAroundDragon } from "@/lib/around-choices";
 import { detectMode, detectTroop } from "@/lib/ai/intent";
 import {
   DEFAULT_MODE,
@@ -10,14 +12,16 @@ import type { AiLine } from "@/lib/ai/prompt";
 import type { RosterCard, SuggestRequest } from "@/lib/ai/roster";
 import { ONLINE_DPS_CORE, metaSeatIds } from "@/data/meta";
 import { makePick } from "@/lib/lineup";
-import { findDragon } from "@/lib/dragons";
+import { allDragons, findDragon } from "@/lib/dragons";
 import { modeLabels, troopLabels } from "@/lib/labels";
 import { pairingReport } from "@/lib/pairing";
+import { suggestFullLine } from "@/lib/suggest";
 import type {
   Lineup,
   LineupKind,
   LineupMode,
   PitState,
+  SlotId,
   TroopType,
 } from "@/lib/types";
 
@@ -90,6 +94,150 @@ function nameList(ids: string[], state: PitState): string {
   return ids.map((id) => nameFor(id, state)).join(", ");
 }
 
+function anchoredComboLines(input: {
+  anchorId: string;
+  anchorSlot?: SlotId | null;
+  request: SuggestRequest;
+  state: PitState;
+  lineup: Lineup;
+  troop: TroopType;
+  mode: LineupMode;
+  skip: string[];
+}): AiLine[] {
+  const dragon = findDragon(input.anchorId, input.state.customDragons);
+  if (!dragon) return [];
+  const owned = input.state.owned.find((row) => row.dragonId === input.anchorId);
+  const stars = owned?.starRank ?? 6;
+  const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
+  const allowed = new Set(input.request.roster.map((card) => card.id));
+  const candidates = choicesAroundDragon({
+    dragonId: input.anchorId,
+    stars,
+    troop: input.troop,
+    mode: input.mode,
+    state: input.state,
+    limit: 16,
+    lockTroop: true,
+  }).filter((choice) => {
+    const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
+    if (seats.some((id) => skipSet.has(id))) return false;
+    if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
+      return false;
+    }
+    if (input.request.pool === "pit") {
+      return seats.every((id) => id === input.anchorId || allowed.has(id));
+    }
+    return true;
+  });
+
+  if (candidates.length > 0) {
+    return candidates.slice(0, 6).map((choice, index) => {
+      const topNote = choice.pros[0]?.title;
+      const reason = topNote
+        ? `${topNote}. ${seatSentence(
+            {
+              name: choice.line.name,
+              troop: choice.line.troop,
+              mode: choice.line.mode,
+              left: choice.line.left,
+              vanguard: choice.line.vanguard,
+              right: choice.line.right,
+              why: "",
+            },
+            input.state,
+          )}.`
+        : `${seatSentence(
+            {
+              name: choice.line.name,
+              troop: choice.line.troop,
+              mode: choice.line.mode,
+              left: choice.line.left,
+              vanguard: choice.line.vanguard,
+              right: choice.line.right,
+              why: "",
+            },
+            input.state,
+          )}.`;
+      return {
+        name:
+          index === 0
+            ? `${dragon.name} core`
+            : `${dragon.name} option ${index + 1}`,
+        troop: choice.line.troop,
+        mode: choice.line.mode,
+        left: choice.line.left,
+        vanguard: choice.line.vanguard,
+        right: choice.line.right,
+        why: reason,
+      };
+    });
+  }
+
+  // Fallback: fill the remaining two seats directly from the active roster.
+  const seat = input.anchorSlot ?? preferredSlot(dragon);
+  const blocked = new Set([
+    ...skipSet,
+    ...(input.request.pool === "pit"
+      ? allDragons(input.state.customDragons)
+          .map((row) => row.id)
+          .filter((id) => id !== input.anchorId && !allowed.has(id))
+      : []),
+  ]);
+  const working: Lineup = {
+    ...input.lineup,
+    troop: input.troop,
+    mode: input.mode,
+    kind: "theory",
+    slots: {
+      left: null,
+      vanguard: null,
+      right: null,
+      [seat]: makePick(input.anchorId, stars, owned?.reignLevel ?? 1),
+    },
+  };
+  const out: AiLine[] = [];
+  for (let i = 0; i < 3; i++) {
+    const picks = suggestFullLine(working, input.state, {
+      excludeIds: blocked,
+    });
+    const left =
+      seat === "left"
+        ? dragon
+        : picks.find((pick) => pick.slot === "left")?.dragon;
+    const vanguard =
+      seat === "vanguard"
+        ? dragon
+        : picks.find((pick) => pick.slot === "vanguard")?.dragon;
+    const right =
+      seat === "right"
+        ? dragon
+        : picks.find((pick) => pick.slot === "right")?.dragon;
+    if (!left || !vanguard || !right) break;
+    if (
+      input.request.pool === "pit" &&
+      (!allowed.has(left.id) ||
+        !allowed.has(vanguard.id) ||
+        !allowed.has(right.id))
+    ) {
+      break;
+    }
+    for (const pick of picks) {
+      if (pick.dragon.id !== input.anchorId) blocked.add(pick.dragon.id);
+    }
+    out.push({
+      name:
+        i === 0 ? `${dragon.name} core` : `${dragon.name} option ${i + 1}`,
+      troop: input.troop,
+      mode: input.mode,
+      left: left.id,
+      vanguard: vanguard.id,
+      right: right.id,
+      why: `${vanguard.name} in Vanguard, ${left.name} left, ${right.name} right.`,
+    });
+  }
+  return out;
+}
+
 /**
  * Rank lines for one troop / mode with a set of names held back. Same
  * composition order as Suggest: meta core first when it is free, then healer,
@@ -105,21 +253,37 @@ export function coachLines(input: {
   /** Prefer lines the thread has not offered yet. */
   avoidSignatures?: string[];
   question?: string;
+  anchorId?: string | null;
+  anchorSlot?: SlotId | null;
 }): AiLine[] {
   const working: Lineup = {
     ...input.lineup,
     troop: input.troop,
     mode: input.mode,
   };
-  const question = input.question ?? "";
-  const meta = wantsOnlineDps(question, input.troop, input.mode)
-    ? metaLineIfFree(input.request, input.skip)
-    : null;
-  const extra = [...input.skip, ...(meta ? metaSeatIds() : [])];
-  const ranked = localComboLines(working, input.state, input.request.roster, extra);
-  const lines = meta
-    ? [meta, ...ranked.filter((line) => line.name !== meta.name)]
-    : ranked;
+  let lines: AiLine[];
+  if (input.anchorId) {
+    lines = anchoredComboLines({
+      anchorId: input.anchorId,
+      anchorSlot: input.anchorSlot,
+      request: input.request,
+      state: input.state,
+      lineup: working,
+      troop: input.troop,
+      mode: input.mode,
+      skip: input.skip,
+    });
+  } else {
+    const question = input.question ?? "";
+    const meta = wantsOnlineDps(question, input.troop, input.mode)
+      ? metaLineIfFree(input.request, input.skip)
+      : null;
+    const extra = [...input.skip, ...(meta ? metaSeatIds() : [])];
+    const ranked = localComboLines(working, input.state, input.request.roster, extra);
+    lines = meta
+      ? [meta, ...ranked.filter((line) => line.name !== meta.name)]
+      : ranked;
+  }
   const avoid = new Set(input.avoidSignatures ?? []);
   if (avoid.size === 0) return lines;
   const fresh = lines.filter((line) => !avoid.has(lineSignature(line)));
@@ -152,9 +316,16 @@ function formationReply(opts: {
   mode: LineupMode;
   skip: string[];
   again: boolean;
+  anchorId?: string | null;
 }): string {
   const head = opts.lines[0];
+  const anchorName = opts.anchorId ? nameFor(opts.anchorId, opts.state) : null;
   if (!head) {
+    if (anchorName) {
+      return opts.request.pool === "pit"
+        ? `No complete ${troopLabels[opts.troop]} ${modeLabels[opts.mode]} line around ${anchorName} fits your owned pit right now. Switch the pool to All or adjust exclusions.`
+        : `No line around ${anchorName} matched with those exclusions. Clear a skip or try another seat.`;
+    }
     return opts.skip.length > 0
       ? `Nothing left to seat once ${nameList(opts.skip, opts.state)} sit out. Bring one of them back, or switch the pool to All.`
       : "I need at least three dragons in this pool before I can seat a line.";
@@ -169,7 +340,8 @@ function formationReply(opts: {
     ? ` ${opts.lines.length - 1} alternate${opts.lines.length - 1 === 1 ? "" : "s"} below.`
     : "";
   const lead = opts.again ? "Different line" : "Best line";
-  return `${lead} for ${troop} ${mode} from your ${pool}: ${head.name} — ${seatSentence(head, opts.state)}.${left}${alts}`;
+  const around = anchorName ? ` around ${anchorName}` : "";
+  return `${lead}${around} for ${troop} ${mode} from your ${pool}: ${head.name} — ${seatSentence(head, opts.state)}.${left}${alts}`;
 }
 
 export type CoachAnswer = { reply: string; lines: AiLine[] };
@@ -247,6 +419,8 @@ export function answerPlan(
     skip: plan.excludeIds,
     avoidSignatures: avoid,
     question: plan.question,
+    anchorId: plan.anchorId,
+    anchorSlot: plan.anchorSlot,
   });
 
   if (plan.intent === "explain" || plan.intent === "compare") {
@@ -267,6 +441,7 @@ export function answerPlan(
       mode: plan.mode,
       skip: plan.excludeIds,
       again: plan.intent === "another",
+      anchorId: plan.anchorId,
     }),
     lines,
   };

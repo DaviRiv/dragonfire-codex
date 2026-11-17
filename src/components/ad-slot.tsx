@@ -83,24 +83,39 @@ export function AdSlot({
 }) {
   const reactId = useId().replace(/:/g, "");
   const elementId = `df-ad-${slot}-${reactId}`;
+  const insRef = useRef<HTMLModElement>(null);
   const pushed = useRef(false);
   const ads = useAds();
   const slotId = ads.slot(slot);
   const liveAdsense =
     ads.ready && ads.mode === "adsense" && Boolean(ads.adsenseClient) && Boolean(slotId);
   const liveGpt = ads.ready && ads.mode === "gpt";
+  const showHouse = ads.ready && ads.mode === "house";
   const meta = AD_SLOT_META[slot];
+  const [defaultW, defaultH] = meta.sizes[0];
 
   useEffect(() => {
     if (pushed.current) return;
     if (liveAdsense) {
-      try {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        pushed.current = true;
-      } catch {
-        // Slot stays empty; house chrome still labels it.
-      }
-      return;
+      const el = insRef.current;
+      if (!el) return;
+      const pushAd = () => {
+        if (pushed.current || el.offsetWidth <= 0) return false;
+        try {
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+          pushed.current = true;
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      if (pushAd()) return;
+      if (typeof ResizeObserver === "undefined") return;
+      const observer = new ResizeObserver(() => {
+        if (pushAd()) observer.disconnect();
+      });
+      observer.observe(el);
+      return () => observer.disconnect();
     }
     if (!liveGpt) return;
     const existing = window.googletag;
@@ -122,7 +137,11 @@ export function AdSlot({
     });
   }, [ads.gptAdUnit, elementId, liveAdsense, liveGpt, meta.sizes, slot]);
 
-  if (!liveAdsense && !liveGpt) {
+  if (!liveAdsense && !liveGpt && !showHouse) {
+    return null;
+  }
+
+  if (showHouse) {
     return (
       <aside aria-label="Advertisement" className={cn("w-full", className)}>
         <p className="mb-1 text-center text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
@@ -133,6 +152,8 @@ export function AdSlot({
     );
   }
 
+  const banner = slot === "billboard" || slot === "anchor";
+
   return (
     <aside aria-label="Advertisement" className={cn("w-full", className)}>
       <p className="mb-1 text-center text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
@@ -140,11 +161,16 @@ export function AdSlot({
       </p>
       {liveAdsense ? (
         <ins
-          className="adsbygoogle mx-auto block"
-          style={{ display: "block" }}
+          ref={insRef}
+          className="adsbygoogle mx-auto block w-full"
+          style={{
+            display: "block",
+            minHeight: defaultH,
+            ...(banner ? {} : { maxWidth: defaultW }),
+          }}
           data-ad-client={ads.adsenseClient}
           data-ad-slot={slotId}
-          data-ad-format={slot === "billboard" || slot === "anchor" ? "horizontal" : "rectangle"}
+          data-ad-format={banner ? "horizontal" : "rectangle"}
           data-full-width-responsive="true"
         />
       ) : (

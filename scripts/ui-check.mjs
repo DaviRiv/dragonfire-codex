@@ -381,7 +381,7 @@ async function horizontalOverflow(page) {
   await page.close();
 }
 
-// ------------------------------------------------- Talk load failure + retry
+// ------------------------------------------------- Forums load failure + retry
 {
   const page = await browser.newPage();
   await page.setViewport(DESKTOP);
@@ -391,13 +391,13 @@ async function horizontalOverflow(page) {
   await page.setRequestInterception(true);
   let failNext = true;
   page.on("request", (req) => {
-    if (failNext && req.url().includes("/api/talk")) {
+    if (failNext && req.url().includes("/api/forums")) {
       void req.abort("failed");
       return;
     }
     void req.continue();
   });
-  await page.goto(`${BASE}/talk`, { waitUntil: "networkidle2", timeout: 60000 });
+  await page.goto(`${BASE}/forums`, { waitUntil: "networkidle2", timeout: 60000 });
   await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
 
   const failed = await page.evaluate(() => {
@@ -411,11 +411,11 @@ async function horizontalOverflow(page) {
     };
   });
   check(
-    "/talk surfaces a load failure as an error, not as an empty room",
+    "/forums surfaces a load failure as an error, not as an empty board",
     failed.shown && !failed.text.includes("quiet"),
     failed.text,
   );
-  check("/talk offers a retry", failed.hasRetry, "");
+  check("/forums offers a retry", failed.hasRetry, "");
 
   // Let the retry succeed and confirm the page recovers.
   failNext = false;
@@ -428,7 +428,7 @@ async function horizontalOverflow(page) {
   const recovered = await page.evaluate(
     () => !document.querySelector('[role="alert"]'),
   );
-  check("/talk recovers after a successful retry", recovered, "");
+  check("/forums recovers after a successful retry", recovered, "");
   await page.close();
 }
 
@@ -469,7 +469,7 @@ async function smallTargets(page) {
   });
 }
 
-for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/guide", "/talk"]) {
+for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/forums"]) {
   const page = await open(path, PHONE);
   const overflow = await horizontalOverflow(page);
   check(
@@ -489,7 +489,7 @@ for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/guide",
 }
 
 // -------------------------------------------------------- headings and focus
-for (const path of ["/team", "/counter", "/pit", "/lineups", "/teams", "/talk", "/guide"]) {
+for (const path of ["/team", "/counter", "/pit", "/lineups", "/teams", "/forums"]) {
   const page = await open(path, DESKTOP);
   const doc = await page.evaluate(() => ({
     h1: document.querySelectorAll("h1").length,

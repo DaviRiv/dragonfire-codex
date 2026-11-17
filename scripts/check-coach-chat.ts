@@ -14,6 +14,9 @@ import {
   type ChatTurn,
 } from "@/lib/ai/conversation";
 import { detectIntent, detectOrdinal, directNames } from "@/lib/ai/intent";
+import { coachLines } from "@/lib/ai/coach";
+import { emptyPit } from "@/lib/dragons";
+import { emptySlots } from "@/lib/lineup";
 import type { AiLine } from "@/lib/ai/prompt";
 import type { RosterCard } from "@/lib/ai/roster";
 
@@ -232,5 +235,53 @@ assert(restored.length === 2, "junk rows are dropped, real ones survive");
 assert(restored[1].status === "error", "a reload turns pending work into a retryable error");
 assert(restored[1].error?.retryable === true, "the player can retry after a reload");
 assert(parseStoredTurns("not an array").length === 0, "a corrupt save reads as empty");
+
+// --- Anchored dragon build ------------------------------------------------
+
+const anchoredPlan = planTurn(
+  "Give me another option",
+  [],
+  roster,
+  { dragonId: "arrax", slot: "right", troop: "cavalry", mode: "pvp" },
+);
+assert(anchoredPlan.anchorId === "arrax", "anchor dragon is preserved");
+assert(anchoredPlan.troop === "cavalry", "anchor troop carries into plan");
+assert(!anchoredPlan.excludeIds.includes("arrax"), "anchor is never excluded");
+
+const anchoredLines = coachLines({
+  request: {
+    lineupName: "Coach",
+    pool: "hatchery",
+    troop: "shieldbearers",
+    mode: "pvp",
+    skipUsed: false,
+    current: { left: null, vanguard: null, right: null },
+    roster,
+  },
+  state: emptyPit(),
+  lineup: {
+    id: "coach-ctx",
+    name: "Coach",
+    kind: "theory",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: true,
+    craftStars: 6,
+    excludeUsed: false,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+  troop: "shieldbearers",
+  mode: "pvp",
+  skip: [],
+  anchorId: "vhagar",
+  anchorSlot: "vanguard",
+});
+assert(anchoredLines.length > 0, "anchored build returns lines");
+assert(
+  anchoredLines.every((item) => item.vanguard === "vhagar"),
+  "every anchored line respects the selected seat",
+);
 
 console.log("check-coach-chat: ok");

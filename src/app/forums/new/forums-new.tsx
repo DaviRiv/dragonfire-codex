@@ -15,8 +15,10 @@ import { useAuth } from "@/lib/auth";
 import type { BoardPublic } from "@/lib/boards";
 import { POST_MAX, TITLE_MAX, postError, titleError } from "@/lib/talk";
 import {
-  TALK_CATEGORIES,
-  talkCategoryLabels,
+  FORUM_BOARDS,
+  FORUM_SECTIONS,
+  forumBoardMeta,
+  isTalkCategory,
   type TalkCategory,
   type TalkLine,
   type TalkThreadDetail,
@@ -34,14 +36,17 @@ function lineFromBoard(board: BoardPublic): TalkLine {
   };
 }
 
-export function TalkNewPage() {
+export function ForumsNewPage() {
   const { ready, user } = useAuth();
   const router = useRouter();
   const search = useSearchParams();
   const boardId = search.get("board")?.trim() || "";
+  const rawCategory = search.get("category");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [category, setCategory] = useState<TalkCategory>("pvp");
+  const [category, setCategory] = useState<TalkCategory>(() =>
+    isTalkCategory(rawCategory) ? rawCategory : "recruitment",
+  );
   const [line, setLine] = useState<TalkLine | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -65,18 +70,20 @@ export function TalkNewPage() {
   }, [boardId]);
 
   if (!ready) {
-    return <p className="text-sm text-muted-foreground">Opening Talk…</p>;
+    return <p className="text-sm text-muted-foreground">Opening Forums…</p>;
   }
   if (!user) {
     return (
       <p className="text-sm text-muted-foreground">
-        <Link href={accountHref("/talk/new")} className="text-amber-200 hover:underline">
+        <Link href={accountHref("/forums/new")} className="text-amber-200 hover:underline">
           Sign in
         </Link>{" "}
-        to start a thread.
+        to post a thread.
       </p>
     );
   }
+
+  const activeBoard = forumBoardMeta(category);
 
   async function submit() {
     const err = titleError(title) ?? postError(body);
@@ -86,7 +93,7 @@ export function TalkNewPage() {
     }
     setBusy(true);
     try {
-      const data = await apiJson<{ thread: TalkThreadDetail }>("/api/talk", {
+      const data = await apiJson<{ thread: TalkThreadDetail }>("/api/forums", {
         method: "POST",
         body: JSON.stringify({
           title,
@@ -97,7 +104,7 @@ export function TalkNewPage() {
         }),
       });
       toast.success("Thread posted.");
-      router.push(`/talk/${data.thread.id}`);
+      router.push(`/forums/${data.thread.id}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not post.");
     } finally {
@@ -108,61 +115,85 @@ export function TalkNewPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <div>
-        <h1 className="font-heading text-2xl tracking-wide sm:text-3xl">
-          New thread
+        <p className="text-xs text-muted-foreground">
+          <Link href="/forums" className="text-amber-200 hover:underline">
+            Forums
+          </Link>{" "}
+          / New thread
+        </p>
+        <h1 className="font-heading mt-1 text-2xl tracking-wide sm:text-3xl">
+          Post a thread
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Name the line, the troop, and what you want people to argue about.
+          {activeBoard.description}
         </p>
       </div>
       {line ? (
-        <div className="rounded-2xl surface px-3 py-2 ring-1 ring-foreground/10">
+        <div className="rounded-xl surface px-3 py-2 ring-1 ring-foreground/10">
           <p className="text-label">Attached line</p>
           <TalkLineChip line={line} />
         </div>
       ) : null}
       <form
-        className="space-y-3"
+        className="space-y-4 rounded-xl surface p-4 ring-1 ring-foreground/15"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
         }}
       >
-        <div className="flex flex-wrap gap-1">
-          {TALK_CATEGORIES.map((item) => (
-            <MiniChip
-              key={item}
-              active={category === item}
-              onClick={() => setCategory(item)}
-            >
-              {talkCategoryLabels[item]}
-            </MiniChip>
+        <div className="space-y-2">
+          <p className="text-label">Board</p>
+          {FORUM_SECTIONS.map((section) => (
+            <div key={section.id} className="space-y-1">
+              <p className="text-xs text-muted-foreground">{section.title}</p>
+              <div className="flex flex-wrap gap-1">
+                {FORUM_BOARDS.filter((board) => board.section === section.id).map(
+                  (board) => (
+                    <MiniChip
+                      key={board.id}
+                      active={category === board.id}
+                      onClick={() => setCategory(board.id)}
+                    >
+                      {board.label}
+                    </MiniChip>
+                  ),
+                )}
+              </div>
+            </div>
           ))}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="talk-title">Title</Label>
+          <Label htmlFor="forum-title">Thread title</Label>
           <Input
-            id="talk-title"
+            id="forum-title"
             value={title}
             maxLength={TITLE_MAX}
-            placeholder="e.g. Malachite / Vhagar / Venator on Shields — still the online core?"
+            placeholder={activeBoard.titlePlaceholder}
             onChange={(event) => setTitle(event.target.value)}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="talk-body">First post</Label>
+          <Label htmlFor="forum-body">Opening post</Label>
           <Textarea
-            id="talk-body"
+            id="forum-body"
             value={body}
             maxLength={POST_MAX}
             rows={8}
-            placeholder="Stars, troop, who died first, whether Burn on Vhagar was a trap…"
+            placeholder={activeBoard.bodyPlaceholder}
             onChange={(event) => setBody(event.target.value)}
           />
         </div>
-        <Button type="submit" disabled={busy}>
-          Post thread
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="submit" disabled={busy}>
+            Post thread
+          </Button>
+          <Link
+            href="/forums"
+            className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   );

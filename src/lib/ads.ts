@@ -41,8 +41,8 @@ export const AD_SLOT_META: Record<
   sidebar: {
     label: "Medium rectangle",
     sizes: [[300, 250]],
-    house: "Talk is the hall for formations. Open a thread before the next rally.",
-    href: "/talk",
+    house: "Forums are open for alliance recruiting, PvP cores, and rally talk.",
+    href: "/forums",
   },
   "sidebar-lower": {
     label: "Half page",
@@ -53,14 +53,14 @@ export const AD_SLOT_META: Record<
   feed: {
     label: "In-content",
     sizes: [[300, 250]],
-    house: "Copilot is in beta. Team builds several lines around the dragon you pick.",
+    house: "Copilot (beta) builds complete lines around the dragon you select.",
     href: "/coach",
   },
   anchor: {
     label: "Mobile banner",
     sizes: [[320, 50]],
-    house: "Discuss teams in Talk",
-    href: "/talk",
+    house: "Recruit & discuss on Forums",
+    href: "/forums",
   },
 };
 
