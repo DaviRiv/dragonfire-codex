@@ -11,8 +11,8 @@ delete process.env.VERCEL_OIDC_TOKEN;
 
 async function main(): Promise<void> {
   const { findOrCreateGoogleUser, googleAccountId, googleSessionUser } =
-    await import("../src/lib/server/users.ts");
-  const { verifyGoogleIdToken } = await import("../src/lib/server/google-oauth.ts");
+    await import("../src/lib/server/users");
+  const { verifyGoogleIdToken } = await import("../src/lib/server/google-oauth");
 
   const id = googleAccountId("sub-123");
   assert.equal(id, googleAccountId("sub-123"));
