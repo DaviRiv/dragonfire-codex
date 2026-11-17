@@ -56,6 +56,12 @@ export async function POST(request: Request) {
         502,
       );
     }
+    if (message.startsWith("OPENAI_QUOTA:")) {
+      return jsonError(
+        "OpenAI API credits are exhausted on this key. Add billing credits on platform.openai.com, or copy the prompt.",
+        402,
+      );
+    }
     if (message.startsWith("OPENAI_RATE_LIMIT:")) {
       return jsonError("OpenAI rate limit. Wait a moment, or copy the prompt.", 429);
     }

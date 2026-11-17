@@ -28,11 +28,19 @@ export async function openaiComplete(prompt: string): Promise<string> {
     }),
   });
   const payload = (await response.json()) as {
-    error?: { message?: string };
+    error?: { message?: string; code?: string; type?: string };
     choices?: { message?: { content?: string } }[];
   };
   if (!response.ok) {
     const message = payload.error?.message ?? `OpenAI HTTP ${response.status}`;
+    const code = payload.error?.code ?? payload.error?.type ?? "";
+    if (
+      code === "insufficient_quota" ||
+      code === "credit_balance_exhausted" ||
+      /no credits|exceeded your current quota/i.test(message)
+    ) {
+      throw new Error(`OPENAI_QUOTA:${message}`);
+    }
     if (response.status === 429) throw new Error(`OPENAI_RATE_LIMIT:${message}`);
     if (response.status === 401) throw new Error("OPENAI_AUTH");
     throw new Error(message);

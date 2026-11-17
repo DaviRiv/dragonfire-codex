@@ -45,6 +45,7 @@ import {
 import { SLOT_IDS } from "@/lib/lineup";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { usePit } from "@/lib/store";
+import { useOpenAiAvailable } from "@/lib/use-openai-available";
 import type { SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ArrowDown, RotateCcw, Send, Sparkles, Square, X } from "lucide-react";
@@ -57,6 +58,7 @@ const DRAFT_LIMIT = 2000;
 export function CoachPage() {
   const { ready, state, addLineup } = usePit();
   const chat = useCoachChat();
+  const openAi = useOpenAiAvailable();
   const pool = chat.pool;
   const anchor = chat.anchor;
 
@@ -252,6 +254,11 @@ export function CoachPage() {
           <h1 className="font-heading inline-flex items-center gap-2 text-xl tracking-wide sm:text-2xl">
             Copilot
             <BetaBadge className="h-5 px-2 text-[10px]" />
+            {openAi ? (
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-sans text-[10px] font-medium tracking-wide text-emerald-200 ring-1 ring-emerald-400/35">
+                ChatGPT
+              </span>
+            ) : null}
           </h1>
           <CopilotContextLine
             anchorName={anchorDragon?.name ?? null}

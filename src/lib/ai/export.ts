@@ -1,6 +1,7 @@
 import { GAME_FACTS } from "@/data/game-facts";
 import { chatgptMetaTemplate } from "@/data/meta";
-import { buildRosterBlock, CHATGPT_EXPORT_RULES } from "@/lib/ai/prompt";
+import { findDragon } from "@/lib/dragons";
+import { buildRosterBlock, CHATGPT_EXPORT_RULES, type AiLine } from "@/lib/ai/prompt";
 import type { AiPool, SuggestRequest } from "@/lib/ai/roster";
 
 export const DEFAULT_CHATGPT_QUESTION =
@@ -71,6 +72,50 @@ ${buildRosterBlock(opts.request)}
 ${conversation ? `\n--- Conversation so far ---\n${conversation}\n` : ""}
 --- Current question ---
 ${question}`;
+}
+
+export function copilotChatPrompt(opts: {
+  question: string;
+  anchorId?: string | null;
+  request: SuggestRequest;
+  lines: AiLine[];
+  turns: ChatGptExportTurn[];
+}): string {
+  const anchorName = opts.anchorId
+    ? (findDragon(opts.anchorId)?.name ?? opts.anchorId)
+    : null;
+  const lineSummary = opts.lines
+    .slice(0, 3)
+    .map((line, index) => {
+      const left = findDragon(line.left)?.name ?? line.left;
+      const vanguard = findDragon(line.vanguard)?.name ?? line.vanguard;
+      const right = findDragon(line.right)?.name ?? line.right;
+      return `${index + 1}. ${line.name} (${line.troop}, ${line.mode}): Left ${left} / Vanguard ${vanguard} / Right ${right} — ${line.why}`;
+    })
+    .join("\n");
+  const conversation = opts.turns
+    .slice(-6)
+    .map(
+      (turn) =>
+        `${turn.role === "user" ? "Player" : "Copilot"}: ${turn.text.trim()}`,
+    )
+    .filter((line) => line.length > 8)
+    .join("\n\n");
+
+  return `You are the in-app Copilot for Game of Thrones: Dragonfire. Answer the player's question concisely in 2-5 plain-text sentences (no markdown headers or bullet spam). Use ONLY the dragons, kits, and lines listed below — never invent dragons or skills.
+
+Game facts:
+${factsBlock()}
+
+${anchorName ? `Selected dragon to build around: ${anchorName}\n` : ""}Troop: ${opts.request.troop}, Mode: ${opts.request.mode}
+
+Verified candidate teams:
+${lineSummary || "(No complete 3-dragon line matched these filters.)"}
+
+--- Roster context ---
+${buildRosterBlock(opts.request)}
+${conversation ? `\n--- Recent turns ---\n${conversation}\n` : ""}
+Player question: ${opts.question}`;
 }
 
 export function chatgptExportFilename(

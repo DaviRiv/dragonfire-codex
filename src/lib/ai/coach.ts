@@ -430,12 +430,33 @@ export function answerPlan(
   });
 
   if (plan.intent === "explain" || plan.intent === "compare") {
-    // Nothing offered yet to explain or compare — rank first, then say so.
     const head = lines[0];
-    const reply = head
-      ? `No line on the table yet, so here is the ranked one for ${troopLabels[plan.troop]} ${modeLabels[plan.mode]}: ${head.name} — ${seatSentence(head, state)}. ${head.why}`
-      : "I need at least three dragons in this pool before I can compare lines.";
-    return { reply, lines };
+    if (!head) {
+      return {
+        reply:
+          "I need at least three dragons in this pool before I can explain or compare lines.",
+        lines,
+      };
+    }
+    if (plan.intent === "compare" && lines.length > 1) {
+      const top = lines[0];
+      const runner = lines[1];
+      return {
+        reply: `${top.name} (${seatSentence(top, state)}) edges out ${runner.name} for ${troopLabels[plan.troop]} ${modeLabels[plan.mode]}. ${top.why}`,
+        lines,
+      };
+    }
+    const report = pairingReport(lineupFromAiLine(head, state, pool), state);
+    const pros = report.pros.slice(0, 2).map((note) => note.title);
+    const cons = report.cons.slice(0, 2).map((note) => note.title);
+    const payoff = pros.length ? ` Payoffs: ${pros.join("; ")}.` : "";
+    const gaps = cons.length
+      ? ` Gaps: ${cons.join("; ")}.`
+      : " No gaps flagged by the pairing rules.";
+    return {
+      reply: `${head.name} (${troopLabels[plan.troop]} ${modeLabels[plan.mode]}) seats ${seatSentence(head, state)}. ${head.why}${payoff}${gaps}`,
+      lines,
+    };
   }
 
   return {

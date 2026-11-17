@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { answerPlan } from "@/lib/ai/coach";
+import { copilotChatPrompt } from "@/lib/ai/export";
 import {
   historyForContext,
   parseStoredTurns,
@@ -22,7 +23,7 @@ import type { Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/type
 export const COACH_STORAGE_KEY = "dragonfire-pit.coach.v2";
 
 /** A single answer should never outrun this. Real work, no padding. */
-const TURN_TIMEOUT_MS = 15_000;
+const TURN_TIMEOUT_MS = 25_000;
 
 /**
  * Copilot ranks against a saved formation when there is one, so seats already
@@ -425,6 +426,35 @@ export function useCoachChat() {
               effectiveRoster,
             );
             const result = answerPlan(plan, request, live.state, live.lineup);
+            let reply = result.reply;
+            try {
+              const prompt = copilotChatPrompt({
+                question,
+                anchorId: plan.anchorId,
+                request,
+                lines: result.lines,
+                turns: history.map((turn) => ({
+                  role: turn.role,
+                  text: turn.text,
+                })),
+              });
+              const res = await fetch("/api/openai/complete", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                credentials: "same-origin",
+                signal: controller.signal,
+                body: JSON.stringify({ prompt }),
+              });
+              if (res.ok) {
+                const payload = (await res.json()) as { reply?: string };
+                if (typeof payload.reply === "string" && payload.reply.trim()) {
+                  reply = payload.reply.trim();
+                }
+              }
+            } catch (err) {
+              if (controller.signal.aborted) throw err;
+              // Keep local ranked explanation when ChatGPT is unavailable.
+            }
             const meta: TurnMeta = {
               troop: plan.troop,
               mode: plan.mode,
@@ -436,7 +466,7 @@ export function useCoachChat() {
               anchorId: plan.anchorId ?? null,
               anchorSlot: plan.anchorSlot ?? null,
             };
-            return { ...result, meta };
+            return { ...result, reply, meta };
           })(),
           TURN_TIMEOUT_MS,
         );
