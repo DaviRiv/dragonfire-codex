@@ -19,6 +19,10 @@ import {
 import { mutateJsonFile, readJsonFile } from "@/lib/server/json-store";
 import { talkFile } from "@/lib/server/paths";
 import { MAX_TALK_THREADS } from "@/lib/server/store-limits";
+import {
+  sanitizeBoardId,
+  sanitizeTalkLine,
+} from "@/lib/server/talk-validate";
 import type { SessionUser } from "@/lib/server/session";
 
 export type TalkReplyRecord = TalkReply & { userId: string };
@@ -118,6 +122,10 @@ export async function createThread(
   if (!isTalkCategory(input.category)) {
     return { error: "Pick a forum board." };
   }
+  const board = sanitizeBoardId(input.boardId);
+  if ("error" in board) return { error: board.error };
+  const line = sanitizeTalkLine(input.line);
+  if ("error" in line) return { error: line.error };
   const now = new Date().toISOString();
   const thread: TalkThreadRecord = {
     id: `tlk_${randomBytes(8).toString("hex")}`,
@@ -128,8 +136,8 @@ export async function createThread(
     author: user.username,
     createdAt: now,
     updatedAt: now,
-    boardId: input.boardId?.trim() || null,
-    line: input.line ?? null,
+    boardId: board.boardId,
+    line: line.line,
     replies: [],
   };
   let full = false;

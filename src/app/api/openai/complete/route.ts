@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import {
+  MAX_OPENAI_PROMPT,
+  openAiPromptError,
+} from "@/lib/server/openai-prompt";
 import { openaiComplete, openaiConfigured } from "@/lib/server/openai";
 import { openaiRateLimit } from "@/lib/server/openai-limit";
 import { getSession, jsonError } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const MAX_PROMPT_CHARS = 48_000;
 
 export async function POST(request: Request) {
   if (!openaiConfigured()) {
@@ -34,9 +36,11 @@ export async function POST(request: Request) {
     return jsonError("Send a prompt string.", 400);
   }
   const prompt = body.prompt?.trim() ?? "";
-  if (!prompt) return jsonError("Prompt is empty.", 400);
-  if (prompt.length > MAX_PROMPT_CHARS) {
-    return jsonError("Prompt is too long for one request.", 413);
+  const promptErr = openAiPromptError(prompt);
+  if (promptErr) {
+    const status =
+      promptErr === "Prompt is too long for one request." ? 413 : 400;
+    return jsonError(promptErr, status);
   }
 
   try {
