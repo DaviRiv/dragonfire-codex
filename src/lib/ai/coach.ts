@@ -15,6 +15,13 @@ import { makePick } from "@/lib/lineup";
 import { allDragons, findDragon, newOwnedDragon } from "@/lib/dragons";
 import { canonAbility, dragonProvides } from "@/lib/abilities";
 import { defaultHabits } from "@/lib/habits";
+import {
+  habitNumberForUnlockStars,
+  habitPreview,
+  kitProgress,
+  liveOwnedHabitRanks,
+  liveOwnedHabits,
+} from "@/lib/habits";
 import { modeLabels, troopLabels } from "@/lib/labels";
 import { partnerRules, pairingReport } from "@/lib/pairing";
 import { isFinisher, isHealer, isMitigation, isTank } from "@/lib/roles";
@@ -216,6 +223,23 @@ export function explainLineThorough(
     );
   }
 
+  const starNotes = starHabitNotes(line, state, pool);
+  const stars = dragons
+    .map((dragon) => {
+      const owned = state.owned.find((row) => row.dragonId === dragon.id);
+      return `${dragon.name} ${owned?.starRank ?? 10}★`;
+    })
+    .join(", ");
+  sentences.push(
+    `Copilot ranked the actual star profile (${stars}), because habits unlock at 2★, 4★, 6★, 8★, and 10★.`,
+  );
+  if (starNotes.live.length > 0) {
+    sentences.push(`Star unlocks: ${starNotes.live.join(" ")}`);
+  }
+  if (starNotes.goals.length > 0) {
+    sentences.push(`Next synergy breakpoint: ${starNotes.goals.join(" ")}`);
+  }
+
   if (!opts?.compact && report.cons.length > 0) {
     const gaps = report.cons
       .slice(0, 2)
@@ -226,11 +250,101 @@ export function explainLineThorough(
   return sentences.join(" ");
 }
 
+type StarHabitSummary = { live: string[]; goals: string[]; score: number };
+
+/**
+ * Explain only habit gates that materially interact with this exact line.
+ * Pairing notes already know whether a provider/consumer gate is live at the
+ * player's rank, so we do not praise a 10★ kit when the pit owns 4★.
+ */
+function starHabitNotes(
+  line: AiLine,
+  state: PitState,
+  pool: SuggestRequest["pool"],
+): StarHabitSummary {
+  const lineup = lineupFromAiLine(line, state, pool);
+  const report = pairingReport(lineup, state);
+  const live: string[] = [];
+  const goals: string[] = [];
+
+  for (const note of report.pros) {
+    const ids = [line.left, line.vanguard, line.right];
+    const owner = ids
+      .map((id) => {
+        const dragon = findDragon(id, state.customDragons);
+        const owned = state.owned.find((row) => row.dragonId === id);
+        if (!dragon || !owned) return null;
+        const gates = [...(dragon.needs ?? []), ...(dragon.provides ?? [])];
+        const gate = gates.find(
+          (candidate) =>
+            candidate.unlockStars != null &&
+            (!note.ability ||
+              canonAbility(candidate.ability) === canonAbility(note.ability)),
+        );
+        if (!gate?.unlockStars || owned.starRank < gate.unlockStars) return null;
+        return { dragon, owned, gate };
+      })
+      .find(Boolean);
+    if (!owner) continue;
+    const habit = habitNumberForUnlockStars(owner.gate.unlockStars);
+    if (
+      habit != null &&
+      !liveOwnedHabits(owner.owned, "pit")?.includes(habit)
+    ) {
+      continue;
+    }
+    const rank = habit
+      ? liveOwnedHabitRanks(owner.owned)[habit - 1]
+      : undefined;
+    const body = habit
+      ? habitPreview(owner.dragon.id, habit - 1, rank)
+      : "";
+    const reason = body && body !== "Not recorded yet."
+      ? ` ${body}`
+      : ` It enables ${note.title.replace(/\.$/, "")}.`;
+    live.push(
+      `${owner.dragon.name} is ${owner.owned.starRank}★; its ${owner.gate.unlockStars}★ Habit${habit ? ` ${habit}` : ""} is live.${reason}`,
+    );
+  }
+
+  for (const note of report.cons) {
+    if (note.cause !== "stars" || note.stars == null) continue;
+    const have =
+      note.ownedStars == null ? "not owned" : `${note.ownedStars}★`;
+    goals.push(
+      `${note.title.replace(/\.$/, "")} (currently ${have}); that habit must unlock before this pairing fires.`,
+    );
+  }
+
+  if (live.length === 0 && goals.length === 0) {
+    for (const id of [line.left, line.vanguard, line.right]) {
+      const dragon = findDragon(id, state.customDragons);
+      const owned = state.owned.find((row) => row.dragonId === id);
+      if (!dragon || !owned) continue;
+      const progress = kitProgress(dragon, owned.starRank, owned.habits);
+      const next = progress.nextUnlocks[0];
+      if (!next) continue;
+      const named = next.habits[0];
+      const effect = next.effects[0];
+      goals.push(
+        `${dragon.name} is ${owned.starRank}★; ${next.stars}★ unlocks ${named ? `Habit ${named.habit}` : effect ?? "its next habit"}, which Copilot will re-evaluate for stronger pairings.`,
+      );
+    }
+  }
+
+  return {
+    live: [...new Set(live)].slice(0, 2),
+    goals: [...new Set(goals)].slice(0, 2),
+    score: live.length * 12 - goals.length * 16,
+  };
+}
+
 function copilotChoiceScore(
   choice: AroundChoice,
   mode: LineupMode,
   primaryTroop: TroopType,
   state: PitState,
+  pool: SuggestRequest["pool"],
 ): number {
   const left = findDragon(choice.line.left, state.customDragons);
   const vanguard = findDragon(choice.line.vanguard, state.customDragons);
@@ -238,6 +352,20 @@ function copilotChoiceScore(
   if (!left || !vanguard || !right) return choice.score;
   const dragons = [left, vanguard, right];
   let score = choice.score;
+  const starLine: AiLine = {
+    name: choice.id,
+    troop: choice.line.troop,
+    mode: choice.line.mode,
+    left: choice.line.left,
+    vanguard: choice.line.vanguard,
+    right: choice.line.right,
+    why: "",
+  };
+  score += starHabitNotes(
+    starLine,
+    state,
+    pool,
+  ).score;
   const combatMode = mode === "pvp" || mode === "defense" || mode === "rally";
   if (combatMode) {
     if (isTank(vanguard)) score += 32;
@@ -376,7 +504,13 @@ function anchoredComboLines(input: {
   const scored = eligible
     .map((choice) => ({
       choice,
-      rank: copilotChoiceScore(choice, input.mode, primaryTroop, evalState),
+      rank: copilotChoiceScore(
+        choice,
+        input.mode,
+        primaryTroop,
+        evalState,
+        input.request.pool,
+      ),
     }))
     .sort((a, b) => b.rank - a.rank || b.choice.score - a.choice.score);
 

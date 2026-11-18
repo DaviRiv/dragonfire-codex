@@ -1,5 +1,12 @@
 import { metaTagFor } from "@/data/meta";
 import { allDragons, findDragon } from "@/lib/dragons";
+import {
+  defaultHabits,
+  habitPreview,
+  liveOwnedHabitRanks,
+  liveOwnedHabits,
+  starsForHabit,
+} from "@/lib/habits";
 import { placedInLineup } from "@/lib/lineup";
 import { dragonRoles, roleShort } from "@/lib/roles";
 import type {
@@ -56,10 +63,27 @@ function gateList(gates?: GatedAbility[]): string {
     .join("+");
 }
 
-function kitSummary(dragon: Dragon): string {
+function kitSummary(
+  dragon: Dragon,
+  stars: number,
+  habits?: number[] | null,
+  habitRanks?: number[] | null,
+): string {
   const command = (dragon.commandShort || dragon.command).replace(/\s+/g, " ");
   const habit = (dragon.habitShort || "").replace(/\s+/g, " ");
-  return [command, habit].filter(Boolean).join(" / ").slice(0, 180);
+  const selected = habits ?? defaultHabits(stars);
+  const ranks = liveOwnedHabitRanks({ habitRanks: habitRanks ?? undefined });
+  const live = selected
+    .filter((slot) => (starsForHabit(slot) ?? 99) <= stars)
+    .map((slot) => {
+      const at = starsForHabit(slot);
+      const text = habitPreview(dragon.id, slot - 1, ranks[slot - 1]);
+      return `H${slot}@${at}★ ${text}`;
+    });
+  return [command, habit, ...live]
+    .filter(Boolean)
+    .join(" / ")
+    .slice(0, 520);
 }
 
 function otherPitTeamNames(
@@ -82,7 +106,12 @@ export function dragonToCard(
   dragon: Dragon,
   stars: number,
   reign: number,
-  extra?: { owned?: boolean; otherTeam?: string },
+  extra?: {
+    owned?: boolean;
+    otherTeam?: string;
+    habits?: number[] | null;
+    habitRanks?: number[] | null;
+  },
 ): RosterCard {
   return {
     id: dragon.id,
@@ -95,7 +124,7 @@ export function dragonToCard(
     flank: dragon.flankBonus,
     needs: gateList(dragon.needs),
     gives: gateList(dragon.provides),
-    kit: kitSummary(dragon),
+    kit: kitSummary(dragon, stars, extra?.habits, extra?.habitRanks),
     owned: extra?.owned ?? true,
     otherTeam: extra?.otherTeam,
   };
@@ -116,6 +145,8 @@ export function collectRoster(
         dragonToCard(dragon, owned.starRank, owned.reignLevel, {
           owned: true,
           otherTeam: otherPitTeamNames(state, lineup.id, dragon.id),
+          habits: liveOwnedHabits(owned, "pit"),
+          habitRanks: owned.habitRanks,
         }),
       );
     }
@@ -135,7 +166,11 @@ export function collectRoster(
         dragon,
         owned?.starRank ?? lineup.craftStars,
         owned?.reignLevel ?? 0,
-        { owned: Boolean(owned) },
+        {
+          owned: Boolean(owned),
+          habits: owned ? liveOwnedHabits(owned, "pit") : null,
+          habitRanks: owned?.habitRanks,
+        },
       ),
     );
   }

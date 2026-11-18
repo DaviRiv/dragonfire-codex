@@ -109,6 +109,8 @@ export function copilotChatPrompt(opts: {
 
 The UI already shows team cards with Left / Vanguard / Right — do NOT restate the full roster or repeat card labels. Focus on mechanics: who tanks or mitigates Vanguard, sustain vs burst on the wings, the +20% troop affinity rule, habit flanks, status chains (Burn, Expose, etc.), and breed partner triggers from the verified notes below.
 
+Stars are functional, not cosmetic. Habits unlock at 2★, 4★, 6★, 8★, and 10★. Use each pit dragon's real Stars and the Hn@x★ entries in Kit. Explicitly say which star-unlocked habit makes the recommended synergy live. If a required habit is still locked, state the exact target stars and explain that the pairing does not fire yet. Never explain a locked habit as though it were active.
+
 Be thorough but readable. If alternates exist, compare them in one sentence (what swaps and what you trade). Never invent dragons or kits. NEVER praise breaking troop affinity unless the verified data says no full-affinity line exists.
 
 Game facts:
