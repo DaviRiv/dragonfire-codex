@@ -33,7 +33,12 @@ import { collectRoster, type AiPool } from "@/lib/ai/roster";
 import { rememberBuild } from "@/lib/build-session";
 import { newId, nowIso } from "@/lib/dragons";
 import {
+  buildReasonLinesPrompt,
+  fetchReasonedLines,
+} from "@/lib/ai/reason-lines";
+import {
   focusConfigKey,
+  focusLineCandidates,
   focusSuggestions,
   type FocusConfig,
 } from "@/lib/focus-suggest";
@@ -69,6 +74,7 @@ export function CoachPage() {
   const [generatedConfig, setGeneratedConfig] = useState<FocusConfig | null>(
     null,
   );
+  const [reasonedLines, setReasonedLines] = useState<AiLine[] | null>(null);
   const [resultsOpen, setResultsOpen] = useState(true);
   const [generating, startGenerating] = useTransition();
 
@@ -119,13 +125,20 @@ export function CoachPage() {
     [anchor.dragonId, anchor.slot, anchor.allowedTroops],
   );
   // Tracks the live pit, so dragons seated from one suggestion drop out of the rest.
-  const result = useMemo(
-    () => (generatedConfig ? focusSuggestions(state, generatedConfig) : null),
-    [generatedConfig, state],
-  );
+  const result = useMemo(() => {
+    if (!generatedConfig) return null;
+    const base = focusSuggestions(state, generatedConfig);
+    return reasonedLines?.length
+      ? { ...base, lines: reasonedLines }
+      : base;
+  }, [generatedConfig, state, reasonedLines]);
   const dirty =
     generatedConfig !== null &&
     focusConfigKey(generatedConfig) !== focusConfigKey(focusConfig);
+
+  useEffect(() => {
+    setReasonedLines(null);
+  }, [state.owned, state.lineups]);
 
   useDevFailureSeam(chat.failNext);
 
@@ -165,8 +178,42 @@ export function CoachPage() {
   function generate() {
     const config = focusConfig;
     startGenerating(() => {
-      setGeneratedConfig(config);
-      setResultsOpen(true);
+      void (async () => {
+        const base = focusLineCandidates(state, config, 12);
+        let lines = base.candidates.slice(0, 3);
+        let reasoned: AiLine[] | null = null;
+        if (openAi === true && base.candidates.length > 0) {
+          const suggestTroop =
+            config.troops.length === 1 ? config.troops[0] : activeTroop;
+          const request = makeSuggestRequest(
+            { ...lineup, troop: suggestTroop, mode: "pvp" },
+            state,
+            base.pool,
+            collectRoster(state, lineup, base.pool),
+          );
+          const prompt = buildReasonLinesPrompt({
+            request,
+            state,
+            candidates: base.candidates,
+            anchorId: config.dragonId,
+            maxPicks: 3,
+            question: config.dragonId
+              ? `Pick the best ${config.troops.length === 1 ? troopLabels[config.troops[0]] + " " : ""}teams around the anchor.`
+              : undefined,
+          });
+          const picked = await fetchReasonedLines(prompt, base.candidates);
+          if (picked?.length) {
+            lines = picked.slice(0, 3);
+            reasoned = lines;
+          }
+        }
+        setReasonedLines(reasoned);
+        setGeneratedConfig(config);
+        setResultsOpen(true);
+        if (reasoned) {
+          toast.message("ChatGPT re-ranked these teams from your roster.");
+        }
+      })();
     });
     if (window.matchMedia("(max-width: 1023px)").matches) {
       requestAnimationFrame(() =>

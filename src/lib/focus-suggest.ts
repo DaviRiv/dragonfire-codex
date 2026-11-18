@@ -43,6 +43,7 @@ function linesFromPool(
   config: FocusConfig,
   pool: AiPool,
   limit: number,
+  candidateLimit = 12,
 ): AiLine[] {
   const lineup = contextLineup(state.lineups, pool);
   const roster = collectRoster(state, lineup, pool);
@@ -62,6 +63,7 @@ function linesFromPool(
       anchorId: config.dragonId,
       anchorSlot: config.slot === "auto" ? null : config.slot,
       lockTroop: true,
+      maxLines: candidateLimit,
     }),
   );
 
@@ -83,19 +85,42 @@ function linesFromPool(
   return out;
 }
 
+/** Ranked candidate lines before taking the top display set. */
+export function focusLineCandidates(
+  state: PitState,
+  config: FocusConfig,
+  candidateLimit = 12,
+): FocusResult & { candidates: AiLine[] } {
+  const fromPit = linesFromPool(state, config, "pit", candidateLimit, candidateLimit);
+  if (fromPit.length > 0) {
+    return {
+      config,
+      lines: fromPit,
+      candidates: fromPit,
+      pool: "pit",
+      fellBack: false,
+    };
+  }
+  const lines = linesFromPool(state, config, "hatchery", candidateLimit, candidateLimit);
+  return {
+    config,
+    lines,
+    candidates: lines,
+    pool: "hatchery",
+    fellBack: true,
+  };
+}
+
 export function focusSuggestions(
   state: PitState,
   config: FocusConfig,
   limit = 3,
 ): FocusResult {
-  const fromPit = linesFromPool(state, config, "pit", limit);
-  if (fromPit.length > 0) {
-    return { config, lines: fromPit, pool: "pit", fellBack: false };
-  }
+  const picked = focusLineCandidates(state, config, Math.max(limit, 12));
   return {
-    config,
-    lines: linesFromPool(state, config, "hatchery", limit),
-    pool: "hatchery",
-    fellBack: true,
+    config: picked.config,
+    lines: picked.candidates.slice(0, limit),
+    pool: picked.pool,
+    fellBack: picked.fellBack,
   };
 }

@@ -30,8 +30,8 @@ Why: one sentence
 Rules:
 - Pick only dragons from the roster. Use their names (vhagar is Vhagar).
 - A line is Left Flank, Vanguard, Right Flank. Use each dragon at most once per line.
-- Follow Current meta for online / PvP DPS. Do not override it with a different “best” core.
-- If the meta core is not free, fill composition in order: a healer if nobody Recovers, then soak / self Damage Received, then a damage dealer to finish.
+- Treat Current meta and meta:* tags as community snapshots, not a script. Prefer the lineup that fits the roster’s real stars and habit unlocks.
+- Build composition in order: healer or recovery if the march needs sustain, soak / mitigation in Vanguard when the mode is combat, then a finisher that matches the troop job mix.
 - Feeding Burn so a tank’s Taunt can hit 50% does not outrank a missing healer.
 - Prefer the Vanguard for Taunt soak.
 - Prefer the asked troop type when a dragon has that affinity, but a correct job mix beats a weak affinity.

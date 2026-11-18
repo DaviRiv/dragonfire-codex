@@ -302,8 +302,8 @@ export function chatgptMetaTemplate(line: MetaLine = ONLINE_DPS_CORE): string {
 - Spearmen core: Left Syrax, Vanguard Vaeldra, Right Caraxes.
 - Cavalry core vs Shields: Left Seasmoke, Vanguard Thunderstrike, Right Sheepstealer. Alternate Cavalry: Left Shadowsong, Vanguard Daemoros, Right Kalspire.
 - Archer variant: Left Seasmoke, Vanguard Zivern, Right Daemoros. Vhagar Archer line: Left Zivern, Vanguard Vhagar, Right Moondancer. Alternate: Left Syrax, Vanguard Vhagar, Right Seasmoke.
-- Seat the exact Shieldbearer core when all three names are in the roster and the player is asking about online, PvP, or a damage march.
-- If a name is missing, or tagged on: another team while Skip other teams is on, say which seat is missing and pick the closest substitute from the roster. Do not invent a different “best” online DPS core.
+- When the player asks about online, PvP, or a damage march, treat the Shieldbearer core below as the usual reference — still pick substitutes from the roster when stars, habits, or pit availability break the lineup.
+- If a name is missing, or tagged on: another team while Skip other teams is on, say which seat is missing and pick the closest substitute from the roster by jobs and affinities, not a different fixed template.
 - Rally, PvE, defense, and gathering can use other cores. A spear rally is not the Shieldbearer DPS line.
 - Rows tagged meta:online-dps are that Shieldbearer core. Other meta:* tags are September 2026 community cores.`;
 }
