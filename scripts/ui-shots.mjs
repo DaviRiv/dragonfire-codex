@@ -114,7 +114,7 @@ async function fillSeats(page) {
 
 for (const [route, seats] of [
   ["/pit", false],
-  ["/team", true],
+  ["/coach?build=1", true],
   ["/counter", true],
   ["/lineups", false],
   ["/lineups/lin-1", false],

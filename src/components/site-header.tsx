@@ -7,7 +7,6 @@ import {
   Flame,
   MessagesSquare,
   Sparkles,
-  Swords,
   Target,
   UserRound,
   Wrench,
@@ -20,7 +19,6 @@ import { useDevMode } from "@/lib/use-dev-mode";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/team", label: "Team", icon: Swords },
   { href: "/counter", label: "Counter", icon: Target },
   { href: "/coach", label: "Copilot", icon: Sparkles, beta: true, hub: true },
   { href: "/forums", label: "Forums", icon: MessagesSquare },

@@ -152,7 +152,7 @@ export function AccountPage() {
           /coach
         </Link>{" "}
         opens, and you can seat lines on{" "}
-        <Link href="/team" className="text-amber-200 hover:underline">
+        <Link href="/coach?build=1" className="text-amber-200 hover:underline">
           Team
         </Link>
         .

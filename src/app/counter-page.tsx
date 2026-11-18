@@ -562,11 +562,11 @@ export function CounterPage() {
       <div className="flex shrink-0 items-center justify-between gap-2">
         <h1 className="font-heading text-base tracking-wide">Counter</h1>
         <Link
-          href="/team"
+          href="/coach?build=1"
           className="text-ui-sm inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-amber-200 hover:bg-muted hover:underline"
         >
           <Swords className="size-3.5" aria-hidden />
-          Team
+          Build team
         </Link>
       </div>
 

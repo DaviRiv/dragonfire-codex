@@ -10,7 +10,7 @@ import {
 import { DragonIcon } from "@/components/dragon-icon";
 import { SearchField } from "@/components/search-field";
 import { SectionLabel } from "@/components/section-label";
-import { TroopIcons } from "@/components/troop-icon";
+import { DragonMetaCompact } from "@/components/dragon-meta";
 import { DRAGONS } from "@/data/dragons";
 import { filterDragonPicks } from "@/lib/counter-pick";
 import { slotShort, troopLabels } from "@/lib/labels";
@@ -324,13 +324,12 @@ function PickGrid({
               <span className="w-full truncate text-[11px] leading-tight">
                 {row.name}
               </span>
-              <span className="flex items-center justify-center gap-1 text-[10px] tabular-nums text-muted-foreground">
-                <TroopIcons
-                  troops={row.affinities}
-                  iconClassName="size-4"
-                />
-                {stars != null ? `★${stars}` : null}
-              </span>
+              <DragonMetaCompact dragon={row} showBuffs={false} />
+              {stars != null ? (
+                <span className="text-[10px] tabular-nums text-amber-200">
+                  ★{stars}
+                </span>
+              ) : null}
             </button>
           </li>
         );

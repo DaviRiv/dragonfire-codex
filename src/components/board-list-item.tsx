@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 export function BoardListItem({
   board,
-  nextPath = "/team",
+  nextPath = "/coach?build=1",
   onRate,
   onSeat,
 }: {
@@ -99,7 +99,7 @@ export function BoardListItem({
           />
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={() => onSeat(board)}>
-              Seat on Team
+              Save team
             </Button>
             <Link
               href={talkNewHref(board.id)}

@@ -4,6 +4,7 @@ import { DragonPortrait } from "@/components/dragon-portrait";
 import { StarRank } from "@/components/star-rank";
 import { Badge } from "@/components/ui/badge";
 import { findDragon } from "@/lib/dragons";
+import { BreedChip } from "@/components/dragon-meta";
 import { breedLabels, rarityLabels } from "@/lib/labels";
 import type { Breed, OwnedDragon, PitState, Rarity, TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -70,10 +71,12 @@ export function DragonCard({
               {rarityLabels[dragon.rarity]}
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {breedLabels[dragon.breed]}
-            {dragon.custom ? " · Custom" : ""}
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <BreedChip breed={dragon.breed} />
+            {dragon.custom ? (
+              <span className="text-[10px] text-muted-foreground">Custom</span>
+            ) : null}
+          </div>
           <div className="mt-3 flex items-center justify-between gap-2">
             <StarRank value={owned.starRank} size="sm" />
           </div>

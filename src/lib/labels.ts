@@ -49,11 +49,12 @@ export const breedLabels: Record<Breed, string> = {
   warrior: "Warrior",
 };
 
+/** Matches Dragonfire-Hub breed chips (purple / green / blue / red). */
 export const breedChipClass: Record<Breed, string> = {
-  champion: "bg-amber-500/15 text-amber-200 ring-amber-400/35",
-  hunter: "bg-orange-500/15 text-orange-200 ring-orange-400/35",
-  sentinel: "bg-cyan-500/15 text-cyan-200 ring-cyan-400/35",
-  warrior: "bg-rose-500/15 text-rose-200 ring-rose-400/35",
+  champion: "bg-purple-500/10 text-purple-400 ring-purple-900/50",
+  hunter: "bg-green-500/10 text-green-400 ring-green-900/50",
+  sentinel: "bg-blue-500/10 text-blue-400 ring-blue-900/50",
+  warrior: "bg-red-500/10 text-red-400 ring-red-900/50",
 };
 
 export const breedRoles: Record<Breed, string> = {

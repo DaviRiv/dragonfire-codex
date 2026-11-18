@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CoachPage } from "./coach-page";
 
 export const metadata: Metadata = {
@@ -8,5 +9,13 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <CoachPage />;
+  return (
+    <Suspense
+      fallback={
+        <p className="p-4 text-sm text-muted-foreground">Opening Copilot…</p>
+      }
+    >
+      <CoachPage />
+    </Suspense>
+  );
 }

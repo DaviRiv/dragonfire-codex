@@ -19,6 +19,7 @@ import { dragonKit, habitNumberForUnlockStars, habitRankOf } from "@/lib/habits"
 import { provideUnlockStars } from "@/lib/abilities";
 import { healingAbilities } from "@/lib/healing";
 import {
+  breedChipClass,
   breedLabels,
   breedRoles,
   marchLabels,
@@ -28,6 +29,7 @@ import {
   statShort,
   STAT_KEYS,
 } from "@/lib/labels";
+import { DragonBuffChips, DragonDamageChips } from "@/components/dragon-meta";
 import {
   dragonPower,
   formatPower,
@@ -173,7 +175,13 @@ export function DragonProfile({
         <Badge variant="outline" className="rounded-md font-normal">
           {rarityLabels[dragon.rarity]}
         </Badge>
-        <Badge variant="outline" className="rounded-md font-normal">
+        <Badge
+          variant="outline"
+          className={cn(
+            "rounded-md border-0 font-medium ring-1",
+            breedChipClass[dragon.breed],
+          )}
+        >
           {breedLabels[dragon.breed]}
         </Badge>
         <Badge variant="outline" className="rounded-md font-normal">
