@@ -145,6 +145,8 @@ export function DragonProfile({
   ownedHabitRanks,
   synergyBuffs = [],
   onHabitRankChange,
+  hideIdentityHeader,
+  hideStatBlock,
 }: {
   dragon: Dragon;
   highlightTroop?: Dragon["affinities"][number];
@@ -159,6 +161,10 @@ export function DragonProfile({
   ownedHabitRanks?: number[];
   synergyBuffs?: SynergyBuff[];
   onHabitRankChange?: (habit: number, rank: number) => void;
+  /** Pit inspect dialog already showed badges and affinities. */
+  hideIdentityHeader?: boolean;
+  /** Pit inspect dialog already showed the stat grid. */
+  hideStatBlock?: boolean;
 }) {
   const kit = dragonKit(dragon, ownedHabitRanks);
   const heals = healingAbilities(dragon, ownedHabitRanks);
@@ -171,44 +177,48 @@ export function DragonProfile({
   const habitExtras = kit.extras.filter((extra) => extra.unlockStars != null);
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline" className="rounded-md font-normal">
-          {rarityLabels[dragon.rarity]}
-        </Badge>
-        <Badge
-          variant="outline"
-          className={cn(
-            "rounded-md border-0 font-medium ring-1",
-            breedChipClass[dragon.breed],
-          )}
-        >
-          {breedLabels[dragon.breed]}
-        </Badge>
-        <Badge variant="outline" className="rounded-md font-normal">
-          {marchLabels[dragon.marchSpeed]}
-        </Badge>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        <AbilityText
-          text={`${breedRoles[dragon.breed]} Buffs the ${slotLabels[dragon.flankBonus]}.`}
-        />
-      </p>
-      <AffinityBadges
-        affinities={dragon.affinities}
-        highlight={highlightTroop}
-      />
-      {dragon.tags.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-            {dragon.tags.map((tag) => (
-              <AbilityTag
-                key={tag}
-                tag={tag}
-                dragonId={dragon.id}
-                stars={provideUnlockStars(dragon, tag)}
-              />
-            ))}
-        </div>
-      ) : null}
+      {hideIdentityHeader ? null : (
+        <>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className="rounded-md font-normal">
+              {rarityLabels[dragon.rarity]}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                "rounded-md border-0 font-medium ring-1",
+                breedChipClass[dragon.breed],
+              )}
+            >
+              {breedLabels[dragon.breed]}
+            </Badge>
+            <Badge variant="outline" className="rounded-md font-normal">
+              {marchLabels[dragon.marchSpeed]}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <AbilityText
+              text={`${breedRoles[dragon.breed]} Buffs the ${slotLabels[dragon.flankBonus]}.`}
+            />
+          </p>
+          <AffinityBadges
+            affinities={dragon.affinities}
+            highlight={highlightTroop}
+          />
+          {dragon.tags.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {dragon.tags.map((tag) => (
+                <AbilityTag
+                  key={tag}
+                  tag={tag}
+                  dragonId={dragon.id}
+                  stars={provideUnlockStars(dragon, tag)}
+                />
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
       {vanguard ? (
         <AbilityBlock
           title={`Vanguard · buffs ${slotLabels[dragon.flankBonus]}`}
@@ -318,38 +328,37 @@ export function DragonProfile({
           />
         );
       })}
-      <div>
-        <p className="text-label mb-2">
-          Stats · ★{starRank}
-        </p>
-        <StatGrid stats={stats} mods={liveMods} />
-        {synergyBuffs.length > 0 ? (
-          <div className="mt-3 rounded-xl bg-emerald-950/40 p-3 ring-1 ring-emerald-500/25">
-            <p className="text-label mb-1.5 text-emerald-200">Live synergy</p>
-            <SynergyBuffList buffs={synergyBuffs} />
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Combat kit bonuses from this three — not added into Hub power.
-            </p>
+      {hideStatBlock ? null : (
+        <div>
+          <p className="text-label mb-2">Stats · ★{starRank}</p>
+          <StatGrid stats={stats} mods={liveMods} />
+          {synergyBuffs.length > 0 ? (
+            <div className="mt-3 rounded-xl bg-emerald-950/40 p-3 ring-1 ring-emerald-500/25">
+              <p className="text-label mb-1.5 text-emerald-200">Live synergy</p>
+              <SynergyBuffList buffs={synergyBuffs} />
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Combat kit bonuses from this three — not added into Hub power.
+              </p>
+            </div>
+          ) : null}
+          <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+            <p className="text-muted-foreground">Troops</p>
+            <p className="text-right tabular-nums">{troops.toLocaleString()}</p>
+            <p className="text-muted-foreground">Hub power</p>
+            <p className="text-right tabular-nums">{formatPower(power)}</p>
           </div>
-        ) : null}
-        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-          <p className="text-muted-foreground">Troops</p>
-          <p className="text-right tabular-nums">{troops.toLocaleString()}</p>
-          <p className="text-muted-foreground">Hub power</p>
-          <p className="text-right tabular-nums">{formatPower(power)}</p>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Hub power is from star rank and reign level — not the in-game Army
+            Power number. Heirlooms, stronghold upgrades, and riders are left
+            out. Stats read Dragonfire-Hub’s catalog at your reign level, then
+            apply star multipliers. Stars auto-select habits in the pit. Uncheck
+            one on the search icon if you have not bought it. Rank diamonds pick
+            the habit upgrade so kit percents match what you have. Tap or click a
+            named buff for its card; hover works on a computer. Habit upgrade
+            Power is in the catalog but is not added into this number.
+          </p>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          Hub power is from star rank and reign level — not the in-game Army
-          Power number. Heirlooms, stronghold upgrades, and riders are left
-          out. Stats read
-          Dragonfire-Hub’s catalog at your reign level, then apply star
-          multipliers. Stars auto-select habits in the pit. Uncheck
-          one on the search icon if you have not bought it. Rank diamonds pick
-          the habit upgrade so kit percents match what you have. Tap or click a
-          named buff for its card; hover works on a computer. Habit upgrade
-          Power is in the catalog but is not added into this number.
-        </p>
-      </div>
+      )}
     </div>
   );
 }

@@ -4,23 +4,21 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
+import { DragonMetaCompact } from "@/components/dragon-meta";
 import { MiniChip } from "@/components/chip";
-import { DragonIcon } from "@/components/dragon-icon";
-import { DragonSheet } from "@/components/dragon-sheet";
+import { DragonCompareDialog } from "@/components/pit/dragon-compare-dialog";
+import { DragonInspectDialog } from "@/components/pit/dragon-inspect-dialog";
+import { PitDragonCard } from "@/components/pit/pit-dragon-card";
 import { ChipRow, NoMatches } from "@/components/filter-bar";
 import { SearchField } from "@/components/search-field";
 import { SectionLabel } from "@/components/section-label";
 import { GridSkeleton } from "@/components/skeleton";
-import {
-  HabitPickerDialog,
-  HabitSearchButton,
-} from "@/components/habit-picker";
-import { StarRank, StarStepper } from "@/components/star-rank";
+import { HabitPickerDialog } from "@/components/habit-picker";
+import { StarRank } from "@/components/star-rank";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DragonMetaCompact } from "@/components/dragon-meta";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
 import { allDragons, lineupsUsingDragon } from "@/lib/dragons";
 import {
@@ -40,6 +38,16 @@ import {
   roleShort,
 } from "@/lib/roles";
 import { REIGN_MAX, REIGN_MIN, clampReign } from "@/lib/lineup";
+import {
+  damageFilterOptions,
+  dragonMatchesDamage,
+  dragonMatchesMinReign,
+  dragonMatchesMinStars,
+  sortOptions,
+  sortPitDragons,
+  type DamageKindFilter,
+  type PitSortKey,
+} from "@/lib/pit-catalog";
 import { exportPit, isPitState, usePit } from "@/lib/store";
 import type {
   Breed,
@@ -83,6 +91,13 @@ export function PitPage() {
   const [breed, setBreed] = useState<Breed | "all">("all");
   const [troop, setTroop] = useState<TroopType | "all">("all");
   const [role, setRole] = useState<CompRole | "all">("all");
+  const [damageKind, setDamageKind] = useState<DamageKindFilter>("all");
+  const [minStars, setMinStars] = useState(0);
+  const [minReign, setMinReign] = useState(1);
+  const [sortKey, setSortKey] = useState<PitSortKey>("name");
+  const [sortDesc, setSortDesc] = useState(true);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [facetsOpen, setFacetsOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -132,25 +147,43 @@ export function PitPage() {
     (rarity === "all" ? 0 : 1) +
     (breed === "all" ? 0 : 1) +
     (troop === "all" ? 0 : 1) +
-    (role === "all" ? 0 : 1);
+    (role === "all" ? 0 : 1) +
+    (damageKind === "all" ? 0 : 1) +
+    (minStars > 0 ? 1 : 0) +
+    (minReign > 1 ? 1 : 0);
   const filtering =
     facetCount > 0 || ownership !== "all" || query.trim() !== "";
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return catalog.filter((dragon) => {
+    const filtered = catalog.filter((dragon) => {
       if (needle && !(haystacks.get(dragon.id) ?? "").includes(needle)) {
         return false;
       }
-      const stars = ownedById.get(dragon.id)?.starRank ?? 0;
+      const owned = ownedById.get(dragon.id);
+      const stars = owned?.starRank ?? 0;
+      const reign = owned?.reignLevel ?? 1;
       if (ownership === "owned" && stars <= 0) return false;
       if (ownership === "missing" && stars > 0) return false;
       if (rarity !== "all" && dragon.rarity !== rarity) return false;
       if (breed !== "all" && dragon.breed !== breed) return false;
       if (troop !== "all" && !dragon.affinities.includes(troop)) return false;
       if (role !== "all" && !hasCompRole(dragon, role)) return false;
+      if (!dragonMatchesDamage(dragon, damageKind)) return false;
+      if (
+        !dragonMatchesMinStars(stars, minStars, ownership)
+      ) {
+        return false;
+      }
+      if (!dragonMatchesMinReign(reign, minReign, stars > 0)) return false;
       return true;
     });
+    return sortPitDragons(
+      filtered,
+      ownedById,
+      sortKey,
+      sortDesc ? "desc" : "asc",
+    );
   }, [
     catalog,
     haystacks,
@@ -161,6 +194,11 @@ export function PitPage() {
     breed,
     troop,
     role,
+    damageKind,
+    minStars,
+    minReign,
+    sortKey,
+    sortDesc,
   ]);
 
   function clearFilters() {
@@ -170,6 +208,22 @@ export function PitPage() {
     setBreed("all");
     setTroop("all");
     setRole("all");
+    setDamageKind("all");
+    setMinStars(0);
+    setMinReign(1);
+  }
+
+  function toggleCompare(dragonId: string) {
+    setCompareIds((current) => {
+      if (current.includes(dragonId)) {
+        return current.filter((id) => id !== dragonId);
+      }
+      if (current.length >= 3) {
+        toast.error("Compare up to three dragons at a time.");
+        return current;
+      }
+      return [...current, dragonId];
+    });
   }
 
   if (!ready) {
@@ -424,6 +478,61 @@ export function PitPage() {
                 </MiniChip>
               ))}
             </FacetRow>
+            <FacetRow label="Damage">
+              {damageFilterOptions().map((option) => (
+                <MiniChip
+                  key={option.id}
+                  active={damageKind === option.id}
+                  onClick={() => setDamageKind(option.id)}
+                >
+                  {option.label}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Min ★">
+              {[0, 1, 3, 6, 10].map((value) => (
+                <MiniChip
+                  key={value}
+                  active={minStars === value}
+                  onClick={() => setMinStars(value)}
+                >
+                  {value === 0 ? "Any" : `★${value}+`}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Min reign">
+              {[1, 20, 40, 60, 80].map((value) => (
+                <MiniChip
+                  key={value}
+                  active={minReign === value}
+                  onClick={() => setMinReign(value)}
+                >
+                  {value === 1 ? "Any" : `Lv ${value}+`}
+                </MiniChip>
+              ))}
+            </FacetRow>
+            <FacetRow label="Sort by">
+              {sortOptions().map((option) => (
+                <MiniChip
+                  key={option.id}
+                  active={sortKey === option.id}
+                  onClick={() =>
+                    setSortKey((current) =>
+                      current === option.id ? current : option.id,
+                    )
+                  }
+                >
+                  {option.label}
+                </MiniChip>
+              ))}
+              <MiniChip
+                active={sortDesc}
+                onClick={() => setSortDesc((v) => !v)}
+                title="Toggle sort direction"
+              >
+                {sortDesc ? "High → low" : "Low → high"}
+              </MiniChip>
+            </FacetRow>
             {filtering ? (
               <button
                 type="button"
@@ -448,64 +557,64 @@ export function PitPage() {
       <SectionLabel className="sr-only">Dragon catalog</SectionLabel>
       {/* Each dragon gets a card. Loose in the grid, one dragon's + sat flush
           against the next dragon's −, with nothing to say which was which. */}
-      <div className="grid grid-cols-3 gap-2 p-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-2.5 p-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {visible.map((dragon) => {
           const owned = ownedById.get(dragon.id);
           const stars = owned?.starRank ?? 0;
           return (
-            <div
+            <PitDragonCard
               key={dragon.id}
-              className={cn(
-                "surface surface-interactive flex flex-col items-center gap-1 rounded-xl px-1 pt-1 pb-1.5 ring-1",
-                stars > 0 ? "ring-amber-400/25" : "ring-foreground/10",
-              )}
-            >
-              {/* The name owns the full card width. Sharing the line with the
-                  kit button cost it a third of the card and truncated most
-                  names at eight columns; the button is a badge on the portrait
-                  now, which is empty space either way. */}
-              <p
-                className={cn(
-                  "font-heading w-full truncate text-center text-[11px] tracking-wide uppercase sm:text-xs",
-                  stars > 0 ? "text-amber-50" : "text-muted-foreground",
-                )}
-                title={dragon.name}
-              >
-                {dragon.name}
-              </p>
-              <DragonMetaCompact dragon={dragon} showBuffs={false} />
-              <div className="relative">
-                <DragonIcon
-                  dragonId={dragon.id}
-                  name={dragon.name}
-                  rarity={dragon.rarity}
-                  custom={dragon.custom}
-                  size="xl"
-                  dimmed={stars <= 0}
-                  onClick={() => setInspecting(dragon)}
-                />
-                <HabitSearchButton
-                  name={dragon.name}
-                  onClick={() => setHabitDragon(dragon)}
-                  className="absolute -right-1 bottom-0 bg-background/85 backdrop-blur-sm"
-                />
-              </div>
-              <StarStepper
-                size="sm"
-                value={stars}
-                onDelta={(delta) => setStars(dragon, stars + delta)}
-              />
-            </div>
+              dragon={dragon}
+              owned={owned}
+              compareSelected={compareIds.includes(dragon.id)}
+              onInspect={() => setInspecting(dragon)}
+              onHabits={() => setHabitDragon(dragon)}
+              onCompareToggle={() => toggleCompare(dragon.id)}
+              onStarsDelta={(delta) => setStars(dragon, stars + delta)}
+            />
           );
         })}
       </div>
-      <DragonSheet
+      {compareIds.length > 0 ? (
+        <div className="sticky bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-30 mx-2 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-stone-900/95 px-3 py-2 shadow-lg ring-1 ring-amber-400/40 backdrop-blur">
+          <p className="text-sm text-amber-50">
+            {compareIds.length} dragon{compareIds.length === 1 ? "" : "s"}{" "}
+            selected for compare
+          </p>
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setCompareIds([])}
+            >
+              Clear
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={compareIds.length < 2}
+              onClick={() => setCompareOpen(true)}
+              data-pit-compare-open
+            >
+              Open compare
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      <DragonInspectDialog
         dragon={inspecting}
         open={!!inspecting}
         onOpenChange={(next) => {
           if (!next) setInspecting(null);
         }}
-        starRank={inspectingOwned?.starRank}
+        starRank={
+          inspectingOwned?.starRank
+            ? inspectingOwned.starRank
+            : inspecting
+              ? 1
+              : undefined
+        }
         reignLevel={inspectingOwned?.reignLevel}
         ownedStars={inspectingOwned?.starRank ?? null}
         ownedHabits={inspectingOwned?.habits}
@@ -515,7 +624,7 @@ export function PitPage() {
             ? (habit, rank) => setDragonHabitRank(inspecting.id, habit, rank)
             : undefined
         }
-        extra={
+        pitExtra={
           inspecting ? (
             <div className="space-y-3">
               <div>
@@ -567,6 +676,12 @@ export function PitPage() {
             </div>
           ) : null
         }
+      />
+      <DragonCompareDialog
+        dragonIds={compareIds}
+        ownedById={ownedById}
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
       />
       <HabitPickerDialog
         dragon={habitDragon}

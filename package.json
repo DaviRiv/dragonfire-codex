@@ -15,6 +15,7 @@
     "check:tutorial": "npx tsx --tsconfig tsconfig.json scripts/check-tutorial.ts",
     "check:coach": "npx tsx --tsconfig tsconfig.json scripts/check-coach-chat.ts",
     "check:focus": "npx tsx --tsconfig tsconfig.json scripts/check-focus-suggest.ts",
+    "check:pit": "npx tsx --tsconfig tsconfig.json scripts/check-pit-catalog.ts",
     "check:army": "npx tsx --tsconfig tsconfig.json scripts/check-army-builder.ts",
     "check:ai": "npx tsx --tsconfig tsconfig.json scripts/check-ai.ts",
     "check:comp": "npx tsx --tsconfig tsconfig.json scripts/check-comp.ts",
