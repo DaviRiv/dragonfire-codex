@@ -33,6 +33,7 @@ import {
   emptySlots,
   makePick,
 } from "@/lib/lineup";
+import { enforceUniquePitDragons } from "@/lib/pit-teams";
 import type {
   Breed,
   Dragon,
@@ -131,7 +132,7 @@ function parseRaw(raw: string | null): PitState {
   if (!raw) return EMPTY;
   try {
     const parsed: unknown = JSON.parse(raw);
-    return normalizePitState(parsed) ?? EMPTY;
+    return enforceUniquePitDragons(normalizePitState(parsed) ?? EMPTY);
   } catch {
     return EMPTY;
   }
@@ -504,15 +505,26 @@ export function PitProvider({ children }: { children: ReactNode }) {
 
   const createLineup = useCallback((name?: string, kind: LineupKind = "pit"): Lineup => {
     const lineup = blankLineup(name, kind);
-    commit((prev) => ({ ...prev, lineups: [lineup, ...prev.lineups] }));
+    commit((prev) =>
+      enforceUniquePitDragons({
+        ...prev,
+        lineups: [...prev.lineups, lineup],
+      }),
+    );
     return lineup;
   }, []);
 
   const addLineup = useCallback((lineup: Lineup) => {
-    commit((prev) => ({
-      ...prev,
-      lineups: [lineup, ...prev.lineups.filter((row) => row.id !== lineup.id)],
-    }));
+    commit((prev) =>
+      enforceUniquePitDragons({
+        ...prev,
+        // Existing teams retain their dragons; the new team loses collisions.
+        lineups: [
+          ...prev.lineups.filter((row) => row.id !== lineup.id),
+          lineup.kind === "pit" ? { ...lineup, excludeUsed: true } : lineup,
+        ],
+      }),
+    );
   }, []);
 
   const ensureLineup = useCallback(
@@ -720,7 +732,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadSample = useCallback(() => {
-    write(normalizePitState(samplePit()) ?? samplePit());
+    write(enforceUniquePitDragons(normalizePitState(samplePit()) ?? samplePit()));
     toast.success("Sample pit loaded — ten dragons, pit lines, and a theory line.");
   }, []);
 
@@ -735,8 +747,8 @@ export function PitProvider({ children }: { children: ReactNode }) {
       toast.error("That file is not a Dragonfire pit export.");
       return;
     }
-    write(normalized);
-    toast.success("Pit imported.");
+    write(enforceUniquePitDragons(normalized));
+    toast.success("Pit imported. Repeated dragons were removed from later pit teams.");
   }, []);
 
   const value = useMemo<PitContextValue>(
@@ -919,7 +931,7 @@ function applySlotDragon(
   );
 
   let lineups = prev.lineups;
-  if (lineup.kind === "pit" && lineup.excludeUsed !== false) {
+  if (lineup.kind === "pit") {
     lineups = lineups.map((item) => {
       if (item.kind !== "pit" || item.id === lineupId) return item;
       const cleared = clearDragonFromSlots(item.slots, dragonId);

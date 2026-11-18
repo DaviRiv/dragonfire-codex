@@ -10,7 +10,11 @@ import {
   rankAutoPitLine,
   pitSetupReady,
 } from "@/lib/army-builder";
-import { MAX_PIT_TEAMS } from "@/lib/pit-teams";
+import {
+  enforceUniquePitDragons,
+  MAX_PIT_TEAMS,
+  repeatedPitDragons,
+} from "@/lib/pit-teams";
 import { samplePit } from "@/data/sample";
 
 function assert(ok: unknown, message: string): asserts ok {
@@ -46,5 +50,22 @@ assert(canAutoBuildPitTeam(draft), "can build with free dragons");
 
 const rank = rankAutoPitLine(draft);
 assert(rank && rank.picks.length === 3, "auto rank fills three seats");
+
+const duplicated = samplePit();
+const pit = duplicated.lineups.filter((lineup) => lineup.kind === "pit");
+const first = pit[0];
+const second = pit[1];
+if (first?.slots.left && second) {
+  second.slots.right = { ...first.slots.left };
+}
+assert(
+  repeatedPitDragons(duplicated).length > 0,
+  "fixture should contain a repeated pit dragon",
+);
+const unique = enforceUniquePitDragons(duplicated);
+assert(
+  repeatedPitDragons(unique).length === 0,
+  "normalization removes repeated pit dragons",
+);
 
 console.log("check-army-builder: ok");

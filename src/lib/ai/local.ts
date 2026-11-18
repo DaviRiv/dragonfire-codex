@@ -27,7 +27,9 @@ export function localComboLines(
   const seatedElsewhere = roster
     .filter((card) => card.otherTeam)
     .map((card) => card.id);
-  const skipUsed = lineup.kind === "pit" && lineup.excludeUsed !== false;
+  // Pit marches are always exclusive. `excludeUsed` now only exists for
+  // backward compatibility with old saves; it cannot permit double-booking.
+  const skipUsed = lineup.kind === "pit";
   const blocked = new Set([
     ...notInRoster,
     ...(skipUsed ? seatedElsewhere : []),
@@ -67,23 +69,18 @@ export function localComboLines(
     });
   }
 
-  if (lines.length === 0 && skipUsed && seatedElsewhere.length > 0) {
-    return localComboLines(
-      { ...lineup, excludeUsed: false },
-      state,
-      roster.map((card) => ({ ...card, otherTeam: undefined })),
-      extraExclude,
-    );
-  }
-
-  if (lines.length === 0 && roster.length >= 3) {
+  if (
+    lines.length === 0 &&
+    roster.filter((card) => !card.otherTeam).length >= 3
+  ) {
+    const free = roster.filter((card) => !card.otherTeam);
     lines.push({
       name: "First three",
       troop: lineup.troop,
       mode: lineup.mode,
-      left: roster[0].id,
-      vanguard: roster[1].id,
-      right: roster[2].id,
+      left: free[0].id,
+      vanguard: free[1].id,
+      right: free[2].id,
       why: "Not enough ranked leftovers; seated the first three roster names.",
     });
   }

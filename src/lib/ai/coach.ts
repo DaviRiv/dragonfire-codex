@@ -431,7 +431,7 @@ function anchoredComboLines(input: {
   const stars = owned?.starRank ?? 10;
   const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
   const usedElsewhere = new Set(
-    input.request.skipUsed
+    input.request.pool === "pit"
       ? input.request.roster
           .filter((card) => Boolean(card.otherTeam) && card.id !== input.anchorId)
           .map((card) => card.id)
