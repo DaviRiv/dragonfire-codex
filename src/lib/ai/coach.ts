@@ -811,7 +811,7 @@ export function answerPlan(
   if (plan.intent === "seat" && plan.referenced.length > 0) {
     const line = plan.referenced[0];
     return {
-      reply: `${line.name} it is — ${seatSentence(line, state)}. Tap Seat on Team on the card to save it as a formation.`,
+      reply: `${line.name} it is — ${seatSentence(line, state)}. Tap Save team on the card to add it to your pit marches.`,
       lines: [line],
     };
   }

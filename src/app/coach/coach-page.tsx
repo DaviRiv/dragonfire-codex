@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { CoachTeamBuilderButton } from "@/app/coach/coach-team-builder";
 import { ArmyAutoBuilder } from "@/components/army-auto-builder";
 import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
@@ -15,6 +16,7 @@ import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
 import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
+import { DragonMetaCompact } from "@/components/dragon-meta";
 import { DragonIcon } from "@/components/dragon-icon";
 import { MetaCard } from "@/components/meta-card";
 import { SearchField } from "@/components/search-field";
@@ -302,7 +304,7 @@ export function CoachPage() {
     <AccountGate
       next="/coach"
       title="Copilot (beta) is for registered accounts"
-      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Team and Forums stay readable without signing in."
+      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Forums stay readable without signing in."
     >
       <div className="mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 flex-col gap-2 overflow-y-auto lg:overflow-hidden">
         <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/50 pb-2">
@@ -320,6 +322,7 @@ export function CoachPage() {
             last={lastAnswer}
           />
           <div className="ms-auto flex items-center gap-1">
+            <CoachTeamBuilderButton />
             {chat.turns.length > 0 ? (
               <Button
                 size="sm"
@@ -419,11 +422,7 @@ export function CoachPage() {
                   <p className="font-heading truncate text-base tracking-wide text-amber-50">
                     {anchorDragon.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {anchorDragon.affinities
-                      .map((item) => troopLabels[item])
-                      .join(" · ")}
-                  </p>
+                  <DragonMetaCompact dragon={anchorDragon} showBuffs />
                   <div className="mt-1 flex flex-wrap gap-1">
                     {dragonRoles(anchorDragon).map((role) => (
                       <span

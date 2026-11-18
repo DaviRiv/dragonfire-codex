@@ -32,7 +32,7 @@ function formatWhen(iso: string): string {
 
 export function BoardCard({
   board,
-  nextPath = "/team",
+  nextPath = "/coach?build=1",
   onRate,
   onComment,
   onSeated,
@@ -111,7 +111,7 @@ export function BoardCard({
       />
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={seat}>
-          Seat on Team
+          Save team
         </Button>
         <Link
           href={talkNewHref(board.id)}

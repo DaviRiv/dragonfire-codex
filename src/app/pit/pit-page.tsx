@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { TroopIcon, TroopIcons } from "@/components/troop-icon";
+import { DragonMetaCompact } from "@/components/dragon-meta";
 import { DRAGON_HABITS } from "@/data/dragon-habits";
 import { allDragons, lineupsUsingDragon } from "@/lib/dragons";
 import {
@@ -401,10 +401,7 @@ export function PitPage() {
                   className="gap-1"
                   title={troopLabels[value]}
                 >
-                  <TroopIcon troop={value} className="size-3.5" />
-                  <span className="sr-only md:not-sr-only">
-                    {troopLabels[value]}
-                  </span>
+                  {troopLabels[value]}
                 </MiniChip>
               ))}
             </FacetRow>
@@ -476,6 +473,7 @@ export function PitPage() {
               >
                 {dragon.name}
               </p>
+              <DragonMetaCompact dragon={dragon} showBuffs={false} />
               <div className="relative">
                 <DragonIcon
                   dragonId={dragon.id}
@@ -656,7 +654,7 @@ function OwnedFacts({
         <span aria-hidden className="text-muted-foreground">
           ·
         </span>
-        <TroopIcons troops={dragon.affinities} iconClassName="size-4" />
+        <DragonMetaCompact dragon={dragon} className="items-start" />
         {roles.length > 0 ? (
           <>
             <span aria-hidden className="text-muted-foreground">

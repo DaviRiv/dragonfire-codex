@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
 import { MiniChip } from "@/components/chip";
@@ -13,7 +13,6 @@ import {
   TeamNotesPanel,
 } from "@/components/team-choice-card";
 import { getCatalogDragon } from "@/data/dragons";
-import { preferredSlot } from "@/lib/ai/around";
 import { choicesAroundSeats } from "@/lib/around-choices";
 import { rememberBuild } from "@/lib/build-session";
 import { starsForCounterPick } from "@/lib/counter-pick";
@@ -21,17 +20,16 @@ import { newId, nowIso } from "@/lib/dragons";
 import { TROOP_TYPES, slotShort } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
 import { MAX_PIT_TEAMS, pitLineups, usedOnPitTeams } from "@/lib/pit-teams";
+import type { TeamBuilderSeed } from "@/lib/team-builder-seed";
+import { teamSeedToQuery } from "@/lib/team-builder-seed";
 import { usePit } from "@/lib/store";
 import type { SlotId, TroopType } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 import { toast } from "sonner";
 
 function clampStars(value: number): number {
   return Math.min(10, Math.max(1, Math.round(value) || 6));
-}
-
-function readId(raw: string | null): string | null {
-  return getCatalogDragon(raw ?? "")?.id ?? null;
 }
 
 type SeatState = { dragonId: string | null; stars: number };
@@ -44,67 +42,65 @@ function emptySeats(): Record<SlotId, SeatState> {
   };
 }
 
-export function TeamPage() {
+function seatsFromSeed(seed: TeamBuilderSeed | null | undefined): {
+  seats: Record<SlotId, SeatState>;
+  troop: TroopType;
+  openSlot: SlotId | null;
+} {
+  const next = emptySeats();
+  if (!seed) {
+    return { seats: next, troop: "shieldbearers", openSlot: "left" };
+  }
+  if (seed.left) {
+    next.left = {
+      dragonId: seed.left,
+      stars: clampStars(seed.leftStars ?? 6),
+    };
+  }
+  if (seed.vanguard) {
+    next.vanguard = {
+      dragonId: seed.vanguard,
+      stars: clampStars(seed.vanguardStars ?? 6),
+    };
+  }
+  if (seed.right) {
+    next.right = {
+      dragonId: seed.right,
+      stars: clampStars(seed.rightStars ?? 6),
+    };
+  }
+  const seated = Boolean(seed.left || seed.vanguard || seed.right);
+  const firstId = seed.left ?? seed.vanguard ?? seed.right;
+  const troop =
+    seed.troop ??
+    (firstId ? getCatalogDragon(firstId)?.affinities[0] : undefined) ??
+    "shieldbearers";
+  return {
+    seats: next,
+    troop,
+    openSlot: seated ? null : "left",
+  };
+}
+
+export function TeamBuilderWorkspace({
+  seed,
+  syncUrl = false,
+  className,
+}: {
+  seed?: TeamBuilderSeed | null;
+  /** Full-page `/team` only — updates the URL as seats change. */
+  syncUrl?: boolean;
+  className?: string;
+}) {
   const router = useRouter();
-  const search = useSearchParams();
   const { state, addLineup } = usePit();
   const listRef = useRef<HTMLDivElement>(null);
 
-  const [seats, setSeats] = useState<Record<SlotId, SeatState>>(() => {
-    const next = emptySeats();
-    const left = readId(search.get("l"));
-    const vanguard = readId(search.get("v"));
-    const right = readId(search.get("r"));
-    if (left || vanguard || right) {
-      if (left) {
-        next.left = {
-          dragonId: left,
-          stars: clampStars(Number(search.get("ls") ?? 6)),
-        };
-      }
-      if (vanguard) {
-        next.vanguard = {
-          dragonId: vanguard,
-          stars: clampStars(Number(search.get("vs") ?? 6)),
-        };
-      }
-      if (right) {
-        next.right = {
-          dragonId: right,
-          stars: clampStars(Number(search.get("rs") ?? 6)),
-        };
-      }
-      return next;
-    }
-    const legacy = readId(search.get("dragon"));
-    if (legacy) {
-      const dragon = getCatalogDragon(legacy);
-      const slot = dragon ? preferredSlot(dragon) : "left";
-      next[slot] = {
-        dragonId: legacy,
-        stars: clampStars(Number(search.get("stars") ?? 6)),
-      };
-    }
-    return next;
-  });
-  const [troop, setTroop] = useState<TroopType>(() => {
-    const raw = search.get("troop");
-    if (raw && TROOP_TYPES.includes(raw as TroopType)) return raw as TroopType;
-    const first =
-      readId(search.get("l")) ??
-      readId(search.get("v")) ??
-      readId(search.get("r")) ??
-      readId(search.get("dragon"));
-    return getCatalogDragon(first ?? "")?.affinities[0] ?? "shieldbearers";
-  });
-  const [openSlot, setOpenSlot] = useState<SlotId | null>(() => {
-    const seated =
-      readId(search.get("l")) ||
-      readId(search.get("v")) ||
-      readId(search.get("r")) ||
-      readId(search.get("dragon"));
-    return seated ? null : "left";
-  });
+  const initial = useMemo(() => seatsFromSeed(seed), [seed]);
+
+  const [seats, setSeats] = useState<Record<SlotId, SeatState>>(initial.seats);
+  const [troop, setTroop] = useState<TroopType>(initial.troop);
+  const [openSlot, setOpenSlot] = useState<SlotId | null>(initial.openSlot);
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
@@ -185,6 +181,7 @@ export function TeamPage() {
   const active = choices.find((row) => row.id === activeId) ?? choices[0] ?? null;
 
   useEffect(() => {
+    if (!syncUrl) return;
     const html = document.documentElement;
     const { body } = document;
     const prev = {
@@ -203,25 +200,21 @@ export function TeamPage() {
       body.style.height = prev.bodyHeight;
       body.style.minHeight = prev.bodyMinHeight;
     };
-  }, []);
+  }, [syncUrl]);
 
   function writeQuery(next: Record<SlotId, SeatState>, nextTroop: TroopType) {
-    const params = new URLSearchParams();
-    if (next.left.dragonId) {
-      params.set("l", next.left.dragonId);
-      params.set("ls", String(next.left.stars));
-    }
-    if (next.vanguard.dragonId) {
-      params.set("v", next.vanguard.dragonId);
-      params.set("vs", String(next.vanguard.stars));
-    }
-    if (next.right.dragonId) {
-      params.set("r", next.right.dragonId);
-      params.set("rs", String(next.right.stars));
-    }
-    params.set("troop", nextTroop);
-    const qs = params.toString();
-    router.replace(qs ? `/team?${qs}` : "/team", { scroll: false });
+    if (!syncUrl) return;
+    const seed: TeamBuilderSeed = {
+      left: next.left.dragonId,
+      vanguard: next.vanguard.dragonId,
+      right: next.right.dragonId,
+      leftStars: next.left.stars,
+      vanguardStars: next.vanguard.stars,
+      rightStars: next.right.stars,
+      troop: nextTroop,
+    };
+    const qs = teamSeedToQuery(seed, nextTroop);
+    router.replace(`/coach?${qs}`, { scroll: false });
   }
 
   function commitSeats(next: Record<SlotId, SeatState>, nextTroop: TroopType) {
@@ -475,7 +468,10 @@ export function TeamPage() {
   return (
     <div
       data-team-page
-      className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden"
+      className={cn(
+        "flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden",
+        className,
+      )}
     >
       {/* The workspace shows its state instead of a title, but the page
           still needs one heading for screen readers and search. */}

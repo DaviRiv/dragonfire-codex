@@ -301,7 +301,8 @@ async function horizontalOverflow(page) {
  * behaviour rather than which class paints the highlight.
  */
 {
-  const page = await open("/team", DESKTOP);
+  const page = await open("/coach?build=1", DESKTOP);
+  await page.waitForSelector("[data-team-page]", { timeout: 15000 });
 
   async function openPicker(slot) {
     await page.evaluate((s) => {
@@ -330,7 +331,7 @@ async function horizontalOverflow(page) {
   await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
   const viaEnter = await seated();
   check(
-    "/team pick list commits the default highlight on Enter",
+    "team builder pick list commits the default highlight on Enter",
     viaEnter !== null && viaEnter === firstRow,
     `seated=${viaEnter} first=${firstRow}`,
   );
@@ -344,7 +345,7 @@ async function horizontalOverflow(page) {
   await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
   const viaArrow = await seated();
   check(
-    "/team pick list moves the highlight with ArrowDown",
+    "team builder pick list moves the highlight with ArrowDown",
     viaArrow !== null && viaArrow !== viaEnter,
     `arrow=${viaArrow} default=${viaEnter}`,
   );
@@ -363,7 +364,7 @@ async function horizontalOverflow(page) {
   await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
   const viaQuery = await seated();
   check(
-    "/team pick list commits the searched dragon on Enter",
+    "team builder pick list commits the searched dragon on Enter",
     narrowed.rows > 0 && viaQuery === narrowed.first,
     `rows=${narrowed.rows} seated=${viaQuery}`,
   );
@@ -374,7 +375,7 @@ async function horizontalOverflow(page) {
     () => document.querySelector("[data-pick-dragon]")?.dataset.pickDragon ?? null,
   );
   check(
-    "/team pick list resets the highlight for a new slot",
+    "team builder pick list resets the highlight for a new slot",
     rightDefault !== null,
     `first=${rightDefault}`,
   );
@@ -469,7 +470,7 @@ async function smallTargets(page) {
   });
 }
 
-for (const path of ["/coach", "/pit", "/team", "/teams", "/lineups", "/counter", "/forums"]) {
+for (const path of ["/coach", "/pit", "/teams", "/lineups", "/counter", "/forums"]) {
   const page = await open(path, PHONE);
   const overflow = await horizontalOverflow(page);
   check(
@@ -489,7 +490,7 @@ for (const path of ["/coach", "/pit", "/team", "/teams", "/lineups", "/counter",
 }
 
 // -------------------------------------------------------- headings and focus
-for (const path of ["/coach", "/team", "/counter", "/pit", "/lineups", "/teams", "/forums"]) {
+for (const path of ["/coach", "/counter", "/pit", "/lineups", "/teams", "/forums"]) {
   const page = await open(path, DESKTOP);
   const doc = await page.evaluate(() => ({
     h1: document.querySelectorAll("h1").length,

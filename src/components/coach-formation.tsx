@@ -186,7 +186,7 @@ export function CoachFormation({
             disabled={blocked}
             data-seat-line={line.name}
           >
-            Seat on Team
+            Save team
           </Button>
           {blockedWhy ? (
             <span className="text-xs text-muted-foreground">{blockedWhy}</span>
