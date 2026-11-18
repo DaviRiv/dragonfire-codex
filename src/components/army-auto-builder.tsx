@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DragonIcon } from "@/components/dragon-icon";
+import { confirmDestructive } from "@/lib/confirm";
 import { SectionLabel } from "@/components/section-label";
 import { TroopIcon } from "@/components/troop-icon";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import { MAX_PIT_TEAMS } from "@/lib/pit-teams";
 import { usePit } from "@/lib/store";
 import type { PitState, SlotId } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ArrowRightLeft, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRightLeft, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {
@@ -33,7 +34,7 @@ type Props = {
 };
 
 export function ArmyAutoBuilder({ onCopilotAnchor, onOpenLineup }: Props) {
-  const { state, addLineup, swapPitSeats } = usePit();
+  const { state, addLineup, swapPitSeats, deleteLineup } = usePit();
   const [shiftFrom, setShiftFrom] = useState<{
     lineupId: string;
     slot: SlotId;
@@ -171,6 +172,18 @@ export function ArmyAutoBuilder({ onCopilotAnchor, onOpenLineup }: Props) {
             canAutoBuild={canBuild && !slot.lineup}
             onAutoBuild={autoBuild}
             onCopilotBuild={copilotBuild}
+            onRemove={(lineupId, name) => {
+              if (
+                !confirmDestructive(
+                  `Remove ${name}? Its dragons return to the available pit for another team.`,
+                )
+              ) {
+                return;
+              }
+              if (shiftFrom?.lineupId === lineupId) setShiftFrom(null);
+              deleteLineup(lineupId);
+              toast.success(`${name} removed. Its dragons are available again.`);
+            }}
           />
         ))}
       </div>
@@ -203,6 +216,7 @@ function MarchSlotCard({
   canAutoBuild,
   onAutoBuild,
   onCopilotBuild,
+  onRemove,
 }: {
   index: number;
   lineup: import("@/lib/types").Lineup | null;
@@ -224,6 +238,7 @@ function MarchSlotCard({
   canAutoBuild: boolean;
   onAutoBuild: () => void;
   onCopilotBuild: () => void;
+  onRemove: (lineupId: string, name: string) => void;
 }) {
   const placed = lineup ? placedInLineup(lineup, state) : [];
   const full = placed.length === 3;
@@ -280,10 +295,22 @@ function MarchSlotCard({
         data-march-index={index}
       >
         <p className="truncate text-[11px] font-medium">{lineup.name}</p>
-        <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-          <TroopIcon troop={lineup.troop} className="size-3" />
-          {modeShort[lineup.mode]}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <TroopIcon troop={lineup.troop} className="size-3" />
+            {modeShort[lineup.mode]}
+          </span>
+          <button
+            type="button"
+            aria-label={`Remove ${lineup.name}`}
+            title={`Remove ${lineup.name}`}
+            data-remove-march={lineup.id}
+            onClick={() => onRemove(lineup.id, lineup.name)}
+            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-red-500/15 hover:text-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        </div>
       </div>
       <ul className="flex flex-1 flex-col gap-1">
         {(["left", "vanguard", "right"] as SlotId[]).map((seat) => {
