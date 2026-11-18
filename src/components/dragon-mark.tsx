@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { Breed } from "@/lib/types";
 
 const colors: Record<Breed, string> = {
-  champion: "text-slate-300",
+  champion: "text-blue-400",
   hunter: "text-orange-400",
   sentinel: "text-green-400",
   warrior: "text-red-400",

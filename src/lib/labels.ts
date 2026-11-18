@@ -50,7 +50,7 @@ export const breedLabels: Record<Breed, string> = {
 };
 
 export const breedChipClass: Record<Breed, string> = {
-  champion: "bg-slate-500/15 text-slate-300 ring-slate-600/50",
+  champion: "bg-blue-500/10 text-blue-400 ring-blue-900/50",
   hunter: "bg-orange-500/10 text-orange-400 ring-orange-900/50",
   sentinel: "bg-green-500/10 text-green-400 ring-green-900/50",
   warrior: "bg-red-500/10 text-red-400 ring-red-900/50",

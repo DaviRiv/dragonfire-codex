@@ -46,11 +46,11 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --color-df-physical: #ff9a3c;
+  --color-df-physical: #f87171;
   --color-df-tactical: #c4a0ff;
-  --color-df-fire: #ff5c3a;
+  --color-df-fire: #fb923c;
   --color-df-recovery: #5cdb7a;
-  --color-df-strength: #ff9a3c;
+  --color-df-strength: #f87171;
   --color-df-instinct: #4ec4f0;
   --color-df-intelligence: #c084fc;
   --color-df-initiative: #f0c040;
