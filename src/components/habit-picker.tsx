@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Search } from "lucide-react";
+import { Check, Search, type LucideIcon } from "lucide-react";
 import { AbilityHover, NamedAbilities } from "@/components/ability-insight";
 import { AbilityTag, AbilityText } from "@/components/ability-text";
 import { StarStepper } from "@/components/star-rank";
@@ -29,10 +29,12 @@ export function HabitSearchButton({
   name,
   onClick,
   className,
+  icon: Icon = Search,
 }: {
   name: string;
   onClick: () => void;
   className?: string;
+  icon?: LucideIcon;
 }) {
   return (
     <button
@@ -47,7 +49,7 @@ export function HabitSearchButton({
         className,
       )}
     >
-      <Search className="size-3.5" aria-hidden />
+      <Icon className="size-3.5" aria-hidden />
     </button>
   );
 }

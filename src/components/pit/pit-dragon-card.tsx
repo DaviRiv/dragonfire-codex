@@ -6,13 +6,12 @@ import { HabitSearchButton } from "@/components/habit-picker";
 import { StarStepper } from "@/components/star-rank";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { pitInspectReign, pitInspectStarRank } from "@/lib/pit-catalog";
-import { rarityLabels, statShort, STAT_KEYS } from "@/lib/labels";
-import { dragonPower, formatPower, scaledStats } from "@/lib/scale-stats";
+import { pitInspectReign } from "@/lib/pit-catalog";
+import { rarityLabels } from "@/lib/labels";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import type { Dragon, OwnedDragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { GitCompare, ZoomIn } from "lucide-react";
+import { GitCompare, ScrollText, ZoomIn } from "lucide-react";
 
 export function PitDragonCard({
   dragon,
@@ -33,10 +32,7 @@ export function PitDragonCard({
 }) {
   const stars = owned?.starRank ?? 0;
   const ownedDragon = stars > 0;
-  const rankStars = pitInspectStarRank(owned);
   const reign = pitInspectReign(owned);
-  const stats = scaledStats(dragon, rankStars, reign);
-  const power = dragonPower(dragon.rarity, rankStars, reign);
   const roles = dragonRoles(dragon);
 
   return (
@@ -70,7 +66,7 @@ export function PitDragonCard({
           <BreedChip breed={dragon.breed} className="text-[9px]" />
           <DragonDamageChips dragon={dragon} className="justify-start" />
         </div>
-        <PitCardMetaLine stars={stars} reign={ownedDragon ? reign : null} power={power} />
+        <PitCardMetaLine stars={stars} reign={ownedDragon ? reign : null} />
       </header>
 
       <div className="relative mx-auto px-2 pt-2">
@@ -81,7 +77,6 @@ export function PitDragonCard({
           custom={dragon.custom}
           size="xl"
           dimmed={!ownedDragon}
-          onClick={onInspect}
           className="mx-auto"
         />
         <Button
@@ -101,20 +96,9 @@ export function PitDragonCard({
         <HabitSearchButton
           name={dragon.name}
           onClick={onHabits}
+          icon={ScrollText}
           className="absolute -right-0.5 bottom-0 bg-background/90 backdrop-blur-sm"
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1 px-2 pt-2 text-[10px] tabular-nums">
-        {STAT_KEYS.map((key) => (
-          <div
-            key={key}
-            className="flex items-baseline justify-between gap-1 rounded-md bg-black/25 px-1.5 py-0.5 ring-1 ring-foreground/10"
-          >
-            <span className="text-muted-foreground">{statShort[key]}</span>
-            <span className="font-medium text-foreground">{stats[key]}</span>
-          </div>
-        ))}
       </div>
 
       {roles.length > 0 ? (
@@ -154,14 +138,12 @@ export function PitDragonCard({
 function PitCardMetaLine({
   stars,
   reign,
-  power,
 }: {
   stars: number;
   reign: number | null;
-  power: number;
 }) {
   return (
-    <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+    <p className="text-[10px] text-muted-foreground">
       <span className="text-amber-100/90">
         {stars > 0 ? (
           <>
@@ -173,10 +155,6 @@ function PitCardMetaLine({
         ) : (
           "Not owned"
         )}
-      </span>
-      <span aria-hidden>·</span>
-      <span title="Hub power at shown star and reign">
-        {formatPower(power)} power
       </span>
     </p>
   );
