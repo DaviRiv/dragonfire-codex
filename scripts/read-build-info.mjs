@@ -46,10 +46,35 @@ function countOnGitHub(fullSha) {
   }
 }
 
+/** Tip commit SHA for CLI Vercel uploads that strip `.git`. */
+function shaOnGitHub() {
+  const url = `https://api.github.com/repos/${repoSlug()}/commits/main`;
+  try {
+    const raw = execFileSync(
+      "curl",
+      [
+        "-fsS",
+        "-H",
+        "accept: application/vnd.github.sha",
+        "-H",
+        "user-agent: dragonfire-build-info",
+        url,
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).trim();
+    return /^[0-9a-f]{7,40}$/i.test(raw) ? raw : "";
+  } catch {
+    return "";
+  }
+}
+
 export function readBuildInfo() {
-  const full = (
+  let full = (
     process.env.VERCEL_GIT_COMMIT_SHA || git(["rev-parse", "HEAD"])
   ).trim();
+  if (!full && process.env.VERCEL === "1") {
+    full = shaOnGitHub();
+  }
   const sha = full ? full.slice(0, 7) : "local";
   const shallow = git(["rev-parse", "--is-shallow-repository"]) === "true";
   let number = "";
