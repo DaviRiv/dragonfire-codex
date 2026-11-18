@@ -12,5 +12,5 @@ export default async function Home({
     else if (Array.isArray(value) && value[0]) params.set(key, value[0]);
   }
   const qs = params.toString();
-  redirect(qs ? `/team?${qs}` : "/team");
+  redirect(qs ? `/coach?${qs}` : "/coach");
 }

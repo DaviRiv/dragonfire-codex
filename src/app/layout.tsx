@@ -32,24 +32,24 @@ const ads = serverAdsConfig();
 export const metadata: Metadata = {
   ...(origin ? { metadataBase: origin } : {}),
   title: {
-    default: "Dragonfire Pit — Team builder for three-dragon lines",
+    default: "Dragonfire Pit — Copilot for three-dragon teams",
     template: "%s · Dragonfire Pit",
   },
   description:
-    "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
+    "Unofficial Game of Thrones: Dragonfire team coach. Copilot ranks full lines around any dragon, explains synergies and troop affinity, then Team and Pit help you seat them.",
   icons: { icon: "/favicon.svg" },
   openGraph: {
     type: "website",
     siteName: "Dragonfire Pit",
-    title: "Dragonfire Pit — Team builder for three-dragon lines",
+    title: "Dragonfire Pit — Copilot for three-dragon teams",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
+      "Unofficial Game of Thrones: Dragonfire team coach. Copilot ranks full lines around any dragon, explains synergies and troop affinity, then Team and Pit help you seat them.",
   },
   twitter: {
     card: "summary",
-    title: "Dragonfire Pit — Team builder for three-dragon lines",
+    title: "Dragonfire Pit — Copilot for three-dragon teams",
     description:
-      "Unofficial Game of Thrones: Dragonfire pit and team tool. Pick one dragon, compare complete lines built around that name, then take one. Copilot is a separate beta chat.",
+      "Unofficial Game of Thrones: Dragonfire team coach. Copilot ranks full lines around any dragon, explains synergies and troop affinity, then Team and Pit help you seat them.",
   },
   appleWebApp: {
     capable: true,

@@ -2,7 +2,7 @@
  * Pages that own their own height: they scroll inside the layout instead of
  * scrolling the document, so nothing may float over their bottom edge.
  */
-const WORKSPACE_ROUTES = ["/team", "/counter", "/coach"];
+const WORKSPACE_ROUTES = ["/coach", "/team", "/counter"];
 
 const WIDE_ROUTES = [...WORKSPACE_ROUTES, "/lineups"];
 

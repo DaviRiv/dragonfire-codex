@@ -73,7 +73,7 @@ export function AccountPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => router.push("/team")}>Open Team</Button>
+          <Button onClick={() => router.push("/coach")}>Open Copilot</Button>
           <Button variant="outline" onClick={() => router.push("/coach")}>
             Open Copilot
           </Button>
@@ -151,7 +151,7 @@ export function AccountPage() {
         <Link href="/coach" className="text-amber-200 hover:underline">
           /coach
         </Link>{" "}
-        opens, and you can rate or post lines on{" "}
+        opens, and you can seat lines on{" "}
         <Link href="/team" className="text-amber-200 hover:underline">
           Team
         </Link>

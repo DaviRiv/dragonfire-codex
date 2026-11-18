@@ -469,7 +469,7 @@ async function smallTargets(page) {
   });
 }
 
-for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/forums"]) {
+for (const path of ["/coach", "/pit", "/team", "/teams", "/lineups", "/counter", "/forums"]) {
   const page = await open(path, PHONE);
   const overflow = await horizontalOverflow(page);
   check(
@@ -489,7 +489,7 @@ for (const path of ["/pit", "/team", "/teams", "/lineups", "/counter", "/forums"
 }
 
 // -------------------------------------------------------- headings and focus
-for (const path of ["/team", "/counter", "/pit", "/lineups", "/teams", "/forums"]) {
+for (const path of ["/coach", "/team", "/counter", "/pit", "/lineups", "/teams", "/forums"]) {
   const page = await open(path, DESKTOP);
   const doc = await page.evaluate(() => ({
     h1: document.querySelectorAll("h1").length,

@@ -52,7 +52,7 @@ export function IntroTutorial() {
     [pathname, router],
   );
 
-  const finish = useCallback(() => leave("/team"), [leave]);
+  const finish = useCallback(() => leave("/coach"), [leave]);
 
   // Whether to offer the intro depends on localStorage, which is unreadable
   // during render, so this one-shot decision has to happen after mount.
@@ -153,8 +153,9 @@ function WelcomeStep({
         Dragonfire Pit
       </h2>
       <p className="mt-3 text-pretty text-base leading-relaxed text-muted-foreground">
-        Seat Left, Vanguard, and Right. Complete three-dragon lines appear as
-        you pick. Nothing here is affiliated with the game.
+        Start in Copilot to rank full lines around any dragon. Team and Pit help
+        you seat Left, Vanguard, and Right. Nothing here is affiliated with the
+        game.
       </p>
       <ol className="mt-6 grid grid-cols-3 gap-2 text-center">
         {(["Left", "Vanguard", "Right"] as const).map((seat) => (

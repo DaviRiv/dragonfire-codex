@@ -36,7 +36,7 @@ export const AD_SLOT_META: Record<
       [320, 50],
     ],
     house: "Pick one dragon on Team — compare complete lines built around that name.",
-    href: "/team",
+    href: "/coach",
   },
   sidebar: {
     label: "Medium rectangle",
