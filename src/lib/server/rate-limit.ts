@@ -9,14 +9,37 @@ export type RateLimitResult =
   | { ok: true }
   | { ok: false; retryAfterSec: number; message: string };
 
+function trimIp(raw: string | null | undefined): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  return value.slice(0, 128);
+}
+
+/**
+ * Caller IP for rate limits. Do not trust the first X-Forwarded-For hop — clients
+ * can spoof it unless the edge overwrites the header (Vercel / Cloudflare).
+ */
 export function clientAddress(request: Request): string {
+  const vercel = trimIp(request.headers.get("x-vercel-forwarded-for"));
+  if (process.env.VERCEL === "1" && vercel) return vercel;
+
+  const cf = trimIp(request.headers.get("cf-connecting-ip"));
+  if (cf) return cf;
+
+  const real = trimIp(request.headers.get("x-real-ip"));
+  if (real && process.env.VERCEL === "1") return real;
+
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first.slice(0, 128);
+    const hops = forwarded
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const last = hops[hops.length - 1];
+    if (last) return last.slice(0, 128);
   }
-  const real = request.headers.get("x-real-ip")?.trim();
-  if (real) return real.slice(0, 128);
+
+  if (real) return real;
   return "unknown";
 }
 
