@@ -124,53 +124,106 @@ function describeLineNatural(
     return `${choice.line.vanguard} in Vanguard, ${choice.line.left} left, ${choice.line.right} right.`;
   }
 
+  const aiLine: AiLine = {
+    name: choice.id,
+    troop: choice.line.troop,
+    mode: choice.line.mode,
+    left: choice.line.left,
+    vanguard: choice.line.vanguard,
+    right: choice.line.right,
+    why: "",
+  };
+  return explainLineThorough(aiLine, evalState, "hatchery", {
+  compact: true,
+  choicePros: choice.pros,
+  });
+}
+
+/** Natural-language breakdown of roles, affinity, and kit synergies for chat + cards. */
+export function explainLineThorough(
+  line: AiLine,
+  state: PitState,
+  pool: SuggestRequest["pool"],
+  opts?: {
+    lead?: string;
+    compact?: boolean;
+    choicePros?: AroundChoice["pros"];
+  },
+): string {
+  const left = findDragon(line.left, state.customDragons);
+  const vanguard = findDragon(line.vanguard, state.customDragons);
+  const right = findDragon(line.right, state.customDragons);
+  if (!left || !vanguard || !right) return line.why || seatSentence(line, state);
+
+  const troopName = troopLabels[line.troop];
+  const modeName = modeLabels[line.mode];
+  const report = pairingReport(lineupFromAiLine(line, state, pool), state);
   const dragons = [left, vanguard, right];
-  const troopName = troopLabels[choice.line.troop];
-  const offTroop = dragons.filter(
-    (d) => !d.affinities.includes(choice.line.troop),
+  const offTroop = dragons.filter((d) => !d.affinities.includes(line.troop));
+
+  const sentences: string[] = [];
+  if (opts?.lead) sentences.push(opts.lead);
+
+  const lane: string[] = [];
+  if (isTank(vanguard)) {
+    lane.push(
+      `${vanguard.name} taunts in Vanguard to soak focus and protect the wings`,
+    );
+  } else if (isMitigation(vanguard)) {
+    lane.push(`${vanguard.name} mitigates in Vanguard so the line survives burst`);
+  } else {
+    lane.push(`${vanguard.name} leads Vanguard`);
+  }
+  const healer = dragons.find(isHealer);
+  const finisher = dragons.find(isFinisher);
+  if (healer && healer.id !== vanguard.id) {
+    lane.push(`${healer.name} keeps Recovery online for sustain`);
+  }
+  if (finisher && finisher.id !== healer?.id && finisher.id !== vanguard.id) {
+    lane.push(`${finisher.name} converts setup into finish damage`);
+  }
+  sentences.push(
+    `For ${modeName}, ${lane.join("; ")}.`,
   );
 
-  const parts: string[] = [];
-
-  if (isTank(vanguard)) {
-    parts.push(`${vanguard.name} holds Vanguard with Taunt to soak hits`);
-  } else if (isMitigation(vanguard)) {
-    parts.push(`${vanguard.name} anchors Vanguard and cuts incoming damage`);
-  } else {
-    parts.push(`${vanguard.name} fronts Vanguard`);
-  }
-
-  const keyPros = choice.pros
-    .filter(
-      (note) =>
-        note.title.includes("feeding") ||
-        note.title.includes("Crescent Blade") ||
-        note.title.includes("flank habit") ||
-        note.title.includes("Flank habit"),
-    )
-    .slice(0, 2)
-    .map((note) => note.title.replace(/\.$/, ""));
-  if (keyPros.length > 0) {
-    parts.push(keyPros.join(" while "));
-  } else {
-    const healer = dragons.find(isHealer);
-    const finisher = dragons.find(isFinisher);
-    if (healer && finisher && healer.id !== finisher.id) {
-      parts.push(
-        `${healer.name} sustains the march with Recovery while ${finisher.name} brings finishing damage`,
-      );
-    }
-  }
-
   if (offTroop.length === 0) {
-    parts.push(`All three match ${troopName} for the +20% troop stat bonus`);
+    sentences.push(
+      `All three share ${troopName} affinity, so you keep the full +20% troop stat bonus on every dragon.`,
+    );
   } else {
-    parts.push(
-      `Warning: ${offTroop.map((d) => d.name).join(" and ")} lack ${troopName} affinity (loses +20% stats)`,
+    sentences.push(
+      `${offTroop.map((d) => d.name).join(" and ")} sit off-troop here and miss that +20% bonus — only use this if nothing full-affinity fits your roster.`,
     );
   }
 
-  return `${parts.join(". ")}.`;
+  const kitFromChoice = (opts?.choicePros ?? [])
+    .slice(0, opts?.compact ? 2 : 4)
+    .map((note) =>
+      (note.detail?.trim() || note.title).replace(/\.$/, ""),
+    );
+  const kitFromReport = report.pros
+    .slice(0, opts?.compact ? 2 : 5)
+    .map((note) =>
+      (note.detail?.trim() || note.title).replace(/\.$/, ""),
+    );
+  const kitBits = [...new Set([...kitFromChoice, ...kitFromReport])].slice(
+    0,
+    opts?.compact ? 2 : 4,
+  );
+  if (kitBits.length > 0) {
+    sentences.push(
+      `Mechanically, ${kitBits.join(". ")}.`,
+    );
+  }
+
+  if (!opts?.compact && report.cons.length > 0) {
+    const gaps = report.cons
+      .slice(0, 2)
+      .map((note) => note.title.replace(/\.$/, ""));
+    sentences.push(`Trade-off: ${gaps.join("; ")}.`);
+  }
+
+  return sentences.join(" ");
 }
 
 function copilotChoiceScore(
@@ -542,30 +595,31 @@ function formationReply(opts: {
       ? `Nothing left to seat once ${nameList(opts.skip, opts.state)} sit out. Bring one of them back, or switch the pool to All dragons.`
       : "I need at least three dragons in this pool before I can seat a line.";
   }
-  const leftName = nameFor(head.left, opts.state);
-  const vanguardName = nameFor(head.vanguard, opts.state);
-  const rightName = nameFor(head.right, opts.state);
   const troop = troopLabels[head.troop];
   const mode = modeLabels[head.mode];
   const heldBack = opts.skip.length
-    ? ` (leaving out ${nameList(opts.skip, opts.state)})`
+    ? `, benching ${nameList(opts.skip, opts.state)}`
     : "";
 
   const lead = opts.again
     ? anchorName
-      ? `Here is a fresh ${mode} setup around ${anchorName}${heldBack}.`
-      : `Here is another ${troop} ${mode} option${heldBack}.`
+      ? `Another ${mode} angle around ${anchorName}${heldBack}.`
+      : `Another ${troop} ${mode} line${heldBack}.`
     : anchorName
-      ? `Here are the top ${mode} teams built around ${anchorName}${heldBack}.`
-      : `Here are the strongest ${troop} ${mode} teams${heldBack}.`;
+      ? `Best ${mode} fit around ${anchorName}${heldBack} — lineup is on the cards above.`
+      : `Top ${troop} ${mode} options${heldBack} — lineup is on the cards above.`;
+
+  const body = explainLineThorough(head, opts.state, opts.request.pool, {
+    lead,
+  });
 
   const altCount = Math.min(2, opts.lines.slice(1).length);
   const altNote =
     altCount > 0
-      ? ` I also included ${altCount} alternate${altCount === 1 ? "" : "s"} alongside it — ask to swap any dragon or switch troops if you want a different angle.`
-      : " Ask if you want to swap any dragon or switch troops.";
+      ? `Alternate cards swap partners while keeping the same core; say who to exclude or ask for another.`
+      : "Name exclusions, another troop, or a different mode if you want to refine this.";
 
-  return `${lead} The top pick pairs ${leftName} (Left), ${vanguardName} (Vanguard), and ${rightName} (Right): ${head.why}${altNote}`;
+  return `${body} ${altNote}`;
 }
 
 export type CoachAnswer = { reply: string; lines: AiLine[] };
@@ -584,15 +638,11 @@ export function answerPlan(
 
   if (plan.intent === "explain" && plan.referenced.length > 0) {
     const line = plan.referenced[0];
-    const report = pairingReport(lineupFromAiLine(line, state, pool), state);
-    const pros = report.pros.slice(0, 2).map((note) => note.title);
-    const cons = report.cons.slice(0, 2).map((note) => note.title);
-    const why = `${line.name} is ${seatSentence(line, state)}. ${line.why}`;
-    const payoff = pros.length ? ` Payoffs: ${pros.join("; ")}.` : "";
-    const gaps = cons.length
-      ? ` Gaps: ${cons.join("; ")}.`
-      : " No gaps flagged by the pairing rules.";
-    return { reply: `${why}${payoff}${gaps}`, lines: plan.referenced };
+    const lead = `${line.name} (${troopLabels[line.troop]} ${modeLabels[line.mode]}):`;
+    return {
+      reply: explainLineThorough(line, state, pool, { lead }),
+      lines: plan.referenced,
+    };
   }
 
   if (plan.intent === "compare" && plan.referenced.length > 0) {
@@ -665,15 +715,9 @@ export function answerPlan(
         lines,
       };
     }
-    const report = pairingReport(lineupFromAiLine(head, state, pool), state);
-    const pros = report.pros.slice(0, 2).map((note) => note.title);
-    const cons = report.cons.slice(0, 2).map((note) => note.title);
-    const payoff = pros.length ? ` Payoffs: ${pros.join("; ")}.` : "";
-    const gaps = cons.length
-      ? ` Gaps: ${cons.join("; ")}.`
-      : " No gaps flagged by the pairing rules.";
+    const lead = `${head.name} (${troopLabels[plan.troop]} ${modeLabels[plan.mode]}):`;
     return {
-      reply: `${head.name} (${troopLabels[plan.troop]} ${modeLabels[plan.mode]}) seats ${seatSentence(head, state)}. ${head.why}${payoff}${gaps}`,
+      reply: explainLineThorough(head, state, pool, { lead }),
       lines,
     };
   }

@@ -13,12 +13,19 @@ import {
   type ChatTurn,
   type TurnMeta,
 } from "@/lib/ai/conversation";
+import { detectMode, detectTroop } from "@/lib/ai/intent";
 import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool, type RosterCard } from "@/lib/ai/roster";
 import { findDragon } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
 import { readPitSnapshot } from "@/lib/store";
-import type { Lineup, LineupMode, PitState, SlotId, TroopType } from "@/lib/types";
+import type {
+  Lineup,
+  LineupMode,
+  PitState,
+  SlotId,
+  TroopType,
+} from "@/lib/types";
 
 export const COACH_STORAGE_KEY = "dragonfire-pit.coach.v2";
 
@@ -74,7 +81,13 @@ type Action =
   | { type: "restore"; turns: ChatTurn[]; pool: AiPool; anchor: CoachAnchor }
   | { type: "pool"; pool: AiPool }
   | { type: "anchor"; anchor: CoachAnchor }
-  | { type: "submit"; requestId: string; question: string; at: number }
+  | {
+      type: "submit";
+      requestId: string;
+      question: string;
+      display?: string;
+      at: number;
+    }
   | {
       type: "resolve";
       requestId: string;
@@ -108,7 +121,7 @@ function reducer(state: State, action: Action): State {
             id: `${action.requestId}-u`,
             requestId: action.requestId,
             role: "user",
-            text: action.question,
+            text: action.display?.trim() || action.question,
             createdAt: action.at,
             status: "done",
           },
@@ -170,6 +183,30 @@ function reducer(state: State, action: Action): State {
     default:
       return state;
   }
+}
+
+function syncAnchorFromPlan(
+  current: CoachAnchor,
+  plan: {
+    anchorId?: string | null;
+    anchorSlot?: SlotId | null;
+    troop: TroopType;
+    mode: LineupMode;
+    lockTroop?: boolean;
+    question: string;
+  },
+): CoachAnchor {
+  const next = { ...current };
+  if (plan.anchorId) {
+    next.dragonId = plan.anchorId;
+    next.slot =
+      plan.anchorSlot ??
+      (plan.anchorId !== current.dragonId ? "auto" : current.slot);
+  }
+  if (plan.lockTroop) next.troop = plan.troop;
+  else if (detectTroop(plan.question)) next.troop = plan.troop;
+  if (detectMode(plan.question)) next.mode = plan.mode;
+  return next;
 }
 
 function newRequestId(): string {
@@ -411,6 +448,16 @@ export function useCoachChat() {
                     mode: anchor.mode,
                   },
             );
+            const plannedAnchor = syncAnchorFromPlan(anchor, plan);
+            if (
+              plannedAnchor.dragonId !== anchor.dragonId ||
+              plannedAnchor.slot !== anchor.slot ||
+              plannedAnchor.troop !== anchor.troop ||
+              plannedAnchor.mode !== anchor.mode
+            ) {
+              anchorRef.current = plannedAnchor;
+              dispatch({ type: "anchor", anchor: plannedAnchor });
+            }
             // If the prompt named a dragon to build around, use the full
             // dragon catalog unless that dragon + partners exist in the pit.
             const effectivePool =
@@ -433,6 +480,7 @@ export function useCoachChat() {
                 anchorId: plan.anchorId,
                 request,
                 lines: result.lines,
+                state: live.state,
                 turns: history.map((turn) => ({
                   role: turn.role,
                   text: turn.text,
@@ -471,12 +519,20 @@ export function useCoachChat() {
           TURN_TIMEOUT_MS,
         );
         if (controller.signal.aborted) return;
-        if (answer.meta.anchorId && answer.meta.anchorId !== anchorRef.current.dragonId) {
-          const synced: CoachAnchor = {
-            ...anchorRef.current,
-            dragonId: answer.meta.anchorId,
-            slot: answer.meta.anchorSlot ?? "auto",
-          };
+        const synced = syncAnchorFromPlan(anchorRef.current, {
+          anchorId: answer.meta.anchorId,
+          anchorSlot: answer.meta.anchorSlot,
+          troop: answer.meta.troop,
+          mode: answer.meta.mode,
+          lockTroop: anchorRef.current.troop !== "auto",
+          question,
+        });
+        if (
+          synced.dragonId !== anchorRef.current.dragonId ||
+          synced.slot !== anchorRef.current.slot ||
+          synced.troop !== anchorRef.current.troop ||
+          synced.mode !== anchorRef.current.mode
+        ) {
           anchorRef.current = synced;
           dispatch({ type: "anchor", anchor: synced });
         }
@@ -497,7 +553,7 @@ export function useCoachChat() {
   }, []);
 
   const send = useCallback(
-    (question: string) => {
+    (question: string, display?: string) => {
       const text = question.trim();
       if (!text) return false;
       const requestId = newRequestId();
@@ -505,6 +561,7 @@ export function useCoachChat() {
         type: "submit",
         requestId,
         question: text,
+        display,
         at: Date.now(),
       };
       dispatch(submit);

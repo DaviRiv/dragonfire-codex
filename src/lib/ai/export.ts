@@ -1,8 +1,10 @@
 import { GAME_FACTS } from "@/data/game-facts";
 import { chatgptMetaTemplate } from "@/data/meta";
 import { findDragon } from "@/lib/dragons";
+import { explainLineThorough } from "@/lib/ai/coach";
 import { buildRosterBlock, CHATGPT_EXPORT_RULES, type AiLine } from "@/lib/ai/prompt";
 import type { AiPool, SuggestRequest } from "@/lib/ai/roster";
+import type { PitState } from "@/lib/types";
 
 export const DEFAULT_CHATGPT_QUESTION =
   "If this is online / PvP DPS and Malachite, Vhagar, and Venator are free in the roster, seat that meta core first. Then give 1–2 alternates from leftovers. Explain Left, Vanguard, and Right in plain English.";
@@ -80,6 +82,7 @@ export function copilotChatPrompt(opts: {
   request: SuggestRequest;
   lines: AiLine[];
   turns: ChatGptExportTurn[];
+  state: PitState;
 }): string {
   const anchorName = opts.anchorId
     ? (findDragon(opts.anchorId)?.name ?? opts.anchorId)
@@ -87,12 +90,12 @@ export function copilotChatPrompt(opts: {
   const lineSummary = opts.lines
     .slice(0, 3)
     .map((line, index) => {
-      const left = findDragon(line.left)?.name ?? line.left;
-      const vanguard = findDragon(line.vanguard)?.name ?? line.vanguard;
-      const right = findDragon(line.right)?.name ?? line.right;
-      return `${index + 1}. ${line.name} (${line.troop}, ${line.mode}): Left ${left} / Vanguard ${vanguard} / Right ${right} — ${line.why}`;
+      const digest = explainLineThorough(line, opts.state, opts.request.pool, {
+        compact: true,
+      });
+      return `${index + 1}. ${line.name} — ${digest}`;
     })
-    .join("\n");
+    .join("\n\n");
   const conversation = opts.turns
     .slice(-6)
     .map(
@@ -102,14 +105,18 @@ export function copilotChatPrompt(opts: {
     .filter((line) => line.length > 8)
     .join("\n\n");
 
-  return `You are the in-app Copilot for Game of Thrones: Dragonfire. Speak naturally in 2-4 plain-text sentences (no markdown headers or bullet lists). Explain WHY the top team at the top of the card list works (troop affinity +20% stats, lane placement, and how their kits trigger each other). NEVER suggest breaking troop affinity across dragons unless no full-affinity line exists. Use ONLY the dragons, kits, and lines listed below.
+  return `You are the in-app Copilot for Game of Thrones: Dragonfire. Write like a patient coach in 2–4 short paragraphs of plain text (no markdown, no bullet lists, no numbered options in the reply).
+
+The UI already shows team cards with Left / Vanguard / Right — do NOT restate the full roster or repeat card labels. Focus on mechanics: who tanks or mitigates Vanguard, sustain vs burst on the wings, the +20% troop affinity rule, habit flanks, status chains (Burn, Expose, etc.), and breed partner triggers from the verified notes below.
+
+Be thorough but readable. If alternates exist, compare them in one sentence (what swaps and what you trade). Never invent dragons or kits. NEVER praise breaking troop affinity unless the verified data says no full-affinity line exists.
 
 Game facts:
 ${factsBlock()}
 
-${anchorName ? `Selected dragon to build around: ${anchorName}\n` : ""}Troop: ${opts.request.troop}, Mode: ${opts.request.mode}
+${anchorName ? `Build around: ${anchorName}\n` : ""}Filter troop: ${opts.request.troop}, mode: ${opts.request.mode}, pool: ${opts.request.pool}
 
-Verified candidate teams:
+Verified teams (ranked — your answer must align with #1):
 ${lineSummary || "(No complete 3-dragon line matched these filters.)"}
 
 --- Roster context ---

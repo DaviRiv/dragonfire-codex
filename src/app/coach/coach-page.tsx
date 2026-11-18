@@ -176,7 +176,15 @@ export function CoachPage() {
     });
     setPickerOpen(false);
     setDragonQuery("");
-    if (chat.turns.length > 0) setShowBuiltInChat(true);
+    const question = `Build a ${modeShort[anchor.mode]} team around ${dragon.name}`;
+    if (chat.turns.length === 0) {
+      chat.send(question, `Teams around ${dragon.name}`);
+      setShowBuiltInChat(false);
+      atBottomRef.current = true;
+      setAtBottom(true);
+    } else {
+      setShowBuiltInChat(true);
+    }
   }
 
   function clearDragon() {
@@ -189,8 +197,8 @@ export function CoachPage() {
     setPickerOpen(true);
   }
 
-  function submit(text: string) {
-    if (!chat.send(text)) return;
+  function submit(text: string, label?: string) {
+    if (!chat.send(text, label)) return;
     setDraft("");
     setShowBuiltInChat(false);
     atBottomRef.current = true;
@@ -257,14 +265,29 @@ export function CoachPage() {
 
   const dragonPrompts = anchorDragon
     ? [
-        `Best team around ${anchorDragon.name}`,
-        `Give me another option around ${anchorDragon.name}`,
-        `Build a rally team around ${anchorDragon.name}`,
+        {
+          send: `Build a ${modeShort[anchor.mode]} team around ${anchorDragon.name}`,
+          label: "Rank best team",
+        },
+        {
+          send: `Give me another option around ${anchorDragon.name}`,
+          label: "Another option",
+        },
+        {
+          send: `Build a rally team around ${anchorDragon.name}`,
+          label: "Rally setup",
+        },
         anchorDragon.id !== "vhagar"
-          ? `Team around ${anchorDragon.name} without Vhagar`
-          : `Team around Vhagar without Malachite`,
+          ? {
+              send: `Team around ${anchorDragon.name} without Vhagar`,
+              label: "Without Vhagar",
+            }
+          : {
+              send: `Team around Vhagar without Malachite`,
+              label: "Without Malachite",
+            },
       ]
-    : [...COACH_STARTERS];
+    : COACH_STARTERS.map((starter) => ({ send: starter, label: starter }));
 
   const showPicker = !anchorDragon || pickerOpen;
 
@@ -551,6 +574,7 @@ export function CoachPage() {
                       onClick={() =>
                         submit(
                           `Explain the top ${modeShort[anchor.mode]} team around ${anchorDragon.name}`,
+                          `Why this ${anchorDragon.name} line works`,
                         )
                       }
                     >
@@ -765,26 +789,26 @@ function Starters({
   anchorName,
   onPick,
 }: {
-  prompts: string[];
+  prompts: { send: string; label: string }[];
   anchorName: string | null;
-  onPick: (text: string) => void;
+  onPick: (send: string, label?: string) => void;
 }) {
   return (
     <div className="rounded-xl bg-black/25 px-3 py-3 ring-1 ring-foreground/10">
       <p className="text-xs text-muted-foreground">
         {anchorName
-          ? `Ask Copilot for alternates around ${anchorName}, exclusions, or another mode.`
-          : "Ask Copilot to build a team around any dragon:"}
+          ? `Shortcuts — Copilot picks troop and seats for you. Name exclusions or modes in the box below.`
+          : "Pick a dragon on the left, or tap a shortcut:"}
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {prompts.map((starter) => (
           <button
-            key={starter}
+            key={starter.send}
             type="button"
             className="rounded-lg bg-card/60 px-2.5 py-1.5 text-left text-[12px] leading-snug ring-1 ring-foreground/15 hover:bg-muted"
-            onClick={() => onPick(starter)}
+            onClick={() => onPick(starter.send, starter.label)}
           >
-            {starter}
+            {starter.label}
           </button>
         ))}
       </div>
