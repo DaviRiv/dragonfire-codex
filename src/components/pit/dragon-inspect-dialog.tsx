@@ -15,35 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SectionLabel } from "@/components/section-label";
 import { marchLabels, rarityLabels, troopLabels } from "@/lib/labels";
 import { dragonPower, formatPower, scaledStats, troopCount } from "@/lib/scale-stats";
-import type { Dragon, TroopType } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-function InspectSection({
-  title,
-  children,
-  className,
-}: {
-  title: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={cn(
-        "rounded-lg bg-black/25 px-2.5 py-2 ring-1 ring-foreground/10",
-        className,
-      )}
-    >
-      <SectionLabel as="h3" className="mb-1.5 text-[11px] text-amber-50/90">
-        {title}
-      </SectionLabel>
-      {children}
-    </section>
-  );
-}
+import type { Dragon, DragonStats, TroopType } from "@/lib/types";
 
 export function DragonInspectDialog({
   dragon,
@@ -77,10 +51,6 @@ export function DragonInspectDialog({
   const stats = scaledStats(dragon, rankStars, reign);
   const power = dragonPower(dragon.rarity, rankStars, reign);
   const troops = troopCount(dragon.rarity, rankStars, reign);
-  const owned =
-    ownedStars != null && ownedStars > 0
-      ? `★${ownedStars} · Lv ${reign}`
-      : "Not in your pit";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,61 +58,31 @@ export function DragonInspectDialog({
         showCloseButton
         className="max-h-[min(92dvh,100dvh-1rem)] gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
-        <div className="border-b border-border/50 px-3 pt-3 pb-2.5">
-          <InspectDialogHeader dragon={dragon} owned={owned} power={power} />
+        <div className="border-b border-border/50 px-3 pt-3 pb-3">
+          <InspectDialogHeader
+            dragon={dragon}
+            stats={stats}
+            power={power}
+            troops={troops}
+            ownedStars={ownedStars}
+            reign={reign}
+          />
         </div>
 
-        <div className="max-h-[min(62dvh,36rem)] space-y-2 overflow-y-auto px-3 py-2">
-          <InspectSection title="Identity">
-            <div className="flex flex-wrap items-center gap-1">
-              <BreedChip breed={dragon.breed} />
-              <DragonDamageChips dragon={dragon} className="justify-start" />
-            </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">
-              {rarityLabels[dragon.rarity]}
-              <span aria-hidden> · </span>
-              {dragon.affinities.map((t) => troopLabels[t]).join(", ")}
-            </p>
-            <DragonBuffChips
-              dragon={dragon}
-              max={4}
-              className="mt-1.5 justify-start"
-            />
-          </InspectSection>
-
-          <InspectSection title="Combat">
-            <StatLine stats={stats} />
-            <p className="mt-1.5 text-[11px] tabular-nums text-muted-foreground">
-              {formatPower(power)} Hub power
-              <span aria-hidden> · </span>
-              {troops.toLocaleString()} troops
-              <span aria-hidden> · </span>
-              {marchLabels[dragon.marchSpeed]} march
-            </p>
-            <p className="mt-1 text-[10px] text-muted-foreground/90">
-              STR, INS, INT, INIT from Hub at your star and reign — no separate
-              attack/HP/crit in catalog.
-            </p>
-          </InspectSection>
-
-          {pitExtra ? (
-            <InspectSection title="Your pit">{pitExtra}</InspectSection>
-          ) : null}
-
-          <InspectSection title="Abilities">
-            <DragonProfile
-              dragon={dragon}
-              highlightTroop={highlightTroop}
-              starRank={rankStars}
-              reignLevel={reign}
-              ownedStars={ownedStars}
-              ownedHabits={ownedHabits}
-              ownedHabitRanks={ownedHabitRanks}
-              onHabitRankChange={onHabitRankChange}
-              hideIdentityHeader
-              hideStatBlock
-            />
-          </InspectSection>
+        <div className="max-h-[min(62dvh,36rem)] space-y-3 overflow-y-auto px-3 py-3">
+          {pitExtra ? <div className="space-y-3">{pitExtra}</div> : null}
+          <DragonProfile
+            dragon={dragon}
+            highlightTroop={highlightTroop}
+            starRank={rankStars}
+            reignLevel={reign}
+            ownedStars={ownedStars}
+            ownedHabits={ownedHabits}
+            ownedHabitRanks={ownedHabitRanks}
+            onHabitRankChange={onHabitRankChange}
+            hideIdentityHeader
+            hideStatBlock
+          />
         </div>
       </DialogContent>
     </Dialog>
@@ -151,12 +91,18 @@ export function DragonInspectDialog({
 
 function InspectDialogHeader({
   dragon,
-  owned,
+  stats,
   power,
+  troops,
+  ownedStars,
+  reign,
 }: {
   dragon: Dragon;
-  owned: string;
+  stats: DragonStats;
   power: number;
+  troops: number;
+  ownedStars?: number | null;
+  reign: number;
 }) {
   return (
     <div className="flex items-start gap-3">
@@ -169,7 +115,7 @@ function InspectDialogHeader({
         sizes="88px"
         showMark={false}
       />
-      <div className="min-w-0 flex-1 pt-0.5">
+      <div className="min-w-0 flex-1 space-y-1.5">
         <DialogHeader className="space-y-0 text-left">
           <DialogTitle className="font-heading text-lg leading-tight tracking-wide text-amber-50">
             {dragon.name}
@@ -178,10 +124,29 @@ function InspectDialogHeader({
             {dragon.epithet}
           </DialogDescription>
         </DialogHeader>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          {owned}
+        <div className="flex flex-wrap items-center gap-1">
+          <BreedChip breed={dragon.breed} />
+          <DragonDamageChips dragon={dragon} className="justify-start" />
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {rarityLabels[dragon.rarity]}
           <span aria-hidden> · </span>
-          <span className="tabular-nums">{formatPower(power)} power</span>
+          {dragon.affinities.map((t) => troopLabels[t]).join(", ")}
+        </p>
+        <DragonBuffChips dragon={dragon} max={3} className="justify-start" />
+        <StatLine stats={stats} />
+        <p className="text-[11px] tabular-nums text-muted-foreground">
+          {ownedStars != null && ownedStars > 0 ? (
+            <>
+              ★{ownedStars} · Lv {reign}
+              <span aria-hidden> · </span>
+            </>
+          ) : null}
+          {formatPower(power)} power
+          <span aria-hidden> · </span>
+          {troops.toLocaleString()} troops
+          <span aria-hidden> · </span>
+          {marchLabels[dragon.marchSpeed]}
         </p>
       </div>
     </div>
