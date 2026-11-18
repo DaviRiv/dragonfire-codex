@@ -11,7 +11,7 @@ import { rarityLabels } from "@/lib/labels";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import type { Dragon, OwnedDragon } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { GitCompare, ScrollText, ZoomIn } from "lucide-react";
+import { GitCompare, ScrollText } from "lucide-react";
 
 export function PitDragonCard({
   dragon,
@@ -78,21 +78,8 @@ export function PitDragonCard({
           size="xl"
           dimmed={!ownedDragon}
           className="mx-auto"
+          onClick={onInspect}
         />
-        <Button
-          type="button"
-          size="icon-sm"
-          variant="secondary"
-          aria-label={`Inspect ${dragon.name}`}
-          data-pit-inspect={dragon.id}
-          onClick={(e) => {
-            e.stopPropagation();
-            onInspect();
-          }}
-          className="absolute top-1 right-1 size-8 bg-background/90 text-amber-100 ring-1 ring-amber-400/40 shadow-sm hover:bg-amber-500/20"
-        >
-          <ZoomIn className="size-4" />
-        </Button>
         <HabitSearchButton
           name={dragon.name}
           onClick={onHabits}
