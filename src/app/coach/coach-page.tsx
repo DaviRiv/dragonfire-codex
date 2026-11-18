@@ -290,7 +290,7 @@ export function CoachPage() {
       ]
     : COACH_STARTERS.map((starter) => ({ send: starter, label: starter }));
 
-  const showPicker = !anchorDragon || pickerOpen;
+  const showPicker = pickerOpen;
 
   return (
     <AccountGate
@@ -354,7 +354,7 @@ export function CoachPage() {
             className="flex min-h-0 flex-col gap-3 rounded-2xl surface p-3 ring-1 ring-foreground/15 lg:overflow-y-auto"
           >
             <div className="flex items-center justify-between gap-2">
-              <SectionLabel>Build around a dragon</SectionLabel>
+              <SectionLabel>Focus dragon · optional</SectionLabel>
               {anchorDragon ? (
                 <div className="flex items-center gap-1">
                   <Button
@@ -377,6 +377,27 @@ export function CoachPage() {
                 </div>
               ) : null}
             </div>
+
+            {!anchorDragon && !pickerOpen ? (
+              <div className="rounded-xl bg-emerald-500/10 px-3 py-2 ring-1 ring-emerald-400/25">
+                <p className="text-xs font-medium text-emerald-100">
+                  No dragon locked
+                </p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                  Copilot will choose the strongest unique team from your
+                  available pit. Pick a dragon only when you want to force one.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  Choose a focus dragon
+                </Button>
+              </div>
+            ) : null}
 
             {anchorDragon && !pickerOpen ? (
               <div className="flex items-center gap-3 rounded-xl bg-amber-500/10 p-2.5 ring-1 ring-amber-400/35">
@@ -413,7 +434,7 @@ export function CoachPage() {
               </div>
             ) : null}
 
-            {showPicker ? (
+            {showPicker && pickerOpen ? (
               <div className="flex min-h-0 flex-col gap-2">
                 <SearchField
                   value={dragonQuery}
@@ -569,7 +590,7 @@ export function CoachPage() {
                 <SectionLabel id="copilot-built-heading">
                   {anchorDragon
                     ? `Teams built around ${anchorDragon.name}${anchor.troop !== "auto" ? ` · ${troopLabels[anchor.troop]}` : ""} · ${modeShort[anchor.mode]}`
-                    : "Select a dragon on the left — or ask Copilot below"}
+                    : `Best available teams · ${modeShort[anchor.mode]}`}
                 </SectionLabel>
                 <div className="flex items-center gap-1.5">
                   {anchorDragon && chat.turns.length > 0 ? (
@@ -603,11 +624,14 @@ export function CoachPage() {
 
               {chat.turns.length > 0 && !showBuiltInChat ? null : !anchorDragon ? (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Pick any dragon on the left, or type something like{" "}
+                  A focus dragon is optional. Use{" "}
+                  <span className="text-amber-100">Copilot-build next</span>{" "}
+                  to let Copilot choose the strongest unique team, or request a
+                  specific dragon below, such as{" "}
                   <span className="text-amber-100">
                     “build me a team around Vhagar”
-                  </span>{" "}
-                  below. Every suggested team will include that dragon.
+                  </span>
+                  .
                 </p>
               ) : builtLines.length === 0 ? (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-black/25 px-3 py-2.5 text-sm text-muted-foreground">
