@@ -122,9 +122,9 @@ export function SiteHeader() {
               <span className="font-heading block text-base leading-none tracking-[0.16em] sm:text-lg sm:tracking-[0.18em]">
                 DRAGONFIRE
               </span>
-              <span className="mt-0.5 block truncate text-[10px] tracking-[0.14em] text-amber-200/70 uppercase">
-                <span className="hidden sm:inline">Copilot · Team · </span>
-                <BuildNumber className="text-amber-200/55" />
+              <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1 text-[10px] tracking-[0.12em] text-amber-200/85 uppercase sm:text-[11px]">
+                <span className="hidden sm:inline">Copilot · </span>
+                <BuildNumber className="text-amber-200/85" />
               </span>
             </span>
           </Link>

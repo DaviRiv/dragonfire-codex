@@ -11,7 +11,7 @@ export function BuildNumber({ className }: { className?: string }) {
       data-build-sha={info.sha}
     >
       <span className="sr-only">{label} · revision </span>
-      <span aria-hidden="true">
+      <span aria-hidden="true" className="whitespace-nowrap">
         {label}
         <span className="normal-case tracking-normal"> · {info.sha}</span>
       </span>

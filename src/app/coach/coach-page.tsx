@@ -12,7 +12,6 @@ import {
 import { CoachTeamBuilderButton } from "@/app/coach/coach-team-builder";
 import { FocusPanel } from "@/app/coach/focus-panel";
 import { ArmyAutoBuilder } from "@/components/army-auto-builder";
-import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
@@ -287,12 +286,7 @@ export function CoachPage() {
     : "";
 
   return (
-    <AccountGate
-      next="/coach"
-      title="Copilot (beta) is for registered accounts"
-      description="Create a free username on this server to rank three-dragon lines. This ranker is in beta. Forums stay readable without signing in."
-    >
-      <div className="mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 flex-col gap-2 overflow-y-auto lg:overflow-hidden">
+    <div className="mx-auto flex w-full min-h-0 max-w-[92rem] flex-1 flex-col gap-2 overflow-y-auto lg:overflow-hidden">
         <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border/50 pb-2">
           <h1 className="font-heading inline-flex items-center gap-2 text-xl tracking-wide sm:text-2xl">
             Copilot
@@ -599,8 +593,7 @@ export function CoachPage() {
             </section>
           </div>
         </div>
-      </div>
-    </AccountGate>
+    </div>
   );
 }
 
