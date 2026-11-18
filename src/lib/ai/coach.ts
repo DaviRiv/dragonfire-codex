@@ -17,7 +17,7 @@ import { canonAbility, dragonProvides } from "@/lib/abilities";
 import { defaultHabits } from "@/lib/habits";
 import { modeLabels, troopLabels } from "@/lib/labels";
 import { partnerRules, pairingReport } from "@/lib/pairing";
-import { isMitigation, isTank } from "@/lib/roles";
+import { isFinisher, isHealer, isMitigation, isTank } from "@/lib/roles";
 import { suggestFullLine } from "@/lib/suggest";
 import type {
   Lineup,
@@ -113,6 +113,66 @@ function benchmarkPitState(state: PitState, minStars = 6): PitState {
   return { ...state, owned };
 }
 
+function describeLineNatural(
+  choice: AroundChoice,
+  evalState: PitState,
+): string {
+  const left = findDragon(choice.line.left, evalState.customDragons);
+  const vanguard = findDragon(choice.line.vanguard, evalState.customDragons);
+  const right = findDragon(choice.line.right, evalState.customDragons);
+  if (!left || !vanguard || !right) {
+    return `${choice.line.vanguard} in Vanguard, ${choice.line.left} left, ${choice.line.right} right.`;
+  }
+
+  const dragons = [left, vanguard, right];
+  const troopName = troopLabels[choice.line.troop];
+  const offTroop = dragons.filter(
+    (d) => !d.affinities.includes(choice.line.troop),
+  );
+
+  const parts: string[] = [];
+
+  if (isTank(vanguard)) {
+    parts.push(`${vanguard.name} holds Vanguard with Taunt to soak hits`);
+  } else if (isMitigation(vanguard)) {
+    parts.push(`${vanguard.name} anchors Vanguard and cuts incoming damage`);
+  } else {
+    parts.push(`${vanguard.name} fronts Vanguard`);
+  }
+
+  const keyPros = choice.pros
+    .filter(
+      (note) =>
+        note.title.includes("feeding") ||
+        note.title.includes("Crescent Blade") ||
+        note.title.includes("flank habit") ||
+        note.title.includes("Flank habit"),
+    )
+    .slice(0, 2)
+    .map((note) => note.title.replace(/\.$/, ""));
+  if (keyPros.length > 0) {
+    parts.push(keyPros.join(" while "));
+  } else {
+    const healer = dragons.find(isHealer);
+    const finisher = dragons.find(isFinisher);
+    if (healer && finisher && healer.id !== finisher.id) {
+      parts.push(
+        `${healer.name} sustains the march with Recovery while ${finisher.name} brings finishing damage`,
+      );
+    }
+  }
+
+  if (offTroop.length === 0) {
+    parts.push(`All three match ${troopName} for the +20% troop stat bonus`);
+  } else {
+    parts.push(
+      `Warning: ${offTroop.map((d) => d.name).join(" and ")} lack ${troopName} affinity (loses +20% stats)`,
+    );
+  }
+
+  return `${parts.join(". ")}.`;
+}
+
 function copilotChoiceScore(
   choice: AroundChoice,
   mode: LineupMode,
@@ -132,11 +192,12 @@ function copilotChoiceScore(
     else if (dragons.some(isTank)) score += 6;
     else score -= 18;
   }
-  const allMatchTroop = dragons.every((d) =>
-    d.affinities.includes(choice.line.troop),
-  );
-  if (allMatchTroop) score += 14;
-  else score -= 10;
+  const offTroopCount = dragons.filter(
+    (d) => !d.affinities.includes(choice.line.troop),
+  ).length;
+  if (offTroopCount === 0) score += 30;
+  else score -= offTroopCount * 60;
+
   if (choice.cons.length === 0) score += 6;
   const distinctStatuses = new Set<string>();
   for (const dragon of dragons) {
@@ -188,6 +249,13 @@ function anchoredComboLines(input: {
   const owned = evalState.owned.find((row) => row.dragonId === input.anchorId);
   const stars = owned?.starRank ?? 10;
   const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
+  const usedElsewhere = new Set(
+    input.request.skipUsed
+      ? input.request.roster
+          .filter((card) => Boolean(card.otherTeam) && card.id !== input.anchorId)
+          .map((card) => card.id)
+      : [],
+  );
   const allowed = new Set(input.request.roster.map((card) => card.id));
   const primaryTroop = dragon.affinities[0] ?? input.troop;
   const troop = input.lockTroop ? input.troop : primaryTroop;
@@ -203,6 +271,7 @@ function anchoredComboLines(input: {
     state: evalState,
     limit: 24,
     lockTroop: Boolean(input.lockTroop),
+    availableIds: input.request.pool === "pit" ? allowed : undefined,
   });
   const fromKit = troopsToSearch.flatMap((t) =>
     kitTeamsAround({
@@ -228,19 +297,30 @@ function anchoredComboLines(input: {
     merged.push(evaluateAroundLine(line, input.anchorId, stars, evalState));
   }
 
-  const scored = merged
-    .filter((choice) => {
-      const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
-      if (!seats.includes(input.anchorId)) return false;
-      if (seats.some((id) => skipSet.has(id))) return false;
-      if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
-        return false;
-      }
-      if (input.request.pool === "pit") {
-        return seats.every((id) => id === input.anchorId || allowed.has(id));
-      }
-      return true;
-    })
+  const filtered = merged.filter((choice) => {
+    const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
+    if (!seats.includes(input.anchorId)) return false;
+    if (seats.some((id) => skipSet.has(id) || usedElsewhere.has(id))) return false;
+    if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
+      return false;
+    }
+    if (input.request.pool === "pit") {
+      return seats.every((id) => id === input.anchorId || allowed.has(id));
+    }
+    return true;
+  });
+
+  // Never break troop affinity (+20% stats) when full-affinity teams exist.
+  const fullAffinity = filtered.filter((choice) =>
+    [choice.line.left, choice.line.vanguard, choice.line.right].every((id) =>
+      findDragon(id, evalState.customDragons)?.affinities.includes(
+        choice.line.troop,
+      ),
+    ),
+  );
+  const eligible = fullAffinity.length > 0 ? fullAffinity : filtered;
+
+  const scored = eligible
     .map((choice) => ({
       choice,
       rank: copilotChoiceScore(choice, input.mode, primaryTroop, evalState),
@@ -288,42 +368,25 @@ function anchoredComboLines(input: {
   }
 
   if (candidates.length > 0) {
-    return candidates.slice(0, 6).map((choice, index) => {
-      const topNote = choice.pros.find(
-        (note) => !note.title.startsWith(`${dragon.name} applies`),
-      )?.title ?? choice.pros[0]?.title;
-      const seatsText = seatSentence(
-        {
-          name: choice.line.name,
-          troop: choice.line.troop,
-          mode: choice.line.mode,
-          left: choice.line.left,
-          vanguard: choice.line.vanguard,
-          right: choice.line.right,
-          why: "",
-        },
-        evalState,
-      );
-      const reason = topNote ? `${topNote}. ${seatsText}.` : `${seatsText}.`;
-      return {
-        name:
-          index === 0
-            ? `${dragon.name} core`
-            : `${dragon.name} option ${index + 1}`,
-        troop: choice.line.troop,
-        mode: choice.line.mode,
-        left: choice.line.left,
-        vanguard: choice.line.vanguard,
-        right: choice.line.right,
-        why: reason,
-      };
-    });
+    return candidates.slice(0, 6).map((choice, index) => ({
+      name:
+        index === 0
+          ? `${dragon.name} core`
+          : `${dragon.name} option ${index + 1}`,
+      troop: choice.line.troop,
+      mode: choice.line.mode,
+      left: choice.line.left,
+      vanguard: choice.line.vanguard,
+      right: choice.line.right,
+      why: describeLineNatural(choice, evalState),
+    }));
   }
 
   // Fallback: fill the remaining two seats directly from the active roster.
   const seat = input.anchorSlot ?? preferredSlot(dragon);
   const blocked = new Set([
     ...skipSet,
+    ...usedElsewhere,
     ...(input.request.pool === "pit"
       ? allDragons(input.state.customDragons)
           .map((row) => row.id)
@@ -472,25 +535,37 @@ function formationReply(opts: {
   if (!head) {
     if (anchorName) {
       return opts.request.pool === "pit"
-        ? `No complete ${troopLabels[opts.troop]} ${modeLabels[opts.mode]} line around ${anchorName} fits your owned pit right now. Switch the pool to All or adjust exclusions.`
-        : `No line around ${anchorName} matched with those exclusions. Clear a skip or try another seat.`;
+        ? `No full-affinity ${troopLabels[opts.troop]} ${modeLabels[opts.mode]} line around ${anchorName} fits your owned pit right now. Switch the pool to All dragons or clear an exclusion.`
+        : `No line around ${anchorName} matched with those exclusions. Clear a skip or try another troop/seat.`;
     }
     return opts.skip.length > 0
-      ? `Nothing left to seat once ${nameList(opts.skip, opts.state)} sit out. Bring one of them back, or switch the pool to All.`
+      ? `Nothing left to seat once ${nameList(opts.skip, opts.state)} sit out. Bring one of them back, or switch the pool to All dragons.`
       : "I need at least three dragons in this pool before I can seat a line.";
   }
-  const pool = opts.request.pool === "pit" ? "pit" : "full roster";
-  const troop = troopLabels[opts.troop];
-  const mode = modeLabels[opts.mode];
-  const left = opts.skip.length
-    ? ` Holding back ${nameList(opts.skip, opts.state)}.`
+  const leftName = nameFor(head.left, opts.state);
+  const vanguardName = nameFor(head.vanguard, opts.state);
+  const rightName = nameFor(head.right, opts.state);
+  const troop = troopLabels[head.troop];
+  const mode = modeLabels[head.mode];
+  const heldBack = opts.skip.length
+    ? ` (leaving out ${nameList(opts.skip, opts.state)})`
     : "";
-  const alts = opts.lines.slice(1).length
-    ? ` ${opts.lines.length - 1} alternate${opts.lines.length - 1 === 1 ? "" : "s"} below.`
-    : "";
-  const lead = opts.again ? "Different line" : "Best line";
-  const around = anchorName ? ` around ${anchorName}` : "";
-  return `${lead}${around} for ${troop} ${mode} from your ${pool}: ${head.name} — ${seatSentence(head, opts.state)}.${left}${alts}`;
+
+  const lead = opts.again
+    ? anchorName
+      ? `Here is a fresh ${mode} setup around ${anchorName}${heldBack}.`
+      : `Here is another ${troop} ${mode} option${heldBack}.`
+    : anchorName
+      ? `Here are the top ${mode} teams built around ${anchorName}${heldBack}.`
+      : `Here are the strongest ${troop} ${mode} teams${heldBack}.`;
+
+  const altCount = Math.min(2, opts.lines.slice(1).length);
+  const altNote =
+    altCount > 0
+      ? ` I also included ${altCount} alternate${altCount === 1 ? "" : "s"} alongside it — ask to swap any dragon or switch troops if you want a different angle.`
+      : " Ask if you want to swap any dragon or switch troops.";
+
+  return `${lead} The top pick pairs ${leftName} (Left), ${vanguardName} (Vanguard), and ${rightName} (Right): ${head.why}${altNote}`;
 }
 
 export type CoachAnswer = { reply: string; lines: AiLine[] };

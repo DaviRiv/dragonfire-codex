@@ -364,6 +364,8 @@ export function choicesAroundDragon(opts: {
   state?: PitState;
   /** Only seat lines on `troop` — skip affinity/other-troop variants. */
   lockTroop?: boolean;
+  /** Only include dragons present in `availableIds` (plus pinned dragon). */
+  availableIds?: Set<string>;
 }): AroundChoice[] {
   const dragon = getCatalogDragon(opts.dragonId);
   if (!dragon) return [];
@@ -421,9 +423,15 @@ export function choicesAroundDragon(opts: {
     }
   }
 
-  found.sort((a, b) => b.score - a.score);
+  const candidates = found.filter((choice) => {
+    if (!opts.availableIds) return true;
+    return seatsOf(choice.line).every(
+      (id) => id === opts.dragonId || opts.availableIds?.has(id),
+    );
+  });
+  candidates.sort((a, b) => b.score - a.score);
   const bestSeat = new Map<string, AroundChoice>();
-  for (const choice of found) {
+  for (const choice of candidates) {
     const key = seatingKey(choice.line);
     const prev = bestSeat.get(key);
     if (!prev || choice.score > prev.score) bestSeat.set(key, choice);
@@ -514,6 +522,7 @@ export function choicesAroundSeats(opts: {
   mode?: LineupMode;
   limit?: number;
   state?: PitState;
+  availableIds?: Set<string>;
 }): AroundChoice[] {
   const locks = (["left", "vanguard", "right"] as const)
     .map((slot) => {
@@ -538,6 +547,13 @@ export function choicesAroundSeats(opts: {
 
   function take(line: BoardLine, bonus = 0) {
     if (!lineMatchesLocks(line, locks)) return;
+    if (opts.availableIds) {
+      const lockSet = new Set(locks.map((lock) => lock.id));
+      const allAvailable = seatsOf(line).every(
+        (id) => lockSet.has(id) || opts.availableIds?.has(id),
+      );
+      if (!allAvailable) return;
+    }
     const next = withLockStars(line, locks, state);
     const key = seatingKey(next);
     if (seen.has(key)) return;
@@ -553,16 +569,36 @@ export function choicesAroundSeats(opts: {
       troop: opts.troop,
       mode,
       state,
-      limit,
+      limit: opts.availableIds ? 32 : limit,
+      availableIds: opts.availableIds,
     })) {
       take(choice.line);
+    }
+    if (opts.availableIds) {
+      for (const line of kitTeamsAround({
+        dragonId: lock.id,
+        stars: lock.stars,
+        troop: opts.troop,
+        mode,
+      })) {
+        take(line);
+      }
     }
   }
 
   const exact = boardFromLocks(locks, opts.troop);
   if (exact) take(exact, 80);
 
-  found.sort((a, b) => b.score - a.score);
+  found.sort((a, b) => {
+    const aAll = seatsOf(a.line).every((id) =>
+      getCatalogDragon(id)?.affinities.includes(opts.troop),
+    );
+    const bAll = seatsOf(b.line).every((id) =>
+      getCatalogDragon(id)?.affinities.includes(opts.troop),
+    );
+    if (aAll !== bAll) return bAll ? 1 : -1;
+    return b.score - a.score;
+  });
   return found.slice(0, limit);
 }
 

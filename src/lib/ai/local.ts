@@ -12,9 +12,18 @@ export function localComboLines(
   extraExclude: string[] = [],
 ): AiLine[] {
   const allowed = new Set(roster.map((card) => card.id));
+  const troopMatches = roster.filter((card) =>
+    card.aff.split("+").includes(lineup.troop),
+  );
+  const enforceTroop = troopMatches.length >= 3;
   const notInRoster = allDragons(state.customDragons)
     .map((dragon) => dragon.id)
-    .filter((id) => !allowed.has(id));
+    .filter((id) => {
+      if (!allowed.has(id)) return true;
+      if (!enforceTroop) return false;
+      const dragon = findDragon(id, state.customDragons);
+      return Boolean(dragon && !dragon.affinities.includes(lineup.troop));
+    });
   const seatedElsewhere = roster
     .filter((card) => card.otherTeam)
     .map((card) => card.id);

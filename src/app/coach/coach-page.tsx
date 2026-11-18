@@ -43,6 +43,7 @@ import {
   troopLabels,
 } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
+import { MAX_PIT_TEAMS, pitLineups, usedOnPitTeams } from "@/lib/pit-teams";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { usePit } from "@/lib/store";
 import { useOpenAiAvailable } from "@/lib/use-openai-available";
@@ -85,6 +86,12 @@ export function CoachPage() {
     () => new Map(state.owned.map((row) => [row.dragonId, row.starRank] as const)),
     [state.owned],
   );
+  const usedTeams = useMemo(() => usedOnPitTeams(state), [state]);
+  const savedPitCount = useMemo(() => pitLineups(state).length, [state]);
+  const availablePitCount = useMemo(
+    () => state.owned.filter((row) => !usedTeams.has(row.dragonId)).length,
+    [state.owned, usedTeams],
+  );
 
   const anchorDragon = anchor.dragonId
     ? getCatalogDragon(anchor.dragonId) ?? null
@@ -126,14 +133,16 @@ export function CoachPage() {
     state,
   ]);
 
-  const pickerDragons = useMemo(
-    () =>
-      filterDragonPicks(DRAGONS, {
-        query: dragonQuery,
-        ownedIds: ownedStars.keys(),
-      }),
-    [dragonQuery, ownedStars],
-  );
+  const pickerDragons = useMemo(() => {
+    const filtered = filterDragonPicks(DRAGONS, {
+      query: dragonQuery,
+      ownedIds: ownedStars.keys(),
+    });
+    if (dragonQuery.trim()) return filtered;
+    const owned = filtered.filter((dragon) => ownedStars.has(dragon.id));
+    const rest = filtered.filter((dragon) => !ownedStars.has(dragon.id));
+    return [...owned, ...rest];
+  }, [dragonQuery, ownedStars]);
 
   useDevFailureSeam(chat.failNext);
 
@@ -198,10 +207,26 @@ export function CoachPage() {
       toast.error("Could not fill all three seats from that line.");
       return;
     }
-    const created = { ...filled, id: newId("lineup"), updatedAt: nowIso() };
+    const atPitLimit = filled.kind === "pit" && savedPitCount >= MAX_PIT_TEAMS;
+    const created = {
+      ...filled,
+      kind: atPitLimit ? ("theory" as const) : filled.kind,
+      id: newId("lineup"),
+      updatedAt: nowIso(),
+    };
     addLineup(created);
     rememberBuild(created.kind, created.id);
-    toast.success(`Seated ${line.name} on Team.`);
+    if (atPitLimit) {
+      toast.success(
+        `Already at ${MAX_PIT_TEAMS}/${MAX_PIT_TEAMS} pit teams — saved ${line.name} as a Theory line.`,
+      );
+      return;
+    }
+    toast.success(
+      created.kind === "pit"
+        ? `Seated ${line.name} (${savedPitCount + 1}/${MAX_PIT_TEAMS} pit teams).`
+        : `Seated ${line.name} on Team.`,
+    );
   }
 
   const buildExport = useCallback(
@@ -361,12 +386,21 @@ export function CoachPage() {
                   {pickerDragons.map((dragon) => {
                     const selected = dragon.id === anchorDragon?.id;
                     const role = dragonRoles(dragon)[0];
+                    const pitStars = ownedStars.get(dragon.id);
+                    const seatedOn = usedTeams.get(dragon.id);
                     return (
                       <li key={dragon.id}>
                         <button
                           type="button"
                           onClick={() => selectDragon(dragon.id)}
                           data-coach-pick={dragon.id}
+                          title={
+                            seatedOn
+                              ? `${dragon.name} · on ${seatedOn}`
+                              : pitStars != null
+                                ? `${dragon.name} · in pit ★${pitStars}`
+                                : dragon.name
+                          }
                           className={cn(
                             "flex w-full flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center transition",
                             selected
@@ -385,7 +419,13 @@ export function CoachPage() {
                             {dragon.name}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            {role ? roleShort[role] : dragon.rarity}
+                            {seatedOn
+                              ? "Seated"
+                              : pitStars != null
+                                ? `★${pitStars}`
+                                : role
+                                  ? roleShort[role]
+                                  : dragon.rarity}
                           </span>
                         </button>
                       </li>
@@ -450,7 +490,7 @@ export function CoachPage() {
               </div>
 
               <div className="space-y-1">
-                <SectionLabel>Pool</SectionLabel>
+                <SectionLabel>Pool · {savedPitCount}/{MAX_PIT_TEAMS} pit teams</SectionLabel>
                 <div className="flex flex-wrap gap-1">
                   <MiniChip
                     active={pool === "hatchery"}
@@ -462,7 +502,7 @@ export function CoachPage() {
                     active={pool === "pit"}
                     onClick={() => chat.setPool("pit")}
                   >
-                    Owned only · {state.owned.length}
+                    Available in Pit · {availablePitCount}/{state.owned.length}
                   </MiniChip>
                 </div>
               </div>
@@ -824,10 +864,7 @@ function Turn({
   }
 
   return (
-    <div data-turn="assistant" className="space-y-2">
-      <div className="w-fit max-w-[min(44rem,95%)] rounded-2xl bg-black/30 px-3 py-2 text-[13px] leading-snug break-words whitespace-pre-wrap ring-1 ring-foreground/10">
-        {turn.text}
-      </div>
+    <div data-turn="assistant" className="space-y-2.5">
       {turn.lines?.length ? (
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {turn.lines.slice(0, 3).map((line, index) => (
@@ -841,6 +878,9 @@ function Turn({
           ))}
         </div>
       ) : null}
+      <div className="w-fit max-w-[min(52rem,100%)] rounded-2xl bg-black/30 px-3.5 py-2.5 text-[13px] leading-relaxed break-words whitespace-pre-wrap ring-1 ring-foreground/10">
+        {turn.text}
+      </div>
     </div>
   );
 }

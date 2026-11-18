@@ -15,6 +15,7 @@ import {
 } from "@/lib/ai/conversation";
 import { detectAnchor, detectIntent, detectOrdinal, directNames } from "@/lib/ai/intent";
 import { answerPlan, coachLines } from "@/lib/ai/coach";
+import { getCatalogDragon } from "@/data/dragons";
 import { emptyPit } from "@/lib/dragons";
 import { emptySlots } from "@/lib/lineup";
 import type { AiLine } from "@/lib/ai/prompt";
@@ -409,6 +410,59 @@ assert(
     return seats.includes("vhagar") && seats.includes("moondancer");
   }),
   "Malachite top 3 must include Malachite / Vhagar / Moondancer",
+);
+
+// Troop affinity must never be broken when full-affinity lines exist.
+for (const item of [...velarLines, ...malachiteLines]) {
+  const seats = [item.left, item.vanguard, item.right];
+  assert(
+    seats.every((id) => getCatalogDragon(id)?.affinities.includes(item.troop)),
+    `line ${item.left}/${item.vanguard}/${item.right} must keep full ${item.troop} affinity`,
+  );
+}
+
+// Pit pool respects dragons already seated on other saved pit teams.
+const pitRoster: RosterCard[] = [
+  { ...card("malachite", "Malachite", ["Heal"]), aff: "cavalry+shieldbearers" },
+  { ...card("vhagar", "Vhagar", ["Tank"]), aff: "shieldbearers+archers+siege", otherTeam: "Team 1" },
+  { ...card("vaeldra", "Vaeldra", ["Tank"]), aff: "shieldbearers+spearmen+cavalry" },
+  { ...card("venator", "Venator", ["DPS"]), aff: "shieldbearers" },
+  { ...card("moondancer", "Moondancer", ["DPS"]), aff: "shieldbearers+archers" },
+];
+const pitLines = coachLines({
+  request: {
+    lineupName: "Coach",
+    pool: "pit",
+    troop: "shieldbearers",
+    mode: "pvp",
+    skipUsed: true,
+    current: { left: null, vanguard: null, right: null },
+    roster: pitRoster,
+  },
+  state: emptyPit(),
+  lineup: {
+    id: "coach-pit",
+    name: "Coach",
+    kind: "pit",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: false,
+    craftStars: 6,
+    excludeUsed: true,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+  troop: "shieldbearers",
+  mode: "pvp",
+  skip: [],
+  anchorId: "malachite",
+  lockTroop: true,
+});
+assert(pitLines.length > 0, "pit available lines build when enough pit dragons are free");
+assert(
+  pitLines.every((item) => ![item.left, item.vanguard, item.right].includes("vhagar")),
+  "skipUsed must not reuse Vhagar when Vhagar is already on another pit team",
 );
 
 console.log("check-coach-chat: ok");

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation";
 import { DragonPickList } from "@/components/dragon-pick-list";
 import { EmptyState } from "@/components/empty-state";
+import { MiniChip } from "@/components/chip";
 import { SeatControl } from "@/components/seat-control";
 import { SectionLabel } from "@/components/section-label";
 import { TroopChip } from "@/components/troop-icon";
@@ -19,6 +20,7 @@ import { starsForCounterPick } from "@/lib/counter-pick";
 import { newId, nowIso } from "@/lib/dragons";
 import { TROOP_TYPES, slotShort } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
+import { MAX_PIT_TEAMS, pitLineups, usedOnPitTeams } from "@/lib/pit-teams";
 import { usePit } from "@/lib/store";
 import type { SlotId, TroopType } from "@/lib/types";
 
@@ -107,9 +109,21 @@ export function TeamPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [seatedId, setSeatedId] = useState<string | null>(null);
+  const [pitOnly, setPitOnly] = useState(false);
 
   const seatedCount = SLOT_IDS.filter((slot) => seats[slot].dragonId).length;
   const picking = openSlot != null;
+  const usedTeams = useMemo(() => usedOnPitTeams(state), [state]);
+  const savedPitCount = useMemo(() => pitLineups(state).length, [state]);
+  const availablePitIds = useMemo(
+    () =>
+      new Set(
+        state.owned
+          .filter((row) => !usedTeams.has(row.dragonId))
+          .map((row) => row.dragonId),
+      ),
+    [state.owned, usedTeams],
+  );
   const ownedIds = useMemo(
     () => new Set(state.owned.map((row) => row.dragonId)),
     [state.owned],
@@ -152,8 +166,11 @@ export function TeamPage() {
       },
       troop,
       state,
+      availableIds: pitOnly ? availablePitIds : undefined,
     });
   }, [
+    availablePitIds,
+    pitOnly,
     seatedCount,
     seats.left.dragonId,
     seats.left.stars,
@@ -321,10 +338,12 @@ export function TeamPage() {
     const owned = ids.every((id) =>
       state.owned.some((row) => row.dragonId === id),
     );
+    const atPitLimit = owned && savedPitCount >= MAX_PIT_TEAMS;
+    const kind = owned && !atPitLimit ? ("pit" as const) : ("theory" as const);
     const created = {
       ...active.lineup,
       id: newId("lineup"),
-      kind: owned ? ("pit" as const) : ("theory" as const),
+      kind,
       ignoreLevel: !owned,
       craftStars: Math.max(
         ...SLOT_IDS.map((slot) =>
@@ -340,7 +359,17 @@ export function TeamPage() {
     rememberBuild(created.kind, created.id);
     setPickedId(active.id);
     setSeatedId(created.id);
-    toast.success(`Seated ${active.line.name}.`);
+    if (atPitLimit) {
+      toast.success(
+        `${MAX_PIT_TEAMS}/${MAX_PIT_TEAMS} pit teams already saved — saved ${active.line.name} as Theory.`,
+      );
+    } else {
+      toast.success(
+        kind === "pit"
+          ? `Seated ${active.line.name} (${savedPitCount + 1}/${MAX_PIT_TEAMS} pit teams).`
+          : `Seated ${active.line.name}.`,
+      );
+    }
   }
 
   function onListKey(event: KeyboardEvent<HTMLDivElement>) {
@@ -427,6 +456,17 @@ export function TeamPage() {
               }}
             />
           ))}
+          <MiniChip
+            active={pitOnly}
+            className={compactChip}
+            onClick={() => {
+              setPitOnly((prev) => !prev);
+              setPickedId(null);
+            }}
+            title={`Build only from available dragons in your pit (${savedPitCount}/${MAX_PIT_TEAMS} teams used)`}
+          >
+            Available in Pit · {availablePitIds.size} ({savedPitCount}/{MAX_PIT_TEAMS})
+          </MiniChip>
         </div>
       ) : null}
     </section>

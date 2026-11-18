@@ -102,7 +102,7 @@ export function copilotChatPrompt(opts: {
     .filter((line) => line.length > 8)
     .join("\n\n");
 
-  return `You are the in-app Copilot for Game of Thrones: Dragonfire. Answer the player's question concisely in 2-5 plain-text sentences (no markdown headers or bullet spam). Use ONLY the dragons, kits, and lines listed below — never invent dragons or skills.
+  return `You are the in-app Copilot for Game of Thrones: Dragonfire. Speak naturally in 2-4 plain-text sentences (no markdown headers or bullet lists). Explain WHY the top team at the top of the card list works (troop affinity +20% stats, lane placement, and how their kits trigger each other). NEVER suggest breaking troop affinity across dragons unless no full-affinity line exists. Use ONLY the dragons, kits, and lines listed below.
 
 Game facts:
 ${factsBlock()}
