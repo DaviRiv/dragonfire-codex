@@ -299,6 +299,18 @@ function fillKitPairs(opts: {
         pool.push([healer, finisher]);
       }
     }
+    if (!pinned || !isTank(pinned)) {
+      for (const tank of tanks) {
+        for (const finisher of finishers) {
+          if (tank.id === finisher.id) continue;
+          pool.push([tank, finisher]);
+        }
+        for (const healer of healers) {
+          if (tank.id === healer.id) continue;
+          pool.push([tank, healer]);
+        }
+      }
+    }
     if (pinned && isHealer(pinned)) {
       for (const healer of healers) {
         for (const second of healers) {

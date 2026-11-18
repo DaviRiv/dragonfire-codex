@@ -329,4 +329,41 @@ assert(
   "every returned line for 'build me a team around vhagar' contains Vhagar",
 );
 
+const velarLines = coachLines({
+  request: {
+    lineupName: "Coach",
+    pool: "hatchery",
+    troop: "shieldbearers",
+    mode: "pvp",
+    skipUsed: false,
+    current: { left: null, vanguard: null, right: null },
+    roster,
+  },
+  state: emptyPit(),
+  lineup: {
+    id: "coach-ctx",
+    name: "Coach",
+    kind: "theory",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: true,
+    craftStars: 6,
+    excludeUsed: false,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+  troop: "shieldbearers",
+  mode: "pvp",
+  skip: [],
+  anchorId: "velar",
+  lockTroop: false,
+});
+assert(
+  velarLines[0]?.left === "velar" &&
+    velarLines[0]?.vanguard === "vhagar" &&
+    velarLines[0]?.right === "moondancer",
+  `Velar top line must be Velar / Vhagar / Moondancer, got ${velarLines[0]?.left} / ${velarLines[0]?.vanguard} / ${velarLines[0]?.right}`,
+);
+
 console.log("check-coach-chat: ok");

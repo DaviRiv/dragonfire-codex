@@ -1,6 +1,6 @@
 import { localComboLines } from "@/lib/ai/local";
-import { preferredSlot } from "@/lib/ai/around";
-import { choicesAroundDragon } from "@/lib/around-choices";
+import { kitTeamsAround, preferredSlot } from "@/lib/ai/around";
+import { choicesAroundDragon, evaluateAroundLine, type AroundChoice } from "@/lib/around-choices";
 import { detectMode, detectTroop } from "@/lib/ai/intent";
 import {
   DEFAULT_MODE,
@@ -10,11 +10,13 @@ import {
 } from "@/lib/ai/conversation";
 import type { AiLine } from "@/lib/ai/prompt";
 import type { RosterCard, SuggestRequest } from "@/lib/ai/roster";
-import { ONLINE_DPS_CORE, metaSeatIds } from "@/data/meta";
+import { CURRENT_META_LINES, ONLINE_DPS_CORE, metaSeatIds } from "@/data/meta";
 import { makePick } from "@/lib/lineup";
-import { allDragons, findDragon } from "@/lib/dragons";
+import { allDragons, findDragon, newOwnedDragon } from "@/lib/dragons";
+import { defaultHabits } from "@/lib/habits";
 import { modeLabels, troopLabels } from "@/lib/labels";
-import { pairingReport } from "@/lib/pairing";
+import { partnerRules, pairingReport } from "@/lib/pairing";
+import { isTank } from "@/lib/roles";
 import { suggestFullLine } from "@/lib/suggest";
 import type {
   Lineup,
@@ -94,6 +96,60 @@ function nameList(ids: string[], state: PitState): string {
   return ids.map((id) => nameFor(id, state)).join(", ");
 }
 
+function benchmarkPitState(state: PitState, minStars = 6): PitState {
+  const byId = new Map(state.owned.map((row) => [row.dragonId, row] as const));
+  const owned = allDragons(state.customDragons).map((dragon) => {
+    const existing = byId.get(dragon.id);
+    if (existing && existing.starRank >= minStars) return existing;
+    return newOwnedDragon(
+      dragon.id,
+      minStars,
+      existing?.reignLevel ?? 25,
+      defaultHabits(minStars),
+      existing?.habitRanks,
+    );
+  });
+  return { ...state, owned };
+}
+
+function copilotChoiceScore(
+  choice: AroundChoice,
+  mode: LineupMode,
+  primaryTroop: TroopType,
+  state: PitState,
+): number {
+  const left = findDragon(choice.line.left, state.customDragons);
+  const vanguard = findDragon(choice.line.vanguard, state.customDragons);
+  const right = findDragon(choice.line.right, state.customDragons);
+  if (!left || !vanguard || !right) return choice.score;
+  const dragons = [left, vanguard, right];
+  let score = choice.score;
+  const combatMode = mode === "pvp" || mode === "defense" || mode === "rally";
+  if (combatMode) {
+    if (isTank(vanguard)) score += 28;
+    else if (dragons.some(isTank)) score += 8;
+    else score -= 18;
+  }
+  for (const dragon of dragons) {
+    for (const rule of partnerRules(dragon, 6)) {
+      if (dragons.some((mate) => mate.id !== dragon.id && mate.breed === rule.breed)) {
+        score += 14;
+      }
+    }
+  }
+  if (choice.line.troop === primaryTroop) score += 6;
+  const isMetaCore = CURRENT_META_LINES.some(
+    (core) =>
+      core.troop === choice.line.troop &&
+      core.mode === choice.line.mode &&
+      core.left.id === choice.line.left &&
+      core.vanguard.id === choice.line.vanguard &&
+      core.right.id === choice.line.right,
+  );
+  if (isMetaCore) score += 16;
+  return score;
+}
+
 function anchoredComboLines(input: {
   anchorId: string;
   anchorSlot?: SlotId | null;
@@ -107,60 +163,86 @@ function anchoredComboLines(input: {
 }): AiLine[] {
   const dragon = findDragon(input.anchorId, input.state.customDragons);
   if (!dragon) return [];
-  const owned = input.state.owned.find((row) => row.dragonId === input.anchorId);
+  const evalState =
+    input.request.pool === "hatchery"
+      ? benchmarkPitState(input.state, 6)
+      : input.state;
+  const owned = evalState.owned.find((row) => row.dragonId === input.anchorId);
   const stars = owned?.starRank ?? 6;
   const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
   const allowed = new Set(input.request.roster.map((card) => card.id));
-  const troop = input.lockTroop ? input.troop : (dragon.affinities[0] ?? input.troop);
-  const candidates = choicesAroundDragon({
+  const primaryTroop = dragon.affinities[0] ?? input.troop;
+  const troop = input.lockTroop ? input.troop : primaryTroop;
+
+  const fromChoices = choicesAroundDragon({
     dragonId: input.anchorId,
     stars,
     troop,
     mode: input.mode,
-    state: input.state,
-    limit: 16,
+    state: evalState,
+    limit: 24,
     lockTroop: Boolean(input.lockTroop),
-  }).filter((choice) => {
-    const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
-    if (!seats.includes(input.anchorId)) return false;
-    if (seats.some((id) => skipSet.has(id))) return false;
-    if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
-      return false;
-    }
-    if (input.request.pool === "pit") {
-      return seats.every((id) => id === input.anchorId || allowed.has(id));
-    }
-    return true;
   });
+  const fromKit = kitTeamsAround({
+    dragonId: input.anchorId,
+    stars,
+    troop,
+    mode: input.mode,
+  }).slice(0, 60);
+
+  const seen = new Set<string>();
+  const merged: AroundChoice[] = [];
+  for (const choice of fromChoices) {
+    const key = `${choice.line.left}|${choice.line.vanguard}|${choice.line.right}|${choice.line.troop}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(choice);
+  }
+  for (const line of fromKit) {
+    const key = `${line.left}|${line.vanguard}|${line.right}|${line.troop}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(evaluateAroundLine(line, input.anchorId, stars, evalState));
+  }
+
+  const candidates = merged
+    .filter((choice) => {
+      const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
+      if (!seats.includes(input.anchorId)) return false;
+      if (seats.some((id) => skipSet.has(id))) return false;
+      if (input.anchorSlot && choice.line[input.anchorSlot] !== input.anchorId) {
+        return false;
+      }
+      if (input.request.pool === "pit") {
+        return seats.every((id) => id === input.anchorId || allowed.has(id));
+      }
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        copilotChoiceScore(b, input.mode, primaryTroop, evalState) -
+          copilotChoiceScore(a, input.mode, primaryTroop, evalState) ||
+        b.score - a.score,
+    );
 
   if (candidates.length > 0) {
     return candidates.slice(0, 6).map((choice, index) => {
-      const topNote = choice.pros[0]?.title;
-      const reason = topNote
-        ? `${topNote}. ${seatSentence(
-            {
-              name: choice.line.name,
-              troop: choice.line.troop,
-              mode: choice.line.mode,
-              left: choice.line.left,
-              vanguard: choice.line.vanguard,
-              right: choice.line.right,
-              why: "",
-            },
-            input.state,
-          )}.`
-        : `${seatSentence(
-            {
-              name: choice.line.name,
-              troop: choice.line.troop,
-              mode: choice.line.mode,
-              left: choice.line.left,
-              vanguard: choice.line.vanguard,
-              right: choice.line.right,
-              why: "",
-            },
-            input.state,
-          )}.`;
+      const topNote = choice.pros.find(
+        (note) => !note.title.startsWith(`${dragon.name} applies`),
+      )?.title ?? choice.pros[0]?.title;
+      const seatsText = seatSentence(
+        {
+          name: choice.line.name,
+          troop: choice.line.troop,
+          mode: choice.line.mode,
+          left: choice.line.left,
+          vanguard: choice.line.vanguard,
+          right: choice.line.right,
+          why: "",
+        },
+        evalState,
+      );
+      const reason = topNote ? `${topNote}. ${seatsText}.` : `${seatsText}.`;
       return {
         name:
           index === 0
