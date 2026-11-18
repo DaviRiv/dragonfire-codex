@@ -100,7 +100,11 @@ export function CoachPage() {
 
   const activeTroop =
     anchor.troop === "auto"
-      ? (anchorDragon?.affinities[0] ?? "shieldbearers")
+      ? (anchorDragon?.affinities.find((troop) =>
+          anchor.allowedTroops.includes(troop),
+        ) ??
+        anchor.allowedTroops[0] ??
+        "shieldbearers")
       : anchor.troop;
 
   const builtLines = useMemo(() => {
@@ -125,6 +129,7 @@ export function CoachPage() {
   }, [
     activeTroop,
     anchor.mode,
+    anchor.allowedTroops,
     anchor.slot,
     anchor.troop,
     anchorDragon,
@@ -170,6 +175,7 @@ export function CoachPage() {
     const dragon = getCatalogDragon(dragonId);
     if (!dragon) return;
     chat.setAnchor({
+      ...anchor,
       dragonId: dragon.id,
       slot: "auto",
       troop: "auto",
@@ -337,6 +343,7 @@ export function CoachPage() {
             const dragon = getCatalogDragon(dragonId);
             if (!dragon) return;
             chat.setAnchor({
+              ...anchor,
               dragonId: dragon.id,
               slot: "auto",
               troop: "auto",
@@ -535,6 +542,47 @@ export function CoachPage() {
                       onClick={() => chat.setAnchor({ ...anchor, troop })}
                     />
                   ))}
+                </div>
+                <div className="space-y-1 border-t border-border/40 pt-2">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Formation types shown
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Turn off troop types you never want Copilot to suggest.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {TROOP_TYPES.map((troop) => {
+                      const active = anchor.allowedTroops.includes(troop);
+                      return (
+                        <TroopChip
+                          key={`allow-${troop}`}
+                          troop={troop}
+                          active={active}
+                          className="min-h-8 px-2 py-0 text-[11px]"
+                          onClick={() => {
+                            const next = active
+                              ? anchor.allowedTroops.filter(
+                                  (item) => item !== troop,
+                                )
+                              : [...anchor.allowedTroops, troop];
+                            if (next.length === 0) {
+                              toast.error("Keep at least one troop type enabled.");
+                              return;
+                            }
+                            chat.setAnchor({
+                              ...anchor,
+                              allowedTroops: next,
+                              troop:
+                                anchor.troop !== "auto" &&
+                                !next.includes(anchor.troop)
+                                  ? "auto"
+                                  : anchor.troop,
+                            });
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-1 pt-1">
                   {MODES.map((mode) => (

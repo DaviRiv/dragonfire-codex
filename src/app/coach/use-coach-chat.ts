@@ -61,6 +61,7 @@ export type CoachAnchor = {
   slot: SlotId | "auto";
   troop: TroopType | "auto";
   mode: LineupMode;
+  allowedTroops: TroopType[];
 };
 
 const DEFAULT_ANCHOR: CoachAnchor = {
@@ -68,6 +69,7 @@ const DEFAULT_ANCHOR: CoachAnchor = {
   slot: "auto",
   troop: "auto",
   mode: "pvp",
+  allowedTroops: ["shieldbearers", "spearmen", "cavalry", "archers", "siege"],
 };
 
 type State = {
@@ -366,6 +368,12 @@ export function useCoachChat() {
           : "auto",
       troop: rawAnchor.troop ?? DEFAULT_ANCHOR.troop,
       mode: rawAnchor.mode ?? DEFAULT_ANCHOR.mode,
+      allowedTroops: Array.isArray(rawAnchor.allowedTroops)
+        ? rawAnchor.allowedTroops.filter(
+            (troop): troop is TroopType =>
+              DEFAULT_ANCHOR.allowedTroops.includes(troop as TroopType),
+          )
+        : DEFAULT_ANCHOR.allowedTroops,
     };
     const savedPool =
       record.pool === "hatchery" ? "hatchery" : "pit";
@@ -449,6 +457,15 @@ export function useCoachChat() {
                     mode: anchor.mode,
                   },
             );
+            if (
+              plan.troop &&
+              !anchor.allowedTroops.includes(plan.troop)
+            ) {
+              const fallback =
+                anchor.allowedTroops[0] ?? "shieldbearers";
+              plan.troop = fallback;
+              plan.lockTroop = true;
+            }
             const plannedAnchor = syncAnchorFromPlan(anchor, plan);
             if (
               plannedAnchor.dragonId !== anchor.dragonId ||

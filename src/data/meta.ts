@@ -72,6 +72,30 @@ export const SHIELD_MOON_CORE: MetaLine = {
   why: "Popular Shieldbearer third: Malachite recovers from the Left, Vhagar soaks in Vanguard, Moondancer finishes on the Right Flank.",
 };
 
+export const VELAR_MOON_CORE: MetaLine = {
+  id: "velar-moon",
+  name: "Velar Moon core",
+  where: "online PvP / field marches",
+  troop: "shieldbearers",
+  mode: "pvp",
+  left: {
+    id: "velar",
+    name: "Velar",
+    job: "Advantage / tactical support",
+  },
+  vanguard: {
+    id: "vhagar",
+    name: "Vhagar",
+    job: "soak / Taunt",
+  },
+  right: {
+    id: "moondancer",
+    name: "Moondancer",
+    job: "Bleed finisher",
+  },
+  why: "Top Shieldbearer core around Vhagar or Velar. Velar feeds Advantage and Tactical Damage from the Left, Vhagar soaks in Vanguard, and Moondancer converts the protected Right Flank into finishing pressure.",
+};
+
 export const SHIELD_RHYS_CORE: MetaLine = {
   id: "shield-rhys",
   name: "Shield Rhysarion third",
@@ -218,6 +242,7 @@ export const ARCHER_SYRAX_CORE: MetaLine = {
 
 export const CURRENT_META_LINES: MetaLine[] = [
   ONLINE_DPS_CORE,
+  VELAR_MOON_CORE,
   SHIELD_MOON_CORE,
   SHIELD_RHYS_CORE,
   SPEAR_SYRAX_CORE,

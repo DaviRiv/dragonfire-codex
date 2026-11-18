@@ -367,6 +367,46 @@ assert(
   `Velar top line must be Velar / Vhagar / Moondancer, got ${velarLines[0]?.left} / ${velarLines[0]?.vanguard} / ${velarLines[0]?.right}`,
 );
 
+const vhagarLines = coachLines({
+  request: {
+    lineupName: "Coach",
+    pool: "hatchery",
+    troop: "shieldbearers",
+    mode: "pvp",
+    skipUsed: false,
+    current: { left: null, vanguard: null, right: null },
+    roster,
+  },
+  state: emptyPit(),
+  lineup: {
+    id: "coach-ctx-vhagar",
+    name: "Coach",
+    kind: "theory",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: true,
+    craftStars: 10,
+    excludeUsed: false,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+  troop: "shieldbearers",
+  mode: "pvp",
+  skip: [],
+  anchorId: "vhagar",
+  lockTroop: true,
+});
+assert(
+  vhagarLines.slice(0, 3).some(
+    (line) =>
+      line.left === "velar" &&
+      line.vanguard === "vhagar" &&
+      line.right === "moondancer",
+  ),
+  "Vhagar top 3 must include Velar / Vhagar / Moondancer",
+);
+
 const malachiteLines = coachLines({
   request: {
     lineupName: "Coach",
