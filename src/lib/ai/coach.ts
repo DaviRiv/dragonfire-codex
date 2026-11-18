@@ -13,10 +13,11 @@ import type { RosterCard, SuggestRequest } from "@/lib/ai/roster";
 import { CURRENT_META_LINES, ONLINE_DPS_CORE, metaSeatIds } from "@/data/meta";
 import { makePick } from "@/lib/lineup";
 import { allDragons, findDragon, newOwnedDragon } from "@/lib/dragons";
+import { canonAbility, dragonProvides } from "@/lib/abilities";
 import { defaultHabits } from "@/lib/habits";
 import { modeLabels, troopLabels } from "@/lib/labels";
 import { partnerRules, pairingReport } from "@/lib/pairing";
-import { isTank } from "@/lib/roles";
+import { isMitigation, isTank } from "@/lib/roles";
 import { suggestFullLine } from "@/lib/suggest";
 import type {
   Lineup,
@@ -126,17 +127,34 @@ function copilotChoiceScore(
   let score = choice.score;
   const combatMode = mode === "pvp" || mode === "defense" || mode === "rally";
   if (combatMode) {
-    if (isTank(vanguard)) score += 28;
-    else if (dragons.some(isTank)) score += 8;
+    if (isTank(vanguard)) score += 32;
+    else if (dragons.some(isMitigation)) score += 6;
+    else if (dragons.some(isTank)) score += 6;
     else score -= 18;
   }
+  const allMatchTroop = dragons.every((d) =>
+    d.affinities.includes(choice.line.troop),
+  );
+  if (allMatchTroop) score += 14;
+  else score -= 10;
+  if (choice.cons.length === 0) score += 6;
+  const distinctStatuses = new Set<string>();
   for (const dragon of dragons) {
-    for (const rule of partnerRules(dragon, 6)) {
+    if (dragon.rarity === "legendary") score += 6;
+    if (/\bCleanse\b/i.test(dragon.command)) score += 8;
+    if (dragonProvides(dragon, "Resistance", 10)) score += 8;
+    for (const gate of dragon.provides ?? []) {
+      if (dragonProvides(dragon, canonAbility(gate.ability), 10)) {
+        distinctStatuses.add(canonAbility(gate.ability));
+      }
+    }
+    for (const rule of partnerRules(dragon, 10)) {
       if (dragons.some((mate) => mate.id !== dragon.id && mate.breed === rule.breed)) {
         score += 14;
       }
     }
   }
+  score += distinctStatuses.size * 4;
   if (choice.line.troop === primaryTroop) score += 6;
   const isMetaCore = CURRENT_META_LINES.some(
     (core) =>
@@ -165,14 +183,17 @@ function anchoredComboLines(input: {
   if (!dragon) return [];
   const evalState =
     input.request.pool === "hatchery"
-      ? benchmarkPitState(input.state, 6)
+      ? benchmarkPitState(input.state, 10)
       : input.state;
   const owned = evalState.owned.find((row) => row.dragonId === input.anchorId);
-  const stars = owned?.starRank ?? 6;
+  const stars = owned?.starRank ?? 10;
   const skipSet = new Set(input.skip.filter((id) => id !== input.anchorId));
   const allowed = new Set(input.request.roster.map((card) => card.id));
   const primaryTroop = dragon.affinities[0] ?? input.troop;
   const troop = input.lockTroop ? input.troop : primaryTroop;
+  const troopsToSearch = input.lockTroop
+    ? [input.troop]
+    : [...new Set([primaryTroop, ...dragon.affinities])];
 
   const fromChoices = choicesAroundDragon({
     dragonId: input.anchorId,
@@ -183,12 +204,14 @@ function anchoredComboLines(input: {
     limit: 24,
     lockTroop: Boolean(input.lockTroop),
   });
-  const fromKit = kitTeamsAround({
-    dragonId: input.anchorId,
-    stars,
-    troop,
-    mode: input.mode,
-  }).slice(0, 60);
+  const fromKit = troopsToSearch.flatMap((t) =>
+    kitTeamsAround({
+      dragonId: input.anchorId,
+      stars,
+      troop: t,
+      mode: input.mode,
+    }),
+  );
 
   const seen = new Set<string>();
   const merged: AroundChoice[] = [];
@@ -205,7 +228,7 @@ function anchoredComboLines(input: {
     merged.push(evaluateAroundLine(line, input.anchorId, stars, evalState));
   }
 
-  const candidates = merged
+  const scored = merged
     .filter((choice) => {
       const seats = [choice.line.left, choice.line.vanguard, choice.line.right];
       if (!seats.includes(input.anchorId)) return false;
@@ -218,12 +241,51 @@ function anchoredComboLines(input: {
       }
       return true;
     })
-    .sort(
-      (a, b) =>
-        copilotChoiceScore(b, input.mode, primaryTroop, evalState) -
-          copilotChoiceScore(a, input.mode, primaryTroop, evalState) ||
-        b.score - a.score,
-    );
+    .map((choice) => ({
+      choice,
+      rank: copilotChoiceScore(choice, input.mode, primaryTroop, evalState),
+    }))
+    .sort((a, b) => b.rank - a.rank || b.choice.score - a.choice.score);
+
+  // Deduplicate identical 3-dragon trios (keep highest-scoring seating),
+  // and when Any troop is active, ensure each affinity gets a top pick so
+  // multi-troop dragons (e.g. Malachite Cavalry + Shieldbearers) surface both.
+  const byTrio = new Map<string, (typeof scored)[number]>();
+  for (const item of scored) {
+    const trio = [
+      item.choice.line.left,
+      item.choice.line.vanguard,
+      item.choice.line.right,
+    ]
+      .sort()
+      .join("|");
+    if (!byTrio.has(trio)) byTrio.set(trio, item);
+  }
+  const uniqueTrios = [...byTrio.values()];
+  let candidates: AroundChoice[];
+  if (!input.lockTroop && troopsToSearch.length > 1) {
+    const picked: AroundChoice[] = [];
+    const pickedIds = new Set<string>();
+    for (const t of troopsToSearch) {
+      const bestForTroop = uniqueTrios.find(
+        (item) =>
+          item.choice.line.troop === t && !pickedIds.has(item.choice.id),
+      );
+      if (bestForTroop) {
+        picked.push(bestForTroop.choice);
+        pickedIds.add(bestForTroop.choice.id);
+      }
+    }
+    for (const item of uniqueTrios) {
+      if (pickedIds.has(item.choice.id)) continue;
+      picked.push(item.choice);
+      pickedIds.add(item.choice.id);
+      if (picked.length >= 6) break;
+    }
+    candidates = picked.slice(0, 6);
+  } else {
+    candidates = uniqueTrios.slice(0, 6).map((item) => item.choice);
+  }
 
   if (candidates.length > 0) {
     return candidates.slice(0, 6).map((choice, index) => {

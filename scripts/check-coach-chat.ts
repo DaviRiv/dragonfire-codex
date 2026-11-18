@@ -366,4 +366,49 @@ assert(
   `Velar top line must be Velar / Vhagar / Moondancer, got ${velarLines[0]?.left} / ${velarLines[0]?.vanguard} / ${velarLines[0]?.right}`,
 );
 
+const malachiteLines = coachLines({
+  request: {
+    lineupName: "Coach",
+    pool: "hatchery",
+    troop: "shieldbearers",
+    mode: "pvp",
+    skipUsed: false,
+    current: { left: null, vanguard: null, right: null },
+    roster,
+  },
+  state: emptyPit(),
+  lineup: {
+    id: "coach-ctx",
+    name: "Coach",
+    kind: "theory",
+    mode: "pvp",
+    troop: "shieldbearers",
+    notes: "",
+    slots: emptySlots(),
+    ignoreLevel: true,
+    craftStars: 10,
+    excludeUsed: false,
+    updatedAt: "1970-01-01T00:00:00.000Z",
+  },
+  troop: "shieldbearers",
+  mode: "pvp",
+  skip: [],
+  anchorId: "malachite",
+  lockTroop: false,
+});
+assert(
+  malachiteLines.slice(0, 3).some((item) => {
+    const seats = [item.left, item.vanguard, item.right];
+    return seats.includes("seasmoke") && seats.includes("kalspire");
+  }),
+  "Malachite top 3 must include Malachite / Seasmoke / Kalspire",
+);
+assert(
+  malachiteLines.slice(0, 3).some((item) => {
+    const seats = [item.left, item.vanguard, item.right];
+    return seats.includes("vhagar") && seats.includes("moondancer");
+  }),
+  "Malachite top 3 must include Malachite / Vhagar / Moondancer",
+);
+
 console.log("check-coach-chat: ok");

@@ -312,6 +312,11 @@ function fillKitPairs(opts: {
       }
     }
     if (pinned && isHealer(pinned)) {
+      for (let i = 0; i < finishers.length; i++) {
+        for (let j = i + 1; j < finishers.length; j++) {
+          pool.push([finishers[i], finishers[j]]);
+        }
+      }
       for (const healer of healers) {
         for (const second of healers) {
           if (healer.id >= second.id) continue;
