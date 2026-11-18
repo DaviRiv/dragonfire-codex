@@ -216,6 +216,30 @@ export const ARCHER_ZIVERN_CORE: MetaLine = {
   why: "Community Archer line once Zivern is high stars. Seasmoke feeds the Right Flank from the Left. Zivern holds Vanguard. Daemoros finishes.",
 };
 
+export const ARCHER_VHAGAR_MOON_CORE: MetaLine = {
+  id: "archer-vhagar-moon",
+  name: "Archer Vhagar Moondancer",
+  where: "online PvP / field marches",
+  troop: "archers",
+  mode: "pvp",
+  left: {
+    id: "zivern",
+    name: "Zivern",
+    job: "Panic / Overwhelm",
+  },
+  vanguard: {
+    id: "vhagar",
+    name: "Vhagar",
+    job: "soak / Taunt",
+  },
+  right: {
+    id: "moondancer",
+    name: "Moondancer",
+    job: "Champion",
+  },
+  why: "Community Archer line when Vhagar soaks Vanguard. Zivern feeds the Left. Vhagar holds Vanguard. Moondancer finishes on the Right Flank.",
+};
+
 export const ARCHER_SYRAX_CORE: MetaLine = {
   id: "archer-syrax",
   name: "Archer Syrax soak",
@@ -249,6 +273,7 @@ export const CURRENT_META_LINES: MetaLine[] = [
   CAV_SEA_CORE,
   CAV_SHADOW_CORE,
   ARCHER_ZIVERN_CORE,
+  ARCHER_VHAGAR_MOON_CORE,
   ARCHER_SYRAX_CORE,
 ];
 
@@ -276,9 +301,9 @@ export function chatgptMetaTemplate(line: MetaLine = ONLINE_DPS_CORE): string {
 - Popular Shieldbearer thirds instead of Venator: Moondancer, Rhysarion (still Malachite Left, Vhagar Vanguard).
 - Spearmen core: Left Syrax, Vanguard Vaeldra, Right Caraxes.
 - Cavalry core vs Shields: Left Seasmoke, Vanguard Thunderstrike, Right Sheepstealer. Alternate Cavalry: Left Shadowsong, Vanguard Daemoros, Right Kalspire.
-- Archer variant: Left Seasmoke, Vanguard Zivern, Right Daemoros. Alternate: Left Syrax, Vanguard Vhagar, Right Seasmoke.
-- Seat the exact Shieldbearer core when all three names are in the roster and the player is asking about online, PvP, or a damage march.
-- If a name is missing, or tagged on: another team while Skip other teams is on, say which seat is missing and pick the closest substitute from the roster. Do not invent a different “best” online DPS core.
+- Archer variant: Left Seasmoke, Vanguard Zivern, Right Daemoros. Vhagar Archer line: Left Zivern, Vanguard Vhagar, Right Moondancer. Alternate: Left Syrax, Vanguard Vhagar, Right Seasmoke.
+- When the player asks about online, PvP, or a damage march, treat the Shieldbearer core below as the usual reference — still pick substitutes from the roster when stars, habits, or pit availability break the lineup.
+- If a name is missing, or tagged on: another team while Skip other teams is on, say which seat is missing and pick the closest substitute from the roster by jobs and affinities, not a different fixed template.
 - Rally, PvE, defense, and gathering can use other cores. A spear rally is not the Shieldbearer DPS line.
 - Rows tagged meta:online-dps are that Shieldbearer core. Other meta:* tags are September 2026 community cores.`;
 }

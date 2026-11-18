@@ -23,7 +23,11 @@ export type BookEntry = {
 
 const SHIELD_CORES = ["online-dps", "shield-moon", "shield-rhys"] as const;
 const CAV_CORES = ["cav-sea", "cav-shadow"] as const;
-const ARCHER_CORES = ["archer-zivern", "archer-syrax"] as const;
+const ARCHER_CORES = [
+  "archer-zivern",
+  "archer-vhagar-moon",
+  "archer-syrax",
+] as const;
 
 export const NAMED_CORES: Record<string, readonly [string, string, string]> =
   Object.fromEntries(
@@ -216,5 +220,6 @@ export const CORE_COUNTER_TROOP: Record<string, TroopType> = {
   "cav-sea": "spearmen",
   "cav-shadow": "spearmen",
   "archer-zivern": "shieldbearers",
+  "archer-vhagar-moon": "shieldbearers",
   "archer-syrax": "shieldbearers",
 };

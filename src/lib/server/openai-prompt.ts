@@ -10,10 +10,17 @@ export function openAiPromptError(prompt: string): string | null {
   if (!text.includes("Game of Thrones: Dragonfire")) {
     return "Only Dragonfire Copilot export prompts are supported.";
   }
+  if (text.includes("REASON_LINES_V1")) {
+    if (!text.includes("--- Candidate teams")) {
+      return "Only Dragonfire Copilot export prompts are supported.";
+    }
+    return null;
+  }
   if (
     !/You are (coaching|building three-dragon) a Game of Thrones: Dragonfire player/i.test(
       text,
-    )
+    ) &&
+    !text.includes("You are the in-app Copilot for Game of Thrones: Dragonfire")
   ) {
     return "Only Dragonfire Copilot export prompts are supported.";
   }

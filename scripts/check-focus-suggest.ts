@@ -45,6 +45,25 @@ assert(
   "every line keeps Vhagar and the locked troop",
 );
 
+const vhagarArchers = focusSuggestions(emptyPit(), {
+  dragonId: "vhagar",
+  slot: "auto",
+  troops: ["archers"],
+});
+assert(vhagarArchers.fellBack && vhagarArchers.pool === "hatchery", "Vhagar archer search widens roster");
+assert(vhagarArchers.lines.length > 0, "Vhagar archer teams exist");
+const archerTrios = vhagarArchers.lines.map((line) => trio(line).sort().join("|"));
+assert(
+  archerTrios.some((key) => key === "moondancer|vhagar|zivern"),
+  "Vhagar + Archers surfaces Zivern / Vhagar / Moondancer",
+);
+assert(
+  vhagarArchers.lines.every(
+    (line) => trio(line).includes("vhagar") && line.troop === "archers",
+  ),
+  "every archer line keeps Vhagar and Archers",
+);
+
 const seated = focusSuggestions(sample, {
   dragonId: "vhagar",
   slot: "vanguard",

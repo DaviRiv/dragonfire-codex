@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { answerPlan } from "@/lib/ai/coach";
+import { answerPlan, coachLines } from "@/lib/ai/coach";
 import { copilotChatPrompt } from "@/lib/ai/export";
+import {
+  buildReasonLinesPrompt,
+  fetchReasonedLines,
+} from "@/lib/ai/reason-lines";
 import {
   historyForContext,
   parseStoredTurns,
@@ -493,7 +497,43 @@ export function useCoachChat() {
               effectivePool,
               effectiveRoster,
             );
-            const result = answerPlan(plan, request, live.state, live.lineup);
+            let result = answerPlan(plan, request, live.state, live.lineup);
+            if (
+              (plan.intent === "formation" || plan.intent === "another") &&
+              result.lines.length > 1
+            ) {
+              const poolCandidates = coachLines({
+                request,
+                state: live.state,
+                lineup: live.lineup,
+                troop: plan.troop,
+                mode: plan.mode,
+                skip: plan.excludeIds,
+                question: plan.question,
+                anchorId: plan.anchorId,
+                anchorSlot: plan.anchorSlot,
+                lockTroop: plan.lockTroop,
+                maxLines: 12,
+              });
+              if (poolCandidates.length > 0) {
+                const reasonPrompt = buildReasonLinesPrompt({
+                  request,
+                  state: live.state,
+                  candidates: poolCandidates,
+                  anchorId: plan.anchorId,
+                  maxPicks: 6,
+                  question: plan.question,
+                });
+                const reasoned = await fetchReasonedLines(
+                  reasonPrompt,
+                  poolCandidates,
+                  controller.signal,
+                );
+                if (reasoned?.length) {
+                  result = { ...result, lines: reasoned };
+                }
+              }
+            }
             let reply = result.reply;
             try {
               const prompt = copilotChatPrompt({

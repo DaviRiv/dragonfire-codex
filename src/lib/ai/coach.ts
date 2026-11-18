@@ -406,7 +406,7 @@ function copilotChoiceScore(
       core.vanguard.id === choice.line.vanguard &&
       core.right.id === choice.line.right,
   );
-  if (isMetaCore) score += 16;
+  if (isMetaCore) score += 5;
   return score;
 }
 
@@ -438,7 +438,9 @@ function anchoredComboLines(input: {
       : [],
   );
   const allowed = new Set(input.request.roster.map((card) => card.id));
-  const primaryTroop = dragon.affinities[0] ?? input.troop;
+  const primaryTroop = input.lockTroop
+    ? input.troop
+    : (dragon.affinities[0] ?? input.troop);
   const troop = input.lockTroop ? input.troop : primaryTroop;
   const troopsToSearch = input.lockTroop
     ? [input.troop]
@@ -551,11 +553,12 @@ function anchoredComboLines(input: {
     }
     candidates = picked.slice(0, 6);
   } else {
-    candidates = uniqueTrios.slice(0, 6).map((item) => item.choice);
+    candidates = uniqueTrios.slice(0, 12).map((item) => item.choice);
   }
 
+  const cap = input.lockTroop ? 12 : 6;
   if (candidates.length > 0) {
-    return candidates.slice(0, 6).map((choice, index) => ({
+    return candidates.slice(0, cap).map((choice, index) => ({
       name:
         index === 0
           ? `${dragon.name} core`
@@ -637,8 +640,8 @@ function anchoredComboLines(input: {
 
 /**
  * Rank lines for one troop / mode with a set of names held back. Same
- * composition order as Suggest: meta core first when it is free, then healer,
- * soak, damage.
+ * composition order as Suggest: meta as a tie-break hint, then jobs, pairing,
+ * and star habits from the ranker (ChatGPT may re-order when signed in).
  */
 export function coachLines(input: {
   request: SuggestRequest;
@@ -653,6 +656,8 @@ export function coachLines(input: {
   anchorId?: string | null;
   anchorSlot?: SlotId | null;
   lockTroop?: boolean;
+  /** How many lines to return (defaults to 6, or 12 when lockTroop). */
+  maxLines?: number;
 }): AiLine[] {
   const working: Lineup = {
     ...input.lineup,
@@ -683,6 +688,10 @@ export function coachLines(input: {
       ? [meta, ...ranked.filter((line) => line.name !== meta.name)]
       : ranked;
   }
+  const cap =
+    input.maxLines ??
+    (input.lockTroop ? 12 : 6);
+  lines = lines.slice(0, cap);
   const avoid = new Set(input.avoidSignatures ?? []);
   if (avoid.size === 0) return lines;
   const fresh = lines.filter((line) => !avoid.has(lineSignature(line)));

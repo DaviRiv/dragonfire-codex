@@ -7,7 +7,7 @@ import type { AiPool, SuggestRequest } from "@/lib/ai/roster";
 import type { PitState } from "@/lib/types";
 
 export const DEFAULT_CHATGPT_QUESTION =
-  "If this is online / PvP DPS and Malachite, Vhagar, and Venator are free in the roster, seat that meta core first. Then give 1–2 alternates from leftovers. Explain Left, Vanguard, and Right in plain English.";
+  "Suggest 2–3 three-dragon lines for the roster and default troop/mode. Reason from jobs, affinities, star-unlocked habits, and partner rules — use community meta only when it still fits these dragons. Explain Left, Vanguard, and Right in plain English.";
 
 export type ChatGptExportTurn = {
   role: "user" | "assistant";
@@ -118,7 +118,7 @@ ${factsBlock()}
 
 ${anchorName ? `Build around: ${anchorName}\n` : ""}Filter troop: ${opts.request.troop}, mode: ${opts.request.mode}, pool: ${opts.request.pool}
 
-Verified teams (ranked — your answer must align with #1):
+Local ranker suggestions (starting point — you may disagree when stars or habits favor another pick):
 ${lineSummary || "(No complete 3-dragon line matched these filters.)"}
 
 --- Roster context ---
