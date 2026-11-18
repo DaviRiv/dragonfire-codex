@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import type { Breed } from "@/lib/types";
 
 const colors: Record<Breed, string> = {
-  champion: "text-amber-300",
+  champion: "text-slate-300",
   hunter: "text-orange-400",
-  sentinel: "text-teal-300",
-  warrior: "text-rose-400",
+  sentinel: "text-green-400",
+  warrior: "text-red-400",
 };
 
 export function DragonMark({
