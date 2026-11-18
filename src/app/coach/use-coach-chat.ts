@@ -13,7 +13,7 @@ import {
   type ChatTurn,
   type TurnMeta,
 } from "@/lib/ai/conversation";
-import { detectMode, detectTroop } from "@/lib/ai/intent";
+import { detectTroop } from "@/lib/ai/intent";
 import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
 import { collectRoster, type AiPool, type RosterCard } from "@/lib/ai/roster";
 import { findDragon } from "@/lib/dragons";
@@ -205,9 +205,10 @@ function syncAnchorFromPlan(
       plan.anchorSlot ??
       (plan.anchorId !== current.dragonId ? "auto" : current.slot);
   }
-  if (plan.lockTroop) next.troop = plan.troop;
-  else if (detectTroop(plan.question)) next.troop = plan.troop;
-  if (detectMode(plan.question)) next.mode = plan.mode;
+  if (plan.lockTroop || detectTroop(plan.question)) {
+    next.troop = plan.troop;
+    next.allowedTroops = [plan.troop];
+  }
   return next;
 }
 
@@ -355,6 +356,13 @@ export function useCoachChat() {
       record.anchor && typeof record.anchor === "object"
         ? (record.anchor as Partial<CoachAnchor>)
         : {};
+    const savedTroops = Array.isArray(rawAnchor.allowedTroops)
+      ? rawAnchor.allowedTroops.filter((troop): troop is TroopType =>
+          DEFAULT_ANCHOR.allowedTroops.includes(troop as TroopType),
+        )
+      : [];
+    const allowedTroops =
+      savedTroops.length > 0 ? savedTroops : DEFAULT_ANCHOR.allowedTroops;
     const anchor: CoachAnchor = {
       dragonId:
         typeof rawAnchor.dragonId === "string" && rawAnchor.dragonId
@@ -366,21 +374,16 @@ export function useCoachChat() {
         rawAnchor.slot === "right"
           ? rawAnchor.slot
           : "auto",
-      troop: rawAnchor.troop ?? DEFAULT_ANCHOR.troop,
-      mode: rawAnchor.mode ?? DEFAULT_ANCHOR.mode,
-      allowedTroops: Array.isArray(rawAnchor.allowedTroops)
-        ? rawAnchor.allowedTroops.filter(
-            (troop): troop is TroopType =>
-              DEFAULT_ANCHOR.allowedTroops.includes(troop as TroopType),
-          )
-        : DEFAULT_ANCHOR.allowedTroops,
+      troop: allowedTroops.length === 1 ? allowedTroops[0] : "auto",
+      mode: DEFAULT_ANCHOR.mode,
+      allowedTroops,
     };
-    const savedPool =
-      record.pool === "hatchery" ? "hatchery" : "pit";
+    // Copilot always starts from the free pit; each turn widens to every
+    // dragon on its own when the pit is too thin.
     dispatch({
       type: "restore",
       turns: parseStoredTurns(record.turns),
-      pool: savedPool,
+      pool: "pit",
       anchor,
     });
   }, []);

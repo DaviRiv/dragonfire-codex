@@ -44,9 +44,14 @@ function startsTimingSentence(chunk: string): boolean {
  * in habit and command copy. Hub shorts often bury that timing in a
  * trailing "(Odd Rounds)" or after a pipe.
  */
+const FORMATTED_TIMING = new Map<string, string>();
+const FORMAT_CACHE_MAX = 4096;
+
 export function formatRoundTimingSentences(text: string): string {
   const raw = text.replace(/\s+/g, " ").trim();
   if (!raw) return raw;
+  const hit = FORMATTED_TIMING.get(raw);
+  if (hit !== undefined) return hit;
   const pieces = raw.split(/\s*\|\s*/).map(formatChunk);
   let next = pieces[0] ?? "";
   for (let i = 1; i < pieces.length; i++) {
@@ -62,5 +67,8 @@ export function formatRoundTimingSentences(text: string): string {
     const name = String(label).replace(/:\s*$/, "").trim();
     return `. ${timingLabel(name)}:`;
   });
-  return next.replace(/\.\s*\./g, ".").trim();
+  const out = next.replace(/\.\s*\./g, ".").trim();
+  if (FORMATTED_TIMING.size >= FORMAT_CACHE_MAX) FORMATTED_TIMING.clear();
+  FORMATTED_TIMING.set(raw, out);
+  return out;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TeamBuilderDialog } from "@/components/team-builder-dialog";
 import { Button } from "@/components/ui/button";
@@ -26,13 +26,13 @@ export function CoachTeamBuilderButton({
     [search],
   );
 
+  const [dismissedQuery, setDismissedQuery] = useState<string | null>(null);
+
   const shouldAutoOpen =
     search.get("build") === "1" ||
     Boolean(search.get("l") || search.get("v") || search.get("r") || search.get("dragon"));
-
-  useEffect(() => {
-    if (shouldAutoOpen) setOpen(true);
-  }, [shouldAutoOpen]);
+  const query = search.toString();
+  const isOpen = open || (shouldAutoOpen && dismissedQuery !== query);
 
   const clearBuildQuery = useCallback(() => {
     if (!shouldAutoOpen && !search.get("build")) return;
@@ -42,7 +42,10 @@ export function CoachTeamBuilderButton({
   function handleOpen(next: boolean) {
     setOpen(next);
     onOpen?.();
-    if (!next) clearBuildQuery();
+    if (!next) {
+      setDismissedQuery(query);
+      clearBuildQuery();
+    }
   }
 
   return (
@@ -59,7 +62,7 @@ export function CoachTeamBuilderButton({
         Build team
       </Button>
       <TeamBuilderDialog
-        open={open}
+        open={isOpen}
         onOpenChange={handleOpen}
         seed={seed as TeamBuilderSeed | null}
       />
