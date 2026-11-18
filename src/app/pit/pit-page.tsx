@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AddDragonDialog } from "@/components/add-dragon-dialog";
 import { MiniChip } from "@/components/chip";
 import { DragonIcon } from "@/components/dragon-icon";
@@ -60,6 +61,8 @@ import { toast } from "sonner";
 type Ownership = "all" | "owned" | "missing";
 
 export function PitPage() {
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("return");
   const {
     ready,
     state,
@@ -207,6 +210,15 @@ export function PitPage() {
   return (
     <div className="-mx-3 -mt-3 min-h-[calc(100dvh-3rem-env(safe-area-inset-top))] sm:-mx-4 sm:-mt-6 md:min-h-[calc(100dvh-3.5rem)]">
       <h1 className="sr-only">Your pit</h1>
+      {returnTo ? (
+        <div className="mx-2 mt-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-muted-foreground">
+          Step 1 — mark at least three dragons with stars. Then{" "}
+          <Link href={returnTo} className="text-amber-100 underline">
+            return to Copilot
+          </Link>{" "}
+          to auto-build five pit teams.
+        </div>
+      ) : null}
       {/* Export / Import / Clear are maintenance, so they shrink to icons on a
           phone instead of wrapping the row three deep above the grid. */}
       <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5">

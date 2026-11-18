@@ -94,6 +94,10 @@ type PitContextValue = {
   updateLineup: (id: string, patch: Partial<Omit<Lineup, "id">>) => void;
   setSlot: (lineupId: string, slot: SlotId, dragonId: string | null) => void;
   slotDragon: (lineupId: string, slot: SlotId, dragonId: string) => void;
+  swapPitSeats: (
+    from: { lineupId: string; slot: SlotId },
+    to: { lineupId: string; slot: SlotId },
+  ) => void;
   slotDragons: (
     lineupId: string,
     picks: { slot: SlotId; dragonId: string }[],
@@ -586,6 +590,16 @@ export function PitProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const swapPitSeats = useCallback(
+    (
+      from: { lineupId: string; slot: SlotId },
+      to: { lineupId: string; slot: SlotId },
+    ) => {
+      commit((prev) => swapPitSeatsInState(prev, from, to));
+    },
+    [],
+  );
+
   const slotDragons = useCallback(
     (
       lineupId: string,
@@ -743,6 +757,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateLineup,
       setSlot,
       slotDragon,
+      swapPitSeats,
       slotDragons,
       updateSlotPick,
       deleteLineup,
@@ -770,6 +785,7 @@ export function PitProvider({ children }: { children: ReactNode }) {
       updateLineup,
       setSlot,
       slotDragon,
+      swapPitSeats,
       slotDragons,
       updateSlotPick,
       deleteLineup,
@@ -801,6 +817,85 @@ export function readPitSnapshot(): PitState {
   return getClientSnapshot();
 }
 
+function swapPitSeatsInState(
+  prev: PitState,
+  from: { lineupId: string; slot: SlotId },
+  to: { lineupId: string; slot: SlotId },
+): PitState {
+  const la = prev.lineups.find((l) => l.id === from.lineupId);
+  const lb = prev.lineups.find((l) => l.id === to.lineupId);
+  if (!la || !lb) return prev;
+  const pickA = la.slots[from.slot];
+  const pickB = lb.slots[to.slot];
+  if (!pickA) return prev;
+
+  if (!pickB) {
+    return applySlotDragon(prev, to.lineupId, to.slot, pickA.dragonId);
+  }
+
+  if (from.lineupId === to.lineupId) {
+    return {
+      ...prev,
+      lineups: prev.lineups.map((item) =>
+        item.id === la.id
+          ? {
+              ...item,
+              slots: { ...item.slots, [from.slot]: pickB, [to.slot]: pickA },
+              updatedAt: nowIso(),
+            }
+          : item,
+      ),
+    };
+  }
+
+  const idA = pickA.dragonId;
+  const idB = pickB.dragonId;
+  let lineups = prev.lineups.map((item) => {
+    if (item.kind !== "pit") return item;
+    const cleared = clearDragonFromSlots(
+      clearDragonFromSlots(item.slots, idA),
+      idB,
+    );
+    if (cleared === item.slots) return item;
+    return { ...item, slots: cleared, updatedAt: nowIso() };
+  });
+
+  const pickFor = (lineup: Lineup, dragonId: string) => {
+    const owned = prev.owned.find((o) => o.dragonId === dragonId);
+    return makePick(
+      dragonId,
+      owned?.starRank ?? 1,
+      owned?.reignLevel ?? 1,
+    );
+  };
+
+  lineups = lineups.map((item) => {
+    if (item.id === la.id) {
+      return {
+        ...item,
+        slots: {
+          ...clearDragonFromSlots(item.slots, idA),
+          [from.slot]: pickFor(item, idB),
+        },
+        updatedAt: nowIso(),
+      };
+    }
+    if (item.id === lb.id) {
+      return {
+        ...item,
+        slots: {
+          ...clearDragonFromSlots(item.slots, idB),
+          [to.slot]: pickFor(item, idA),
+        },
+        updatedAt: nowIso(),
+      };
+    }
+    return item;
+  });
+
+  return { ...prev, lineups };
+}
+
 function applySlotDragon(
   prev: PitState,
   lineupId: string,
@@ -823,9 +918,19 @@ function applySlotDragon(
     owned?.reignLevel ?? 1,
   );
 
+  let lineups = prev.lineups;
+  if (lineup.kind === "pit" && lineup.excludeUsed !== false) {
+    lineups = lineups.map((item) => {
+      if (item.kind !== "pit" || item.id === lineupId) return item;
+      const cleared = clearDragonFromSlots(item.slots, dragonId);
+      if (cleared === item.slots) return item;
+      return { ...item, slots: cleared, updatedAt: nowIso() };
+    });
+  }
+
   return {
     ...prev,
-    lineups: prev.lineups.map((item) => {
+    lineups: lineups.map((item) => {
       if (item.id !== lineupId) return item;
       let slots = clearDragonFromSlots(item.slots, dragonId);
       slots = { ...slots, [slot]: pick };

@@ -797,7 +797,7 @@ export function lineupFromAiLine(
     },
     ignoreLevel: kind === "theory",
     craftStars: 10,
-    excludeUsed: false,
+    excludeUsed: kind === "pit",
     updatedAt: new Date().toISOString(),
   };
 }

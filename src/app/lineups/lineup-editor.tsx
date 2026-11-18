@@ -34,6 +34,7 @@ import {
   type CompRole,
 } from "@/lib/roles";
 import { vanguardBonus, liveOwnedHabits } from "@/lib/habits";
+import { MAX_PIT_TEAMS } from "@/lib/pit-teams";
 import { suggestDragons, suggestFullLine } from "@/lib/suggest";
 import { confirmDestructive } from "@/lib/confirm";
 import { usePit } from "@/lib/store";
@@ -204,6 +205,12 @@ export function LineupEditor({
 
   function nextArmy() {
     const pitCount = state.lineups.filter((row) => row.kind === "pit").length;
+    if (pitCount >= MAX_PIT_TEAMS) {
+      toast.error(
+        `You already have ${MAX_PIT_TEAMS} pit teams. Shift dragons on Copilot or disband one.`,
+      );
+      return;
+    }
     const created = createLineup(`Lineup ${pitCount + 1}`, "pit");
     updateLineup(created.id, {
       troop: active.troop,

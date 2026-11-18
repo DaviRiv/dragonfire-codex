@@ -10,8 +10,10 @@ import { SectionLabel } from "@/components/section-label";
 import { CardListSkeleton } from "@/components/skeleton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { MAX_PIT_TEAMS, pitLineups } from "@/lib/pit-teams";
 import { usePit } from "@/lib/store";
 import type { LineupKind } from "@/lib/types";
+import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
 export function LineupsPage() {
@@ -24,6 +26,12 @@ export function LineupsPage() {
   }
 
   function newLineup(kind: LineupKind) {
+    if (kind === "pit" && pitLineups(state).length >= MAX_PIT_TEAMS) {
+      toast.error(
+        `You already have ${MAX_PIT_TEAMS} pit teams. Edit one on Copilot or disband a saved line first.`,
+      );
+      return;
+    }
     const count = state.lineups.filter((l) => l.kind === kind).length;
     const lineup = createLineup(
       kind === "theory" ? `Theory ${count + 1}` : `Lineup ${count + 1}`,

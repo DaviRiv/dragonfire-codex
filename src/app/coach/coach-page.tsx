@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { ArmyAutoBuilder } from "@/components/army-auto-builder";
 import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
@@ -330,6 +331,21 @@ export function CoachPage() {
             ) : null}
           </div>
         </header>
+
+        <ArmyAutoBuilder
+          onCopilotAnchor={(dragonId) => {
+            const dragon = getCatalogDragon(dragonId);
+            if (!dragon) return;
+            chat.setAnchor({
+              dragonId: dragon.id,
+              slot: "auto",
+              troop: "auto",
+              mode: anchor.mode,
+            });
+            setPickerOpen(false);
+            chat.setPool("pit");
+          }}
+        />
 
         <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[23rem_minmax(0,1fr)]">
           {/* Left pane: dragon selector + optional filters */}

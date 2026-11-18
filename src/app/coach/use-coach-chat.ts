@@ -312,7 +312,7 @@ export function useCoachChat() {
   const [state, dispatch] = useReducer(reducer, {
     turns: [],
     restored: false,
-    pool: "hatchery",
+    pool: "pit",
     anchor: DEFAULT_ANCHOR,
   });
 
@@ -367,7 +367,8 @@ export function useCoachChat() {
       troop: rawAnchor.troop ?? DEFAULT_ANCHOR.troop,
       mode: rawAnchor.mode ?? DEFAULT_ANCHOR.mode,
     };
-    const savedPool = record.pool === "pit" ? "pit" : "hatchery";
+    const savedPool =
+      record.pool === "hatchery" ? "hatchery" : "pit";
     dispatch({
       type: "restore",
       turns: parseStoredTurns(record.turns),
