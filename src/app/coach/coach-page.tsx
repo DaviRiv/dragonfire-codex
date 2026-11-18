@@ -7,52 +7,51 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import { CoachTeamBuilderButton } from "@/app/coach/coach-team-builder";
+import { FocusPanel } from "@/app/coach/focus-panel";
 import { ArmyAutoBuilder } from "@/components/army-auto-builder";
 import { AccountGate } from "@/components/account-gate";
 import { BetaBadge } from "@/components/beta-badge";
 import { ChatGptExportBar } from "@/components/chatgpt-export";
 import { CoachFormation } from "@/components/coach-formation";
-import { MiniChip } from "@/components/chip";
 import { Disclosure } from "@/components/disclosure";
-import { DragonMetaCompact } from "@/components/dragon-meta";
-import { DragonIcon } from "@/components/dragon-icon";
 import { MetaCard } from "@/components/meta-card";
-import { SearchField } from "@/components/search-field";
 import { SectionLabel } from "@/components/section-label";
-import { TroopChip, TroopIcon } from "@/components/troop-icon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   contextLineup,
   useCoachChat,
 } from "@/app/coach/use-coach-chat";
-import { DRAGONS, getCatalogDragon } from "@/data/dragons";
-import { COACH_STARTERS, coachLines, lineupFromAiLine } from "@/lib/ai/coach";
+import { getCatalogDragon } from "@/data/dragons";
+import { COACH_STARTERS, lineupFromAiLine } from "@/lib/ai/coach";
 import type { ChatErrorKind, ChatTurn } from "@/lib/ai/conversation";
 import { chatgptCoachExport, chatgptExportFilename } from "@/lib/ai/export";
 import { makeSuggestRequest, type AiLine } from "@/lib/ai/prompt";
-import { collectRoster } from "@/lib/ai/roster";
+import { collectRoster, type AiPool } from "@/lib/ai/roster";
 import { rememberBuild } from "@/lib/build-session";
-import { filterDragonPicks } from "@/lib/counter-pick";
 import { newId, nowIso } from "@/lib/dragons";
 import {
-  MODES,
-  TROOP_TYPES,
-  modeLabels,
-  modeShort,
-  slotShort,
-  troopLabels,
-} from "@/lib/labels";
-import { SLOT_IDS } from "@/lib/lineup";
+  focusConfigKey,
+  focusSuggestions,
+  type FocusConfig,
+} from "@/lib/focus-suggest";
+import { TROOP_TYPES, modeLabels, slotShort, troopLabels } from "@/lib/labels";
 import { MAX_PIT_TEAMS, pitLineups, usedOnPitTeams } from "@/lib/pit-teams";
-import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import { usePit } from "@/lib/store";
 import { useOpenAiAvailable } from "@/lib/use-openai-available";
-import type { SlotId } from "@/lib/types";
+import type { TroopType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ArrowDown, RotateCcw, Send, Sparkles, Square, X } from "lucide-react";
+import {
+  ArrowDown,
+  ChevronDown,
+  RotateCcw,
+  Send,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import { toast } from "sonner";
 
 /** How close to the bottom still counts as "following along". */
@@ -68,10 +67,13 @@ export function CoachPage() {
 
   const [draft, setDraft] = useState("");
   const [atBottom, setAtBottom] = useState(true);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [dragonQuery, setDragonQuery] = useState("");
-  const [showBuiltInChat, setShowBuiltInChat] = useState(false);
+  const [generatedConfig, setGeneratedConfig] = useState<FocusConfig | null>(
+    null,
+  );
+  const [resultsOpen, setResultsOpen] = useState(true);
+  const [generating, startGenerating] = useTransition();
 
+  const resultsRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const atBottomRef = useRef(true);
@@ -109,48 +111,22 @@ export function CoachPage() {
         "shieldbearers")
       : anchor.troop;
 
-  const builtLines = useMemo(() => {
-    if (!anchorDragon) return [];
-    const request = makeSuggestRequest(
-      { ...lineup, troop: activeTroop, mode: anchor.mode },
-      state,
-      pool,
-      roster,
-    );
-    return coachLines({
-      request,
-      state,
-      lineup,
-      troop: activeTroop,
-      mode: anchor.mode,
-      skip: [],
-      anchorId: anchorDragon.id,
-      anchorSlot: anchor.slot === "auto" ? null : anchor.slot,
-      lockTroop: anchor.troop !== "auto",
-    }).slice(0, 3);
-  }, [
-    activeTroop,
-    anchor.mode,
-    anchor.allowedTroops,
-    anchor.slot,
-    anchor.troop,
-    anchorDragon,
-    lineup,
-    pool,
-    roster,
-    state,
-  ]);
-
-  const pickerDragons = useMemo(() => {
-    const filtered = filterDragonPicks(DRAGONS, {
-      query: dragonQuery,
-      ownedIds: ownedStars.keys(),
-    });
-    if (dragonQuery.trim()) return filtered;
-    const owned = filtered.filter((dragon) => ownedStars.has(dragon.id));
-    const rest = filtered.filter((dragon) => !ownedStars.has(dragon.id));
-    return [...owned, ...rest];
-  }, [dragonQuery, ownedStars]);
+  const focusConfig = useMemo<FocusConfig>(
+    () => ({
+      dragonId: anchor.dragonId,
+      slot: anchor.dragonId ? anchor.slot : "auto",
+      troops: anchor.allowedTroops,
+    }),
+    [anchor.dragonId, anchor.slot, anchor.allowedTroops],
+  );
+  // Tracks the live pit, so dragons seated from one suggestion drop out of the rest.
+  const result = useMemo(
+    () => (generatedConfig ? focusSuggestions(state, generatedConfig) : null),
+    [generatedConfig, state],
+  );
+  const dirty =
+    generatedConfig !== null &&
+    focusConfigKey(generatedConfig) !== focusConfigKey(focusConfig);
 
   useDevFailureSeam(chat.failNext);
 
@@ -173,43 +149,37 @@ export function CoachPage() {
     if (atBottomRef.current) scrollToEnd();
   }, [chat.turns, scrollToEnd]);
 
-  function selectDragon(dragonId: string) {
-    const dragon = getCatalogDragon(dragonId);
-    if (!dragon) return;
-    chat.setAnchor({
-      ...anchor,
-      dragonId: dragon.id,
-      slot: "auto",
-      troop: "auto",
-      mode: anchor.mode,
-    });
-    setPickerOpen(false);
-    setDragonQuery("");
-    const question = `Build a ${modeShort[anchor.mode]} team around ${dragon.name}`;
-    if (chat.turns.length === 0) {
-      chat.send(question, `Teams around ${dragon.name}`);
-      setShowBuiltInChat(false);
-      atBottomRef.current = true;
-      setAtBottom(true);
-    } else {
-      setShowBuiltInChat(true);
-    }
+  function setFocusDragon(dragonId: string | null) {
+    const dragon = dragonId ? getCatalogDragon(dragonId) : null;
+    chat.setAnchor({ ...anchor, dragonId: dragon?.id ?? null, slot: "auto" });
   }
 
-  function clearDragon() {
+  function setFocusTroops(troops: TroopType[]) {
+    if (troops.length === 0) return;
     chat.setAnchor({
       ...anchor,
-      dragonId: null,
-      slot: "auto",
-      troop: "auto",
+      allowedTroops: troops,
+      troop: troops.length === 1 ? troops[0] : "auto",
     });
-    setPickerOpen(true);
+  }
+
+  function generate() {
+    const config = focusConfig;
+    startGenerating(() => {
+      setGeneratedConfig(config);
+      setResultsOpen(true);
+    });
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      requestAnimationFrame(() =>
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    }
   }
 
   function submit(text: string, label?: string) {
     if (!chat.send(text, label)) return;
     setDraft("");
-    setShowBuiltInChat(false);
+    setResultsOpen(false);
     atBottomRef.current = true;
     setAtBottom(true);
     requestAnimationFrame(() => {
@@ -218,8 +188,8 @@ export function CoachPage() {
     });
   }
 
-  function seat(line: AiLine) {
-    const filled = lineupFromAiLine(line, state, pool);
+  function seat(line: AiLine, linePool: AiPool = pool) {
+    const filled = lineupFromAiLine(line, state, linePool);
     if (!filled.slots.left || !filled.slots.vanguard || !filled.slots.right) {
       toast.error("Could not fill all three seats from that line.");
       return;
@@ -242,7 +212,7 @@ export function CoachPage() {
     toast.success(
       created.kind === "pit"
         ? `Seated ${line.name} (${savedPitCount + 1}/${MAX_PIT_TEAMS} pit teams).`
-        : `Seated ${line.name} on Team.`,
+        : `Saved ${line.name} as a Theory line.`,
     );
   }
 
@@ -250,7 +220,7 @@ export function CoachPage() {
     () =>
       chatgptCoachExport({
         request: makeSuggestRequest(
-          { ...lineup, troop: activeTroop, mode: anchor.mode },
+          { ...lineup, troop: activeTroop, mode: "pvp" },
           state,
           pool,
           roster,
@@ -260,7 +230,7 @@ export function CoachPage() {
           .map((turn) => ({ role: turn.role, text: turn.text })),
         draft,
       }),
-    [activeTroop, anchor.mode, chat.turns, draft, lineup, state, pool, roster],
+    [activeTroop, chat.turns, draft, lineup, state, pool, roster],
   );
 
   if (!ready) {
@@ -275,16 +245,12 @@ export function CoachPage() {
   const dragonPrompts = anchorDragon
     ? [
         {
-          send: `Build a ${modeShort[anchor.mode]} team around ${anchorDragon.name}`,
+          send: `Build a team around ${anchorDragon.name}`,
           label: "Rank best team",
         },
         {
           send: `Give me another option around ${anchorDragon.name}`,
           label: "Another option",
-        },
-        {
-          send: `Build a rally team around ${anchorDragon.name}`,
-          label: "Rally setup",
         },
         anchorDragon.id !== "vhagar"
           ? {
@@ -298,7 +264,27 @@ export function CoachPage() {
       ]
     : COACH_STARTERS.map((starter) => ({ send: starter, label: starter }));
 
-  const showPicker = pickerOpen;
+  const resultDragon = result?.config.dragonId
+    ? getCatalogDragon(result.config.dragonId) ?? null
+    : null;
+  const resultTroops = result
+    ? TROOP_TYPES.filter((troop) => result.config.troops.includes(troop))
+    : [];
+  const resultFacts = result
+    ? [
+        resultDragon
+          ? result.config.slot === "auto"
+            ? "Best seat"
+            : `${slotShort[result.config.slot]} seat`
+          : null,
+        resultTroops.length === TROOP_TYPES.length
+          ? "Any troop"
+          : resultTroops.map((troop) => troopLabels[troop]).join(", "),
+        result.pool === "pit" ? "From your free pit" : "From every dragon",
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
 
   return (
     <AccountGate
@@ -341,373 +327,154 @@ export function CoachPage() {
           </div>
         </header>
 
-        <ArmyAutoBuilder
-          onCopilotAnchor={(dragonId) => {
-            const dragon = getCatalogDragon(dragonId);
-            if (!dragon) return;
-            chat.setAnchor({
-              ...anchor,
-              dragonId: dragon.id,
-              slot: "auto",
-              troop: "auto",
-              mode: anchor.mode,
-            });
-            setPickerOpen(false);
-            chat.setPool("pit");
-          }}
-        />
+        <ArmyAutoBuilder onCopilotAnchor={setFocusDragon} />
 
         <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[21rem_minmax(0,1fr)] xl:grid-cols-[23rem_minmax(0,1fr)]">
-          {/* Left pane: dragon selector + optional filters */}
-          <aside
-            aria-label="Pick a dragon"
-            className="flex min-h-0 flex-col gap-3 rounded-2xl surface p-3 ring-1 ring-foreground/15 lg:overflow-y-auto"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <SectionLabel>Focus dragon · optional</SectionLabel>
-              {anchorDragon ? (
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setPickerOpen((open) => !open)}
-                  >
-                    {pickerOpen ? "Done" : "Change"}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label="Clear selected dragon"
-                    onClick={clearDragon}
-                  >
-                    <X className="size-4" />
-                  </Button>
+          <FocusPanel
+            dragonId={anchor.dragonId}
+            slot={anchor.slot}
+            troops={anchor.allowedTroops}
+            ownedStars={ownedStars}
+            usedTeams={usedTeams}
+            availablePitCount={availablePitCount}
+            generating={generating}
+            generated={generatedConfig !== null}
+            dirty={dirty}
+            onDragon={setFocusDragon}
+            onSlot={(slot) => chat.setAnchor({ ...anchor, slot })}
+            onTroops={setFocusTroops}
+            onGenerate={generate}
+            extra={
+              <Disclosure
+                title="Meta reference & ChatGPT export"
+                className="bg-black/20"
+              >
+                <div className="space-y-2">
+                  <MetaCard />
+                  <ChatGptExportBar
+                    build={buildExport}
+                    filename={chatgptExportFilename("coach", pool)}
+                    disabled={roster.length === 0}
+                  />
                 </div>
-              ) : null}
-            </div>
-
-            {!anchorDragon && !pickerOpen ? (
-              <div className="rounded-xl bg-emerald-500/10 px-3 py-2 ring-1 ring-emerald-400/25">
-                <p className="text-xs font-medium text-emerald-100">
-                  No dragon locked
-                </p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                  Copilot will choose the strongest unique team from your
-                  available pit. Pick a dragon only when you want to force one.
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-2"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  Choose a focus dragon
-                </Button>
-              </div>
-            ) : null}
-
-            {anchorDragon && !pickerOpen ? (
-              <div className="flex items-center gap-3 rounded-xl bg-amber-500/10 p-2.5 ring-1 ring-amber-400/35">
-                <DragonIcon
-                  dragonId={anchorDragon.id}
-                  name={anchorDragon.name}
-                  rarity={anchorDragon.rarity}
-                  size="lg"
-                  selected
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-heading truncate text-base tracking-wide text-amber-50">
-                    {anchorDragon.name}
-                  </p>
-                  <DragonMetaCompact dragon={anchorDragon} showBuffs />
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {dragonRoles(anchorDragon).map((role) => (
-                      <span
-                        key={role}
-                        className={cn(
-                          "rounded-full px-1.5 py-px text-[10px] ring-1",
-                          roleChipClass[role],
-                        )}
-                      >
-                        {roleShort[role]}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {showPicker && pickerOpen ? (
-              <div className="flex min-h-0 flex-col gap-2">
-                <SearchField
-                  value={dragonQuery}
-                  onChange={setDragonQuery}
-                  label="Search dragon to build around"
-                  inputClassName="h-11 md:h-9"
-                />
-                <ul className="grid max-h-64 grid-cols-3 gap-1 overflow-y-auto overscroll-contain rounded-xl bg-black/25 p-1.5 ring-1 ring-foreground/10 sm:grid-cols-4 lg:grid-cols-3">
-                  {pickerDragons.map((dragon) => {
-                    const selected = dragon.id === anchorDragon?.id;
-                    const role = dragonRoles(dragon)[0];
-                    const pitStars = ownedStars.get(dragon.id);
-                    const seatedOn = usedTeams.get(dragon.id);
-                    return (
-                      <li key={dragon.id}>
-                        <button
-                          type="button"
-                          onClick={() => selectDragon(dragon.id)}
-                          data-coach-pick={dragon.id}
-                          title={
-                            seatedOn
-                              ? `${dragon.name} · on ${seatedOn}`
-                              : pitStars != null
-                                ? `${dragon.name} · in pit ★${pitStars}`
-                                : dragon.name
-                          }
-                          className={cn(
-                            "flex w-full flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-center transition",
-                            selected
-                              ? "bg-amber-500/20 ring-1 ring-amber-300"
-                              : "hover:bg-muted",
-                          )}
-                        >
-                          <DragonIcon
-                            dragonId={dragon.id}
-                            name={dragon.name}
-                            rarity={dragon.rarity}
-                            size="sm"
-                            selected={selected}
-                          />
-                          <span className="w-full truncate text-[11px]">
-                            {dragon.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {seatedOn
-                              ? "Seated"
-                              : pitStars != null
-                                ? `★${pitStars}`
-                                : role
-                                  ? roleShort[role]
-                                  : dragon.rarity}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : null}
-
-            <div className="space-y-2.5 border-t border-border/50 pt-2.5">
-              <div className="space-y-1">
-                <SectionLabel>Seat</SectionLabel>
-                <div className="flex flex-wrap gap-1">
-                  <MiniChip
-                    active={anchor.slot === "auto"}
-                    onClick={() => chat.setAnchor({ ...anchor, slot: "auto" })}
-                  >
-                    Best seat
-                  </MiniChip>
-                  {SLOT_IDS.map((slot: SlotId) => (
-                    <MiniChip
-                      key={slot}
-                      active={anchor.slot === slot}
-                      onClick={() => chat.setAnchor({ ...anchor, slot })}
-                    >
-                      {slotShort[slot]}
-                    </MiniChip>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <SectionLabel>Troop &amp; mode</SectionLabel>
-                <div className="flex flex-wrap gap-1">
-                  <MiniChip
-                    active={anchor.troop === "auto"}
-                    onClick={() => chat.setAnchor({ ...anchor, troop: "auto" })}
-                  >
-                    Any troop
-                  </MiniChip>
-                  {TROOP_TYPES.map((troop) => (
-                    <TroopChip
-                      key={troop}
-                      troop={troop}
-                      active={anchor.troop === troop}
-                      className="min-h-8 px-2 py-0 text-[11px]"
-                      onClick={() => chat.setAnchor({ ...anchor, troop })}
-                    />
-                  ))}
-                </div>
-                <div className="space-y-1 border-t border-border/40 pt-2">
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Formation types shown
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Turn off troop types you never want Copilot to suggest.
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {TROOP_TYPES.map((troop) => {
-                      const active = anchor.allowedTroops.includes(troop);
-                      return (
-                        <TroopChip
-                          key={`allow-${troop}`}
-                          troop={troop}
-                          active={active}
-                          className="min-h-8 px-2 py-0 text-[11px]"
-                          onClick={() => {
-                            const next = active
-                              ? anchor.allowedTroops.filter(
-                                  (item) => item !== troop,
-                                )
-                              : [...anchor.allowedTroops, troop];
-                            if (next.length === 0) {
-                              toast.error("Keep at least one troop type enabled.");
-                              return;
-                            }
-                            chat.setAnchor({
-                              ...anchor,
-                              allowedTroops: next,
-                              troop:
-                                anchor.troop !== "auto" &&
-                                !next.includes(anchor.troop)
-                                  ? "auto"
-                                  : anchor.troop,
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {MODES.map((mode) => (
-                    <MiniChip
-                      key={mode}
-                      active={anchor.mode === mode}
-                      onClick={() => chat.setAnchor({ ...anchor, mode })}
-                    >
-                      {modeShort[mode]}
-                    </MiniChip>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <SectionLabel>Pool · {savedPitCount}/{MAX_PIT_TEAMS} pit teams</SectionLabel>
-                <div className="flex flex-wrap gap-1">
-                  <MiniChip
-                    active={pool === "hatchery"}
-                    onClick={() => chat.setPool("hatchery")}
-                  >
-                    All dragons
-                  </MiniChip>
-                  <MiniChip
-                    active={pool === "pit"}
-                    onClick={() => chat.setPool("pit")}
-                  >
-                    Available in Pit · {availablePitCount}/{state.owned.length}
-                  </MiniChip>
-                </div>
-              </div>
-            </div>
-
-            <Disclosure title="Meta reference & ChatGPT export">
-              <div className="space-y-2">
-                <MetaCard />
-                <ChatGptExportBar
-                  build={buildExport}
-                  filename={chatgptExportFilename("coach", pool)}
-                  disabled={roster.length === 0}
-                />
-              </div>
-            </Disclosure>
-          </aside>
+              </Disclosure>
+            }
+          />
 
           {/* Right pane: teams around selected dragon + Copilot chat */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
             <section
+              ref={resultsRef}
               aria-labelledby="copilot-built-heading"
-              className="shrink-0 rounded-2xl surface p-3 ring-1 ring-foreground/15"
+              aria-busy={generating || undefined}
+              data-coach-results
+              className="shrink-0 scroll-mt-3 rounded-2xl surface p-3 ring-1 ring-foreground/15"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <SectionLabel id="copilot-built-heading">
-                  {anchorDragon
-                    ? `Teams built around ${anchorDragon.name}${anchor.troop !== "auto" ? ` · ${troopLabels[anchor.troop]}` : ""} · ${modeShort[anchor.mode]}`
-                    : `Best available teams · ${modeShort[anchor.mode]}`}
-                </SectionLabel>
-                <div className="flex items-center gap-1.5">
-                  {anchorDragon && chat.turns.length > 0 ? (
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <SectionLabel id="copilot-built-heading">
+                    {!result
+                      ? "Suggestions"
+                      : resultDragon
+                        ? `Teams around ${resultDragon.name}`
+                        : "Best teams for you"}
+                  </SectionLabel>
+                  {result ? (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {resultFacts}
+                    </p>
+                  ) : null}
+                </div>
+                {result && result.lines.length > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    {resultDragon ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          submit(
+                            `Explain the top team around ${resultDragon.name}`,
+                            `Why this ${resultDragon.name} line works`,
+                          )
+                        }
+                      >
+                        <Sparkles data-icon="inline-start" />
+                        Ask Copilot why
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setShowBuiltInChat((open) => !open)}
+                      aria-expanded={resultsOpen}
+                      onClick={() => setResultsOpen((open) => !open)}
                     >
-                      {showBuiltInChat ? "Hide top 3" : "Show top 3"}
+                      {resultsOpen ? "Hide" : "Show"}
+                      <ChevronDown
+                        data-icon="inline-end"
+                        className={cn("transition", resultsOpen && "rotate-180")}
+                      />
                     </Button>
-                  ) : null}
-                  {anchorDragon && builtLines.length > 0 ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        submit(
-                          `Explain the top ${modeShort[anchor.mode]} team around ${anchorDragon.name}`,
-                          `Why this ${anchorDragon.name} line works`,
-                        )
-                      }
-                    >
-                      <Sparkles data-icon="inline-start" />
-                      Ask Copilot why
-                    </Button>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
 
-              {chat.turns.length > 0 && !showBuiltInChat ? null : !anchorDragon ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  A focus dragon is optional. Use{" "}
-                  <span className="text-amber-100">Copilot-build next</span>{" "}
-                  to let Copilot choose the strongest unique team, or request a
-                  specific dragon below, such as{" "}
-                  <span className="text-amber-100">
-                    “build me a team around Vhagar”
-                  </span>
+              {dirty ? (
+                <p className="mt-2 rounded-lg bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-100 ring-1 ring-amber-400/30">
+                  Your choices changed. Tap{" "}
+                  <span className="font-medium">Update suggestions</span> to
+                  refresh these teams.
+                </p>
+              ) : null}
+
+              {!result ? (
+                <div className="mt-2 flex items-center gap-3 rounded-xl border border-dashed border-foreground/20 px-3 py-4">
+                  <Sparkles
+                    className="size-5 shrink-0 text-amber-300/80"
+                    aria-hidden
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Choose a focus dragon (optional) and troops, then tap{" "}
+                    <span className="text-amber-100">Generate suggestions</span>
+                    . Your top three teams show up here.
+                  </p>
+                </div>
+              ) : !resultsOpen ? null : result.lines.length === 0 ? (
+                <p className="mt-2 rounded-xl bg-black/25 px-3 py-2.5 text-sm text-muted-foreground">
+                  No complete team matched
+                  {resultDragon ? ` around ${resultDragon.name}` : ""}. Try
+                  turning on more troops
+                  {resultDragon && result.config.slot !== "auto"
+                    ? " or switching the seat to Best"
+                    : ""}
                   .
                 </p>
-              ) : builtLines.length === 0 ? (
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-black/25 px-3 py-2.5 text-sm text-muted-foreground">
-                  <span>
-                    No complete {modeShort[anchor.mode]} line around{" "}
-                    {anchorDragon.name} matched your current filters.
-                  </span>
-                  {pool === "pit" ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => chat.setPool("hatchery")}
-                    >
-                      Use All dragons
-                    </Button>
-                  ) : null}
-                </div>
               ) : (
-                <div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                  {builtLines.map((line, index) => (
-                    <CoachFormation
-                      key={`built-${index}-${line.left}-${line.vanguard}-${line.right}`}
-                      line={line}
-                      state={state}
-                      pool={pool}
-                      onSeat={seat}
-                    />
-                  ))}
-                </div>
+                <>
+                  {result.fellBack ? (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Your free pit could not fill a full team for these
+                      choices, so these teams use every dragon.
+                    </p>
+                  ) : null}
+                  <div
+                    className={cn(
+                      "mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3",
+                      generating && "opacity-60",
+                    )}
+                  >
+                    {result.lines.map((line, index) => (
+                      <CoachFormation
+                        key={`built-${index}-${line.left}-${line.vanguard}-${line.right}`}
+                        line={line}
+                        state={state}
+                        pool={result.pool}
+                        onSeat={(picked) => seat(picked, result.pool)}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </section>
 
@@ -779,7 +546,7 @@ export function CoachPage() {
                     onChange={(event) => setDraft(event.target.value)}
                     placeholder={
                       anchorDragon
-                        ? `Ask about ${anchorDragon.name} (e.g. "without Malachite", "try rally", or name another dragon)…`
+                        ? `Ask about ${anchorDragon.name} (e.g. "without Malachite", or name another dragon)…`
                         : 'Try "Build me a team around Vhagar"…'
                     }
                     className="max-h-36 min-h-11 w-full"
@@ -855,9 +622,9 @@ function CopilotContextLine({
       {meta ? (
         <>
           <span aria-hidden>·</span>
-          <span className="inline-flex items-center gap-1">
-            <TroopIcon troop={meta.troop} className="size-3.5" />
-            {troopLabels[meta.troop]} · {modeLabels[meta.mode]}
+          <span>
+            {troopLabels[meta.troop]}
+            {meta.mode !== "pvp" ? ` · ${modeLabels[meta.mode]}` : ""}
           </span>
         </>
       ) : null}
@@ -884,8 +651,8 @@ function Starters({
     <div className="rounded-xl bg-black/25 px-3 py-3 ring-1 ring-foreground/10">
       <p className="text-xs text-muted-foreground">
         {anchorName
-          ? `Shortcuts — Copilot picks troop and seats for you. Name exclusions or modes in the box below.`
-          : "Pick a dragon on the left, or tap a shortcut:"}
+          ? `Ask Copilot about ${anchorName} — it picks troop and seats for you. Name dragons to leave out in the box below.`
+          : "Ask Copilot anything about teams, or tap a shortcut:"}
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {prompts.map((starter) => (

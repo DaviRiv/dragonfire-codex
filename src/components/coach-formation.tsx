@@ -1,12 +1,12 @@
 "use client";
 
 import { DragonIcon } from "@/components/dragon-icon";
-import { TroopIcon } from "@/components/troop-icon";
+import { troopWordClass } from "@/components/troop-words";
 import { Button } from "@/components/ui/button";
 import type { AiLine } from "@/lib/ai/prompt";
 import type { AiPool } from "@/lib/ai/roster";
 import { findDragon } from "@/lib/dragons";
-import { modeLabels, slotShort, troopLabels } from "@/lib/labels";
+import { slotShort, troopLabels } from "@/lib/labels";
 import { SLOT_IDS } from "@/lib/lineup";
 import { dragonRoles, roleChipClass, roleShort } from "@/lib/roles";
 import type { PitState, Rarity, SlotId } from "@/lib/types";
@@ -113,10 +113,14 @@ export function CoachFormation({
         <h3 className="font-heading truncate text-base tracking-wide text-amber-50">
           {line.name}
         </h3>
-        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-amber-100/75">
-          <TroopIcon troop={line.troop} className="size-3.5" />
-          <span>
-            {troopLabels[line.troop]} · {modeLabels[line.mode]}
+        <p className="mt-1">
+          <span
+            className={cn(
+              "inline-flex rounded border px-1.5 py-px text-[10px] font-medium",
+              troopWordClass[line.troop],
+            )}
+          >
+            {troopLabels[line.troop]}
           </span>
         </p>
       </header>
